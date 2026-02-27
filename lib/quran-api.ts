@@ -1,12 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE = 'https://api.alquran.cloud/v1';
-const CACHE_PREFIX = 'quran_';
-const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+const CACHE_PREFIX = 'quran_v2_';
 
 export interface Surah {
   number: number;
-  name: string;           // Arabic name
+  name: string;
   englishName: string;
   englishNameTranslation: string;
   numberOfAyahs: number;
@@ -14,8 +13,8 @@ export interface Surah {
 }
 
 export interface Ayah {
-  number: number;         // global ayah number
-  text: string;           // Arabic text
+  number: number;
+  text: string;
   numberInSurah: number;
   juz: number;
   manzil: number;
@@ -44,15 +43,14 @@ async function getCache<T>(key: string): Promise<T | null> {
   try {
     const raw = await AsyncStorage.getItem(CACHE_PREFIX + key);
     if (!raw) return null;
-    const { data, timestamp } = JSON.parse(raw);
-    if (Date.now() - timestamp > CACHE_TTL) return null;
+    const { data } = JSON.parse(raw);
     return data as T;
   } catch { return null; }
 }
 
 async function setCache(key: string, data: unknown) {
   try {
-    await AsyncStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ data, timestamp: Date.now() }));
+    await AsyncStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ data, ts: Date.now() }));
   } catch {}
 }
 
@@ -104,7 +102,42 @@ export async function searchQuran(query: string): Promise<{ surah: Surah; ayah: 
   } catch { return []; }
 }
 
-// Surah metadata (name in Arabic, name transliteration, type, count)
+export async function getDownloadedCount(): Promise<number> {
+  let count = 0;
+  for (let i = 1; i <= 114; i++) {
+    const key = `surah_${i}`;
+    const cached = await getCache(key);
+    if (cached) count++;
+  }
+  return count;
+}
+
+export async function isSurahDownloaded(number: number): Promise<boolean> {
+  const cached = await getCache(`surah_${number}`);
+  return cached !== null;
+}
+
+export async function downloadAllSurahs(
+  onProgress: (downloaded: number, total: number) => void
+): Promise<{ success: number; failed: number }> {
+  let success = 0;
+  let failed = 0;
+  const total = 114;
+
+  for (let i = 1; i <= total; i++) {
+    try {
+      await fetchSurah(i);
+      success++;
+    } catch {
+      failed++;
+    }
+    onProgress(success + failed, total);
+    await new Promise(r => setTimeout(r, 80));
+  }
+
+  return { success, failed };
+}
+
 export const SURAH_META: Array<{
   number: number;
   arabic: string;
@@ -177,13 +210,13 @@ export const SURAH_META: Array<{
   { number: 61,  arabic: 'الصَّف',             transliteration: 'Aṣ-Ṣaf',           english: 'The Ranks',             ayahs: 14,  type: 'Medinan', hasBismillah: true },
   { number: 62,  arabic: 'الْجُمُعَة',         transliteration: 'Al-Jumuʿah',       english: 'Friday',                ayahs: 11,  type: 'Medinan', hasBismillah: true },
   { number: 63,  arabic: 'الْمُنَافِقُون',     transliteration: 'Al-Munāfiqūn',     english: 'The Hypocrites',        ayahs: 11,  type: 'Medinan', hasBismillah: true },
-  { number: 64,  arabic: 'التَّغَابُن',        transliteration: 'At-Taghābun',      english: 'The Mutual Disillusion',ayahs: 18,  type: 'Medinan', hasBismillah: true },
+  { number: 64,  arabic: 'التَّغَابُن',        transliteration: 'At-Taghābun',      english: 'The Mutual Disillusion', ayahs: 18, type: 'Medinan', hasBismillah: true },
   { number: 65,  arabic: 'الطَّلَاق',          transliteration: 'Aṭ-Ṭalāq',        english: 'The Divorce',           ayahs: 12,  type: 'Medinan', hasBismillah: true },
-  { number: 66,  arabic: 'التَّحْرِيم',        transliteration: 'At-Taḥrīm',        english: 'The Prohibtiion',       ayahs: 12,  type: 'Medinan', hasBismillah: true },
+  { number: 66,  arabic: 'التَّحْرِيم',        transliteration: 'At-Taḥrīm',        english: 'The Prohibition',       ayahs: 12,  type: 'Medinan', hasBismillah: true },
   { number: 67,  arabic: 'الْمُلْك',           transliteration: 'Al-Mulk',          english: 'The Sovereignty',       ayahs: 30,  type: 'Meccan',  hasBismillah: true },
   { number: 68,  arabic: 'الْقَلَم',           transliteration: 'Al-Qalam',         english: 'The Pen',               ayahs: 52,  type: 'Meccan',  hasBismillah: true },
   { number: 69,  arabic: 'الْحَاقَّة',         transliteration: 'Al-Ḥāqqah',        english: 'The Reality',           ayahs: 52,  type: 'Meccan',  hasBismillah: true },
-  { number: 70,  arabic: 'الْمَعَارِج',        transliteration: 'Al-Maʿārij',       english: 'The Ascending Stairways',ayahs: 44, type: 'Meccan',  hasBismillah: true },
+  { number: 70,  arabic: 'الْمَعَارِج',        transliteration: 'Al-Maʿārij',       english: 'The Ascending Stairways', ayahs: 44, type: 'Meccan', hasBismillah: true },
   { number: 71,  arabic: 'نُوح',               transliteration: 'Nūḥ',              english: 'Noah',                  ayahs: 28,  type: 'Meccan',  hasBismillah: true },
   { number: 72,  arabic: 'الْجِن',             transliteration: 'Al-Jinn',          english: 'The Jinn',              ayahs: 28,  type: 'Meccan',  hasBismillah: true },
   { number: 73,  arabic: 'الْمُزَّمِّل',       transliteration: 'Al-Muzzammil',     english: 'The Enshrouded One',    ayahs: 20,  type: 'Meccan',  hasBismillah: true },
