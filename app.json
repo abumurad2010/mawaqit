@@ -1,26 +1,34 @@
 {
   "expo": {
-    "name": "Prayer Tracker",
-    "slug": "prayer-tracker",
+    "name": "Mawaqit",
+    "slug": "mawaqit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "prayertracker",
-    "userInterfaceStyle": "dark",
+    "scheme": "mawaqit",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A1A12"
+      "backgroundColor": "#1a5c38"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.prayertracker"
+      "bundleIdentifier": "com.mawaqit.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Location is used to calculate accurate prayer times and Qibla direction.",
+        "NSMotionUsageDescription": "Motion sensors are used to show the Qibla compass direction."
+      }
     },
     "android": {
-      "package": "com.prayertracker",
+      "package": "com.mawaqit.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "adaptiveIcon": {
-        "backgroundColor": "#0A1A12",
+        "backgroundColor": "#1a5c38",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -37,7 +45,13 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow $(PRODUCT_NAME) to access your device motion for the Qibla compass."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
