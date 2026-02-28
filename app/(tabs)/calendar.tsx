@@ -53,6 +53,7 @@ export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors } = useApp();
   const C = colors;
+  const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
 
@@ -229,13 +230,14 @@ export default function CalendarScreen() {
               >
                 <Text style={[styles.cellDay, {
                   color: sel ? C.tintText : tod ? C.tint : isFriday ? C.tint : C.text,
-                  fontWeight: sel || tod ? '700' : '400',
+                  fontWeight: sel || tod ? '700' : fw,
                 }]}>
                   {isAr ? toArabicIndic(cell.day) : cell.day}
                 </Text>
                 {cell.hijri && (
                   <Text style={[styles.cellHijri, {
                     color: sel ? 'rgba(255,255,255,0.8)' : C.textMuted,
+                    fontWeight: fw,
                   }]}>
                     {isAr ? toArabicIndic(cell.hijri.d) : cell.hijri.d}
                   </Text>
@@ -266,13 +268,14 @@ export default function CalendarScreen() {
                       />
                       <Text style={[styles.prayerName, {
                         color: C.text,
+                        fontWeight: fw,
                         fontFamily: isAr ? 'Amiri_400Regular' : undefined,
                         fontSize: isAr ? 16 : 14,
                       }]}>
                         {prayerLabels[key]}
                       </Text>
                     </View>
-                    <Text style={[styles.prayerTime, { color: C.textSecond }]}>
+                    <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw }]}>
                       {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
                     </Text>
                   </View>
@@ -286,7 +289,7 @@ export default function CalendarScreen() {
         ) : (
           <View style={[styles.noLocation, { paddingHorizontal: 16 }]}>
             <Ionicons name="location-outline" size={32} color={C.textMuted} />
-            <Text style={[styles.noLocationText, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            <Text style={[styles.noLocationText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
               {isAr ? 'يرجى تحديد الموقع لعرض أوقات الصلاة' : 'Set your location to see prayer times'}
             </Text>
           </View>
@@ -296,10 +299,10 @@ export default function CalendarScreen() {
 
       {/* Dua — fixed footer */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
-        <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
+        <Text style={[styles.dua, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
-        <Text style={[styles.freeApp, { color: C.textMuted }]}>
+        <Text style={[styles.freeApp, { color: C.textMuted, fontWeight: fw }]}>
           {tr.freeApp}
         </Text>
       </View>

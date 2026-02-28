@@ -23,6 +23,7 @@ export default function QuranScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, updateSettings } = useApp();
   const C = colors;
+  const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
 
@@ -70,11 +71,11 @@ export default function QuranScreen() {
           <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
             {item.arabic}
           </Text>
-          <Text style={[styles.surahEnglish, { color: C.textMuted }]}>
+          <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw }]}>
             {item.transliteration}
             {isAr ? '' : ` · ${item.english}`}
           </Text>
-          <Text style={[styles.surahMeta, { color: C.textMuted }]}>
+          <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw }]}>
             {item.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
             {' · '}
             {item.ayahs} {isAr ? 'آية' : 'verses'}

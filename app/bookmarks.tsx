@@ -16,6 +16,7 @@ export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, colors, bookmarks, removeBookmark } = useApp();
   const C = colors;
+  const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
@@ -55,10 +56,10 @@ export default function BookmarksScreen() {
                 </View>
               )}
             </View>
-            <Text style={[styles.ayahNum, { color: C.textSecond }]}>
+            <Text style={[styles.ayahNum, { color: C.textSecond, fontWeight: fw }]}>
               {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
             </Text>
-            <Text style={[styles.preview, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
+            <Text style={[styles.preview, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
               {item.ayahText}…
             </Text>
           </View>
@@ -96,7 +97,7 @@ export default function BookmarksScreen() {
       {bookmarks.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="bookmark-outline" size={56} color={C.textMuted} />
-          <Text style={[styles.emptyText, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Text style={[styles.emptyText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
             {tr.noBookmarks}
           </Text>
         </View>

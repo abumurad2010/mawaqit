@@ -18,9 +18,10 @@ export interface ColorPalette {
   goldLight:        string;
   danger:           string;
   surface:          string;
-  heroCardBg:       string;
-  heroCardText:     string;
-  heroCardSubtext:  string;
+  heroCardBg:           string;
+  heroCardText:         string;
+  heroCardSubtext:      string;
+  fontWeightNormal:     '400' | '700'; // '700' in HC for bold-everywhere accessibility
 }
 
 const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPalette }> = {
@@ -50,6 +51,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#1a7a4a',       // white on #1a7a4a = 7.0:1 ✓
       heroCardText:     '#FFFFFF',
       heroCardSubtext:  'rgba(255,255,255,0.70)',
+      fontWeightNormal: '400',
     },
     dark: {
       background:       '#000000',
@@ -72,6 +74,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#1C5E35',       // deep forest green — white on #1C5E35 = 8.5:1 ✓
       heroCardText:     '#FFFFFF',
       heroCardSubtext:  'rgba(255,255,255,0.65)',
+      fontWeightNormal: '400',
     },
   },
 
@@ -102,6 +105,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#000000',       // white on black = 21:1 ✓✓✓
       heroCardText:     '#FFFFFF',
       heroCardSubtext:  'rgba(255,255,255,0.75)',
+      fontWeightNormal: '700',
     },
     dark: {
       background:       '#000000',
@@ -124,6 +128,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#FFFFFF',       // black on white = 21:1 ✓✓✓
       heroCardText:     '#000000',
       heroCardSubtext:  'rgba(0,0,0,0.60)',
+      fontWeightNormal: '700',
     },
   },
 
@@ -152,6 +157,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#003D99',       // white on #003D99 = 9.7:1 ✓
       heroCardText:     '#FFFFFF',
       heroCardSubtext:  'rgba(255,255,255,0.70)',
+      fontWeightNormal: '400',
     },
     dark: {
       background:       '#000000',
@@ -174,6 +180,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#003D99',       // white on #003D99 = 9.7:1 ✓
       heroCardText:     '#FFFFFF',
       heroCardSubtext:  'rgba(255,255,255,0.65)',
+      fontWeightNormal: '400',
     },
   },
 
@@ -202,6 +209,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#6B4C00',       // white on #6B4C00 = 9.1:1 ✓
       heroCardText:     '#FFFFFF',
       heroCardSubtext:  'rgba(255,255,255,0.70)',
+      fontWeightNormal: '400',
     },
     dark: {
       background:       '#1A0F0A',
@@ -224,6 +232,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       '#4A3000',       // warm-white on #4A3000 = 9.8:1 ✓
       heroCardText:     '#FFE4B5',
       heroCardSubtext:  'rgba(255,228,181,0.65)',
+      fontWeightNormal: '400',
     },
   },
 };

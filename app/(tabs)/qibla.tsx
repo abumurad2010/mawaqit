@@ -29,6 +29,7 @@ export default function QiblaScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, location: appLocation, colors } = useApp();
   const C = colors;
+  const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
 
@@ -142,7 +143,7 @@ export default function QiblaScreen() {
           const { status } = await Location.requestForegroundPermissionsAsync();
           setHasPermission(status === 'granted');
         }}>
-          <Text style={{ color: C.tint, fontSize: 15, marginTop: 12 }}>{tr.requestPermission}</Text>
+          <Text style={{ color: C.tint, fontSize: 15, fontWeight: fw, marginTop: 12 }}>{tr.requestPermission}</Text>
         </Pressable>
       </View>
     );
@@ -273,17 +274,18 @@ export default function QiblaScreen() {
         {magnetometerAvailable ? (
           <Text style={[styles.instrText, {
             color: C.textSecond,
+            fontWeight: fw,
             fontFamily: isAr ? 'Amiri_400Regular' : undefined,
           }]}>
             {tr.pointToMecca}
           </Text>
         ) : (
-          <Text style={[styles.instrText, { color: C.textMuted }]}>
+          <Text style={[styles.instrText, { color: C.textMuted, fontWeight: fw }]}>
             {tr.compassNotAvailable}
           </Text>
         )}
         {location && (
-          <Text style={[styles.coordText, { color: C.textMuted }]}>
+          <Text style={[styles.coordText, { color: C.textMuted, fontWeight: fw }]}>
             {location.lat.toFixed(4)}°, {location.lng.toFixed(4)}°
           </Text>
         )}
@@ -292,6 +294,7 @@ export default function QiblaScreen() {
             <Text style={styles.calibrateSymbol}>∞</Text>
             <Text style={[styles.calibrateText, {
               color: C.textMuted,
+              fontWeight: fw,
               fontFamily: isAr ? 'Amiri_400Regular' : undefined,
               textAlign: isAr ? 'right' : 'left',
             }]}>
@@ -305,10 +308,10 @@ export default function QiblaScreen() {
 
       {/* Dua — pinned to bottom, same as all other pages */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
-        <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
+        <Text style={[styles.dua, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
-        <Text style={[styles.freeApp, { color: C.textMuted }]}>
+        <Text style={[styles.freeApp, { color: C.textMuted, fontWeight: fw }]}>
           {tr.freeApp}
         </Text>
       </View>

@@ -235,6 +235,7 @@ export default function PrayerTimesScreen() {
 
   const pageText  = C.text;
   const pageMuted = C.textMuted;
+  const fw = C.fontWeightNormal;
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -285,7 +286,7 @@ export default function PrayerTimesScreen() {
             numberOfLines={1}
           >{gregorianStr}</Text>
           <Text
-            style={[styles.hijriText, { color: pageMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}
+            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}
             numberOfLines={1}
           >{hijriStr}</Text>
         </View>
@@ -293,7 +294,7 @@ export default function PrayerTimesScreen() {
         {/* Row 3: location */}
         <View style={styles.metaRow}>
           <Ionicons name="location-sharp" size={10} color={pageMuted} />
-          <Text style={[styles.metaText, { color: pageMuted, flexShrink: 1 }]} numberOfLines={1}>
+          <Text style={[styles.metaText, { color: pageMuted, fontWeight: fw, flexShrink: 1 }]} numberOfLines={1}>
             {loadingLoc
               ? tr.searching
               : location
@@ -326,11 +327,11 @@ export default function PrayerTimesScreen() {
                 {prayerLabel(displayNext.name)}
               </Text>
             </View>
-            <Text style={[styles.heroCountdown, { color: C.heroCardText }]}>{countdown}</Text>
+            <Text style={[styles.heroCountdown, { color: C.heroCardText, fontWeight: fw }]}>{countdown}</Text>
           </Animated.View>
         ) : (
           <View style={[styles.heroCard, styles.heroCardEmpty, { backgroundColor: C.backgroundCard }]}>
-            <Text style={[styles.heroEmptyText, { color: C.textMuted }]}>
+            <Text style={[styles.heroEmptyText, { color: C.textMuted, fontWeight: fw }]}>
               {loadingLoc ? tr.searching : !location ? tr.locationPermission : tr.searching}
             </Text>
           </View>
@@ -359,7 +360,7 @@ export default function PrayerTimesScreen() {
                     styles.prayerName,
                     {
                       color: active ? C.tint : passed ? C.textMuted : C.text,
-                      fontWeight: active ? '700' : '400',
+                      fontWeight: active ? '700' : fw,
                       fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
                       fontSize: 15,
                       lineHeight: 20,
@@ -370,7 +371,7 @@ export default function PrayerTimesScreen() {
                 </View>
                 <Text style={[
                   styles.prayerTime,
-                  { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : '400' }
+                  { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw }
                 ]}>
                   {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                 </Text>
@@ -386,10 +387,10 @@ export default function PrayerTimesScreen() {
 
       {/* ── Dua ── */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
-        <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
+        <Text style={[styles.dua, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
-        <Text style={[styles.freeApp, { color: C.textMuted }]}>
+        <Text style={[styles.freeApp, { color: C.textMuted, fontWeight: fw }]}>
           {tr.freeApp}
         </Text>
       </View>
