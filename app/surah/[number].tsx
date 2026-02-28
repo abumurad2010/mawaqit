@@ -299,10 +299,11 @@ export default function SurahScreen() {
                     key={ayah.number}
                     onLongPress={() => handleLongPress(ayah)}
                     onLayout={(e) => {
-                      ayahPositions.current[ayah.numberInSurah] = e.nativeEvent.layout.y;
+                      const y = e.nativeEvent.layout.y;
+                      ayahPositions.current[ayah.numberInSurah] = y;
                       if (targetAyah && ayah.numberInSurah === targetAyah && !scrolled.current) {
                         scrolled.current = true;
-                        setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, e.nativeEvent.layout.y - 80), animated: true }), 300);
+                        setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 80), animated: true }), 300);
                       }
                     }}
                     style={[
