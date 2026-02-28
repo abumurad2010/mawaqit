@@ -209,17 +209,44 @@ export default function PrayerTimesScreen() {
 
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
+        {/* Left: brand + date + hijri */}
         <View style={{ flex: 1 }}>
-          {/* Brand wordmark */}
           <Text style={[styles.appName, { color: C.tint }]}>
             {isAr ? 'مواقيت' : 'MAWAQIT'}
           </Text>
-          {/* Gregorian date */}
           <Text style={[styles.dateText, { color: C.text }]} numberOfLines={1}>
             {gregorianStr}
           </Text>
-          {/* Location + Hijri in one muted line */}
-          <View style={styles.metaRow}>
+          <Text style={[styles.metaText, { color: C.textMuted, marginTop: 3 }]} numberOfLines={1}>
+            {hijriStr}
+          </Text>
+        </View>
+
+        {/* Right: icon buttons + location underneath */}
+        <View style={styles.headerRight}>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                if (locationMode === 'auto') {
+                  setShowManual(true);
+                } else {
+                  updateSettings({ locationMode: 'auto' });
+                  fetchAutoLocation();
+                }
+              }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={19} color={C.tint} />
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Ionicons name="settings-outline" size={19} color={C.textSecond} />
+            </Pressable>
+          </View>
+          <View style={styles.locationRow}>
             <Ionicons name="location-sharp" size={10} color={C.textMuted} />
             <Text style={[styles.metaText, { color: C.textMuted }]} numberOfLines={1}>
               {loadingLoc
@@ -228,31 +255,7 @@ export default function PrayerTimesScreen() {
                   ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
                   : tr.locationPermission}
             </Text>
-            <Text style={[styles.metaDot, { color: C.textMuted }]}>·</Text>
-            <Text style={[styles.metaText, { color: C.textMuted }]}>{hijriStr}</Text>
           </View>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              if (locationMode === 'auto') {
-                setShowManual(true);
-              } else {
-                updateSettings({ locationMode: 'auto' });
-                fetchAutoLocation();
-              }
-            }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={19} color={C.tint} />
-          </Pressable>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Ionicons name="settings-outline" size={19} color={C.textSecond} />
-          </Pressable>
         </View>
       </View>
 
@@ -452,7 +455,9 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'nowrap' },
   metaText: { fontSize: 12 },
   metaDot: { fontSize: 12, marginHorizontal: 2 },
-  headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
+  headerRight: { alignItems: 'flex-end', gap: 6 },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   /* Next prayer hero */
