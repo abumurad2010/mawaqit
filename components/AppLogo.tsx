@@ -23,6 +23,6 @@ export default function AppLogo({ tintColor, lang }: AppLogoProps) {
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', gap: 3 },
-  image: { width: 40, height: 40 },
+  image: { width: 52, height: 52 },
   name: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
 });
