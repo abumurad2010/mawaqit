@@ -24,32 +24,37 @@ export default function BookmarksScreen() {
 
   const renderItem = ({ item, index }: { item: Bookmark; index: number }) => (
     <Animated.View entering={FadeInDown.delay(index * 50).duration(350)}>
-      <Pressable
-        onPress={() => {
-          Haptics.selectionAsync();
-          router.push({ pathname: '/surah/[number]', params: { number: String(item.surahNumber) } });
-        }}
-        style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-      >
-        <View style={[styles.goldDot, { backgroundColor: C.gold }]} />
-        <View style={styles.info}>
-          <Text style={[styles.surahName, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-            {item.surahName}
-          </Text>
-          <Text style={[styles.ayahNum, { color: C.textSecond }]}>
-            {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
-          </Text>
-          <Text style={[styles.preview, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
-            {item.ayahText}…
-          </Text>
-        </View>
+      <View style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            router.push({
+              pathname: '/surah/[number]',
+              params: { number: String(item.surahNumber), ayah: String(item.ayahNumber) },
+            });
+          }}
+          style={styles.rowBody}
+        >
+          <View style={[styles.goldDot, { backgroundColor: C.gold }]} />
+          <View style={styles.info}>
+            <Text style={[styles.surahName, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+              {item.surahName}
+            </Text>
+            <Text style={[styles.ayahNum, { color: C.textSecond }]}>
+              {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
+            </Text>
+            <Text style={[styles.preview, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
+              {item.ayahText}…
+            </Text>
+          </View>
+        </Pressable>
         <Pressable
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeBookmark(item.surahNumber, item.ayahNumber); }}
           style={({ pressed }) => [styles.deleteBtn, { opacity: pressed ? 0.6 : 1 }]}
         >
           <Ionicons name="trash-outline" size={18} color={C.danger} />
         </Pressable>
-      </Pressable>
+      </View>
     </Animated.View>
   );
 
@@ -108,13 +113,16 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   emptyText: { fontSize: 15 },
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 14, borderWidth: 1, marginBottom: 8, overflow: 'hidden',
+  },
+  rowBody: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
   },
   goldDot: { width: 8, height: 8, borderRadius: 4 },
   info: { flex: 1 },
   surahName: { fontSize: 18, marginBottom: 2 },
   ayahNum: { fontSize: 12, marginBottom: 4 },
   preview: { fontSize: 14, lineHeight: 22 },
-  deleteBtn: { padding: 8 },
+  deleteBtn: { padding: 14, paddingLeft: 8 },
 });
