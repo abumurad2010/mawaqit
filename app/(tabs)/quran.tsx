@@ -152,7 +152,7 @@ export default function QuranScreen() {
               styles.segmentLabel,
               { color: mode === 'transliteration' ? '#fff' : C.textMuted },
             ]}>
-              {isAr ? 'النطق' : 'Transliteration'}
+              {isAr ? 'النقل الحرفي' : 'Transliteration'}
             </Text>
           </Pressable>
         </View>
