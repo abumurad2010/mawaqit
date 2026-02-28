@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
@@ -62,11 +61,6 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
-      <LinearGradient
-        colors={isDark ? ['#0a2416', '#070f0a'] : ['#e8f5ec', '#f8fdf9']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16 }]}>

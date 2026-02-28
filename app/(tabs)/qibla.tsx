@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming,
   FadeIn, interpolate, Extrapolation,
@@ -136,17 +135,17 @@ export default function QiblaScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
-      <LinearGradient
-        colors={isDark ? ['#0a2416', '#070f0a'] : ['#e8f5ec', '#f8fdf9']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 8, paddingHorizontal: 20 }]}>
-        <Text style={[styles.title, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-          {tr.qibla}
-        </Text>
+      <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
+        <View>
+          <Text style={[styles.appNameSmall, { color: C.tint }]}>
+            {isAr ? 'مواقيت' : 'MAWAQIT'}
+          </Text>
+          <Text style={[styles.title, { color: C.text }]}>
+            {tr.qibla}
+          </Text>
+        </View>
         {qiblaBearing !== null && (
           <View style={[styles.badgeRow]}>
             <View style={[styles.badge, { backgroundColor: C.surface }]}>
@@ -281,7 +280,8 @@ export default function QiblaScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  title: { fontSize: 26, fontWeight: '700' },
+  appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
+  title: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1, marginLeft: 12 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 13, fontWeight: '600' },

@@ -4,11 +4,10 @@ import {
   Platform, Alert, Modal, TextInput, ScrollView
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat,
   withSequence, withTiming, FadeIn,
@@ -16,7 +15,6 @@ import Animated, {
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { MosqueSilhouette } from '@/components/MosqueFrame';
 import {
   calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
@@ -193,27 +191,31 @@ export default function PrayerTimesScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
-      {/* Background gradient */}
-      <LinearGradient
-        colors={isDark
-          ? ['#0a2416', '#070f0a']
-          : ['#e8f5ec', '#f8fdf9']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      />
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 8, paddingHorizontal: 20 }]}>
-        <View>
-          <Text style={[styles.appName, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
-            {isAr ? 'مواقيت' : 'Mawaqit'}
+      {/* ── Header ── */}
+      <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
+        <View style={{ flex: 1 }}>
+          {/* Brand wordmark */}
+          <Text style={[styles.appName, { color: C.tint }]}>
+            {isAr ? 'مواقيت' : 'MAWAQIT'}
           </Text>
-          <Text style={[styles.dateText, { color: C.textSecond }]} numberOfLines={1}>
+          {/* Gregorian date */}
+          <Text style={[styles.dateText, { color: C.text }]} numberOfLines={1}>
             {gregorianStr}
           </Text>
-          <Text style={[styles.hijriText, { color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]} numberOfLines={1}>
-            {hijriStr}
-          </Text>
+          {/* Location + Hijri in one muted line */}
+          <View style={styles.metaRow}>
+            <Ionicons name="location-sharp" size={10} color={C.textMuted} />
+            <Text style={[styles.metaText, { color: C.textMuted }]} numberOfLines={1}>
+              {loadingLoc
+                ? tr.searching
+                : location
+                  ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
+                  : tr.locationPermission}
+            </Text>
+            <Text style={[styles.metaDot, { color: C.textMuted }]}>·</Text>
+            <Text style={[styles.metaText, { color: C.textMuted }]}>{hijriStr}</Text>
+          </View>
         </View>
         <View style={styles.headerActions}>
           <Pressable
@@ -226,105 +228,96 @@ export default function PrayerTimesScreen() {
                 fetchAutoLocation();
               }
             }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
           >
-            <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={20} color={C.tint} />
+            <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={19} color={C.tint} />
           </Pressable>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
           >
-            <Ionicons name="settings-outline" size={20} color={C.tint} />
+            <Ionicons name="settings-outline" size={19} color={C.textSecond} />
           </Pressable>
         </View>
       </View>
 
-      {/* Location + mosque silhouette — one compact row */}
-      <View style={[styles.subHeader, { paddingHorizontal: 20 }]}>
-        <View style={styles.locationRow}>
-          <Ionicons name="location-sharp" size={12} color={C.tint} />
-          <Text style={[styles.locationText, { color: C.textMuted }]} numberOfLines={1}>
-            {loadingLoc
-              ? tr.searching
-              : location
-                ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
-                : tr.locationPermission}
-          </Text>
-        </View>
-        <MosqueSilhouette color={C.tint} size={0.75} />
-      </View>
-
-      {/* Next prayer — compact strip, always in its own reserved space */}
-      <View style={[styles.nextSlot, { paddingHorizontal: 16 }]}>
-        {nextPrayer && times && (
+      {/* ── Next prayer hero card ── */}
+      <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 12 }}>
+        {nextPrayer && times ? (
           <Animated.View
-            entering={FadeIn.duration(400)}
-            style={[styles.nextStrip, { backgroundColor: C.tint }]}
+            entering={FadeIn.duration(500)}
+            style={[styles.heroCard, { backgroundColor: C.tint }]}
           >
-            <Animated.View style={pulseStyle}>
-              <MaterialCommunityIcons
-                name={PRAYER_ICONS[nextPrayer.name] as any}
-                size={22} color="#fff"
-              />
-            </Animated.View>
-            <View style={[styles.nextCenter, { alignItems: isAr ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[styles.nextLabel, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-                {tr.nextPrayer}
-              </Text>
-              <Text style={[styles.nextPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-                {prayerLabel(nextPrayer.name)}
-              </Text>
+            <View style={styles.heroTop}>
+              <Text style={styles.heroLabel}>{tr.nextPrayer}</Text>
+              <Animated.View style={pulseStyle}>
+                <MaterialCommunityIcons
+                  name={PRAYER_ICONS[nextPrayer.name] as any}
+                  size={20} color="rgba(255,255,255,0.6)"
+                />
+              </Animated.View>
             </View>
-            <Text style={styles.countdown}>{countdown}</Text>
+            <Text style={[styles.heroPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              {prayerLabel(nextPrayer.name)}
+            </Text>
+            <Text style={styles.heroCountdown}>{countdown}</Text>
           </Animated.View>
+        ) : (
+          <View style={[styles.heroCard, styles.heroCardEmpty, { backgroundColor: C.backgroundCard }]}>
+            <Text style={[styles.heroEmptyText, { color: C.textMuted }]}>
+              {loadingLoc ? tr.searching : tr.locationPermission}
+            </Text>
+          </View>
         )}
       </View>
 
-      {/* Prayer times — static, compact, no centering */}
-      <View style={[styles.prayerList, { paddingHorizontal: 16 }]}>
-        {PRAYER_ORDER.map((key) => {
+      {/* ── Prayer list ── */}
+      <View style={[styles.prayerCard, { backgroundColor: C.backgroundCard, marginHorizontal: 16 }]}>
+        {PRAYER_ORDER.map((key, idx) => {
           const active = isNext(key);
           const passed = !active && isPassed(key);
+          const isLast = idx === PRAYER_ORDER.length - 1;
           return (
-            <View
-              key={key}
-              style={[
+            <View key={key}>
+              <View style={[
                 styles.prayerRow,
-                {
-                  backgroundColor: active ? C.tint : passed ? C.surface : C.backgroundCard,
-                  borderColor: active ? C.tint : C.separator,
-                },
-              ]}
-            >
-              <View style={styles.prayerLeft}>
-                <MaterialCommunityIcons
-                  name={PRAYER_ICONS[key] as any}
-                  size={20}
-                  color={active ? '#fff' : passed ? C.textMuted : C.tint}
-                />
+                active && { backgroundColor: C.tintLight },
+              ]}>
+                <View style={styles.prayerLeft}>
+                  <MaterialCommunityIcons
+                    name={PRAYER_ICONS[key] as any}
+                    size={18}
+                    color={active ? C.tint : passed ? C.textMuted : C.textSecond}
+                  />
+                  <Text style={[
+                    styles.prayerName,
+                    {
+                      color: active ? C.tint : passed ? C.textMuted : C.text,
+                      fontWeight: active ? '700' : '400',
+                      fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
+                      fontSize: isAr ? 17 : 15,
+                    }
+                  ]}>
+                    {prayerLabel(key)}
+                  </Text>
+                </View>
                 <Text style={[
-                  styles.prayerName,
-                  {
-                    color: active ? '#fff' : passed ? C.textMuted : C.text,
-                    fontFamily: isAr ? 'Amiri_700Bold' : undefined,
-                    fontSize: isAr ? 17 : 14,
-                  }
+                  styles.prayerTime,
+                  { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : '400' }
                 ]}>
-                  {prayerLabel(key)}
+                  {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                 </Text>
               </View>
-              <Text style={[styles.prayerTime, { color: active ? '#fff' : passed ? C.textMuted : C.text }]}>
-                {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
-              </Text>
+              {!isLast && <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />}
             </View>
           );
         })}
       </View>
 
-      {/* Spacer pushes dua to the bottom */}
+      {/* Spacer */}
       <View style={{ flex: 1 }} />
 
-      {/* Dua — always at the bottom, never overlapping */}
+      {/* ── Dua ── */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
@@ -436,88 +429,65 @@ export default function PrayerTimesScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+
+  /* Header */
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  appName: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5 },
+  dateText: { fontSize: 22, fontWeight: '600', marginTop: 3, letterSpacing: -0.3 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'nowrap' },
+  metaText: { fontSize: 12 },
+  metaDot: { fontSize: 12, marginHorizontal: 2 },
+  headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
+  iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+
+  /* Next prayer hero */
+  heroCard: {
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
   },
-  appName: { fontSize: 26, fontWeight: '700', letterSpacing: 0.5 },
-  dateText: { fontSize: 12, marginTop: 2 },
-  hijriText: { fontSize: 12, marginTop: 1 },
-  headerActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  iconBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  subHeader: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 8,
-  },
-  locationRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-  },
-  locationText: { fontSize: 12 },
-  nextSlot: { height: 56, justifyContent: 'center', marginBottom: 8 },
-  nextStrip: {
-    flexDirection: 'row', alignItems: 'center',
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, gap: 10,
-  },
-  nextCenter: { flex: 1 },
-  nextLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 10, marginBottom: 1 },
-  nextPrayerName: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  countdown: {
-    color: '#fff', fontSize: 16, fontWeight: '700',
+  heroCardEmpty: { alignItems: 'center', paddingVertical: 22 },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' },
+  heroPrayerName: { color: '#fff', fontSize: 26, fontWeight: '700', marginBottom: 6 },
+  heroCountdown: {
+    color: '#fff',
+    fontSize: 42,
+    fontWeight: '300',
+    letterSpacing: -1,
     fontVariant: ['tabular-nums'],
-    letterSpacing: 0.5,
   },
-  prayerList: { gap: 5 },
+  heroEmptyText: { fontSize: 13 },
+
+  /* Prayer card container */
+  prayerCard: { borderRadius: 16, overflow: 'hidden' },
   prayerRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: 12, borderWidth: 1,
+    paddingHorizontal: 16, paddingVertical: 13,
   },
-  prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  prayerName: { fontSize: 14, fontWeight: '600' },
-  prayerTime: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  rowDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
+  prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  prayerName: { fontSize: 15 },
+  prayerTime: { fontSize: 15, fontVariant: ['tabular-nums'] },
+
+  /* Dua */
   duaRow: { alignItems: 'center', paddingHorizontal: 24 },
   dua: { fontSize: 13, textAlign: 'center' },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalBox: {
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    padding: 24, gap: 16,
-  },
+
+  /* Location modal */
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalBox: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, gap: 16 },
   modalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
   inputRow: { gap: 6 },
   inputLabel: { fontSize: 13, fontWeight: '500' },
-  input: {
-    borderWidth: 1, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 10,
-    fontSize: 15,
-  },
+  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15 },
   modalBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  modalBtn: {
-    flex: 1, paddingVertical: 13, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  modalBtn: { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   cityRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  searchBtn: {
-    width: 44, height: 44, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  cityList: {
-    borderWidth: 1, borderRadius: 10, overflow: 'hidden',
-  },
-  cityItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 12, paddingVertical: 10,
-  },
+  searchBtn: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  cityList: { borderWidth: 1, borderRadius: 10, overflow: 'hidden' },
+  cityItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
   cityItemText: { fontSize: 13, flex: 1 },
-  divider: {
-    borderTopWidth: 1, alignItems: 'center',
-    paddingTop: 12, marginTop: 4,
-  },
+  divider: { borderTopWidth: 1, alignItems: 'center', paddingTop: 12, marginTop: 4 },
   dividerText: { fontSize: 11, marginTop: -18, paddingHorizontal: 8 },
 });

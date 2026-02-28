@@ -5,12 +5,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { MosqueSilhouette } from '@/components/MosqueFrame';
 import {
   calculatePrayerTimes, formatTimeAtOffset,
   type PrayerTimes as PrayerTimesType,
@@ -134,22 +132,23 @@ export default function CalendarScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
-      <LinearGradient
-        colors={isDark ? ['#0a2416', '#070f0a'] : ['#e8f5ec', '#f8fdf9']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      />
-
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 8, paddingBottom: bottomInset + 80 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 10, paddingBottom: bottomInset + 80 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
-          <MosqueSilhouette color={C.tint} size={0.7} />
+          <View>
+            <Text style={[styles.appNameSmall, { color: C.tint }]}>
+              {isAr ? 'مواقيت' : 'MAWAQIT'}
+            </Text>
+            <Text style={[styles.screenTitle, { color: C.text }]}>
+              {isAr ? 'التقويم' : 'Calendar'}
+            </Text>
+          </View>
           <Pressable
             onPress={goToToday}
-            style={[styles.todayBtn, { backgroundColor: C.surface }]}
+            style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}
           >
             <Text style={[styles.todayBtnText, { color: C.tint }]}>
               {isAr ? 'اليوم' : 'Today'}
@@ -159,7 +158,7 @@ export default function CalendarScreen() {
 
         {/* Month navigation */}
         <View style={[styles.monthNav, { paddingHorizontal: 16 }]}>
-          <Pressable onPress={goToPrevMonth} style={[styles.arrowBtn, { backgroundColor: C.surface }]}>
+          <Pressable onPress={goToPrevMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
             <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
           </Pressable>
           <View style={styles.monthCenter}>
@@ -179,7 +178,7 @@ export default function CalendarScreen() {
               })()}
             </Text>
           </View>
-          <Pressable onPress={goToNextMonth} style={[styles.arrowBtn, { backgroundColor: C.surface }]}>
+          <Pressable onPress={goToNextMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
             <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={20} color={C.tint} />
           </Pressable>
         </View>
@@ -242,7 +241,7 @@ export default function CalendarScreen() {
         <Animated.View
           entering={FadeInDown.duration(300)}
           key={`${selectedDate.y}-${selectedDate.m}-${selectedDate.d}`}
-          style={[styles.selectedInfo, { backgroundColor: C.surface, marginHorizontal: 16 }]}
+          style={[styles.selectedInfo, { backgroundColor: C.backgroundCard, marginHorizontal: 16 }]}
         >
           <View style={styles.selectedDates}>
             <Text style={[styles.selectedGregorian, { color: C.text }]}>
@@ -263,29 +262,33 @@ export default function CalendarScreen() {
             <Text style={[styles.sectionTitle, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
               {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
             </Text>
-            {PRAYER_ORDER.map((key) => (
-              <View
-                key={key}
-                style={[styles.prayerRow, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-              >
-                <View style={styles.prayerLeft}>
-                  <MaterialCommunityIcons
-                    name={PRAYER_ICONS[key] as any}
-                    size={20} color={C.tint}
-                  />
-                  <Text style={[styles.prayerName, {
-                    color: C.text,
-                    fontFamily: isAr ? 'Amiri_700Bold' : undefined,
-                    fontSize: isAr ? 17 : 14,
-                  }]}>
-                    {prayerLabels[key]}
-                  </Text>
+            <View style={[styles.prayerCard, { backgroundColor: C.backgroundCard }]}>
+              {PRAYER_ORDER.map((key, idx) => (
+                <View key={key}>
+                  <View style={styles.prayerRow}>
+                    <View style={styles.prayerLeft}>
+                      <MaterialCommunityIcons
+                        name={PRAYER_ICONS[key] as any}
+                        size={17} color={C.tint}
+                      />
+                      <Text style={[styles.prayerName, {
+                        color: C.text,
+                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                        fontSize: isAr ? 16 : 14,
+                      }]}>
+                        {prayerLabels[key]}
+                      </Text>
+                    </View>
+                    <Text style={[styles.prayerTime, { color: C.textSecond }]}>
+                      {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
+                    </Text>
+                  </View>
+                  {idx < PRAYER_ORDER.length - 1 && (
+                    <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
+                  )}
                 </View>
-                <Text style={[styles.prayerTime, { color: C.text }]}>
-                  {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
-                </Text>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         ) : (
           <View style={[styles.noLocation, { paddingHorizontal: 16 }]}>
@@ -309,12 +312,13 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scrollContent: { gap: 0 },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
     marginBottom: 16,
   },
-  title: { fontSize: 26, fontWeight: '700' },
+  appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
+  screenTitle: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   todayBtn: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, marginTop: 4,
   },
   todayBtnText: { fontSize: 13, fontWeight: '600' },
   monthNav: {
@@ -322,46 +326,34 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   arrowBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 36, height: 36, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
   monthCenter: { alignItems: 'center', flex: 1 },
   monthName: { fontSize: 18, fontWeight: '700' },
   hijriMonthLabel: { fontSize: 12, marginTop: 2 },
-  dayHeaderRow: {
-    flexDirection: 'row', marginBottom: 4,
-  },
-  dayHeaderCell: {
-    flex: 1, alignItems: 'center', paddingVertical: 4,
-  },
+  dayHeaderRow: { flexDirection: 'row', marginBottom: 4 },
+  dayHeaderCell: { flex: 1, alignItems: 'center', paddingVertical: 4 },
   dayHeaderText: { fontSize: 11, fontWeight: '600' },
-  grid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    marginBottom: 16,
-  },
-  cell: {
-    width: `${100 / 7}%`,
-    paddingVertical: 6,
-    alignItems: 'center',
-  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 },
+  cell: { width: `${100 / 7}%`, paddingVertical: 6, alignItems: 'center' },
   cellDay: { fontSize: 14 },
   cellHijri: { fontSize: 9, marginTop: 1 },
-  selectedInfo: {
-    borderRadius: 16, padding: 16, marginBottom: 12,
-  },
+  selectedInfo: { borderRadius: 16, padding: 16, marginBottom: 12 },
   selectedDates: { gap: 4 },
   selectedGregorian: { fontSize: 14, fontWeight: '600' },
   selectedHijri: { fontSize: 16 },
-  prayerSection: { gap: 8, marginBottom: 16 },
-  sectionTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  prayerSection: { gap: 6, marginBottom: 16 },
+  sectionTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+  prayerCard: { borderRadius: 16, overflow: 'hidden' },
   prayerRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: 12, borderWidth: 1,
+    paddingHorizontal: 16, paddingVertical: 11,
   },
+  rowDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
   prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  prayerName: { fontSize: 14, fontWeight: '600' },
-  prayerTime: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  prayerName: { fontSize: 14 },
+  prayerTime: { fontSize: 14, fontVariant: ['tabular-nums'] },
   noLocation: { alignItems: 'center', gap: 8, paddingVertical: 20, marginBottom: 16 },
   noLocationText: { fontSize: 14, textAlign: 'center' },
   dua: { fontSize: 13, textAlign: 'center', paddingHorizontal: 20, paddingVertical: 12 },

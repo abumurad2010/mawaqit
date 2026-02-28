@@ -52,8 +52,8 @@ function ClassicTabLayout() {
           position: 'absolute',
           backgroundColor: Platform.select({
             ios: 'transparent',
-            android: isDark ? '#0d1f13' : '#f8fdf9',
-            web: isDark ? '#0d1f13' : '#f8fdf9',
+            android: isDark ? '#1C1C1E' : '#FFFFFF',
+            web: isDark ? '#1C1C1E' : '#F2F2F7',
           }),
           borderTopWidth: 1,
           borderTopColor: C.separator,
