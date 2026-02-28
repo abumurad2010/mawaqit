@@ -19,7 +19,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
     isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
-    maghribAdjustment, locationMode, fontSize, updateSettings,
+    maghribAdjustment, fontSize, updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
@@ -33,7 +33,6 @@ export default function SettingsScreen() {
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
-  const [draftLocationMode, setDraftLocationMode] = useState(locationMode);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
 
   const hasChanges =
@@ -41,7 +40,6 @@ export default function SettingsScreen() {
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
-    draftLocationMode !== locationMode ||
     draftAdjustment !== (maghribAdjustment ?? 0);
 
   const handleSave = () => {
@@ -51,7 +49,6 @@ export default function SettingsScreen() {
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
-      locationMode: draftLocationMode,
       maghribAdjustment: draftAdjustment,
     });
     router.back();
@@ -261,23 +258,6 @@ export default function SettingsScreen() {
                 : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
             </Text>
           </View>
-        </View>
-
-        {/* Location */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-          {isAr ? 'الموقع' : 'Location'}
-        </Text>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Row
-            label={isAr ? 'وضع الموقع' : 'Location Mode'}
-            right={
-              <View style={styles.chips}>
-                <Chip value={isAr ? 'تلقائي' : 'Auto'}   selected={draftLocationMode === 'auto'}   onPress={() => setDraftLocationMode('auto')} />
-                <Chip value={isAr ? 'يدوي'   : 'Manual'} selected={draftLocationMode === 'manual'} onPress={() => setDraftLocationMode('manual')} />
-              </View>
-            }
-            noBorder
-          />
         </View>
 
         {/* Dua */}
