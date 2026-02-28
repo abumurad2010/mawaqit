@@ -13,6 +13,7 @@ import type { PrayerNotifType } from '@/contexts/AppContext';
 import { t, type Lang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
+import { playAthan, stopAthan } from '@/lib/audio';
 
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
 
@@ -43,8 +44,22 @@ export default function SettingsScreen() {
     prayerNotifications ?? {}
   );
   const [showMethodModal, setShowMethodModal] = useState(false);
+  const [previewing, setPreviewing] = useState<string | null>(null);
 
   const recommendedMethod = getMethodForCountry(countryCode);
+
+  const handlePreview = async (key: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (previewing === key) {
+      await stopAthan();
+      setPreviewing(null);
+    } else {
+      if (previewing) await stopAthan();
+      setPreviewing(key);
+      await playAthan('full');
+      setPreviewing(null);
+    }
+  };
 
   const normNotif = (r: Record<string, PrayerNotifType>) =>
     JSON.stringify(Object.fromEntries(Object.entries(r).sort()));
@@ -456,6 +471,23 @@ export default function SettingsScreen() {
                       color={isAthan ? '#fff' : C.textSecond}
                     />
                   </Pressable>
+
+                  {/* Preview — only when athan selected */}
+                  {isAthan && (
+                    <Pressable
+                      onPress={() => handlePreview(prayer.key)}
+                      style={[styles.iconChip, {
+                        backgroundColor: previewing === prayer.key ? C.tint + 'CC' : C.backgroundSecond,
+                        borderColor: C.separator,
+                      }]}
+                    >
+                      <Ionicons
+                        name={previewing === prayer.key ? 'stop' : 'play'}
+                        size={14}
+                        color={previewing === prayer.key ? '#fff' : C.textSecond}
+                      />
+                    </Pressable>
+                  )}
 
                 </View>
               </View>
