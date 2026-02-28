@@ -11,7 +11,7 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat,
-  withSequence, withTiming, FadeIn, FadeInDown,
+  withSequence, withTiming, FadeIn,
 } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -239,73 +239,67 @@ export default function PrayerTimesScreen() {
         </View>
       </View>
 
-      {/* Mosque silhouette divider */}
-      <View style={{ alignItems: 'center', marginBottom: 4 }}>
-        <MosqueSilhouette color={C.tint} />
+      {/* Location + mosque silhouette — one compact row */}
+      <View style={[styles.subHeader, { paddingHorizontal: 20 }]}>
+        <View style={styles.locationRow}>
+          <Ionicons name="location-sharp" size={12} color={C.tint} />
+          <Text style={[styles.locationText, { color: C.textMuted }]} numberOfLines={1}>
+            {loadingLoc
+              ? tr.searching
+              : location
+                ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
+                : tr.locationPermission}
+          </Text>
+        </View>
+        <MosqueSilhouette color={C.tint} size={0.75} />
       </View>
 
-      {/* Location line */}
-      <View style={[styles.locationRow, { paddingHorizontal: 20 }]}>
-        <Ionicons name="location-sharp" size={12} color={C.tint} />
-        <Text style={[styles.locationText, { color: C.textMuted }]}>
-          {loadingLoc
-            ? tr.searching
-            : location
-              ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
-              : tr.locationPermission}
-        </Text>
-      </View>
-
-      {/* Next prayer banner */}
-      {nextPrayer && times && (
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(500)}
-          style={[styles.nextBanner, { backgroundColor: C.tint, marginHorizontal: 20 }]}
-        >
-          <Animated.View style={pulseStyle}>
-            <MaterialCommunityIcons
-              name={PRAYER_ICONS[nextPrayer.name] as any}
-              size={28} color="#fff"
-            />
+      {/* Next prayer — compact strip, always in its own reserved space */}
+      <View style={[styles.nextSlot, { paddingHorizontal: 16 }]}>
+        {nextPrayer && times && (
+          <Animated.View
+            entering={FadeIn.duration(400)}
+            style={[styles.nextStrip, { backgroundColor: C.tint }]}
+          >
+            <Animated.View style={pulseStyle}>
+              <MaterialCommunityIcons
+                name={PRAYER_ICONS[nextPrayer.name] as any}
+                size={22} color="#fff"
+              />
+            </Animated.View>
+            <View style={[styles.nextCenter, { alignItems: isAr ? 'flex-end' : 'flex-start' }]}>
+              <Text style={[styles.nextLabel, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {tr.nextPrayer}
+              </Text>
+              <Text style={[styles.nextPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+                {prayerLabel(nextPrayer.name)}
+              </Text>
+            </View>
+            <Text style={styles.countdown}>{countdown}</Text>
           </Animated.View>
-          <View style={[styles.nextCenter, { alignItems: isAr ? 'flex-end' : 'flex-start' }]}>
-            <Text style={[styles.nextLabel, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-              {tr.nextPrayer}
-            </Text>
-            <Text style={[styles.nextPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-              {prayerLabel(nextPrayer.name)}
-            </Text>
-          </View>
-          <Text style={styles.countdown}>{countdown}</Text>
-        </Animated.View>
-      )}
+        )}
+      </View>
 
-      {/* Prayer times list */}
-      <View style={[styles.timesContainer, { paddingHorizontal: 16, flex: 1, justifyContent: 'center' }]}>
-        {PRAYER_ORDER.map((key, idx) => {
+      {/* Prayer times — static, compact, no centering */}
+      <View style={[styles.prayerList, { paddingHorizontal: 16 }]}>
+        {PRAYER_ORDER.map((key) => {
           const active = isNext(key);
           const passed = !active && isPassed(key);
           return (
-            <Animated.View
-              entering={FadeInDown.delay(150 + idx * 60).duration(400)}
+            <View
               key={key}
               style={[
                 styles.prayerRow,
                 {
-                  backgroundColor: active
-                    ? C.tint
-                    : passed
-                    ? C.surface
-                    : C.backgroundCard,
+                  backgroundColor: active ? C.tint : passed ? C.surface : C.backgroundCard,
                   borderColor: active ? C.tint : C.separator,
-                  marginBottom: 8,
                 },
               ]}
             >
               <View style={styles.prayerLeft}>
                 <MaterialCommunityIcons
                   name={PRAYER_ICONS[key] as any}
-                  size={22}
+                  size={20}
                   color={active ? '#fff' : passed ? C.textMuted : C.tint}
                 />
                 <Text style={[
@@ -313,25 +307,25 @@ export default function PrayerTimesScreen() {
                   {
                     color: active ? '#fff' : passed ? C.textMuted : C.text,
                     fontFamily: isAr ? 'Amiri_700Bold' : undefined,
-                    fontSize: isAr ? 18 : 15,
+                    fontSize: isAr ? 17 : 14,
                   }
                 ]}>
                   {prayerLabel(key)}
                 </Text>
               </View>
-              <Text style={[
-                styles.prayerTime,
-                { color: active ? '#fff' : passed ? C.textMuted : C.text }
-              ]}>
+              <Text style={[styles.prayerTime, { color: active ? '#fff' : passed ? C.textMuted : C.text }]}>
                 {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
               </Text>
-            </Animated.View>
+            </View>
           );
         })}
       </View>
 
-      {/* Footer dua */}
-      <View style={[styles.footer, { paddingBottom: bottomInset + 60, paddingHorizontal: 20 }]}>
+      {/* Spacer pushes dua to the bottom */}
+      <View style={{ flex: 1 }} />
+
+      {/* Dua — always at the bottom, never overlapping */}
+      <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
@@ -455,34 +449,38 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
   },
+  subHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', marginBottom: 8,
+  },
   locationRow: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    marginTop: 4, marginBottom: 12,
   },
   locationText: { fontSize: 12 },
-  nextBanner: {
+  nextSlot: { height: 56, justifyContent: 'center', marginBottom: 8 },
+  nextStrip: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: 16, padding: 14, gap: 12, marginBottom: 16,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, gap: 10,
   },
   nextCenter: { flex: 1 },
-  nextLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginBottom: 2 },
-  nextPrayerName: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  nextLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 10, marginBottom: 1 },
+  nextPrayerName: { color: '#fff', fontSize: 16, fontWeight: '700' },
   countdown: {
-    color: '#fff', fontSize: 18, fontWeight: '700',
+    color: '#fff', fontSize: 16, fontWeight: '700',
     fontVariant: ['tabular-nums'],
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  timesContainer: {},
+  prayerList: { gap: 5 },
   prayerRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderRadius: 14, borderWidth: 1,
+    paddingHorizontal: 14, paddingVertical: 9,
+    borderRadius: 12, borderWidth: 1,
   },
-  prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  prayerName: { fontSize: 15, fontWeight: '600' },
-  prayerTime: { fontSize: 15, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  footer: { alignItems: 'center' },
-  dua: { fontSize: 14, textAlign: 'center' },
+  prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  prayerName: { fontSize: 14, fontWeight: '600' },
+  prayerTime: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24 },
+  dua: { fontSize: 13, textAlign: 'center' },
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
