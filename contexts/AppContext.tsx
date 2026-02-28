@@ -13,6 +13,8 @@ import type { Lang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications } from '@/lib/notifications';
 
+export type PrayerNotifType = 'none' | 'banner' | 'athan_full' | 'athan_abbreviated';
+
 export interface Bookmark {
   surahNumber: number;
   surahName: string;
@@ -39,10 +41,7 @@ interface AppSettings {
   fontSize: 'small' | 'medium' | 'large';
   maghribAdjustment: number;
   hijriAdjustment: number;
-  notificationPrayers: string[];
-  notificationBanner: boolean;
-  notificationAthan: boolean;
-  athanType: 'full' | 'abbreviated';
+  prayerNotifications: Record<string, PrayerNotifType>;
 }
 
 interface AppContextValue extends AppSettings {
@@ -75,10 +74,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 'medium',
   maghribAdjustment: 0,
   hijriAdjustment: 0,
-  notificationPrayers: [],
-  notificationBanner: true,
-  notificationAthan: false,
-  athanType: 'full',
+  prayerNotifications: {},
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -110,6 +106,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (parsed.calcMethod && !VALID_CALC_METHODS.includes(parsed.calcMethod)) {
             parsed.calcMethod = 'MWL';
           }
+          // Migrate old notification fields → prayerNotifications
+          if (!parsed.prayerNotifications && parsed.notificationPrayers) {
+            const notifs: Record<string, PrayerNotifType> = {};
+            const oldPrayers: string[] = parsed.notificationPrayers || [];
+            const oldAthan: boolean = parsed.notificationAthan || false;
+            const oldAthanType: string = parsed.athanType || 'full';
+            for (const p of oldPrayers) {
+              notifs[p] = oldAthan
+                ? (oldAthanType === 'abbreviated' ? 'athan_abbreviated' : 'athan_full')
+                : 'banner';
+            }
+            parsed.prayerNotifications = notifs;
+          }
+          delete parsed.notificationPrayers;
+          delete parsed.notificationBanner;
+          delete parsed.notificationAthan;
+          delete parsed.athanType;
           setSettings({ ...DEFAULT_SETTINGS, ...parsed });
         }
         if (b) setBookmarks(JSON.parse(b));
@@ -138,8 +151,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!location) return;
-    const { notificationPrayers, notificationBanner, notificationAthan, athanType, lang, calcMethod, asrMethod } = settings;
-    if (notificationPrayers.length === 0 || (!notificationBanner && !notificationAthan)) {
+    const { prayerNotifications, lang, calcMethod, asrMethod } = settings;
+    const hasAny = Object.values(prayerNotifications).some(v => v !== 'none');
+    if (!hasAny) {
       cancelAllPrayerNotifications();
       return;
     }
@@ -148,13 +162,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       calcMethod,
       asrMethod,
       maghribOffset,
-      notificationPrayers,
-      notificationBanner,
-      notificationAthan,
-      athanType,
+      prayerNotifications,
       lang,
     });
-  }, [location, settings.notificationPrayers, settings.notificationBanner, settings.notificationAthan, settings.athanType, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

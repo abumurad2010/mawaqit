@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, Switch,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,8 +9,10 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import type { PrayerNotifType } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import { playAthan, stopAthan } from '@/lib/audio';
 
 const CALC_METHODS: CalcMethod[] = [
   'MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi', 'Jordan',
@@ -24,7 +25,7 @@ export default function SettingsScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment,
-    notificationPrayers, notificationBanner, notificationAthan, athanType,
+    prayerNotifications,
     updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
@@ -40,12 +41,13 @@ export default function SettingsScreen() {
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
   const [draftHijri, setDraftHijri] = useState(hijriAdjustment ?? 0);
-  const [draftPrayers, setDraftPrayers] = useState<string[]>(notificationPrayers ?? []);
-  const [draftBanner, setDraftBanner] = useState(notificationBanner ?? true);
-  const [draftAthan, setDraftAthan] = useState(notificationAthan ?? false);
-  const [draftAthanType, setDraftAthanType] = useState<'full' | 'abbreviated'>(athanType ?? 'full');
+  const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifType>>(
+    prayerNotifications ?? {}
+  );
+  const [playingAthan, setPlayingAthan] = useState(false);
 
-  const notifEnabled = draftPrayers.length > 0;
+  const normNotif = (r: Record<string, PrayerNotifType>) =>
+    JSON.stringify(Object.fromEntries(Object.entries(r).sort()));
 
   const hasChanges =
     draftCalcMethod !== calcMethod ||
@@ -53,10 +55,7 @@ export default function SettingsScreen() {
     draftFontSize !== fontSize ||
     draftAdjustment !== (maghribAdjustment ?? 0) ||
     draftHijri !== (hijriAdjustment ?? 0) ||
-    JSON.stringify(draftPrayers.sort()) !== JSON.stringify([...(notificationPrayers ?? [])].sort()) ||
-    draftBanner !== (notificationBanner ?? true) ||
-    draftAthan !== (notificationAthan ?? false) ||
-    draftAthanType !== (athanType ?? 'full');
+    normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -66,41 +65,38 @@ export default function SettingsScreen() {
       fontSize: draftFontSize,
       maghribAdjustment: draftAdjustment,
       hijriAdjustment: draftHijri,
-      notificationPrayers: draftPrayers,
-      notificationBanner: draftBanner,
-      notificationAthan: draftAthan,
-      athanType: draftAthanType,
+      prayerNotifications: draftNotifications,
     });
     router.back();
   };
 
-  const PRAYER_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
-  const PRAYER_NAMES_AR: Record<string, string> = { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' };
-  const PRAYER_NAMES_EN: Record<string, string> = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
-  const prayerNames = isAr ? PRAYER_NAMES_AR : PRAYER_NAMES_EN;
+  const NOTIF_PRAYERS: { key: string; ar: string; en: string }[] = [
+    { key: 'fajr',    ar: 'الفجر',       en: 'Fajr' },
+    { key: 'dhuha',   ar: 'الضحى',       en: 'Dhuha' },
+    { key: 'dhuhr',   ar: 'الظهر',       en: 'Dhuhr' },
+    { key: 'asr',     ar: 'العصر',       en: 'Asr' },
+    { key: 'maghrib', ar: 'المغرب',      en: 'Maghrib' },
+    { key: 'isha',    ar: 'العشاء',      en: 'Isha' },
+    { key: 'qiyam',   ar: 'قيام الليل', en: 'Qiyam' },
+  ];
 
-  const togglePrayer = async (key: string) => {
-    Haptics.selectionAsync();
-    const isAdding = !draftPrayers.includes(key);
-    if (isAdding && Platform.OS !== 'web') {
+  const setPrayerNotif = async (key: string, type: PrayerNotifType) => {
+    if (type !== 'none' && Platform.OS !== 'web') {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== 'granted') return;
     }
-    setDraftPrayers(prev =>
-      prev.includes(key) ? prev.filter(p => p !== key) : [...prev, key]
-    );
+    Haptics.selectionAsync();
+    setDraftNotifications(prev => ({ ...prev, [key]: type }));
   };
 
-  const toggleAllPrayers = async () => {
-    Haptics.selectionAsync();
-    if (draftPrayers.length === PRAYER_KEYS.length) {
-      setDraftPrayers([]);
+  const handlePreviewAthan = async (type: 'full' | 'abbreviated') => {
+    if (playingAthan) {
+      await stopAthan();
+      setPlayingAthan(false);
     } else {
-      if (Platform.OS !== 'web') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== 'granted') return;
-      }
-      setDraftPrayers([...PRAYER_KEYS]);
+      setPlayingAthan(true);
+      await playAthan(type);
+      setTimeout(() => setPlayingAthan(false), type === 'abbreviated' ? 8500 : 60000);
     }
   };
 
@@ -339,136 +335,136 @@ export default function SettingsScreen() {
           {isAr ? 'الإشعارات' : 'Notifications'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          {NOTIF_PRAYERS.map((prayer, idx) => {
+            const type: PrayerNotifType = draftNotifications[prayer.key] ?? 'none';
+            const isAthan = type === 'athan_full' || type === 'athan_abbreviated';
+            const isLast = idx === NOTIF_PRAYERS.length - 1;
+            const athanSubType: 'full' | 'abbreviated' = type === 'athan_abbreviated' ? 'abbreviated' : 'full';
 
-          {/* Prayers row */}
-          <View style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: 'column', alignItems: 'flex-start', gap: 10 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-                {isAr ? 'الصلوات' : 'Prayers'}
-              </Text>
-              <Pressable onPress={toggleAllPrayers} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-                <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600' }}>
-                  {draftPrayers.length === PRAYER_KEYS.length
-                    ? (isAr ? 'إلغاء الكل' : 'Deselect all')
-                    : (isAr ? 'تحديد الكل' : 'Select all')}
-                </Text>
-              </Pressable>
-            </View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {PRAYER_KEYS.map(key => {
-                const selected = draftPrayers.includes(key);
-                return (
-                  <Pressable
-                    key={key}
-                    onPress={() => togglePrayer(key)}
-                    style={[
-                      styles.chip,
-                      { backgroundColor: selected ? C.tint : C.backgroundSecond, borderColor: selected ? C.tint : C.separator }
-                    ]}
-                  >
-                    <Text style={{ color: selected ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                      {prayerNames[key]}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Notification type */}
-          <View style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: 'column', alignItems: 'flex-start', gap: 10, opacity: notifEnabled ? 1 : 0.4 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-              {isAr ? 'نوع الإشعار' : 'Notification Type'}
-            </Text>
-            <View style={{ gap: 8, width: '100%' }}>
-              <Pressable
-                onPress={() => { if (notifEnabled) { Haptics.selectionAsync(); setDraftBanner(v => !v); } }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-              >
-                <Switch
-                  value={draftBanner}
-                  onValueChange={v => { if (notifEnabled) setDraftBanner(v); }}
-                  trackColor={{ false: C.separator, true: C.tint }}
-                  thumbColor="#FFFFFF"
-                  disabled={!notifEnabled}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: C.text, fontSize: 14, fontWeight: '500', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                    {isAr ? 'إشعار النظام' : 'Banner notification'}
+            return (
+              <View key={prayer.key}>
+                <View style={[
+                  styles.notifRow,
+                  { borderBottomColor: C.separator, borderBottomWidth: (isLast && !isAthan) ? 0 : 1 }
+                ]}>
+                  <Text style={[
+                    styles.notifLabel,
+                    { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }
+                  ]}>
+                    {isAr ? prayer.ar : prayer.en}
                   </Text>
-                  <Text style={{ color: C.textMuted, fontSize: 11, fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                    {isAr ? 'تنبيه برسالة كإشعار الهاتف' : 'Alert via system notification'}
-                  </Text>
+                  <View style={styles.notifChips}>
+                    {([
+                      { val: 'none'  as PrayerNotifType, ar: '—',     en: '—'      },
+                      { val: 'banner' as PrayerNotifType, ar: 'تنبيه', en: 'Banner' },
+                      { val: 'athan_full' as PrayerNotifType, ar: 'أذان', en: 'Athan' },
+                    ] as { val: PrayerNotifType; ar: string; en: string }[]).map(chip => {
+                      const chipActive = chip.val === 'none'
+                        ? type === 'none'
+                        : chip.val === 'banner'
+                          ? type === 'banner'
+                          : isAthan;
+                      return (
+                        <Pressable
+                          key={chip.val}
+                          onPress={() => {
+                            if (chip.val === 'athan_full') {
+                              setPrayerNotif(prayer.key, isAthan ? type : 'athan_full');
+                            } else {
+                              setPrayerNotif(prayer.key, chip.val);
+                            }
+                          }}
+                          style={[
+                            styles.chip,
+                            {
+                              backgroundColor: chipActive ? C.tint : C.backgroundSecond,
+                              borderColor: chipActive ? C.tint : C.separator,
+                            }
+                          ]}
+                        >
+                          <Text style={{
+                            color: chipActive ? '#fff' : C.textSecond,
+                            fontSize: 12, fontWeight: '600',
+                            fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                          }}>
+                            {isAr ? chip.ar : chip.en}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
                 </View>
-              </Pressable>
 
-              <Pressable
-                onPress={() => { if (notifEnabled) { Haptics.selectionAsync(); setDraftAthan(v => !v); } }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-              >
-                <Switch
-                  value={draftAthan}
-                  onValueChange={v => { if (notifEnabled) setDraftAthan(v); }}
-                  trackColor={{ false: C.separator, true: C.tint }}
-                  thumbColor="#FFFFFF"
-                  disabled={!notifEnabled}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: C.text, fontSize: 14, fontWeight: '500', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                    {isAr ? 'صوت الأذان' : 'Athan audio'}
-                  </Text>
-                  <Text style={{ color: C.textMuted, fontSize: 11, fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                    {isAr ? 'تشغيل الأذان عند وقت الصلاة' : 'Play athan at prayer time'}
-                  </Text>
-                </View>
-              </Pressable>
-
-              {draftAthan && notifEnabled && (
-                <View style={{
-                  marginTop: 2, marginLeft: 54,
-                  flexDirection: isAr ? 'row-reverse' : 'row', gap: 8,
-                }}>
-                  <Pressable
-                    onPress={() => { Haptics.selectionAsync(); setDraftAthanType('full'); }}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: draftAthanType === 'full' ? C.tint : C.backgroundSecond,
-                        borderColor: draftAthanType === 'full' ? C.tint : C.separator,
-                      }
-                    ]}
-                  >
-                    <Text style={{ color: draftAthanType === 'full' ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                      {isAr ? 'أذان كامل' : 'Full'}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => { Haptics.selectionAsync(); setDraftAthanType('abbreviated'); }}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: draftAthanType === 'abbreviated' ? C.tint : C.backgroundSecond,
-                        borderColor: draftAthanType === 'abbreviated' ? C.tint : C.separator,
-                      }
-                    ]}
-                  >
-                    <Text style={{ color: draftAthanType === 'abbreviated' ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                      {isAr ? 'الله أكبر × ٢' : 'Abbreviated'}
-                    </Text>
-                  </Pressable>
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Empty state hint */}
-          {!notifEnabled && (
-            <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
-              <Text style={{ color: C.textMuted, fontSize: 12, textAlign: 'center', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                {isAr ? 'اختر صلاة واحدة على الأقل لتفعيل الإشعارات' : 'Select at least one prayer to enable notifications'}
-              </Text>
-            </View>
-          )}
+                {isAthan && (
+                  <View style={[
+                    styles.notifSubRow,
+                    { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, backgroundColor: C.backgroundSecond }
+                  ]}>
+                    <Pressable
+                      onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: athanSubType === 'full' ? C.tint : C.backgroundSecond,
+                          borderColor: athanSubType === 'full' ? C.tint : C.separator,
+                        }
+                      ]}
+                    >
+                      <Text style={{
+                        color: athanSubType === 'full' ? '#fff' : C.textSecond,
+                        fontSize: 12, fontWeight: '600',
+                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                      }}>
+                        {isAr ? 'أذان كامل' : 'Full'}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setPrayerNotif(prayer.key, 'athan_abbreviated')}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: athanSubType === 'abbreviated' ? C.tint : C.backgroundSecond,
+                          borderColor: athanSubType === 'abbreviated' ? C.tint : C.separator,
+                        }
+                      ]}
+                    >
+                      <Text style={{
+                        color: athanSubType === 'abbreviated' ? '#fff' : C.textSecond,
+                        fontSize: 12, fontWeight: '600',
+                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                      }}>
+                        {isAr ? 'مختصر' : 'Abbreviated'}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => handlePreviewAthan(athanSubType)}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: playingAthan ? C.tint : C.backgroundSecond,
+                          borderColor: playingAthan ? C.tint : C.separator,
+                          flexDirection: 'row', gap: 4, alignItems: 'center',
+                        }
+                      ]}
+                    >
+                      <Ionicons
+                        name={playingAthan ? 'stop' : 'play'}
+                        size={12}
+                        color={playingAthan ? '#fff' : C.textSecond}
+                      />
+                      <Text style={{
+                        color: playingAthan ? '#fff' : C.textSecond,
+                        fontSize: 12, fontWeight: '600',
+                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                      }}>
+                        {isAr ? 'معاينة' : 'Preview'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
 
         {/* Dua */}
@@ -551,4 +547,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
   },
   totalBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  notifRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 10, gap: 8,
+  },
+  notifSubRow: {
+    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
+    paddingHorizontal: 16, paddingVertical: 8, gap: 8,
+  },
+  notifLabel: { fontSize: 14, fontWeight: '500', flex: 1 },
+  notifChips: { flexDirection: 'row', gap: 6, flexShrink: 0 },
 });

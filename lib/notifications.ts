@@ -2,15 +2,26 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { calculatePrayerTimes } from './prayer-times';
 import type { CalcMethod, AsrMethod } from './prayer-times';
-import type { LocationData } from '@/contexts/AppContext';
+import type { LocationData, PrayerNotifType } from '@/contexts/AppContext';
 
-export const NOTIFIABLE_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
-export type NotifiablePrayer = typeof NOTIFIABLE_PRAYERS[number];
-
-export const PRAYER_LABELS: Record<'ar' | 'en', Record<NotifiablePrayer, string>> = {
-  ar: { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' },
-  en: { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' },
+export const PRAYER_LABELS: Record<'ar' | 'en', Record<string, string>> = {
+  ar: {
+    fajr: 'الفجر', dhuha: 'الضحى', dhuhr: 'الظهر',
+    asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء', qiyam: 'قيام الليل',
+  },
+  en: {
+    fajr: 'Fajr', dhuha: 'Dhuha', dhuhr: 'Dhuhr',
+    asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha', qiyam: 'Qiyam',
+  },
 };
+
+function getDhuhaTime(sunrise: Date): Date {
+  return new Date(sunrise.getTime() + 20 * 60 * 1000);
+}
+
+function getQiyamTime(isha: Date, fajrNextDay: Date): Date {
+  return new Date(isha.getTime() + (fajrNextDay.getTime() - isha.getTime()) * (2 / 3));
+}
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
@@ -27,20 +38,15 @@ export async function schedulePrayerNotifications(params: {
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
   maghribOffset: number;
-  notificationPrayers: string[];
-  notificationBanner: boolean;
-  notificationAthan: boolean;
-  athanType: 'full' | 'abbreviated';
+  prayerNotifications: Record<string, PrayerNotifType>;
   lang: 'ar' | 'en';
   daysAhead?: number;
 }) {
   await cancelAllPrayerNotifications();
-
-  if (!params.notificationBanner && !params.notificationAthan) return;
-  if (params.notificationPrayers.length === 0) return;
   if (Platform.OS === 'web') return;
 
-  const labels = PRAYER_LABELS[params.lang];
+  const { prayerNotifications, lang } = params;
+  const labels = PRAYER_LABELS[lang];
   const daysAhead = params.daysAhead ?? 7;
   const now = new Date();
 
@@ -57,21 +63,41 @@ export async function schedulePrayerNotifications(params: {
       maghribOffsetMinutes: params.maghribOffset,
     });
 
-    for (const prayerKey of params.notificationPrayers) {
-      const prayerTime = times[prayerKey as keyof typeof times];
-      if (!prayerTime || !(prayerTime instanceof Date)) continue;
-      if (prayerTime <= now) continue;
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const nextTimes = calculatePrayerTimes({
+      lat: params.location.lat,
+      lng: params.location.lng,
+      date: nextDate,
+      method: params.calcMethod,
+      asrMethod: params.asrMethod,
+      maghribOffsetMinutes: params.maghribOffset,
+    });
+
+    const prayerTimeMap: Record<string, Date | null> = {
+      fajr: times.fajr,
+      dhuha: getDhuhaTime(times.sunrise),
+      dhuhr: times.dhuhr,
+      asr: times.asr,
+      maghrib: times.maghrib,
+      isha: times.isha,
+      qiyam: getQiyamTime(times.isha, nextTimes.fajr),
+    };
+
+    for (const [prayerKey, notifType] of Object.entries(prayerNotifications)) {
+      if (notifType === 'none') continue;
+      const prayerTime = prayerTimeMap[prayerKey];
+      if (!prayerTime || prayerTime <= now) continue;
+
+      const isAthan = notifType === 'athan_full' || notifType === 'athan_abbreviated';
+      const athanType = notifType === 'athan_abbreviated' ? 'abbreviated' : 'full';
 
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: labels[prayerKey as NotifiablePrayer] ?? prayerKey,
-          body: params.lang === 'ar' ? 'حان وقت الصلاة' : 'It\'s time to pray',
-          data: {
-            prayerKey,
-            playAthan: params.notificationAthan,
-            athanType: params.athanType,
-          },
-          sound: params.notificationBanner ? 'default' : null,
+          title: labels[prayerKey] ?? prayerKey,
+          body: lang === 'ar' ? 'حان وقت الصلاة' : "It's time to pray",
+          data: { prayerKey, playAthan: isAthan, athanType },
+          sound: notifType === 'banner' ? 'default' : null,
         },
         trigger: { date: prayerTime },
       });
