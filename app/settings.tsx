@@ -12,7 +12,6 @@ import { useApp } from '@/contexts/AppContext';
 import type { PrayerNotifType } from '@/contexts/AppContext';
 import { t, type Lang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
-import { playAthan, stopAthan } from '@/lib/audio';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
@@ -43,7 +42,6 @@ export default function SettingsScreen() {
   const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifType>>(
     prayerNotifications ?? {}
   );
-  const [playingAthan, setPlayingAthan] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
 
   const recommendedMethod = getMethodForCountry(countryCode);
@@ -95,16 +93,6 @@ export default function SettingsScreen() {
     setDraftNotifications(prev => ({ ...prev, [key]: type }));
   };
 
-  const handlePreviewAthan = async (type: 'full' | 'abbreviated') => {
-    if (playingAthan) {
-      await stopAthan();
-      setPlayingAthan(false);
-    } else {
-      setPlayingAthan(true);
-      await playAthan(type);
-      setTimeout(() => setPlayingAthan(false), type === 'abbreviated' ? 8500 : 60000);
-    }
-  };
 
   const Row = ({
     label, right, noBorder,
@@ -411,130 +399,65 @@ export default function SettingsScreen() {
           {NOTIF_PRAYERS.map((prayer, idx) => {
             const type: PrayerNotifType = draftNotifications[prayer.key] ?? 'none';
             const isAthan = type === 'athan_full' || type === 'athan_abbreviated';
+            const isBanner = type === 'banner';
+            const isNone = type === 'none';
             const isLast = idx === NOTIF_PRAYERS.length - 1;
-            const athanSubType: 'full' | 'abbreviated' = type === 'athan_abbreviated' ? 'abbreviated' : 'full';
 
             return (
-              <View key={prayer.key}>
-                <View style={[
-                  styles.notifRow,
-                  { borderBottomColor: C.separator, borderBottomWidth: (isLast && !isAthan) ? 0 : 1 }
+              <View key={prayer.key} style={[
+                styles.notifRow,
+                { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 }
+              ]}>
+                <Text style={[
+                  styles.notifLabel,
+                  { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }
                 ]}>
-                  <Text style={[
-                    styles.notifLabel,
-                    { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }
-                  ]}>
-                    {isAr ? prayer.ar : prayer.en}
-                  </Text>
-                  <View style={styles.notifChips}>
-                    {([
-                      { val: 'none'  as PrayerNotifType, ar: '—',     en: '—'      },
-                      { val: 'banner' as PrayerNotifType, ar: 'تنبيه', en: 'Banner' },
-                      { val: 'athan_full' as PrayerNotifType, ar: 'أذان', en: 'Athan' },
-                    ] as { val: PrayerNotifType; ar: string; en: string }[]).map(chip => {
-                      const chipActive = chip.val === 'none'
-                        ? type === 'none'
-                        : chip.val === 'banner'
-                          ? type === 'banner'
-                          : isAthan;
-                      return (
-                        <Pressable
-                          key={chip.val}
-                          onPress={() => {
-                            if (chip.val === 'athan_full') {
-                              setPrayerNotif(prayer.key, isAthan ? type : 'athan_full');
-                            } else {
-                              setPrayerNotif(prayer.key, chip.val);
-                            }
-                          }}
-                          style={[
-                            styles.chip,
-                            {
-                              backgroundColor: chipActive ? C.tint : C.backgroundSecond,
-                              borderColor: chipActive ? C.tint : C.separator,
-                            }
-                          ]}
-                        >
-                          <Text style={{
-                            color: chipActive ? '#fff' : C.textSecond,
-                            fontSize: 12, fontWeight: '600',
-                            fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-                          }}>
-                            {isAr ? chip.ar : chip.en}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
+                  {isAr ? prayer.ar : prayer.en}
+                </Text>
+                <View style={styles.notifChips}>
 
-                {isAthan && (
-                  <View style={[
-                    styles.notifSubRow,
-                    { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, backgroundColor: C.backgroundSecond }
-                  ]}>
-                    <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: athanSubType === 'full' ? C.tint : C.backgroundSecond,
-                          borderColor: athanSubType === 'full' ? C.tint : C.separator,
-                        }
-                      ]}
-                    >
-                      <Text style={{
-                        color: athanSubType === 'full' ? '#fff' : C.textSecond,
-                        fontSize: 12, fontWeight: '600',
-                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-                      }}>
-                        {isAr ? 'أذان كامل' : 'Full'}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, 'athan_abbreviated')}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: athanSubType === 'abbreviated' ? C.tint : C.backgroundSecond,
-                          borderColor: athanSubType === 'abbreviated' ? C.tint : C.separator,
-                        }
-                      ]}
-                    >
-                      <Text style={{
-                        color: athanSubType === 'abbreviated' ? '#fff' : C.textSecond,
-                        fontSize: 12, fontWeight: '600',
-                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-                      }}>
-                        {isAr ? 'مختصر' : 'Abbreviated'}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => handlePreviewAthan(athanSubType)}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: playingAthan ? C.tint : C.backgroundSecond,
-                          borderColor: playingAthan ? C.tint : C.separator,
-                          flexDirection: 'row', gap: 4, alignItems: 'center',
-                        }
-                      ]}
-                    >
-                      <Ionicons
-                        name={playingAthan ? 'stop' : 'play'}
-                        size={12}
-                        color={playingAthan ? '#fff' : C.textSecond}
-                      />
-                      <Text style={{
-                        color: playingAthan ? '#fff' : C.textSecond,
-                        fontSize: 12, fontWeight: '600',
-                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-                      }}>
-                        {isAr ? 'معاينة' : 'Preview'}
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
+                  {/* None */}
+                  <Pressable
+                    onPress={() => setPrayerNotif(prayer.key, 'none')}
+                    style={[styles.iconChip, {
+                      backgroundColor: isNone ? C.tint : C.backgroundSecond,
+                      borderColor: isNone ? C.tint : C.separator,
+                    }]}
+                  >
+                    <Text style={{ color: isNone ? '#fff' : C.textSecond, fontSize: 13, fontWeight: '600' }}>—</Text>
+                  </Pressable>
+
+                  {/* Banner / bell */}
+                  <Pressable
+                    onPress={() => setPrayerNotif(prayer.key, 'banner')}
+                    style={[styles.iconChip, {
+                      backgroundColor: isBanner ? C.tint : C.backgroundSecond,
+                      borderColor: isBanner ? C.tint : C.separator,
+                    }]}
+                  >
+                    <Ionicons
+                      name={isBanner ? 'notifications' : 'notifications-outline'}
+                      size={16}
+                      color={isBanner ? '#fff' : C.textSecond}
+                    />
+                  </Pressable>
+
+                  {/* Athan / speaker */}
+                  <Pressable
+                    onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
+                    style={[styles.iconChip, {
+                      backgroundColor: isAthan ? C.tint : C.backgroundSecond,
+                      borderColor: isAthan ? C.tint : C.separator,
+                    }]}
+                  >
+                    <Ionicons
+                      name={isAthan ? 'volume-high' : 'volume-mute'}
+                      size={16}
+                      color={isAthan ? '#fff' : C.textSecond}
+                    />
+                  </Pressable>
+
+                </View>
               </View>
             );
           })}
@@ -634,10 +557,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 10, gap: 8,
   },
-  notifSubRow: {
-    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap',
-    paddingHorizontal: 16, paddingVertical: 8, gap: 8,
-  },
   notifLabel: { fontSize: 14, fontWeight: '500', flex: 1 },
   notifChips: { flexDirection: 'row', gap: 6, flexShrink: 0 },
+  iconChip: {
+    width: 34, height: 34, borderRadius: 10, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });
