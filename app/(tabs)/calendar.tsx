@@ -140,10 +140,11 @@ export default function CalendarScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1 }}>
+            <ThemeToggle />
+          </View>
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <ThemeToggle />
             <Pressable
               onPress={goToToday}
               style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}

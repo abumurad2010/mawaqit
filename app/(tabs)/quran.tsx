@@ -79,10 +79,11 @@ export default function QuranScreen() {
       {/* Header */}
       <View style={[styles.topHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
         <View style={styles.headerTop}>
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1 }}>
+            <ThemeToggle />
+          </View>
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
-            <ThemeToggle />
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}

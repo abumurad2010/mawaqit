@@ -160,7 +160,9 @@ export default function QiblaScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 1 }}>
+          <ThemeToggle />
+        </View>
         <AppLogo tintColor={C.tint} lang={lang} />
         <View style={[styles.badgeRow, { flex: 1 }]}>
           {qiblaBearing !== null && (
@@ -179,7 +181,6 @@ export default function QiblaScreen() {
               )}
             </>
           )}
-          <ThemeToggle />
         </View>
       </View>
 

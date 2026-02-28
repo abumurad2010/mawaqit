@@ -236,7 +236,9 @@ export default function PrayerTimesScreen() {
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
         {/* Row 1: spacer | centered logo | buttons */}
         <View style={styles.header}>
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1 }}>
+            <ThemeToggle />
+          </View>
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
@@ -253,7 +255,6 @@ export default function PrayerTimesScreen() {
             >
               <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={19} color={C.tint} />
             </Pressable>
-            <ThemeToggle />
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
