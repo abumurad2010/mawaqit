@@ -231,7 +231,7 @@ export default function PrayerTimesScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const pageText  = isDark ? '#FFFFFF' : C.text;
-  const pageMuted = isDark ? 'rgba(255,255,255,0.70)' : C.textMuted;
+  const pageMuted = isDark ? '#FFFFFF' : C.textMuted;
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -343,12 +343,12 @@ export default function PrayerTimesScreen() {
                   <MaterialCommunityIcons
                     name={PRAYER_ICONS[key] as any}
                     size={18}
-                    color={active ? C.tint : passed ? (isDark ? 'rgba(255,255,255,0.50)' : '#777777') : (isDark ? 'rgba(255,255,255,0.80)' : '#333333')}
+                    color={active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#333333')}
                   />
                   <Text style={[
                     styles.prayerName,
                     {
-                      color: active ? C.tint : passed ? (isDark ? 'rgba(255,255,255,0.50)' : '#777777') : (isDark ? '#FFFFFF' : '#111111'),
+                      color: active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#111111'),
                       fontWeight: active ? '700' : '400',
                       fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
                       fontSize: isAr ? 17 : 15,
@@ -359,7 +359,7 @@ export default function PrayerTimesScreen() {
                 </View>
                 <Text style={[
                   styles.prayerTime,
-                  { color: active ? C.tint : passed ? (isDark ? 'rgba(255,255,255,0.50)' : '#777777') : (isDark ? '#FFFFFF' : '#111111'), fontWeight: active ? '700' : '400' }
+                  { color: active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#111111'), fontWeight: active ? '700' : '400' }
                 ]}>
                   {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                 </Text>
