@@ -17,5 +17,5 @@ export default function AppLogo(_props: AppLogoProps) {
 }
 
 const styles = StyleSheet.create({
-  image: { width: 86, height: 70 },
+  image: { width: 70, height: 72 },
 });
