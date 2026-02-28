@@ -280,19 +280,6 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Save button */}
-        <Pressable
-          onPress={handleSave}
-          style={({ pressed }) => [
-            styles.saveFooterBtn,
-            { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
-          ]}
-        >
-          <Text style={[styles.saveFooterText, { color: hasChanges ? '#fff' : C.tint }]}>
-            {isAr ? 'حفظ الإعدادات' : 'Save Settings'}
-          </Text>
-        </Pressable>
-
         {/* Dua */}
         <Text style={[styles.aboutText, { color: C.textMuted, fontFamily: 'Amiri_400Regular', marginTop: 20, textAlign: 'center' }]}>
           {tr.dua}
@@ -373,9 +360,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
   },
   totalBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  saveFooterBtn: {
-    marginTop: 24, borderRadius: 14,
-    paddingVertical: 15, alignItems: 'center',
-  },
-  saveFooterText: { fontSize: 16, fontWeight: '700' },
 });
