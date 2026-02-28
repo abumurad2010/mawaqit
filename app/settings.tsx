@@ -10,17 +10,19 @@ import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { PrayerNotifType } from '@/contexts/AppContext';
-import { t, type Lang } from '@/constants/i18n';
+import { t } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
+import ThemeToggle from '@/components/ThemeToggle';
+import LangToggle from '@/components/LangToggle';
 
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, themeMode, calcMethod, asrMethod, maghribBase, countryCode,
+    isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment,
     prayerNotifications,
     updateSettings,
@@ -33,8 +35,6 @@ export default function SettingsScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   // Local draft state — nothing is saved until the user taps Save
-  const [draftTheme, setDraftTheme] = useState<'auto' | 'light' | 'dark'>(themeMode);
-  const [draftLang, setDraftLang] = useState<Lang>(lang);
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
@@ -65,8 +65,6 @@ export default function SettingsScreen() {
     JSON.stringify(Object.fromEntries(Object.entries(r).sort()));
 
   const hasChanges =
-    draftTheme !== themeMode ||
-    draftLang !== lang ||
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
@@ -77,8 +75,6 @@ export default function SettingsScreen() {
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateSettings({
-      themeMode: draftTheme,
-      lang: draftLang,
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
@@ -151,50 +147,27 @@ export default function SettingsScreen() {
         <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
           {tr.settings}
         </Text>
-        <Pressable
-          onPress={handleSave}
-          style={({ pressed }) => [
-            styles.saveBtn,
-            { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
-          ]}
-        >
-          <Text style={[styles.saveBtnText, { color: hasChanges ? '#fff' : C.tint }]}>
-            {isAr ? 'حفظ' : 'Save'}
-          </Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <LangToggle />
+          <ThemeToggle />
+          <Pressable
+            onPress={handleSave}
+            style={({ pressed }) => [
+              styles.saveBtn,
+              { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
+            ]}
+          >
+            <Text style={[styles.saveBtnText, { color: hasChanges ? '#fff' : C.tint }]}>
+              {isAr ? 'حفظ' : 'Save'}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* Display — Theme & Language */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-          {isAr ? 'العرض' : 'Display'}
-        </Text>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Row
-            label={tr.theme}
-            right={
-              <View style={styles.chips}>
-                <Chip value={isAr ? 'تلقائي' : 'Auto'}  selected={draftTheme === 'auto'}  onPress={() => setDraftTheme('auto')} />
-                <Chip value={isAr ? 'فاتح'   : 'Light'} selected={draftTheme === 'light'} onPress={() => setDraftTheme('light')} />
-                <Chip value={isAr ? 'داكن'   : 'Dark'}  selected={draftTheme === 'dark'}  onPress={() => setDraftTheme('dark')} />
-              </View>
-            }
-          />
-          <Row
-            label={tr.language}
-            noBorder
-            right={
-              <View style={styles.chips}>
-                <Chip value="العربية" selected={draftLang === 'ar'} onPress={() => setDraftLang('ar')} />
-                <Chip value="English" selected={draftLang === 'en'} onPress={() => setDraftLang('en')} />
-              </View>
-            }
-          />
-        </View>
 
         {/* Quran font */}
         <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
@@ -511,6 +484,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingBottom: 12,
   },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   closeBtn: {
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
