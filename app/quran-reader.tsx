@@ -130,6 +130,7 @@ export default function QuranReaderScreen() {
     const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
     if (newPage < 1 || newPage > TOTAL_PAGES) return;
     navigating.current = true;
+    // Quran is RTL: "next" page is to the left, "prev" page is to the right
     const toX = direction === 'next' ? -W : W;
     Animated.timing(slideAnim, { toValue: toX, duration: 180, useNativeDriver: true }).start(() => {
       setPageNum(newPage);
@@ -142,13 +143,17 @@ export default function QuranReaderScreen() {
     Haptics.selectionAsync();
   }, [pageNum, W, slideAnim]);
 
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > Math.abs(g.dy) && Math.abs(g.dx) > 12,
       onPanResponderRelease: (_, g) => {
-        if (g.dx < -SWIPE_THRESHOLD) navigate('next');
-        else if (g.dx > SWIPE_THRESHOLD) navigate('prev');
+        // Quran is RTL: swipe left (dx < 0) = next page, swipe right (dx > 0) = prev page
+        if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('next');
+        else if (g.dx > SWIPE_THRESHOLD) navigateRef.current('prev');
       },
     })
   ).current;
@@ -182,7 +187,7 @@ export default function QuranReaderScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
         >
-          <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
+          <Ionicons name="chevron-forward" size={20} color={C.tint} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -348,7 +353,7 @@ export default function QuranReaderScreen() {
             { backgroundColor: C.backgroundCard, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
           ]}
         >
-          <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={16} color={C.tint} />
+          <Ionicons name="chevron-forward" size={16} color={C.tint} />
           <Text style={[styles.navBtnText, { color: C.tint }]}>
             {isAr ? 'السابقة' : 'Prev'}
           </Text>
@@ -365,7 +370,7 @@ export default function QuranReaderScreen() {
           <Text style={[styles.navBtnText, { color: C.tint }]}>
             {isAr ? 'التالية' : 'Next'}
           </Text>
-          <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={16} color={C.tint} />
+          <Ionicons name="chevron-back" size={16} color={C.tint} />
         </Pressable>
       </View>
     </View>
