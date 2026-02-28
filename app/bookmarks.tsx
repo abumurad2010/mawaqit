@@ -21,23 +21,40 @@ export default function BookmarksScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const renderItem = ({ item }: { item: Bookmark }) => (
+  const renderItem = ({ item }: { item: Bookmark }) => {
+    const isTranslit = item.type === 'transliteration';
+    const navigate = () => {
+      Haptics.selectionAsync();
+      if (isTranslit) {
+        router.push({
+          pathname: '/surah-transliteration/[number]',
+          params: { number: String(item.surahNumber) },
+        });
+      } else {
+        router.push({
+          pathname: '/surah/[number]',
+          params: { number: String(item.surahNumber), ayah: String(item.ayahNumber) },
+        });
+      }
+    };
+    return (
     <View style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.push({
-              pathname: '/surah/[number]',
-              params: { number: String(item.surahNumber), ayah: String(item.ayahNumber) },
-            });
-          }}
-          style={styles.rowBody}
-        >
-          <View style={[styles.goldDot, { backgroundColor: C.gold }]} />
+        <Pressable onPress={navigate} style={styles.rowBody}>
+          <View style={[styles.goldDot, { backgroundColor: isTranslit ? C.tint : C.gold }]} />
           <View style={styles.info}>
-            <Text style={[styles.surahName, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-              {item.surahName}
-            </Text>
+            <View style={styles.surahNameRow}>
+              <Text style={[styles.surahName, { color: C.text, fontFamily: 'Amiri_700Bold', flex: 1 }]}>
+                {item.surahName}
+              </Text>
+              {isTranslit && (
+                <View style={[styles.typeBadge, { backgroundColor: C.tintLight, borderColor: C.tint }]}>
+                  <Ionicons name="language" size={10} color={C.tint} />
+                  <Text style={[styles.typeBadgeText, { color: C.tint }]}>
+                    {isAr ? 'نقل حرفي' : 'Translit'}
+                  </Text>
+                </View>
+              )}
+            </View>
             <Text style={[styles.ayahNum, { color: C.textSecond }]}>
               {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
             </Text>
@@ -54,6 +71,7 @@ export default function BookmarksScreen() {
         </Pressable>
     </View>
   );
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -118,7 +136,14 @@ const styles = StyleSheet.create({
   },
   goldDot: { width: 8, height: 8, borderRadius: 4 },
   info: { flex: 1 },
-  surahName: { fontSize: 18, marginBottom: 2 },
+  surahNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  surahName: { fontSize: 18 },
+  typeBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 6, borderWidth: 1,
+  },
+  typeBadgeText: { fontSize: 10, fontWeight: '600' },
   ayahNum: { fontSize: 12, marginBottom: 4 },
   preview: { fontSize: 14, lineHeight: 22 },
   deleteBtn: { padding: 14, paddingLeft: 8 },

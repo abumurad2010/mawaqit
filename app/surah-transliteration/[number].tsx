@@ -1,119 +1,77 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Platform, Modal, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import { LANG_META, isRtlLang } from '@/constants/i18n';
-import type { Lang } from '@/constants/i18n';
+import { isRtlLang } from '@/constants/i18n';
 import { SURAH_META, getSurah } from '@/lib/quran-api';
-import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS as TRANSLIT_LANGS } from '@/lib/quran-transliteration';
+import { fetchSurahTransliteration } from '@/lib/quran-transliteration';
 import PageBackground from '@/components/PageBackground';
+import type { Bookmark } from '@/contexts/AppContext';
 
 const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const BISMILLAH_TRANSLIT = 'Bismi Allāhi l-raḥmāni l-raḥīm';
+const AYAHS_PER_PAGE = 5;
 
 export default function SurahTransliterationScreen() {
   const { number } = useLocalSearchParams<{ number: string }>();
   const surahNum = Number(number ?? '1');
   const insets = useSafeAreaInsets();
-  const { isDark, resolvedSecondLang, colors } = useApp();
+  const { isDark, lang, translitLang, colors, isBookmarked, addBookmark, removeBookmark } = useApp();
   const C = colors;
+  const isAr = lang === 'ar';
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const defaultLang: Lang = resolvedSecondLang === 'ar' ? 'en' : resolvedSecondLang;
-  const [translationLang, setTranslationLang] = useState<Lang>(defaultLang);
-  const [showLangPicker, setShowLangPicker] = useState(false);
-  const isRtlTranslation = isRtlLang(translationLang);
+  const isRtlTranslation = isRtlLang(translitLang);
 
   const meta = SURAH_META[surahNum - 1];
   const arabicData = getSurah(surahNum);
+  const totalAyahs = arabicData.ayahs.length;
+  const totalPages = Math.max(1, Math.ceil(totalAyahs / AYAHS_PER_PAGE));
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const pageAyahs = arabicData.ayahs.slice(
+    (currentPage - 1) * AYAHS_PER_PAGE,
+    currentPage * AYAHS_PER_PAGE,
+  );
 
   const { data: translitData, isLoading, error, refetch } = useQuery({
-    queryKey: ['/translit', surahNum, translationLang],
-    queryFn: () => fetchSurahTransliteration(surahNum, translationLang),
+    queryKey: ['/translit', surahNum, translitLang],
+    queryFn: () => fetchSurahTransliteration(surahNum, translitLang),
     retry: 2,
   });
 
-  const renderItem = useCallback(({ item, index }: { item: typeof arabicData.ayahs[0]; index: number }) => {
-    const tlit = translitData?.[index];
-    const ayahNum = item.numberInSurah;
+  const goPage = useCallback((p: number) => {
+    Haptics.selectionAsync();
+    setCurrentPage(p);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, []);
 
-    return (
-      <View style={[styles.ayahCard, {
-        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-        borderColor: C.separator,
-      }]}>
-        {/* Number badge */}
-        <View style={[styles.numBadge, { backgroundColor: C.tint }]}>
-          <Text style={styles.numText}>{ayahNum}</Text>
-        </View>
-
-        <View style={styles.ayahContent}>
-          {/* Arabic text */}
-          <Text style={[styles.arabicText, { color: C.text, fontFamily: 'Amiri_400Regular' }]}>
-            {item.text}
-          </Text>
-
-          {/* Transliteration */}
-          {isLoading ? (
-            <View style={styles.shimmer}>
-              <View style={[styles.shimmerLine, { backgroundColor: C.separator, width: '90%' }]} />
-              <View style={[styles.shimmerLine, { backgroundColor: C.separator, width: '60%' }]} />
-            </View>
-          ) : tlit ? (
-            <>
-              <Text style={[styles.translitText, { color: C.tint }]}>
-                {tlit.transliteration}
-              </Text>
-              {tlit.translation.length > 0 && (
-                <Text style={[
-                  styles.translationText,
-                  { color: C.textSecond, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : undefined }
-                ]}>
-                  {tlit.translation}
-                </Text>
-              )}
-            </>
-          ) : null}
-        </View>
-      </View>
-    );
-  }, [translitData, isLoading, isDark, C, isRtlTranslation]);
-
-  const ListHeader = () => (
-    <View style={styles.listHeader}>
-      {meta?.hasBismillah && surahNum !== 9 && (
-        <View style={[styles.bismillahCard, { backgroundColor: C.tintLight, borderColor: C.separator }]}>
-          <Text style={[styles.bismillahArabic, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
-            {BISMILLAH}
-          </Text>
-          <Text style={[styles.bismillahTranslit, { color: C.textSecond }]}>
-            {BISMILLAH_TRANSLIT}
-          </Text>
-        </View>
-      )}
-      {error && (
-        <Pressable
-          onPress={() => refetch()}
-          style={[styles.errorBanner, { backgroundColor: '#FF3B3020', borderColor: '#FF3B30' }]}
-        >
-          <Ionicons name="wifi-outline" size={16} color="#FF3B30" />
-          <Text style={{ color: '#FF3B30', fontSize: 13, fontWeight: '600', flex: 1 }}>
-            Failed to load. Tap to retry.
-          </Text>
-          <Ionicons name="refresh-outline" size={16} color="#FF3B30" />
-        </Pressable>
-      )}
-    </View>
-  );
+  const toggleBookmark = useCallback((ayahNum: number, ayahText: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isBookmarked(surahNum, ayahNum)) {
+      removeBookmark(surahNum, ayahNum);
+    } else {
+      const b: Bookmark = {
+        surahNumber: surahNum,
+        surahName: meta?.arabic ?? '',
+        ayahNumber: ayahNum,
+        ayahText,
+        timestamp: Date.now(),
+        type: 'transliteration',
+      };
+      addBookmark(b);
+    }
+  }, [surahNum, meta, isBookmarked, addBookmark, removeBookmark]);
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -133,72 +91,168 @@ export default function SurahTransliterationScreen() {
             {meta?.arabic ?? ''}
           </Text>
           <Text style={[styles.headerSub, { color: C.textMuted }]} numberOfLines={1}>
-            {meta?.transliteration ?? ''} · {meta?.ayahs} verses
+            {meta?.transliteration ?? ''} · {totalAyahs} {isAr ? 'آية' : 'verses'}
           </Text>
         </View>
 
-        {/* Language picker */}
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
-          style={[styles.langBtn, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-        >
+        {/* Page indicator */}
+        <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700' }}>
-            {LANG_META[translationLang]?.code ?? translationLang.toUpperCase()}
+            {currentPage}/{totalPages}
           </Text>
-          <Ionicons name="chevron-down" size={12} color={C.tint} />
-        </Pressable>
+        </View>
       </View>
 
-      {/* Ayah list */}
-      <FlatList
-        data={arabicData.ayahs}
-        keyExtractor={item => String(item.numberInSurah)}
-        renderItem={renderItem}
-        ListHeaderComponent={ListHeader}
-        contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 24 }}
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 24, paddingTop: 12 }}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={12}
-        maxToRenderPerBatch={12}
-        windowSize={8}
-      />
-
-      {/* Language picker modal */}
-      <Modal
-        visible={showLangPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowLangPicker(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowLangPicker(false)}>
-          <View style={[styles.modalSheet, { backgroundColor: C.backgroundCard, paddingBottom: bottomInset + 8 }]}>
-            <View style={[styles.modalHandle, { backgroundColor: C.separator }]} />
-            <Text style={[styles.modalTitle, { color: C.text }]}>Translation Language</Text>
-
-            {TRANSLIT_LANGS.map(lang => {
-              const meta = LANG_META[lang];
-              const active = lang === translationLang;
-              return (
-                <TouchableOpacity
-                  key={lang}
-                  onPress={() => { Haptics.selectionAsync(); setTranslationLang(lang); setShowLangPicker(false); }}
-                  style={[styles.langRow, {
-                    backgroundColor: active ? C.tint + '18' : 'transparent',
-                    borderColor: active ? C.tint : C.separator,
-                  }]}
-                >
-                  <Text style={[styles.langNative, { color: active ? C.tint : C.text, fontFamily: isRtlLang(lang) ? 'Amiri_400Regular' : undefined }]}>
-                    {meta?.native ?? lang}
-                  </Text>
-                  <Text style={[styles.langLabel, { color: active ? C.tint : C.textMuted }]}>
-                    {meta?.label ?? lang}
-                  </Text>
-                  {active && <Ionicons name="checkmark" size={16} color={C.tint} />}
-                </TouchableOpacity>
-              );
-            })}
+        {/* Bismillah */}
+        {meta?.hasBismillah && surahNum !== 9 && currentPage === 1 && (
+          <View style={[styles.bismillahCard, { backgroundColor: C.tintLight, borderColor: C.separator }]}>
+            <Text style={[styles.bismillahArabic, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
+              {BISMILLAH}
+            </Text>
+            <Text style={[styles.bismillahTranslit, { color: C.textSecond }]}>
+              {BISMILLAH_TRANSLIT}
+            </Text>
           </View>
-        </Pressable>
-      </Modal>
+        )}
+
+        {/* Network error */}
+        {error && (
+          <Pressable
+            onPress={() => refetch()}
+            style={[styles.errorBanner, { backgroundColor: '#FF3B3020', borderColor: '#FF3B30' }]}
+          >
+            <Ionicons name="wifi-outline" size={16} color="#FF3B30" />
+            <Text style={{ color: '#FF3B30', fontSize: 13, fontWeight: '600', flex: 1 }}>
+              {isAr ? 'تعذّر التحميل. اضغط للمحاولة' : 'Failed to load. Tap to retry.'}
+            </Text>
+            <Ionicons name="refresh-outline" size={16} color="#FF3B30" />
+          </Pressable>
+        )}
+
+        {/* Ayah cards for this page */}
+        {pageAyahs.map((item, idx) => {
+          const globalIdx = (currentPage - 1) * AYAHS_PER_PAGE + idx;
+          const tlit = translitData?.[globalIdx];
+          const ayahNum = item.numberInSurah;
+          const bookmarked = isBookmarked(surahNum, ayahNum);
+
+          return (
+            <View
+              key={ayahNum}
+              style={[styles.ayahCard, {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                borderColor: C.separator,
+              }]}
+            >
+              {/* Top row: badge + bookmark */}
+              <View style={styles.ayahTopRow}>
+                <View style={[styles.numBadge, { backgroundColor: C.tint }]}>
+                  <Text style={styles.numText}>{ayahNum}</Text>
+                </View>
+                <Pressable
+                  onPress={() => toggleBookmark(ayahNum, item.text)}
+                  hitSlop={8}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                >
+                  <Ionicons
+                    name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                    size={18}
+                    color={bookmarked ? C.gold : C.textMuted}
+                  />
+                </Pressable>
+              </View>
+
+              <View style={styles.ayahContent}>
+                {/* Arabic */}
+                <Text style={[styles.arabicText, { color: C.text, fontFamily: 'Amiri_400Regular' }]}>
+                  {item.text}
+                </Text>
+
+                {/* Transliteration + translation */}
+                {isLoading ? (
+                  <View style={styles.shimmer}>
+                    <View style={[styles.shimmerLine, { backgroundColor: C.separator, width: '90%' }]} />
+                    <View style={[styles.shimmerLine, { backgroundColor: C.separator, width: '60%' }]} />
+                  </View>
+                ) : tlit ? (
+                  <>
+                    <Text style={[styles.translitText, { color: C.tint }]}>
+                      {tlit.transliteration}
+                    </Text>
+                    {tlit.translation.length > 0 && (
+                      <Text style={[
+                        styles.translationText,
+                        { color: C.textSecond, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : undefined }
+                      ]}>
+                        {tlit.translation}
+                      </Text>
+                    )}
+                  </>
+                ) : null}
+              </View>
+            </View>
+          );
+        })}
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <View style={styles.pagination}>
+            <Pressable
+              onPress={() => currentPage > 1 && goPage(currentPage - 1)}
+              style={[styles.pageBtn, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: currentPage === 1 ? 0.35 : 1 }]}
+              disabled={currentPage === 1}
+            >
+              <Ionicons name="chevron-back" size={20} color={C.tint} />
+            </Pressable>
+
+            {/* Page number pills — show a sliding window */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pagePills}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
+                .reduce<(number | 'dot')[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('dot');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === 'dot' ? (
+                    <Text key={`dot-${idx}`} style={[styles.pageDot, { color: C.textMuted }]}>…</Text>
+                  ) : (
+                    <Pressable
+                      key={p}
+                      onPress={() => goPage(p as number)}
+                      style={[
+                        styles.pagePill,
+                        {
+                          backgroundColor: p === currentPage ? C.tint : C.backgroundCard,
+                          borderColor: p === currentPage ? C.tint : C.separator,
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: p === currentPage ? '#fff' : C.textMuted, fontSize: 12, fontWeight: '600' }}>
+                        {p}
+                      </Text>
+                    </Pressable>
+                  )
+                )
+              }
+            </ScrollView>
+
+            <Pressable
+              onPress={() => currentPage < totalPages && goPage(currentPage + 1)}
+              style={[styles.pageBtn, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: currentPage === totalPages ? 0.35 : 1 }]}
+              disabled={currentPage === totalPages}
+            >
+              <Ionicons name="chevron-forward" size={20} color={C.tint} />
+            </Pressable>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -217,55 +271,52 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center' },
   headerArabic: { fontSize: 20, textAlign: 'center' },
   headerSub: { fontSize: 11, textAlign: 'center', marginTop: 1 },
-  langBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
+  pageIndicator: {
     paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 8, borderWidth: 1,
   },
-  listHeader: { marginTop: 12, gap: 10, marginBottom: 4 },
   bismillahCard: {
     alignItems: 'center', paddingVertical: 16, paddingHorizontal: 12,
-    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, gap: 6, marginBottom: 8,
+    borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, gap: 6, marginBottom: 10,
   },
   bismillahArabic: { fontSize: 22, textAlign: 'center' },
   bismillahTranslit: { fontSize: 12, textAlign: 'center', fontStyle: 'italic' },
   errorBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 8,
+    padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 10,
   },
   ayahCard: {
-    flexDirection: 'row', gap: 12, alignItems: 'flex-start',
     padding: 14, borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth, marginBottom: 6,
+    borderWidth: StyleSheet.hairlineWidth, marginBottom: 8,
+  },
+  ayahTopRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10,
   },
   numBadge: {
     width: 32, height: 32, borderRadius: 9,
-    alignItems: 'center', justifyContent: 'center', marginTop: 2, flexShrink: 0,
+    alignItems: 'center', justifyContent: 'center',
   },
   numText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  ayahContent: { flex: 1, gap: 6 },
+  ayahContent: { gap: 6 },
   arabicText: { fontSize: 19, lineHeight: 32, textAlign: 'right' },
   shimmer: { gap: 6, marginTop: 4 },
   shimmerLine: { height: 10, borderRadius: 5 },
   translitText: { fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   translationText: { fontSize: 13, lineHeight: 20, opacity: 0.85 },
-  modalOverlay: {
-    flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)',
+  pagination: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginTop: 16, gap: 8,
   },
-  modalSheet: {
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: 16, paddingTop: 12, gap: 4,
-    maxHeight: '75%',
+  pageBtn: {
+    width: 38, height: 38, borderRadius: 10, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
   },
-  modalHandle: {
-    width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 10,
+  pagePills: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
   },
-  modalTitle: { fontSize: 15, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
-  langRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 14, paddingVertical: 12,
-    borderRadius: 10, borderWidth: StyleSheet.hairlineWidth,
+  pagePill: {
+    width: 32, height: 32, borderRadius: 8, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center',
   },
-  langNative: { fontSize: 15, fontWeight: '600', flex: 1 },
-  langLabel: { fontSize: 12 },
+  pageDot: { fontSize: 14, paddingHorizontal: 2 },
 });

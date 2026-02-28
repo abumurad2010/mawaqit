@@ -34,6 +34,7 @@ export interface Bookmark {
   ayahNumber: number;
   ayahText: string;
   timestamp: number;
+  type?: 'mushaf' | 'transliteration';
 }
 
 export interface LocationData {
@@ -47,6 +48,7 @@ export interface LocationData {
 interface AppSettings {
   lang: Lang;
   secondLang: SecondLang;
+  translitLang: Lang;
   themeMode: 'auto' | 'light' | 'dark';
   accessibilityTheme: AccessibilityTheme;
   calcMethod: CalcMethod;
@@ -84,6 +86,7 @@ interface AppContextValue extends AppSettings {
 const DEFAULT_SETTINGS: AppSettings = {
   lang: 'ar',
   secondLang: 'auto',
+  translitLang: 'en',
   themeMode: 'auto',
   accessibilityTheme: 'default',
   calcMethod: 'MWL',

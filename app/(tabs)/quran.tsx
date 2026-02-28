@@ -4,23 +4,24 @@ import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, Pressable, Platform,
+  View, Text, StyleSheet, FlatList, Pressable, Platform, ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import { t } from '@/constants/i18n';
+import { t, LANG_META, isRtlLang } from '@/constants/i18n';
+import type { Lang } from '@/constants/i18n';
 import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
+import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 
 type QuranMode = 'mushaf' | 'transliteration';
 
 export default function QuranScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, lastReadSurah, lastReadPage, colors } = useApp();
+  const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, updateSettings } = useApp();
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -38,6 +39,11 @@ export default function QuranScreen() {
       const page = SURAH_START_PAGES[number] ?? 1;
       router.push({ pathname: '/quran-reader', params: { page: String(page) } });
     }
+  };
+
+  const setTranslitLang = (l: Lang) => {
+    Haptics.selectionAsync();
+    updateSettings({ translitLang: l });
   };
 
   const renderItem = ({ item, index }: { item: typeof SURAH_META[0]; index: number }) => (
@@ -118,44 +124,58 @@ export default function QuranScreen() {
         <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setMode('mushaf'); }}
-            style={[
-              styles.segmentBtn,
-              mode === 'mushaf' && { backgroundColor: C.tint },
-            ]}
+            style={[styles.segmentBtn, mode === 'mushaf' && { backgroundColor: C.tint }]}
           >
-            <Ionicons
-              name="book"
-              size={13}
-              color={mode === 'mushaf' ? '#fff' : C.textMuted}
-            />
-            <Text style={[
-              styles.segmentLabel,
-              { color: mode === 'mushaf' ? '#fff' : C.textMuted },
-            ]}>
+            <Ionicons name="book" size={13} color={mode === 'mushaf' ? '#fff' : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: mode === 'mushaf' ? '#fff' : C.textMuted }]}>
               {isAr ? 'المصحف' : 'Mushaf'}
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setMode('transliteration'); }}
-            style={[
-              styles.segmentBtn,
-              mode === 'transliteration' && { backgroundColor: C.tint },
-            ]}
+            style={[styles.segmentBtn, mode === 'transliteration' && { backgroundColor: C.tint }]}
           >
-            <Ionicons
-              name="language"
-              size={13}
-              color={mode === 'transliteration' ? '#fff' : C.textMuted}
-            />
-            <Text style={[
-              styles.segmentLabel,
-              { color: mode === 'transliteration' ? '#fff' : C.textMuted },
-            ]}>
+            <Ionicons name="language" size={13} color={mode === 'transliteration' ? '#fff' : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: mode === 'transliteration' ? '#fff' : C.textMuted }]}>
               {isAr ? 'النقل الحرفي' : 'Transliteration'}
             </Text>
           </Pressable>
         </View>
+
+        {/* Translation language chips — only in transliteration mode */}
+        {mode === 'transliteration' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.langChips}
+          >
+            {SUPPORTED_TRANSLIT_LANGS.map(l => {
+              const active = l === translitLang;
+              const isRtl = isRtlLang(l);
+              return (
+                <Pressable
+                  key={l}
+                  onPress={() => setTranslitLang(l)}
+                  style={[
+                    styles.langChip,
+                    {
+                      backgroundColor: active ? C.tint : C.backgroundCard,
+                      borderColor: active ? C.tint : C.separator,
+                    },
+                  ]}
+                >
+                  <Text style={[
+                    styles.langChipNative,
+                    { color: active ? '#fff' : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined },
+                  ]}>
+                    {LANG_META[l]?.native ?? l}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* Continue Reading — only in Mushaf mode */}
@@ -199,8 +219,6 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   topHeader: { marginBottom: 10 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
-  title: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   segmentRow: {
@@ -212,6 +230,14 @@ const styles = StyleSheet.create({
     gap: 5, paddingVertical: 8, borderRadius: 10,
   },
   segmentLabel: { fontSize: 12, fontWeight: '600' },
+  langChips: {
+    paddingTop: 10, paddingBottom: 2, gap: 6, flexDirection: 'row',
+  },
+  langChip: {
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 20, borderWidth: 1,
+  },
+  langChipNative: { fontSize: 13, fontWeight: '600' },
   continueBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 16, paddingVertical: 11, borderRadius: 12,
