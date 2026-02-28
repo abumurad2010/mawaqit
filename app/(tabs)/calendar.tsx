@@ -284,6 +284,9 @@ export default function CalendarScreen() {
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
+        <Text style={[styles.freeApp, { color: C.textMuted }]}>
+          {tr.freeApp}
+        </Text>
       </View>
     </View>
   );
@@ -333,6 +336,7 @@ const styles = StyleSheet.create({
   prayerTime: { fontSize: 14, fontVariant: ['tabular-nums'] },
   noLocation: { alignItems: 'center', gap: 8, paddingVertical: 20, marginBottom: 16 },
   noLocationText: { fontSize: 14, textAlign: 'center' },
-  duaRow: { alignItems: 'center', paddingHorizontal: 24 },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
   dua: { fontSize: 13, textAlign: 'center' },
+  freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
 });

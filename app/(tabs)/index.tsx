@@ -365,6 +365,9 @@ export default function PrayerTimesScreen() {
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
+        <Text style={[styles.freeApp, { color: C.textMuted }]}>
+          {tr.freeApp}
+        </Text>
       </View>
 
       {/* Manual location modal */}
@@ -526,8 +529,9 @@ const styles = StyleSheet.create({
   prayerTime: { fontSize: 15, fontVariant: ['tabular-nums'] },
 
   /* Dua */
-  duaRow: { alignItems: 'center', paddingHorizontal: 24 },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
   dua: { fontSize: 13, textAlign: 'center' },
+  freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
 
   /* Location modal */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
