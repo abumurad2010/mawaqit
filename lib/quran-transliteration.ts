@@ -10,7 +10,6 @@ export interface TranslitAyah {
 const EDITION_MAP: Partial<Record<Lang, string>> = {
   en: 'en.sahih',
   fr: 'fr.hamidullah',
-  de: 'de.aburida',
   es: 'es.cortes',
   ru: 'ru.kuliev',
   zh: 'zh.jian',
@@ -30,7 +29,7 @@ export function getTranslationEdition(lang: Lang): string {
 }
 
 export const SUPPORTED_TRANSLIT_LANGS: Lang[] = [
-  'en', 'fr', 'de', 'es', 'ur', 'id', 'ms', 'bn', 'tr', 'ha', 'so', 'sw', 'ru', 'fa',
+  'en', 'fr', 'es', 'ru', 'zh', 'tr', 'ur', 'id', 'bn', 'fa', 'ms', 'pt', 'sw', 'ha',
 ];
 
 const CACHE_VERSION = 'v1';
