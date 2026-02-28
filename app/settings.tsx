@@ -315,20 +315,20 @@ export default function SettingsScreen() {
             {
               key: 'high-contrast' as AccessibilityTheme,
               label: isAr ? 'تباين عالٍ' : 'High Contrast',
-              desc: isAr ? 'تباين أقوى للرؤية الضعيفة' : 'For low vision & visual impairment',
-              swatchLight: '#005C25', swatchDark: '#00FF7F',
+              desc: isAr ? 'أسود وأبيض خالص — أقصى وضوح' : 'Pure black & white, maximum clarity',
+              swatchLight: '#000000', swatchDark: '#FFFFFF',
             },
             {
               key: 'colorblind' as AccessibilityTheme,
               label: isAr ? 'عمى الألوان' : 'Color Blind',
               desc: isAr ? 'لون أزرق مناسب لعمى الألوان' : 'Blue accent, deuteranopia-friendly',
-              swatchLight: '#0066CC', swatchDark: '#409CFF',
+              swatchLight: '#0055CC', swatchDark: '#409CFF',
             },
             {
               key: 'warm' as AccessibilityTheme,
               label: isAr ? 'دافئ' : 'Warm',
               desc: isAr ? 'يُخفف الضوء الأزرق — مريح للعيون' : 'Amber tones, reduced blue light',
-              swatchLight: '#B8860B', swatchDark: '#E8A000',
+              swatchLight: '#8C6400', swatchDark: '#E8A000',
             },
           ] as const).map((theme, idx, arr) => {
             const isSelected = draftAccessibilityTheme === theme.key;

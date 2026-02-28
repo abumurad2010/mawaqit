@@ -308,25 +308,25 @@ export default function PrayerTimesScreen() {
         {displayNext && times ? (
           <Animated.View
             entering={FadeIn.duration(500)}
-            style={[styles.heroCard, { backgroundColor: C.tint }]}
+            style={[styles.heroCard, { backgroundColor: C.heroCardBg }]}
           >
             <Animated.View style={pulseStyle}>
               <MaterialCommunityIcons
                 name={PRAYER_ICONS[displayNext.name] as any}
-                size={16} color="rgba(255,255,255,0.55)"
+                size={16} color={C.heroCardSubtext}
               />
             </Animated.View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroLabel}>
+              <Text style={[styles.heroLabel, { color: C.heroCardSubtext }]}>
                 {'isTomorrow' in displayNext && displayNext.isTomorrow
                   ? tr.tomorrowFajr
                   : tr.nextPrayer}
               </Text>
-              <Text style={[styles.heroPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
                 {prayerLabel(displayNext.name)}
               </Text>
             </View>
-            <Text style={styles.heroCountdown}>{countdown}</Text>
+            <Text style={[styles.heroCountdown, { color: C.heroCardText }]}>{countdown}</Text>
           </Animated.View>
         ) : (
           <View style={[styles.heroCard, styles.heroCardEmpty, { backgroundColor: C.backgroundCard }]}>
@@ -530,10 +530,9 @@ const styles = StyleSheet.create({
   },
   heroCardEmpty: { alignItems: 'center', paddingVertical: 10, flexDirection: 'row', justifyContent: 'center' },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 1, lineHeight: 12 },
-  heroPrayerName: { color: '#fff', fontSize: 15, fontWeight: '700', lineHeight: 20 },
+  heroLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 1, lineHeight: 12 },
+  heroPrayerName: { fontSize: 15, fontWeight: '700', lineHeight: 20 },
   heroCountdown: {
-    color: '#fff',
     fontSize: 22,
     fontWeight: '300',
     letterSpacing: -0.5,
