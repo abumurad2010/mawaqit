@@ -296,14 +296,14 @@ export default function QiblaScreen() {
         )}
       </Animated.View>
 
-      {/* Dua */}
+      </ScrollView>
+
+      {/* Dua — pinned to bottom, same as all other pages */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
       </View>
-
-      </ScrollView>
     </View>
   );
 }
