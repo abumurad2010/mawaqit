@@ -110,9 +110,9 @@ export default function SettingsScreen() {
   }: { label: string; right: React.ReactNode; noBorder?: boolean }) => (
     <View style={[
       styles.settingRow,
-      { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1 }
+      { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isAr ? 'row-reverse' : 'row' }
     ]}>
-      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
         {label}
       </Text>
       <View style={styles.rightSide}>{right}</View>
@@ -137,7 +137,7 @@ export default function SettingsScreen() {
     <View style={[styles.root, { backgroundColor: C.background }]}>
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16 }]}>
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
           style={({ pressed }) => [styles.closeBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
@@ -170,7 +170,7 @@ export default function SettingsScreen() {
       >
 
         {/* Quran font */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
           {isAr ? 'خط القرآن' : 'Quran Font'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -188,15 +188,15 @@ export default function SettingsScreen() {
         </View>
 
         {/* Hijri date adjustment */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
           {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isAr ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
               {tr.hijriAdjustment}
             </Text>
-            <View style={styles.stepperRow}>
+            <View style={[styles.stepperRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
               <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
                 <Pressable
                   onPress={() => { Haptics.selectionAsync(); setDraftHijri(v => Math.max(v - 1, -2)); }}
@@ -229,20 +229,20 @@ export default function SettingsScreen() {
         </View>
 
         {/* Prayer Calculation */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
           {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {/* Calculation method — dropdown row */}
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowMethodModal(true); }}
-            style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1 }]}
+            style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isAr ? 'row-reverse' : 'row' }]}
           >
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
                 {tr.calculationMethod}
               </Text>
-              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isAr ? 'Amiri_400Regular' : undefined }} numberOfLines={1}>
+              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }} numberOfLines={1}>
                 {tr.methods[draftCalcMethod] ?? draftCalcMethod}
               </Text>
             </View>
@@ -252,7 +252,7 @@ export default function SettingsScreen() {
           {/* Method picker modal */}
           <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: C.separator }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
                   {tr.calculationMethod}
                 </Text>
@@ -276,7 +276,7 @@ export default function SettingsScreen() {
                       }}
                       style={[
                         styles.methodRow,
-                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 },
+                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isAr ? 'row-reverse' : 'row' },
                         isSelected && { backgroundColor: C.tint + '18' },
                       ]}
                     >
@@ -285,14 +285,15 @@ export default function SettingsScreen() {
                           fontSize: 13, fontWeight: isSelected ? '700' : '500',
                           color: isSelected ? C.tint : C.text,
                           fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                          textAlign: isAr ? 'right' : 'left',
                         }}>
                           {label}
                         </Text>
                         {isRecommended && (
-                          <View style={styles.recommendedBadge}>
+                          <View style={[styles.recommendedBadge, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
                             <Ionicons name="location-outline" size={11} color={C.tint} />
                             <Text style={{ fontSize: 11, color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                              {isAr ? tr.recommendedForLocation : tr.recommendedForLocation}
+                              {tr.recommendedForLocation}
                             </Text>
                           </View>
                         )}
@@ -317,13 +318,13 @@ export default function SettingsScreen() {
           />
 
           {/* Maghrib offset — base + stepper */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isAr ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
               {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
             </Text>
 
             {/* Recommended base */}
-            <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55' }]}>
+            <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isAr ? 'row-reverse' : 'row' }]}>
               <Ionicons name="location-outline" size={13} color={C.tint} />
               <Text style={[styles.autoOffsetText, { color: C.tint }]}>
                 {isAr
@@ -333,7 +334,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Stepper row */}
-            <View style={styles.stepperRow}>
+            <View style={[styles.stepperRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
               <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
                 {isAr ? 'تعديل:' : 'Adjustment:'}
               </Text>
@@ -371,7 +372,7 @@ export default function SettingsScreen() {
               </Pressable>
             )}
 
-            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
               {isAr
                 ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
                 : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
@@ -380,7 +381,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Notifications */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
           {isAr ? 'الإشعارات' : 'Notifications'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -397,10 +398,10 @@ export default function SettingsScreen() {
                 { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 }
               ]}>
                 {/* Main row: name + 3 type chips */}
-                <View style={styles.notifRow}>
+                <View style={[styles.notifRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
                   <Text style={[
                     styles.notifLabel,
-                    { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }
+                    { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }
                   ]}>
                     {isAr ? prayer.ar : prayer.en}
                   </Text>
@@ -452,7 +453,7 @@ export default function SettingsScreen() {
 
                 {/* Sub-row: Full / Abbreviated + Preview — only when athan active */}
                 {isAthan && (
-                  <View style={[styles.notifSubRow, { borderTopColor: C.separator }]}>
+                  <View style={[styles.notifSubRow, { borderTopColor: C.separator, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
                     <Pressable
                       onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
                       style={[styles.subChip, {
@@ -525,7 +526,7 @@ const styles = StyleSheet.create({
   saveBtnText: { fontSize: 13, fontWeight: '600' },
   sectionTitle: {
     fontSize: 11, fontWeight: '700', letterSpacing: 0.6,
-    textTransform: 'uppercase', marginTop: 18, marginBottom: 6, marginLeft: 4,
+    textTransform: 'uppercase', marginTop: 18, marginBottom: 6,
   },
   card: {
     borderRadius: 14, borderWidth: 1, overflow: 'hidden',
