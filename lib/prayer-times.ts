@@ -118,13 +118,12 @@ function asrTime(jd: number, lat: number, dhuhr: number, method: AsrMethod): num
   return dhuhr + hourAngle(angle, lat, declination);
 }
 
-/** Convert decimal hour in UTC to local Date */
+/** Convert decimal UTC hour to a Date, anchored to UTC midnight of the LOCAL calendar date. */
 function decimalToDate(h: number, date: Date): Date {
-  const d = new Date(date);
-  d.setUTCHours(0, 0, 0, 0);
-  const totalMs = h * 3600 * 1000;
-  d.setTime(d.getTime() + totalMs);
-  return d;
+  // Use the local calendar date (not UTC date) as the anchor so that after local
+  // midnight in UTC+ zones the times still belong to the correct local day.
+  const utcMidnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return new Date(utcMidnight + h * 3600 * 1000);
 }
 
 export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
@@ -139,9 +138,9 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
 
   const m = METHODS[method];
 
-  const y = date.getUTCFullYear();
-  const mo = date.getUTCMonth() + 1;
-  const d = date.getUTCDate();
+  const y = date.getFullYear();
+  const mo = date.getMonth() + 1;
+  const d = date.getDate();
   const jd = julianDay(y, mo, d);
 
   const { declination, equation } = sunPosition(jd);
