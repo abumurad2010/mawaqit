@@ -1,13 +1,14 @@
 import React from 'react';
-import { Image, StyleSheet, useWindowDimensions } from 'react-native';
+import { Image, StyleSheet, useColorScheme } from 'react-native';
 
 export default function PageBackground() {
-  const { width, height } = useWindowDimensions();
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
   return (
     <Image
-      source={require('@/assets/images/bg-kaaba.png')}
-      style={[styles.bg, { width: width * 1.1, height: height * 0.7 }]}
-      resizeMode="contain"
+      source={require('@/assets/images/bg-prayer.png')}
+      style={[styles.bg, { opacity: isDark ? 0.22 : 0.18 }]}
+      resizeMode="cover"
       pointerEvents="none"
     />
   );
@@ -16,9 +17,9 @@ export default function PageBackground() {
 const styles = StyleSheet.create({
   bg: {
     position: 'absolute',
-    bottom: -40,
-    right: -60,
-    opacity: 0.10,
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
     zIndex: 0,
   },
 });
