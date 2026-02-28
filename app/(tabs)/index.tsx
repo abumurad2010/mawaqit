@@ -355,7 +355,8 @@ export default function PrayerTimesScreen() {
                       color: active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#111111'),
                       fontWeight: active ? '700' : '400',
                       fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
-                      fontSize: isAr ? 17 : 15,
+                      fontSize: 15,
+                      lineHeight: 20,
                     }
                   ]}>
                     {prayerLabel(key)}
@@ -542,8 +543,8 @@ const styles = StyleSheet.create({
   },
   rowDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
   prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  prayerName: { fontSize: 15 },
-  prayerTime: { fontSize: 15, fontVariant: ['tabular-nums'] },
+  prayerName: { fontSize: 15, lineHeight: 20 },
+  prayerTime: { fontSize: 15, lineHeight: 20, fontVariant: ['tabular-nums'] },
 
   /* Dua */
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
