@@ -49,7 +49,7 @@ export default function PrayerTimesScreen() {
   const [manLat, setManLat] = useState(manualLocation?.lat?.toString() ?? '');
   const [manLng, setManLng] = useState(manualLocation?.lng?.toString() ?? '');
   const [cityQuery, setCityQuery] = useState('');
-  const [cityResults, setCityResults] = useState<Array<{ name: string; lat: number; lng: number }>>([]);
+  const [cityResults, setCityResults] = useState<Array<{ name: string; lat: number; lng: number; countryCode?: string }>>([]);
   const [cityLoading, setCityLoading] = useState(false);
 
   const pulse = useSharedValue(1);
@@ -125,17 +125,31 @@ export default function PrayerTimesScreen() {
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-  const saveManualLocation = () => {
+  const saveManualLocation = async () => {
     const lat = parseFloat(manLat);
     const lng = parseFloat(manLng);
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       Alert.alert('Invalid', 'Please enter valid coordinates');
       return;
     }
-    const foundCity = cityResults.find(c => c.lat === lat && c.lng === lng)?.name;
-    const cityName = (foundCity ?? cityQuery.trim()) || undefined;
-    updateSettings({ locationMode: 'manual', manualLocation: { lat, lng, city: cityName } });
-    setLocation({ lat, lng, city: cityName });
+    const matchedResult = cityResults.find(c => c.lat === lat && c.lng === lng);
+    const cityName = (matchedResult?.name ?? cityQuery.trim()) || undefined;
+    let countryCode = matchedResult?.countryCode;
+
+    // If the user typed raw coordinates (no city search result), reverse-geocode for country code
+    if (!countryCode) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+          { headers: { 'User-Agent': 'MawaqitApp/1.0' } }
+        );
+        const data = await res.json();
+        countryCode = data.address?.country_code?.toUpperCase();
+      } catch {}
+    }
+
+    updateSettings({ locationMode: 'manual', manualLocation: { lat, lng, city: cityName, countryCode } });
+    setLocation({ lat, lng, city: cityName, countryCode });
     setShowManual(false);
     setCityResults([]);
     setCityQuery('');
@@ -156,6 +170,7 @@ export default function PrayerTimesScreen() {
         name: p.display_name?.split(',').slice(0, 2).join(',') ?? p.name,
         lat: parseFloat(p.lat),
         lng: parseFloat(p.lon),
+        countryCode: p.address?.country_code?.toUpperCase() as string | undefined,
       }));
       setCityResults(places);
     } catch {
