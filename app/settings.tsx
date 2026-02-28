@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform, Switch,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -28,32 +28,58 @@ export default function SettingsScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
+  // Local draft state — nothing is saved until the user taps Save
+  const [draftLang, setDraftLang] = useState(lang);
+  const [draftTheme, setDraftTheme] = useState(themeMode);
+  const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
+  const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
+  const [draftFontSize, setDraftFontSize] = useState(fontSize);
+  const [draftLocationMode, setDraftLocationMode] = useState(locationMode);
+
+  const hasChanges =
+    draftLang !== lang ||
+    draftTheme !== themeMode ||
+    draftCalcMethod !== calcMethod ||
+    draftAsrMethod !== asrMethod ||
+    draftFontSize !== fontSize ||
+    draftLocationMode !== locationMode;
+
+  const handleSave = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    updateSettings({
+      lang: draftLang,
+      themeMode: draftTheme,
+      calcMethod: draftCalcMethod,
+      asrMethod: draftAsrMethod,
+      fontSize: draftFontSize,
+      locationMode: draftLocationMode,
+    });
+    router.back();
+  };
+
   const Row = ({
-    label, right, onPress, noBorder,
-  }: { label: string; right: React.ReactNode; onPress?: () => void; noBorder?: boolean }) => (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.settingRow,
-        { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, opacity: pressed && onPress ? 0.7 : 1 }
-      ]}
-    >
+    label, right, noBorder,
+  }: { label: string; right: React.ReactNode; noBorder?: boolean }) => (
+    <View style={[
+      styles.settingRow,
+      { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1 }
+    ]}>
       <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
         {label}
       </Text>
       <View style={styles.rightSide}>{right}</View>
-    </Pressable>
+    </View>
   );
 
-  const Chip = ({ value, current, onPress }: { value: string; current: string; onPress: () => void }) => (
+  const Chip = ({ value, selected, onPress }: { value: string; selected: boolean; onPress: () => void }) => (
     <Pressable
-      onPress={onPress}
+      onPress={() => { Haptics.selectionAsync(); onPress(); }}
       style={[
         styles.chip,
-        { backgroundColor: value === current ? C.tint : C.backgroundSecond, borderColor: C.separator },
+        { backgroundColor: selected ? C.tint : C.backgroundSecond, borderColor: C.separator },
       ]}
     >
-      <Text style={{ color: value === current ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600' }}>
+      <Text style={{ color: selected ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600' }}>
         {value}
       </Text>
     </Pressable>
@@ -68,12 +94,22 @@ export default function SettingsScreen() {
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
           style={({ pressed }) => [styles.closeBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
         >
-          <Ionicons name="close" size={20} color={C.tint} />
+          <Ionicons name="close" size={20} color={C.textSecond} />
         </Pressable>
         <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
           {tr.settings}
         </Text>
-        <View style={{ width: 36 }} />
+        <Pressable
+          onPress={handleSave}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
+          ]}
+        >
+          <Text style={[styles.saveBtnText, { color: hasChanges ? '#fff' : C.tint }]}>
+            {isAr ? 'حفظ' : 'Save'}
+          </Text>
+        </Pressable>
       </View>
 
       <ScrollView
@@ -90,9 +126,8 @@ export default function SettingsScreen() {
             label={tr.language}
             right={
               <View style={styles.chips}>
-                {(['ar', 'en'] as const).map(l => (
-                  <Chip key={l} value={l === 'ar' ? tr.arabic : tr.english} current={lang === l ? (l === 'ar' ? tr.arabic : tr.english) : ''} onPress={() => { Haptics.selectionAsync(); updateSettings({ lang: l }); }} />
-                ))}
+                <Chip value={tr.arabic}   selected={draftLang === 'ar'} onPress={() => setDraftLang('ar')} />
+                <Chip value={tr.english}  selected={draftLang === 'en'} onPress={() => setDraftLang('en')} />
               </View>
             }
           />
@@ -100,9 +135,9 @@ export default function SettingsScreen() {
             label={tr.theme}
             right={
               <View style={styles.chips}>
-                {(['light', 'auto', 'dark'] as const).map(m => (
-                  <Chip key={m} value={m === 'light' ? (isAr ? 'فاتح' : 'Light') : m === 'dark' ? (isAr ? 'داكن' : 'Dark') : (isAr ? 'تلقائي' : 'Auto')} current={themeMode === m ? (m === 'light' ? (isAr ? 'فاتح' : 'Light') : m === 'dark' ? (isAr ? 'داكن' : 'Dark') : (isAr ? 'تلقائي' : 'Auto')) : ''} onPress={() => { Haptics.selectionAsync(); updateSettings({ themeMode: m }); }} />
-                ))}
+                <Chip value={isAr ? 'فاتح'   : 'Light'} selected={draftTheme === 'light'} onPress={() => setDraftTheme('light')} />
+                <Chip value={isAr ? 'تلقائي' : 'Auto'}  selected={draftTheme === 'auto'}  onPress={() => setDraftTheme('auto')} />
+                <Chip value={isAr ? 'داكن'   : 'Dark'}  selected={draftTheme === 'dark'}  onPress={() => setDraftTheme('dark')} />
               </View>
             }
             noBorder
@@ -118,14 +153,9 @@ export default function SettingsScreen() {
             label={tr.fontSize}
             right={
               <View style={styles.chips}>
-                {FONT_SIZES.map(s => (
-                  <Chip
-                    key={s}
-                    value={s === 'small' ? tr.small : s === 'medium' ? tr.medium : tr.large}
-                    current={fontSize === s ? (s === 'small' ? tr.small : s === 'medium' ? tr.medium : tr.large) : ''}
-                    onPress={() => { Haptics.selectionAsync(); updateSettings({ fontSize: s }); }}
-                  />
-                ))}
+                <Chip value={tr.small}  selected={draftFontSize === 'small'}  onPress={() => setDraftFontSize('small')} />
+                <Chip value={tr.medium} selected={draftFontSize === 'medium'} onPress={() => setDraftFontSize('medium')} />
+                <Chip value={tr.large}  selected={draftFontSize === 'large'}  onPress={() => setDraftFontSize('large')} />
               </View>
             }
             noBorder
@@ -148,17 +178,17 @@ export default function SettingsScreen() {
               return (
                 <Pressable
                   key={m}
-                  onPress={() => { Haptics.selectionAsync(); updateSettings({ calcMethod: m }); }}
+                  onPress={() => { Haptics.selectionAsync(); setDraftCalcMethod(m); }}
                   style={[
                     styles.methodChip,
                     {
-                      backgroundColor: calcMethod === m ? C.tint : C.backgroundSecond,
-                      borderColor: calcMethod === m ? C.tint : C.separator,
+                      backgroundColor: draftCalcMethod === m ? C.tint : C.backgroundSecond,
+                      borderColor: draftCalcMethod === m ? C.tint : C.separator,
                     }
                   ]}
                 >
                   <Text style={{
-                    color: calcMethod === m ? '#fff' : C.textSecond,
+                    color: draftCalcMethod === m ? '#fff' : C.textSecond,
                     fontSize: 11, fontWeight: '600', textAlign: 'center',
                     fontFamily: isAr ? 'Amiri_400Regular' : undefined,
                   }} numberOfLines={2}>
@@ -174,9 +204,8 @@ export default function SettingsScreen() {
             label={tr.asrMethod}
             right={
               <View style={styles.chips}>
-                {(['standard', 'hanafi'] as AsrMethod[]).map(m => (
-                  <Chip key={m} value={m === 'standard' ? tr.standard : tr.hanafi} current={asrMethod === m ? (m === 'standard' ? tr.standard : tr.hanafi) : ''} onPress={() => { Haptics.selectionAsync(); updateSettings({ asrMethod: m }); }} />
-                ))}
+                <Chip value={tr.standard} selected={draftAsrMethod === 'standard'} onPress={() => setDraftAsrMethod('standard')} />
+                <Chip value={tr.hanafi}   selected={draftAsrMethod === 'hanafi'}   onPress={() => setDraftAsrMethod('hanafi')} />
               </View>
             }
           />
@@ -197,7 +226,7 @@ export default function SettingsScreen() {
             <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
               {isAr
                 ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
-                : 'Minutes added after astronomical sunset per your country\'s Islamic authority standard'}
+                : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
             </Text>
           </View>
         </View>
@@ -211,8 +240,8 @@ export default function SettingsScreen() {
             label={isAr ? 'وضع الموقع' : 'Location Mode'}
             right={
               <View style={styles.chips}>
-                <Chip value={isAr ? 'تلقائي' : 'Auto'} current={locationMode === 'auto' ? (isAr ? 'تلقائي' : 'Auto') : ''} onPress={() => { Haptics.selectionAsync(); updateSettings({ locationMode: 'auto' }); }} />
-                <Chip value={isAr ? 'يدوي' : 'Manual'} current={locationMode === 'manual' ? (isAr ? 'يدوي' : 'Manual') : ''} onPress={() => { Haptics.selectionAsync(); updateSettings({ locationMode: 'manual' }); }} />
+                <Chip value={isAr ? 'تلقائي' : 'Auto'}   selected={draftLocationMode === 'auto'}   onPress={() => setDraftLocationMode('auto')} />
+                <Chip value={isAr ? 'يدوي'   : 'Manual'} selected={draftLocationMode === 'manual'} onPress={() => setDraftLocationMode('manual')} />
               </View>
             }
             noBorder
@@ -230,6 +259,20 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Save button (also in footer for easy reach) */}
+        <Pressable
+          onPress={handleSave}
+          style={({ pressed }) => [
+            styles.saveFooterBtn,
+            { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
+          ]}
+        >
+          <Text style={[styles.saveFooterText, { color: hasChanges ? '#fff' : C.tint }]}>
+            {isAr ? 'حفظ الإعدادات' : 'Save Settings'}
+          </Text>
+        </Pressable>
+
       </ScrollView>
     </View>
   );
@@ -246,6 +289,11 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   title: { fontSize: 18, fontWeight: '700' },
+  saveBtn: {
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 18,
+  },
+  saveBtnText: { fontSize: 14, fontWeight: '700' },
   sectionTitle: {
     fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
     textTransform: 'uppercase', marginTop: 20, marginBottom: 8, marginLeft: 4,
@@ -281,4 +329,9 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1,
   },
   autoOffsetText: { fontSize: 13, fontWeight: '600' },
+  saveFooterBtn: {
+    marginTop: 24, borderRadius: 14,
+    paddingVertical: 15, alignItems: 'center',
+  },
+  saveFooterText: { fontSize: 16, fontWeight: '700' },
 });
