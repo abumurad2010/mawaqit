@@ -116,7 +116,7 @@ export default function SettingsScreen() {
         { backgroundColor: selected ? C.tint : C.backgroundSecond, borderColor: C.separator },
       ]}
     >
-      <Text style={{ color: selected ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600' }}>
+      <Text style={{ color: selected ? '#fff' : C.textSecond, fontSize: 11, fontWeight: '600' }}>
         {value}
       </Text>
     </Pressable>
@@ -294,7 +294,7 @@ export default function SettingsScreen() {
                     >
                       <View style={{ flex: 1, gap: 2 }}>
                         <Text style={{
-                          fontSize: 14, fontWeight: isSelected ? '700' : '500',
+                          fontSize: 13, fontWeight: isSelected ? '700' : '500',
                           color: isSelected ? C.tint : C.text,
                           fontFamily: isAr ? 'Amiri_400Regular' : undefined,
                         }}>
@@ -483,24 +483,24 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontSize: 18, fontWeight: '700' },
+  title: { fontSize: 16, fontWeight: '700' },
   saveBtn: {
-    paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 18,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 16,
   },
-  saveBtnText: { fontSize: 14, fontWeight: '700' },
+  saveBtnText: { fontSize: 13, fontWeight: '600' },
   sectionTitle: {
-    fontSize: 13, fontWeight: '700', letterSpacing: 0.5,
-    textTransform: 'uppercase', marginTop: 20, marginBottom: 8, marginLeft: 4,
+    fontSize: 11, fontWeight: '700', letterSpacing: 0.6,
+    textTransform: 'uppercase', marginTop: 18, marginBottom: 6, marginLeft: 4,
   },
   card: {
-    borderRadius: 16, borderWidth: 1, overflow: 'hidden',
+    borderRadius: 14, borderWidth: 1, overflow: 'hidden',
   },
   settingRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, flexWrap: 'wrap', gap: 8,
+    paddingHorizontal: 14, paddingVertical: 11, flexWrap: 'wrap', gap: 8,
   },
-  settingLabel: { fontSize: 14, fontWeight: '500', flexShrink: 1 },
+  settingLabel: { fontSize: 13, fontWeight: '500', flexShrink: 1 },
   rightSide: { flexShrink: 0 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 16,
     borderBottomWidth: 1,
   },
-  modalTitle: { fontSize: 17, fontWeight: '700' },
+  modalTitle: { fontSize: 15, fontWeight: '700' },
   explain: { fontSize: 11, lineHeight: 17, paddingHorizontal: 16, paddingBottom: 12 },
   aboutText: { fontSize: 16, textAlign: 'center', width: '100%' },
   autoOffsetBadge: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   stepperRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap',
   },
-  stepperLabel: { fontSize: 13, fontWeight: '500' },
+  stepperLabel: { fontSize: 12, fontWeight: '500' },
   stepperControls: {
     flexDirection: 'row', alignItems: 'center',
     borderRadius: 12, borderWidth: 1, overflow: 'hidden',
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
   },
   stepperValue: {
-    minWidth: 36, textAlign: 'center', fontSize: 15, fontWeight: '700',
+    minWidth: 34, textAlign: 'center', fontSize: 14, fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   totalBadge: {
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 10, gap: 8,
   },
-  notifLabel: { fontSize: 14, fontWeight: '500', flex: 1 },
+  notifLabel: { fontSize: 13, fontWeight: '500', flex: 1 },
   notifChips: { flexDirection: 'row', gap: 6, flexShrink: 0 },
   iconChip: {
     width: 34, height: 34, borderRadius: 10, borderWidth: 1,
