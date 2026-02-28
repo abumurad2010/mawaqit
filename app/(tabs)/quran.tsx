@@ -119,21 +119,22 @@ export default function QuranScreen() {
         data={SURAH_META}
         keyExtractor={item => String(item.number)}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 100 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
+        ListFooterComponent={
+          <View style={[styles.duaRow, { paddingBottom: 8 }]}>
+            <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
+              {tr.dua}
+            </Text>
+            <Text style={[styles.freeApp, { color: C.textMuted }]}>
+              {tr.freeApp}
+            </Text>
+          </View>
+        }
         scrollEnabled={true}
         showsVerticalScrollIndicator={false}
         initialNumToRender={20}
         maxToRenderPerBatch={20}
       />
-
-      <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
-        <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
-          {tr.dua}
-        </Text>
-        <Text style={[styles.freeApp, { color: C.textMuted }]}>
-          {tr.freeApp}
-        </Text>
-      </View>
     </View>
   );
 }
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   },
   numText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   surahInfo: { flex: 1 },
-  duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4, position: 'absolute', bottom: 0, left: 0, right: 0 },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4, marginTop: 16 },
   dua: { fontSize: 13, textAlign: 'center' },
   freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
   surahArabic: { fontSize: 18, marginBottom: 2 },
