@@ -92,10 +92,11 @@ export async function schedulePrayerNotifications(params: {
       const prayerTime = prayerTimeMap[prayerKey];
       if (!prayerTime || prayerTime <= now) continue;
 
-      // When athan is enabled, it acts as the audio — use null sound so the app
-      // plays the athan file instead. The banner is shown via shouldShowAlert.
-      // When banner-only, use the system default sound.
-      const sound = hasAthan ? null : 'default';
+      // When athan is enabled the app plays audio via expo-audio on receipt —
+      // system sound must be absent so iOS doesn't also play the default chime.
+      // expo-notifications requires a string or boolean for 'sound'; passing
+      // null/undefined crashes on iOS native. Use false to silence the system tone.
+      const sound: string | false = hasAthan ? false : 'default';
 
       await Notifications.scheduleNotificationAsync({
         content: {

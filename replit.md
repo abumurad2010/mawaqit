@@ -8,7 +8,8 @@ A full-featured Islamic app with accurate prayer times, Qibla compass, full Qura
 
 - **Prayer Times** — Astronomically accurate (full USNO algorithm) with 8 calculation methods (MWL, ISNA, Egypt, Umm Al-Qura, Karachi, Tehran, Jafari, Jordan). Configurable Maghrib offset (0-10 min).
 - **Qibla Compass** — Live compass using device magnetometer + GPS to point to Mecca (21.4225°N, 39.8262°E). Shows distance to Mecca.
-- **Full Quran** — Complete Arabic Quran text bundled in app, searchable, with bookmarks on specific ayahs, page-by-page reading, table of contents.
+- **Full Quran** — Complete Arabic Quran text bundled in app, searchable, with bookmarks on specific ayahs, page-by-page reading, table of contents. Transliteration + translation tab (14 languages, API-backed and cached).
+- **Quran Transliteration** — Segmented tab switcher in Quran screen (Mushaf / Transliteration). Per-surah view with romanized Arabic phonetics + translation in the user's selected second language. Data from alquran.cloud API, cached in AsyncStorage.
 - **Hijri Calendar** — View prayer times for any day with Gregorian/Hijri dual calendar.
 - **Settings** — Dark/light/auto theme, language picker (15 languages), location (auto GPS or manual city search), calculation method, Asr method, Maghrib offset, font size.
 
