@@ -20,8 +20,8 @@ type QuranMode = 'mushaf' | 'transliteration';
 
 export default function QuranScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, lastReadSurah, lastReadPage } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, lastReadSurah, lastReadPage, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

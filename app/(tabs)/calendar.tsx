@@ -51,8 +51,8 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

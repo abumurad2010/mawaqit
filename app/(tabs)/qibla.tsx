@@ -27,8 +27,8 @@ const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
 
 export default function QiblaScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location: appLocation } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, location: appLocation, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

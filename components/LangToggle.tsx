@@ -6,8 +6,8 @@ import Colors from '@/constants/colors';
 import { LANG_META } from '@/constants/i18n';
 
 export default function LangToggle() {
-  const { lang, resolvedSecondLang, isDark, updateSettings } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { lang, resolvedSecondLang, isDark, colors, updateSettings } = useApp();
+  const C = colors;
 
   const toggle = () => {
     Haptics.selectionAsync();

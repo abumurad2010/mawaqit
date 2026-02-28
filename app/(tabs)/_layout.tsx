@@ -33,8 +33,8 @@ function NativeTabLayout() {
 }
 
 function ClassicTabLayout() {
-  const { isDark, lang } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
 
   return (

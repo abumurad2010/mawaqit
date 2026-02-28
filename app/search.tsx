@@ -16,8 +16,8 @@ import { searchQuran, SURAH_META, getAyahPage } from '@/lib/quran-api';
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

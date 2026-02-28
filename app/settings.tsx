@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
+import type { AccessibilityTheme } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
@@ -24,11 +25,11 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
-    maghribAdjustment, fontSize, hijriAdjustment,
-    prayerNotifications,
+    maghribAdjustment, fontSize, hijriAdjustment, accessibilityTheme,
+    prayerNotifications, colors,
     updateSettings,
   } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
   const isRtl = isRtlLang(lang);
@@ -46,6 +47,7 @@ export default function SettingsScreen() {
     prayerNotifications ?? {}
   );
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
+  const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -75,6 +77,7 @@ export default function SettingsScreen() {
     draftAdjustment !== (maghribAdjustment ?? 0) ||
     draftHijri !== (hijriAdjustment ?? 0) ||
     draftSecondLang !== (secondLang ?? 'auto') ||
+    draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
@@ -90,6 +93,7 @@ export default function SettingsScreen() {
       prayerNotifications: draftNotifications,
       secondLang: draftSecondLang,
       lang: newLang,
+      accessibilityTheme: draftAccessibilityTheme,
     });
     router.back();
   };
@@ -289,6 +293,83 @@ export default function SettingsScreen() {
             }
             noBorder
           />
+        </View>
+
+        {/* Accessibility */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+          {isAr ? 'إمكانية الوصول' : 'Accessibility'}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <Text style={[styles.explain, { color: C.textMuted, paddingTop: 12, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+            {isAr
+              ? 'اختر نظام ألوان مناسب لاحتياجاتك البصرية'
+              : 'Choose a colour theme suited to your visual needs'}
+          </Text>
+          {([
+            {
+              key: 'default' as AccessibilityTheme,
+              label: isAr ? 'الافتراضي' : 'Default',
+              desc: isAr ? 'النظام الأخضر القياسي' : 'Standard green theme',
+              swatchLight: '#1a7a4a', swatchDark: '#34C759',
+            },
+            {
+              key: 'high-contrast' as AccessibilityTheme,
+              label: isAr ? 'تباين عالٍ' : 'High Contrast',
+              desc: isAr ? 'تباين أقوى للرؤية الضعيفة' : 'For low vision & visual impairment',
+              swatchLight: '#005C25', swatchDark: '#00FF7F',
+            },
+            {
+              key: 'colorblind' as AccessibilityTheme,
+              label: isAr ? 'عمى الألوان' : 'Color Blind',
+              desc: isAr ? 'لون أزرق مناسب لعمى الألوان' : 'Blue accent, deuteranopia-friendly',
+              swatchLight: '#0066CC', swatchDark: '#409CFF',
+            },
+            {
+              key: 'warm' as AccessibilityTheme,
+              label: isAr ? 'دافئ' : 'Warm',
+              desc: isAr ? 'يُخفف الضوء الأزرق — مريح للعيون' : 'Amber tones, reduced blue light',
+              swatchLight: '#B8860B', swatchDark: '#E8A000',
+            },
+          ] as const).map((theme, idx, arr) => {
+            const isSelected = draftAccessibilityTheme === theme.key;
+            const isLast = idx === arr.length - 1;
+            const swatch = isDark ? theme.swatchDark : theme.swatchLight;
+            return (
+              <Pressable
+                key={theme.key}
+                onPress={() => { Haptics.selectionAsync(); setDraftAccessibilityTheme(theme.key); }}
+                style={[
+                  styles.accessThemeRow,
+                  {
+                    borderBottomColor: C.separator,
+                    borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+                    backgroundColor: isSelected ? C.tint + '12' : 'transparent',
+                    flexDirection: isRtl ? 'row-reverse' : 'row',
+                  },
+                ]}
+              >
+                {/* Colour swatch */}
+                <View style={[styles.accessSwatch, { backgroundColor: swatch }]}>
+                  {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[
+                    styles.accessThemeLabel,
+                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }
+                  ]}>
+                    {theme.label}
+                  </Text>
+                  <Text style={[
+                    styles.accessThemeDesc,
+                    { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }
+                  ]}>
+                    {theme.desc}
+                  </Text>
+                </View>
+                {isSelected && <Ionicons name="checkmark-circle" size={20} color={C.tint} />}
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Hijri date adjustment */}
@@ -711,4 +792,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
     borderRadius: 8, borderWidth: 1,
   },
+  accessThemeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  accessSwatch: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  accessThemeLabel: { fontSize: 13, marginBottom: 2 },
+  accessThemeDesc: { fontSize: 11, lineHeight: 15 },
 });

@@ -11,7 +11,8 @@ A full-featured Islamic app with accurate prayer times, Qibla compass, full Qura
 - **Full Quran** — Complete Arabic Quran text bundled in app, searchable, with bookmarks on specific ayahs, page-by-page reading, table of contents. Transliteration + translation tab (14 languages, API-backed and cached).
 - **Quran Transliteration** — Segmented tab switcher in Quran screen (Mushaf / Transliteration). Per-surah view with romanized Arabic phonetics + translation in the user's selected second language. Data from alquran.cloud API, cached in AsyncStorage.
 - **Hijri Calendar** — View prayer times for any day with Gregorian/Hijri dual calendar.
-- **Settings** — Dark/light/auto theme, language picker (15 languages), location (auto GPS or manual city search), calculation method, Asr method, Maghrib offset, font size.
+- **Settings** — Dark/light/auto theme, language picker (15 languages), location (auto GPS or manual city search), calculation method, Asr method, Maghrib offset, font size. Accessibility colour themes (Default/High Contrast/Color Blind/Warm).
+- **Accessibility Colour Themes** — 4 themes selectable from Settings › Accessibility: Default (green), High Contrast (pure black/white + vivid tint), Color Blind (blue accent, deuteranopia-friendly), Warm (amber/sepia, reduced blue light). Persisted in AppContext; `getColors(isDark, theme)` in `constants/colors.ts` computes the active `ColorPalette` used across all screens.
 
 ## Architecture
 

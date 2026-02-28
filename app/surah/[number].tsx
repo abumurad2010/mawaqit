@@ -37,8 +37,8 @@ export default function SurahScreen() {
 
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { isDark, lang, fontSize, isBookmarked, addBookmark, removeBookmark, setLastReadSurah } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, fontSize, isBookmarked, addBookmark, removeBookmark, setLastReadSurah, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

@@ -38,9 +38,9 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, hijriAdjustment,
+    updateSettings, locationUtcOffset, hijriAdjustment, colors,
   } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

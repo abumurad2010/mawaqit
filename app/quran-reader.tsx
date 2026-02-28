@@ -105,8 +105,8 @@ export default function QuranReaderScreen() {
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, setLastReadPage, updateSettings,
-          addBookmark, removeBookmark, isBookmarked } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+          addBookmark, removeBookmark, isBookmarked, colors } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
 

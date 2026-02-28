@@ -13,6 +13,8 @@ import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications } from '@/lib/notifications';
+import { getColors } from '@/constants/colors';
+import type { AccessibilityTheme, ColorPalette } from '@/constants/colors';
 
 /** @deprecated use PrayerNotifConfig instead */
 type _OldPrayerNotifType = 'none' | 'banner' | 'athan_full' | 'athan_abbreviated';
@@ -46,6 +48,7 @@ interface AppSettings {
   lang: Lang;
   secondLang: SecondLang;
   themeMode: 'auto' | 'light' | 'dark';
+  accessibilityTheme: AccessibilityTheme;
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
   locationMode: 'auto' | 'manual';
@@ -59,6 +62,7 @@ interface AppSettings {
 interface AppContextValue extends AppSettings {
   isDark: boolean;
   isRtl: boolean;
+  colors: ColorPalette;
   resolvedSecondLang: Lang;
   location: LocationData | null;
   setLocation: (loc: LocationData | null) => void;
@@ -81,6 +85,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   lang: 'ar',
   secondLang: 'auto',
   themeMode: 'auto',
+  accessibilityTheme: 'default',
   calcMethod: 'MWL',
   asrMethod: 'standard',
   locationMode: 'auto',
@@ -193,6 +198,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const isRtl = isRtlLang(settings.lang);
 
+  const colors: ColorPalette = getColors(isDark, settings.accessibilityTheme ?? 'default');
+
   useEffect(() => {
     if (!location) return;
     const { prayerNotifications, lang, calcMethod, asrMethod } = settings;
@@ -259,6 +266,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...settings,
       isDark,
       isRtl,
+      colors,
       resolvedSecondLang,
       location,
       setLocation,
@@ -276,7 +284,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastReadSurah,
       setLastReadSurah,
     }),
-    [settings, isDark, isRtl, resolvedSecondLang, location, maghribBase, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
   );
 
   if (!loaded) return null;

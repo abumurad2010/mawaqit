@@ -14,8 +14,8 @@ import type { Bookmark } from '@/contexts/AppContext';
 
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, bookmarks, removeBookmark } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, lang, colors, bookmarks, removeBookmark } = useApp();
+  const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
   const topInset = Platform.OS === 'web' ? 67 : insets.top;

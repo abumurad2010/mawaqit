@@ -14,8 +14,8 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function ThemeToggle() {
-  const { themeMode, isDark, updateSettings } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { themeMode, isDark, colors, updateSettings } = useApp();
+  const C = colors;
 
   const cycle = () => {
     Haptics.selectionAsync();

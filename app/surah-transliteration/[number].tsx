@@ -22,8 +22,8 @@ export default function SurahTransliterationScreen() {
   const { number } = useLocalSearchParams<{ number: string }>();
   const surahNum = Number(number ?? '1');
   const insets = useSafeAreaInsets();
-  const { isDark, resolvedSecondLang } = useApp();
-  const C = isDark ? Colors.dark : Colors.light;
+  const { isDark, resolvedSecondLang, colors } = useApp();
+  const C = colors;
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
