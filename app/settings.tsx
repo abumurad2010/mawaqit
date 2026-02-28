@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import type { PrayerNotifType } from '@/contexts/AppContext';
+import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
@@ -42,7 +42,7 @@ export default function SettingsScreen() {
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
   const [draftHijri, setDraftHijri] = useState(hijriAdjustment ?? 0);
-  const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifType>>(
+  const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifConfig>>(
     prayerNotifications ?? {}
   );
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
@@ -65,7 +65,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const normNotif = (r: Record<string, PrayerNotifType>) =>
+  const normNotif = (r: Record<string, PrayerNotifConfig>) =>
     JSON.stringify(Object.fromEntries(Object.entries(r).sort()));
 
   const hasChanges =
@@ -104,13 +104,30 @@ export default function SettingsScreen() {
     { key: 'qiyam',   ar: 'قيام الليل', en: 'Qiyam' },
   ];
 
-  const setPrayerNotif = async (key: string, type: PrayerNotifType) => {
-    if (type !== 'none' && Platform.OS !== 'web') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') return;
-    }
+  const EMPTY_CFG: PrayerNotifConfig = { banner: false, athan: 'none' };
+
+  const requestNotifPermission = async (): Promise<boolean> => {
+    if (Platform.OS === 'web') return true;
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  };
+
+  const setPrayerBanner = async (key: string, on: boolean) => {
+    if (on && !await requestNotifPermission()) return;
     Haptics.selectionAsync();
-    setDraftNotifications(prev => ({ ...prev, [key]: type }));
+    setDraftNotifications(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? EMPTY_CFG), banner: on },
+    }));
+  };
+
+  const setPrayerAthan = async (key: string, athan: PrayerNotifConfig['athan']) => {
+    if (athan !== 'none' && !await requestNotifPermission()) return;
+    Haptics.selectionAsync();
+    setDraftNotifications(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? EMPTY_CFG), athan },
+    }));
   };
 
 
@@ -473,18 +490,17 @@ export default function SettingsScreen() {
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {NOTIF_PRAYERS.map((prayer, idx) => {
-            const type: PrayerNotifType = draftNotifications[prayer.key] ?? 'none';
-            const isAthan = type === 'athan_full' || type === 'athan_abbreviated';
-            const isBanner = type === 'banner';
-            const isNone = type === 'none';
+            const cfg: PrayerNotifConfig = draftNotifications[prayer.key] ?? EMPTY_CFG;
+            const hasBanner = cfg.banner;
+            const hasAthan = cfg.athan !== 'none';
             const isLast = idx === NOTIF_PRAYERS.length - 1;
 
             return (
               <View key={prayer.key} style={[
                 styles.notifItem,
-                { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 }
+                { borderBottomColor: C.separator, borderBottomWidth: isLast && !hasAthan ? 0 : 1 }
               ]}>
-                {/* Main row: name + 3 type chips */}
+                {/* Main row: prayer name + Banner toggle + Athan toggle */}
                 <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   <Text style={[
                     styles.notifLabel,
@@ -494,44 +510,33 @@ export default function SettingsScreen() {
                   </Text>
                   <View style={styles.notifChips}>
 
-                    {/* None */}
+                    {/* Banner toggle — ring bell */}
                     <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, 'none')}
+                      onPress={() => setPrayerBanner(prayer.key, !hasBanner)}
                       style={[styles.iconChip, {
-                        backgroundColor: isNone ? C.tint : C.backgroundSecond,
-                        borderColor: isNone ? C.tint : C.separator,
-                      }]}
-                    >
-                      <Text style={{ color: isNone ? '#fff' : C.textSecond, fontSize: 13, fontWeight: '600' }}>—</Text>
-                    </Pressable>
-
-                    {/* Banner / bell */}
-                    <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, 'banner')}
-                      style={[styles.iconChip, {
-                        backgroundColor: isBanner ? C.tint : C.backgroundSecond,
-                        borderColor: isBanner ? C.tint : C.separator,
+                        backgroundColor: hasBanner ? C.tint : C.backgroundSecond,
+                        borderColor: hasBanner ? C.tint : C.separator,
                       }]}
                     >
                       <Ionicons
-                        name={isBanner ? 'notifications' : 'notifications-outline'}
+                        name={hasBanner ? 'notifications' : 'notifications-outline'}
                         size={16}
-                        color={isBanner ? '#fff' : C.textSecond}
+                        color={hasBanner ? '#fff' : C.textSecond}
                       />
                     </Pressable>
 
-                    {/* Athan / speaker */}
+                    {/* Athan toggle — speaker */}
                     <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, isAthan ? type : 'athan_full')}
+                      onPress={() => setPrayerAthan(prayer.key, hasAthan ? 'none' : 'full')}
                       style={[styles.iconChip, {
-                        backgroundColor: isAthan ? C.tint : C.backgroundSecond,
-                        borderColor: isAthan ? C.tint : C.separator,
+                        backgroundColor: hasAthan ? C.tint : C.backgroundSecond,
+                        borderColor: hasAthan ? C.tint : C.separator,
                       }]}
                     >
                       <Ionicons
-                        name={isAthan ? 'volume-high' : 'volume-mute'}
+                        name={hasAthan ? 'volume-high' : 'volume-mute'}
                         size={16}
-                        color={isAthan ? '#fff' : C.textSecond}
+                        color={hasAthan ? '#fff' : C.textSecond}
                       />
                     </Pressable>
 
@@ -539,27 +544,32 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Sub-row: Full / Abbreviated + Preview — only when athan active */}
-                {isAthan && (
-                  <View style={[styles.notifSubRow, { borderTopColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                {hasAthan && (
+                  <View style={[styles.notifSubRow, {
+                    borderTopColor: C.separator,
+                    borderBottomColor: C.separator,
+                    borderBottomWidth: isLast ? 0 : 0,
+                    flexDirection: isRtl ? 'row-reverse' : 'row'
+                  }]}>
                     <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
+                      onPress={() => setPrayerAthan(prayer.key, 'full')}
                       style={[styles.subChip, {
-                        backgroundColor: type === 'athan_full' ? C.tint + '20' : 'transparent',
-                        borderColor: type === 'athan_full' ? C.tint : C.separator,
+                        backgroundColor: cfg.athan === 'full' ? C.tint + '20' : 'transparent',
+                        borderColor: cfg.athan === 'full' ? C.tint : C.separator,
                       }]}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: type === 'athan_full' ? C.tint : C.textSecond }}>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'full' ? C.tint : C.textSecond }}>
                         {isAr ? 'كامل' : 'Full'}
                       </Text>
                     </Pressable>
                     <Pressable
-                      onPress={() => setPrayerNotif(prayer.key, 'athan_abbreviated')}
+                      onPress={() => setPrayerAthan(prayer.key, 'abbreviated')}
                       style={[styles.subChip, {
-                        backgroundColor: type === 'athan_abbreviated' ? C.tint + '20' : 'transparent',
-                        borderColor: type === 'athan_abbreviated' ? C.tint : C.separator,
+                        backgroundColor: cfg.athan === 'abbreviated' ? C.tint + '20' : 'transparent',
+                        borderColor: cfg.athan === 'abbreviated' ? C.tint : C.separator,
                       }]}
                     >
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: type === 'athan_abbreviated' ? C.tint : C.textSecond }}>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'abbreviated' ? C.tint : C.textSecond }}>
                         {isAr ? 'مختصر' : 'Abbr.'}
                       </Text>
                     </Pressable>

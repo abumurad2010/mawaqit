@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { calculatePrayerTimes } from './prayer-times';
 import type { CalcMethod, AsrMethod } from './prayer-times';
-import type { LocationData, PrayerNotifType } from '@/contexts/AppContext';
+import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 
@@ -37,7 +37,7 @@ export async function schedulePrayerNotifications(params: {
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
   maghribOffset: number;
-  prayerNotifications: Record<string, PrayerNotifType>;
+  prayerNotifications: Record<string, PrayerNotifConfig>;
   lang: Lang;
   daysAhead?: number;
 }) {
@@ -83,20 +83,26 @@ export async function schedulePrayerNotifications(params: {
       qiyam: getQiyamTime(times.isha, nextTimes.fajr),
     };
 
-    for (const [prayerKey, notifType] of Object.entries(prayerNotifications)) {
-      if (notifType === 'none') continue;
+    for (const [prayerKey, cfg] of Object.entries(prayerNotifications)) {
+      const hasBanner = cfg.banner;
+      const hasAthan = cfg.athan !== 'none';
+
+      if (!hasBanner && !hasAthan) continue;
+
       const prayerTime = prayerTimeMap[prayerKey];
       if (!prayerTime || prayerTime <= now) continue;
 
-      const isAthan = notifType === 'athan_full' || notifType === 'athan_abbreviated';
-      const athanType = notifType === 'athan_abbreviated' ? 'abbreviated' : 'full';
+      // When athan is enabled, it acts as the audio — use null sound so the app
+      // plays the athan file instead. The banner is shown via shouldShowAlert.
+      // When banner-only, use the system default sound.
+      const sound = hasAthan ? null : 'default';
 
       await Notifications.scheduleNotificationAsync({
         content: {
           title: labels[prayerKey] ?? prayerKey,
           body: lang === 'ar' ? 'حان وقت الصلاة' : "It's time to pray",
-          data: { prayerKey, playAthan: isAthan, athanType },
-          sound: notifType === 'banner' ? 'default' : null,
+          data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan },
+          sound,
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
       });

@@ -14,7 +14,16 @@ import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications } from '@/lib/notifications';
 
-export type PrayerNotifType = 'none' | 'banner' | 'athan_full' | 'athan_abbreviated';
+/** @deprecated use PrayerNotifConfig instead */
+type _OldPrayerNotifType = 'none' | 'banner' | 'athan_full' | 'athan_abbreviated';
+
+export interface PrayerNotifConfig {
+  banner: boolean;
+  athan: 'none' | 'full' | 'abbreviated';
+}
+
+/** Backwards-compat export so other files don't need immediate updates */
+export type PrayerNotifType = PrayerNotifConfig;
 export type SecondLang = Lang | 'auto';
 
 export interface Bookmark {
@@ -115,16 +124,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (parsed.calcMethod && !VALID_CALC_METHODS.includes(parsed.calcMethod)) {
             parsed.calcMethod = 'MWL';
           }
-          // Migrate old notification fields → prayerNotifications
-          if (!parsed.prayerNotifications && parsed.notificationPrayers) {
-            const notifs: Record<string, PrayerNotifType> = {};
+          // Migrate old string-format notifications → new {banner, athan} object format
+          if (parsed.prayerNotifications) {
+            const migrated: Record<string, PrayerNotifConfig> = {};
+            for (const [k, v] of Object.entries(parsed.prayerNotifications)) {
+              if (typeof v === 'string') {
+                // Old string format migration
+                const old = v as string;
+                if (old === 'banner')            migrated[k] = { banner: true,  athan: 'none' };
+                else if (old === 'athan_full')   migrated[k] = { banner: false, athan: 'full' };
+                else if (old === 'athan_abbreviated') migrated[k] = { banner: false, athan: 'abbreviated' };
+                else                             migrated[k] = { banner: false, athan: 'none' };
+              } else if (typeof v === 'object' && v !== null) {
+                migrated[k] = v as PrayerNotifConfig;
+              }
+            }
+            parsed.prayerNotifications = migrated;
+          } else if (parsed.notificationPrayers) {
+            const notifs: Record<string, PrayerNotifConfig> = {};
             const oldPrayers: string[] = parsed.notificationPrayers || [];
             const oldAthan: boolean = parsed.notificationAthan || false;
             const oldAthanType: string = parsed.athanType || 'full';
             for (const p of oldPrayers) {
               notifs[p] = oldAthan
-                ? (oldAthanType === 'abbreviated' ? 'athan_abbreviated' : 'athan_full')
-                : 'banner';
+                ? { banner: false, athan: oldAthanType === 'abbreviated' ? 'abbreviated' : 'full' }
+                : { banner: true, athan: 'none' };
             }
             parsed.prayerNotifications = notifs;
           }
@@ -172,7 +196,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!location) return;
     const { prayerNotifications, lang, calcMethod, asrMethod } = settings;
-    const hasAny = Object.values(prayerNotifications).some(v => v !== 'none');
+    const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
     if (!hasAny) {
       cancelAllPrayerNotifications();
       return;
