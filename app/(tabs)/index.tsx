@@ -213,11 +213,18 @@ export default function PrayerTimesScreen() {
   const isNext = (key: keyof PrayerTimesType) => nextPrayer?.name === key;
   const isPassed = (key: keyof PrayerTimesType) => times ? times[key] < now : false;
 
-  const gregorianStr = now.toLocaleDateString(
+  // Shift `now` to the location's timezone when a manual UTC offset is set
+  const locationNow = useMemo(() => {
+    if (locationUtcOffset === null) return now;
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    return new Date(utcMs + locationUtcOffset * 3600000);
+  }, [now, locationUtcOffset]);
+
+  const gregorianStr = locationNow.toLocaleDateString(
     isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
   );
-  const hijri = gregorianToHijri(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const hijri = gregorianToHijri(locationNow.getFullYear(), locationNow.getMonth() + 1, locationNow.getDate());
   const hijriStr = formatHijriDate(hijri, lang);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
