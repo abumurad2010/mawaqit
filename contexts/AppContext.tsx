@@ -36,12 +36,14 @@ interface AppSettings {
   locationMode: 'auto' | 'manual';
   manualLocation: LocationData | null;
   fontSize: 'small' | 'medium' | 'large';
+  maghribAdjustment: number;
 }
 
 interface AppContextValue extends AppSettings {
   isDark: boolean;
   location: LocationData | null;
   setLocation: (loc: LocationData | null) => void;
+  maghribBase: number;
   maghribOffset: number;
   countryCode: string | null;
   /** UTC offset in whole hours for manual location (Math.round(lng/15)), or null for auto */
@@ -65,6 +67,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   locationMode: 'auto',
   manualLocation: null,
   fontSize: 'medium',
+  maghribAdjustment: 0,
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -103,7 +106,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const maghribOffset = getMaghribOffset(countryCode);
+  const maghribBase = getMaghribOffset(countryCode);
+  const maghribOffset = maghribBase + (settings.maghribAdjustment ?? 0);
 
   const locationUtcOffset: number | null =
     settings.locationMode === 'manual' && settings.manualLocation
@@ -166,6 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isDark,
       location,
       setLocation,
+      maghribBase,
       maghribOffset,
       countryCode,
       locationUtcOffset,
@@ -179,7 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastReadSurah,
       setLastReadSurah,
     }),
-    [settings, isDark, location, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, location, maghribBase, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
   );
 
   if (!loaded) return null;

@@ -18,8 +18,8 @@ const FONT_SIZES = ['small', 'medium', 'large'] as const;
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, calcMethod, asrMethod, maghribOffset, countryCode,
-    locationMode, themeMode, fontSize, updateSettings,
+    isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
+    maghribAdjustment, locationMode, themeMode, fontSize, updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
@@ -35,6 +35,7 @@ export default function SettingsScreen() {
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
   const [draftLocationMode, setDraftLocationMode] = useState(locationMode);
+  const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
 
   const hasChanges =
     draftLang !== lang ||
@@ -42,7 +43,8 @@ export default function SettingsScreen() {
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
-    draftLocationMode !== locationMode;
+    draftLocationMode !== locationMode ||
+    draftAdjustment !== (maghribAdjustment ?? 0);
 
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -53,6 +55,7 @@ export default function SettingsScreen() {
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
       locationMode: draftLocationMode,
+      maghribAdjustment: draftAdjustment,
     });
     router.back();
   };
@@ -210,19 +213,61 @@ export default function SettingsScreen() {
             }
           />
 
-          {/* Maghrib offset — auto */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }]}>
+          {/* Maghrib offset — base + stepper */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }]}>
             <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
               {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
             </Text>
+
+            {/* Recommended base */}
             <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55' }]}>
-              <Ionicons name="location-outline" size={14} color={C.tint} />
+              <Ionicons name="location-outline" size={13} color={C.tint} />
               <Text style={[styles.autoOffsetText, { color: C.tint }]}>
                 {isAr
-                  ? `${maghribOffset} ${maghribOffset === 1 ? 'دقيقة' : 'دقائق'} — تلقائي بناءً على موقعك${countryCode ? ` (${countryCode})` : ''}`
-                  : `${maghribOffset} min — auto-set for your location${countryCode ? ` (${countryCode})` : ''}`}
+                  ? `موصى به: ${maghribBase} ${maghribBase === 1 ? 'دقيقة' : 'دقائق'}${countryCode ? ` (${countryCode})` : ''}`
+                  : `Recommended: ${maghribBase} min${countryCode ? ` (${countryCode})` : ''}`}
               </Text>
             </View>
+
+            {/* Stepper row */}
+            <View style={styles.stepperRow}>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {isAr ? 'تعديل:' : 'Adjustment:'}
+              </Text>
+              <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(v => Math.max(v - 1, -maghribBase)); }}
+                  style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Ionicons name="remove" size={18} color={C.tint} />
+                </Pressable>
+                <Text style={[styles.stepperValue, { color: C.text }]}>
+                  {draftAdjustment > 0 ? `+${draftAdjustment}` : draftAdjustment}
+                </Text>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(v => Math.min(v + 1, 30)); }}
+                  style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Ionicons name="add" size={18} color={C.tint} />
+                </Pressable>
+              </View>
+              <View style={[styles.totalBadge, { backgroundColor: C.tint }]}>
+                <Text style={styles.totalBadgeText}>
+                  {isAr
+                    ? `= ${maghribBase + draftAdjustment} د`
+                    : `= ${maghribBase + draftAdjustment} min`}
+                </Text>
+              </View>
+            </View>
+
+            {draftAdjustment !== 0 && (
+              <Pressable onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(0); }}>
+                <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600' }}>
+                  {isAr ? 'إعادة ضبط' : 'Reset to recommended'}
+                </Text>
+              </Pressable>
+            )}
+
             <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
               {isAr
                 ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
@@ -329,6 +374,25 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1,
   },
   autoOffsetText: { fontSize: 13, fontWeight: '600' },
+  stepperRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+  },
+  stepperLabel: { fontSize: 13, fontWeight: '500' },
+  stepperControls: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 12, borderWidth: 1, overflow: 'hidden',
+  },
+  stepperBtn: {
+    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
+  },
+  stepperValue: {
+    minWidth: 36, textAlign: 'center', fontSize: 15, fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  totalBadge: {
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
+  },
+  totalBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   saveFooterBtn: {
     marginTop: 24, borderRadius: 14,
     paddingVertical: 15, alignItems: 'center',
