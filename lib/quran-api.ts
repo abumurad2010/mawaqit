@@ -261,6 +261,8 @@ export function getQuranPage(pageNum: number): PageAyah[] {
   return PAGE_INDEX[pageNum - 1];
 }
 
+export const BISMILLAH_TEXT: string = (QURAN_DATA['1']?.[0]?.t) ?? 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+
 /** Returns the Quran page number for a given surah+ayah */
 export function getAyahPage(surahNum: number, ayahNum: number): number {
   const raw = QURAN_DATA[String(surahNum)];

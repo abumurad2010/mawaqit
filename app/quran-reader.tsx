@@ -7,11 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQuranPage, SURAH_META, SURAH_START_PAGES, type PageAyah } from '@/lib/quran-api';
+import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, type PageAyah } from '@/lib/quran-api';
 
 const TOTAL_PAGES = 604;
 const SWIPE_THRESHOLD = 55;
@@ -20,44 +19,83 @@ function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 }
 
-function MosqueArch({ color }: { color: string }) {
+function stripBismillah(text: string): string {
+  return text.slice(BISMILLAH_TEXT.length).trimStart();
+}
+
+function SurahBanner({ surahNum, color, textColor, mutedColor }: {
+  surahNum: number; color: string; textColor: string; mutedColor: string;
+}) {
+  const meta = SURAH_META[surahNum - 1];
+  if (!meta) return null;
+
+  const ayahCount = meta.ayahs;
+  const typeLabel = meta.type === 'Meccan' ? 'مكية' : 'مدنية';
+
   return (
-    <View style={arch.container}>
-      <View style={arch.row}>
-        <View style={[arch.minaretSm, { backgroundColor: color }]} />
-        <View style={{ width: 4 }} />
-        <View style={[arch.minaretMd, { backgroundColor: color }]} />
-        <View style={{ width: 3 }} />
-        <View style={{ alignItems: 'center' }}>
-          <View style={[arch.crescent, { borderColor: color }]} />
-          <View style={[arch.dome, { backgroundColor: color }]} />
-          <View style={[arch.domeBase, { backgroundColor: color }]} />
+    <View style={banner.wrapper}>
+      <View style={[banner.outer, { borderColor: color }]}>
+        <View style={[banner.inner, { borderColor: color }]}>
+          <View style={banner.sideOrn}>
+            <View style={[banner.orn, { backgroundColor: color }]} />
+            <View style={[banner.ornLine, { backgroundColor: color }]} />
+            <View style={[banner.orn, { backgroundColor: color }]} />
+          </View>
+
+          <View style={banner.center}>
+            <Text style={[banner.surahWord, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
+              سُورَةُ
+            </Text>
+            <Text style={[banner.surahName, { color: textColor, fontFamily: 'Amiri_700Bold' }]}>
+              {meta.arabic}
+            </Text>
+            <View style={banner.metaRow}>
+              <Text style={[banner.meta, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
+                {typeLabel}
+              </Text>
+              <View style={[banner.metaDot, { backgroundColor: mutedColor }]} />
+              <Text style={[banner.meta, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
+                {toArabicIndic(ayahCount)} آية
+              </Text>
+            </View>
+          </View>
+
+          <View style={banner.sideOrn}>
+            <View style={[banner.orn, { backgroundColor: color }]} />
+            <View style={[banner.ornLine, { backgroundColor: color }]} />
+            <View style={[banner.orn, { backgroundColor: color }]} />
+          </View>
         </View>
-        <View style={{ width: 3 }} />
-        <View style={[arch.minaretMd, { backgroundColor: color }]} />
-        <View style={{ width: 4 }} />
-        <View style={[arch.minaretSm, { backgroundColor: color }]} />
       </View>
-      <View style={[arch.baseLine, { backgroundColor: color }]} />
     </View>
   );
 }
 
-const arch = StyleSheet.create({
-  container: { alignItems: 'center', marginVertical: 4, paddingHorizontal: 20 },
-  row: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 0 },
-  minaretSm: { width: 4, height: 18, borderTopLeftRadius: 2, borderTopRightRadius: 2 },
-  minaretMd: { width: 5, height: 24, borderTopLeftRadius: 2, borderTopRightRadius: 2 },
-  crescent: {
-    width: 10, height: 10, borderRadius: 5,
-    borderWidth: 2, marginBottom: 1,
+const banner = StyleSheet.create({
+  wrapper: { marginTop: 8, marginBottom: 6, marginHorizontal: 4 },
+  outer: {
+    borderWidth: 1.5,
+    borderRadius: 3,
+    padding: 3,
   },
-  dome: {
-    width: 36, height: 18,
-    borderTopLeftRadius: 18, borderTopRightRadius: 18,
+  inner: {
+    borderWidth: 0.75,
+    borderRadius: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  domeBase: { width: 40, height: 14 },
-  baseLine: { height: 1, width: '90%', opacity: 0.35, marginTop: 2 },
+  center: { alignItems: 'center', flex: 1 },
+  surahWord: { fontSize: 12, letterSpacing: 1, marginBottom: 2 },
+  surahName: { fontSize: 24, letterSpacing: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  meta: { fontSize: 11 },
+  metaDot: { width: 3, height: 3, borderRadius: 1.5, opacity: 0.5 },
+  sideOrn: { alignItems: 'center', justifyContent: 'center', gap: 3, width: 20 },
+  orn: { width: 5, height: 5, borderRadius: 2.5 },
+  ornLine: { width: 1, height: 20 },
 });
 
 export default function QuranReaderScreen() {
@@ -127,46 +165,45 @@ export default function QuranReaderScreen() {
 
   const juzNum = pageAyahs[0]?.juz ?? 1;
 
-  return (
-    <View style={[styles.root, { backgroundColor: isDark ? '#0a1a0f' : '#f5f0e6' }]}>
-      <LinearGradient
-        colors={isDark ? ['#0a2010', '#070e08'] : ['#f5f0e6', '#ede8d5']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      />
+  const firstSurahOnPage = SURAH_META[pageAyahs[0]?.surahNum - 1];
+  const surahLabel = firstSurahOnPage
+    ? (isAr ? firstSurahOnPage.arabic : firstSurahOnPage.transliteration)
+    : '';
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16 }]}>
+  const bgColor = isDark ? '#0D0D0D' : '#FAF6EE';
+
+  return (
+    <View style={[styles.root, { backgroundColor: bgColor }]}>
+
+      {/* ── Header ── */}
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator }]}>
         <Pressable
           onPress={() => router.back()}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
         >
           <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Text style={[styles.appName, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
-            {isAr ? 'مواقيت' : 'Mawaqit'}
+          <Text style={[styles.headerSurah, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+            {surahLabel}
           </Text>
-          <Text style={[styles.pageLabel, { color: C.textMuted }]}>
+          <Text style={[styles.headerJuz, { color: C.textMuted }]}>
             {isAr
-              ? `صفحة ${toArabicIndic(pageNum)} · جزء ${toArabicIndic(juzNum)}`
-              : `Page ${pageNum} · Juz ${juzNum}`}
+              ? `جزء ${toArabicIndic(juzNum)} · صفحة ${toArabicIndic(pageNum)}`
+              : `Juz ${juzNum} · Page ${pageNum}`}
           </Text>
         </View>
 
         <Pressable
           onPress={() => router.push('/bookmarks')}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
         >
-          <Ionicons name="bookmark-outline" size={18} color={C.tint} />
+          <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
         </Pressable>
       </View>
 
-      {/* Mosque arch decoration */}
-      <MosqueArch color={C.tint} />
-
-      {/* Page content with swipe */}
+      {/* ── Page content with swipe ── */}
       <Animated.View
         style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]}
         {...panResponder.panHandlers}
@@ -185,31 +222,34 @@ export default function QuranReaderScreen() {
           ) : (
             groups.map((group, gi) => {
               const meta = SURAH_META[group.surahNum - 1];
+              const hasBismillah = meta?.hasBismillah ?? false;
+              const showBismillah = group.showHeader && hasBismillah && group.surahNum !== 1;
+
               return (
                 <View key={`g-${group.surahNum}-${gi}`}>
-                  {/* Surah header — shown when surah starts on this page */}
+
+                  {/* ── Surah banner ── */}
                   {group.showHeader && (
-                    <View style={[styles.surahHeader, {
-                      borderColor: C.tint,
-                      backgroundColor: isDark ? 'rgba(26,122,74,0.15)' : 'rgba(26,122,74,0.09)',
-                    }]}>
-                      <Text style={[styles.surahHeaderBismi, { color: C.tint }]}>
-                        {'﴿ '}
-                        {meta?.arabic ?? ''}
-                        {' ﴾'}
-                      </Text>
-                      <Text style={[styles.surahHeaderMeta, { color: C.textMuted }]}>
-                        {meta?.type === 'Meccan'
-                          ? (isAr ? 'مكية' : 'Meccan')
-                          : (isAr ? 'مدنية' : 'Medinan')}
-                        {'  ·  '}
-                        {isAr ? toArabicIndic(meta?.ayahs ?? 0) : (meta?.ayahs ?? 0)}
-                        {' '}{isAr ? 'آية' : 'verses'}
-                      </Text>
-                    </View>
+                    <SurahBanner
+                      surahNum={group.surahNum}
+                      color={C.tint}
+                      textColor={C.text}
+                      mutedColor={C.textMuted}
+                    />
                   )}
 
-                  {/* Ayah text — flowing Arabic */}
+                  {/* ── Bismillah line (separate from verse 1) ── */}
+                  {showBismillah && (
+                    <Text style={[styles.bismillah, {
+                      color: C.text,
+                      fontSize: arabicFontSize * 1.05,
+                      lineHeight: arabicFontSize * 2.3,
+                    }]}>
+                      {BISMILLAH_TEXT}
+                    </Text>
+                  )}
+
+                  {/* ── Flowing verse text ── */}
                   <Text
                     style={[styles.ayahText, {
                       color: C.text,
@@ -217,61 +257,69 @@ export default function QuranReaderScreen() {
                       lineHeight: arabicFontSize * 2.1,
                     }]}
                   >
-                    {group.ayahs.map(ayah => (
-                      <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
-                        {ayah.text}
-                        <Text style={{ color: C.tint, fontSize: arabicFontSize * 0.72 }}>
-                          {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
-                        </Text>
-                      </React.Fragment>
-                    ))}
+                    {group.ayahs.map(ayah => {
+                      let text = ayah.text;
+                      if (ayah.ayahNum === 1 && showBismillah) {
+                        text = stripBismillah(text);
+                      }
+                      return (
+                        <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
+                          {text}
+                          <Text style={{ color: C.tint, fontSize: arabicFontSize * 0.7 }}>
+                            {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
+                          </Text>
+                        </React.Fragment>
+                      );
+                    })}
                   </Text>
                 </View>
               );
             })
           )}
+
+          {/* Page number at bottom */}
+          <View style={styles.pageNumRow}>
+            <View style={[styles.pageNumLine, { backgroundColor: C.separator }]} />
+            <Text style={[styles.pageNum, { color: C.textMuted, fontFamily: 'Amiri_700Bold' }]}>
+              {toArabicIndic(pageNum)}
+            </Text>
+            <View style={[styles.pageNumLine, { backgroundColor: C.separator }]} />
+          </View>
         </ScrollView>
       </Animated.View>
 
-      {/* Bottom navigation */}
+      {/* ── Bottom navigation ── */}
       <View style={[styles.bottomNav, {
         paddingBottom: bottomInset + 14,
         borderTopColor: C.separator,
-        backgroundColor: isDark ? 'rgba(10,26,15,0.95)' : 'rgba(245,240,230,0.95)',
+        backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
       }]}>
         <Pressable
           onPress={() => navigate('prev')}
           disabled={pageNum <= 1}
           style={({ pressed }) => [
             styles.navBtn,
-            { backgroundColor: C.surface, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
+            { backgroundColor: C.backgroundCard, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
           ]}
         >
-          <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={18} color={C.tint} />
-          <Text style={[styles.navBtnText, { color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={16} color={C.tint} />
+          <Text style={[styles.navBtnText, { color: C.tint }]}>
             {isAr ? 'السابقة' : 'Prev'}
           </Text>
         </Pressable>
-
-        <Text style={[styles.pageCenter, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-          {isAr ? toArabicIndic(pageNum) : pageNum}
-          <Text style={{ fontSize: 14, color: C.textMuted }}>
-            {isAr ? `/${toArabicIndic(TOTAL_PAGES)}` : `/${TOTAL_PAGES}`}
-          </Text>
-        </Text>
 
         <Pressable
           onPress={() => navigate('next')}
           disabled={pageNum >= TOTAL_PAGES}
           style={({ pressed }) => [
             styles.navBtn,
-            { backgroundColor: C.surface, opacity: pageNum >= TOTAL_PAGES ? 0.3 : pressed ? 0.7 : 1 },
+            { backgroundColor: C.backgroundCard, opacity: pageNum >= TOTAL_PAGES ? 0.3 : pressed ? 0.7 : 1 },
           ]}
         >
-          <Text style={[styles.navBtnText, { color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Text style={[styles.navBtnText, { color: C.tint }]}>
             {isAr ? 'التالية' : 'Next'}
           </Text>
-          <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={18} color={C.tint} />
+          <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={16} color={C.tint} />
         </Pressable>
       </View>
     </View>
@@ -280,43 +328,48 @@ export default function QuranReaderScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingBottom: 6,
+    paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerCenter: { alignItems: 'center', flex: 1 },
-  appName: { fontSize: 17, letterSpacing: 0.5 },
-  pageLabel: { fontSize: 11, marginTop: 2 },
-  iconBtn: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center',
+  headerSurah: { fontSize: 17, letterSpacing: 0.5 },
+  headerJuz: { fontSize: 11, marginTop: 1 },
+  iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+
+  pageContent: { paddingHorizontal: 16, paddingTop: 4 },
+
+  bismillah: {
+    fontFamily: 'Amiri_400Regular',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 4,
+    writingDirection: 'rtl',
   },
-  pageContent: { paddingHorizontal: 18, paddingTop: 6 },
-  surahHeader: {
-    alignItems: 'center', borderWidth: 1.5, borderRadius: 14,
-    paddingVertical: 10, paddingHorizontal: 20,
-    marginBottom: 12, marginTop: 6,
-  },
-  surahHeaderBismi: {
-    fontSize: 22, fontFamily: 'Amiri_700Bold', textAlign: 'center',
-    letterSpacing: 1,
-  },
-  surahHeaderMeta: { fontSize: 12, marginTop: 4, fontFamily: 'Amiri_400Regular' },
+
   ayahText: {
     fontFamily: 'Amiri_400Regular',
     textAlign: 'justify',
     writingDirection: 'rtl',
-    marginBottom: 8,
+    marginBottom: 10,
   },
+
+  pageNumRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginTop: 16, marginBottom: 4, paddingHorizontal: 8,
+  },
+  pageNumLine: { flex: 1, height: StyleSheet.hairlineWidth },
+  pageNum: { fontSize: 16 },
+
   bottomNav: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 12,
-    borderTopWidth: 0.5,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   navBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
   },
   navBtnText: { fontSize: 13, fontWeight: '600' },
-  pageCenter: { fontSize: 24 },
 });
