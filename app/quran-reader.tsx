@@ -104,7 +104,7 @@ export default function QuranReaderScreen() {
 
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { isDark, lang, fontSize, setLastReadPage } = useApp();
+  const { isDark, lang, fontSize, setLastReadPage, updateSettings } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -113,6 +113,7 @@ export default function QuranReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [pageNum, setPageNum] = useState(initialPage);
+  const [showFontPanel, setShowFontPanel] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -176,7 +177,7 @@ export default function QuranReaderScreen() {
     <View style={[styles.root, { backgroundColor: bgColor }]}>
 
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator }]}>
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: showFontPanel ? 'transparent' : C.separator }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
@@ -195,13 +196,58 @@ export default function QuranReaderScreen() {
           </Text>
         </View>
 
-        <Pressable
-          onPress={() => router.push('/bookmarks')}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
-        </Pressable>
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowFontPanel(v => !v); }}
+            style={({ pressed }) => [styles.iconBtn, {
+              backgroundColor: showFontPanel ? C.tint : C.backgroundCard,
+              opacity: pressed ? 0.7 : 1,
+            }]}
+          >
+            <Text style={[styles.aaBtn, { color: showFontPanel ? '#fff' : C.textSecond }]}>Aa</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/bookmarks')}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
+          </Pressable>
+        </View>
       </View>
+
+      {/* ── Font size panel ── */}
+      {showFontPanel && (
+        <View style={[styles.fontPanel, { backgroundColor: C.backgroundCard, borderBottomColor: C.separator }]}>
+          {(['small', 'medium', 'large'] as const).map((size, i) => {
+            const textSizes = [15, 20, 26];
+            const sizeLabels = isAr
+              ? ['صغير', 'متوسط', 'كبير']
+              : ['Small', 'Medium', 'Large'];
+            const selected = fontSize === size;
+            return (
+              <Pressable
+                key={size}
+                testID={`font-size-${size}`}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  updateSettings({ fontSize: size });
+                }}
+                style={[
+                  styles.fontOption,
+                  selected && { backgroundColor: C.tintLight, borderRadius: 10 },
+                ]}
+              >
+                <Text style={[styles.fontOptionLetter, { color: selected ? C.tint : C.textSecond, fontSize: textSizes[i] }]}>
+                  أ
+                </Text>
+                <Text style={[styles.fontOptionLabel, { color: selected ? C.tint : C.textMuted }]}>
+                  {sizeLabels[i]}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       {/* ── Page content with swipe ── */}
       <Animated.View
@@ -334,9 +380,23 @@ const styles = StyleSheet.create({
     paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerCenter: { alignItems: 'center', flex: 1 },
+  headerRight: { flexDirection: 'row', gap: 6 },
   headerSurah: { fontSize: 17, letterSpacing: 0.5 },
   headerJuz: { fontSize: 11, marginTop: 1 },
   iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  aaBtn: { fontSize: 13, fontWeight: '700', letterSpacing: -0.5 },
+
+  fontPanel: {
+    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  fontOption: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 8, gap: 4,
+  },
+  fontOptionLetter: { fontFamily: 'Amiri_700Bold' },
+  fontOptionLabel: { fontSize: 10, fontWeight: '600' },
 
   pageContent: { paddingHorizontal: 16, paddingTop: 4 },
 
