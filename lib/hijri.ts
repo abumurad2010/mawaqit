@@ -68,12 +68,12 @@ export function gregorianToHijri(year: number, month: number, day: number): Hijr
   return hijriFromJdn(jdnFromGregorian(year, month, day));
 }
 
-export function hijriMonthName(month: number, lang: 'ar' | 'en'): string {
+export function hijriMonthName(month: number, lang: string): string {
   const idx = Math.max(0, Math.min(11, month - 1));
   return lang === 'ar' ? HIJRI_MONTHS_AR[idx] : HIJRI_MONTHS_EN[idx];
 }
 
-export function formatHijriDate(h: HijriDate, lang: 'ar' | 'en'): string {
+export function formatHijriDate(h: HijriDate, lang: string): string {
   const monthName = hijriMonthName(h.month, lang);
   if (lang === 'ar') {
     return `${h.day} ${monthName} ${h.year} هـ`;

@@ -10,7 +10,7 @@ A full-featured Islamic app with accurate prayer times, Qibla compass, full Qura
 - **Qibla Compass** — Live compass using device magnetometer + GPS to point to Mecca (21.4225°N, 39.8262°E). Shows distance to Mecca.
 - **Full Quran** — Complete Arabic Quran text bundled in app, searchable, with bookmarks on specific ayahs, page-by-page reading, table of contents.
 - **Hijri Calendar** — View prayer times for any day with Gregorian/Hijri dual calendar.
-- **Settings** — Dark/light/auto theme, Arabic/English language, location (auto GPS or manual city search), calculation method, Asr method, Maghrib offset, font size.
+- **Settings** — Dark/light/auto theme, language picker (15 languages), location (auto GPS or manual city search), calculation method, Asr method, Maghrib offset, font size.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ A full-featured Islamic app with accurate prayer times, Qibla compass, full Qura
 - `lib/hijri.ts` — Gregorian to Hijri calendar conversion
 - `lib/quran-api.ts` — Bundled Quran text (Uthmani script from quran.com)
 - `contexts/AppContext.tsx` — Global settings + bookmarks state
-- `constants/i18n.ts` — Arabic/English translations
+- `constants/i18n.ts` — 15-language translation system (AR, EN, FR, ES, RU, ZH, TR, UR, ID, BN, FA, MS, PT, SW, HA) with auto-detection from GPS country code
 - `constants/colors.ts` — Green-themed color palette (light + dark)
 
 ## Packages

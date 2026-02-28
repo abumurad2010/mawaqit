@@ -3,15 +3,25 @@ import { Pressable, Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/contexts/AppContext';
 import Colors from '@/constants/colors';
+import { LANG_META } from '@/constants/i18n';
 
 export default function LangToggle() {
-  const { lang, isDark, updateSettings } = useApp();
+  const { lang, resolvedSecondLang, isDark, updateSettings } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
 
   const toggle = () => {
     Haptics.selectionAsync();
-    updateSettings({ lang: lang === 'ar' ? 'en' : 'ar' });
+    if (lang === 'ar') {
+      updateSettings({ lang: resolvedSecondLang });
+    } else {
+      updateSettings({ lang: 'ar' });
+    }
   };
+
+  const labelToShow =
+    lang === 'ar'
+      ? LANG_META[resolvedSecondLang].code
+      : 'ع';
 
   return (
     <Pressable
@@ -19,7 +29,7 @@ export default function LangToggle() {
       style={({ pressed }) => [styles.btn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
     >
       <Text style={[styles.label, { color: C.tint }]}>
-        {lang === 'ar' ? 'EN' : 'ع'}
+        {labelToShow}
       </Text>
     </Pressable>
   );
@@ -27,5 +37,5 @@ export default function LangToggle() {
 
 const styles = StyleSheet.create({
   btn:   { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 14, fontWeight: '700' },
+  label: { fontSize: 13, fontWeight: '700' },
 });

@@ -3,17 +3,16 @@ import { Platform } from 'react-native';
 import { calculatePrayerTimes } from './prayer-times';
 import type { CalcMethod, AsrMethod } from './prayer-times';
 import type { LocationData, PrayerNotifType } from '@/contexts/AppContext';
+import { t } from '@/constants/i18n';
+import type { Lang } from '@/constants/i18n';
 
-export const PRAYER_LABELS: Record<'ar' | 'en', Record<string, string>> = {
-  ar: {
-    fajr: 'الفجر', dhuha: 'الضحى', dhuhr: 'الظهر',
-    asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء', qiyam: 'قيام الليل',
-  },
-  en: {
-    fajr: 'Fajr', dhuha: 'Dhuha', dhuhr: 'Dhuhr',
-    asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha', qiyam: 'Qiyam',
-  },
-};
+function getPrayerLabels(lang: Lang): Record<string, string> {
+  const tr = t(lang);
+  return {
+    fajr: tr.fajr, dhuha: tr.dhuha, dhuhr: tr.dhuhr,
+    asr: tr.asr, maghrib: tr.maghrib, isha: tr.isha, qiyam: tr.qiyam,
+  };
+}
 
 function getDhuhaTime(sunrise: Date): Date {
   return new Date(sunrise.getTime() + 20 * 60 * 1000);
@@ -39,14 +38,14 @@ export async function schedulePrayerNotifications(params: {
   asrMethod: AsrMethod;
   maghribOffset: number;
   prayerNotifications: Record<string, PrayerNotifType>;
-  lang: 'ar' | 'en';
+  lang: Lang;
   daysAhead?: number;
 }) {
   await cancelAllPrayerNotifications();
   if (Platform.OS === 'web') return;
 
   const { prayerNotifications, lang } = params;
-  const labels = PRAYER_LABELS[lang];
+  const labels = getPrayerLabels(lang);
   const daysAhead = params.daysAhead ?? 7;
   const now = new Date();
 

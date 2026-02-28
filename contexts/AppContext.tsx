@@ -10,10 +10,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import type { Lang } from '@/constants/i18n';
+import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications } from '@/lib/notifications';
 
 export type PrayerNotifType = 'none' | 'banner' | 'athan_full' | 'athan_abbreviated';
+export type SecondLang = Lang | 'auto';
 
 export interface Bookmark {
   surahNumber: number;
@@ -33,6 +35,7 @@ export interface LocationData {
 
 interface AppSettings {
   lang: Lang;
+  secondLang: SecondLang;
   themeMode: 'auto' | 'light' | 'dark';
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
@@ -46,12 +49,13 @@ interface AppSettings {
 
 interface AppContextValue extends AppSettings {
   isDark: boolean;
+  isRtl: boolean;
+  resolvedSecondLang: Lang;
   location: LocationData | null;
   setLocation: (loc: LocationData | null) => void;
   maghribBase: number;
   maghribOffset: number;
   countryCode: string | null;
-  /** UTC offset in whole hours for manual location (Math.round(lng/15)), or null for auto */
   locationUtcOffset: number | null;
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
@@ -66,6 +70,7 @@ interface AppContextValue extends AppSettings {
 
 const DEFAULT_SETTINGS: AppSettings = {
   lang: 'ar',
+  secondLang: 'auto',
   themeMode: 'auto',
   calcMethod: 'MWL',
   asrMethod: 'standard',
@@ -76,6 +81,11 @@ const DEFAULT_SETTINGS: AppSettings = {
   hijriAdjustment: 0,
   prayerNotifications: {},
 };
+
+const VALID_CALC_METHODS = [
+  'MWL','ISNA','Egypt','MakkahUmmQura','Karachi','Jordan',
+  'Kuwait','Qatar','Algeria','Morocco','Singapore','Turkey','France','Russia',
+];
 
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -102,7 +112,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (s) {
           const parsed = JSON.parse(s);
           delete parsed.maghribOffset;
-          const VALID_CALC_METHODS = ['MWL','ISNA','Egypt','MakkahUmmQura','Karachi','Jordan','Kuwait','Qatar','Algeria','Morocco','Singapore','Turkey','France','Russia'];
           if (parsed.calcMethod && !VALID_CALC_METHODS.includes(parsed.calcMethod)) {
             parsed.calcMethod = 'MWL';
           }
@@ -123,6 +132,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           delete parsed.notificationBanner;
           delete parsed.notificationAthan;
           delete parsed.athanType;
+          // Ensure secondLang exists (migration for existing users)
+          if (!parsed.secondLang) {
+            parsed.secondLang = 'auto';
+          }
           setSettings({ ...DEFAULT_SETTINGS, ...parsed });
         }
         if (b) setBookmarks(JSON.parse(b));
@@ -148,6 +161,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       : settings.themeMode === 'light'
       ? false
       : systemScheme === 'dark';
+
+  const resolvedSecondLang: Lang =
+    settings.secondLang === 'auto'
+      ? detectSecondLang(countryCode)
+      : settings.secondLang;
+
+  const isRtl = isRtlLang(settings.lang);
 
   useEffect(() => {
     if (!location) return;
@@ -214,6 +234,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       ...settings,
       isDark,
+      isRtl,
+      resolvedSecondLang,
       location,
       setLocation,
       maghribBase,
@@ -230,7 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastReadSurah,
       setLastReadSurah,
     }),
-    [settings, isDark, location, maghribBase, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, isRtl, resolvedSecondLang, location, maghribBase, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
   );
 
   if (!loaded) return null;

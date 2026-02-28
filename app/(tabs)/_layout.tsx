@@ -7,6 +7,7 @@ import React from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
+import { t } from '@/constants/i18n';
 
 function NativeTabLayout() {
   return (
@@ -34,13 +35,7 @@ function NativeTabLayout() {
 function ClassicTabLayout() {
   const { isDark, lang } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
-
-  const labels: Record<string, string> = {
-    index:    lang === 'ar' ? 'الصلاة'    : 'Prayers',
-    calendar: lang === 'ar' ? 'التقويم'   : 'Calendar',
-    qibla:    lang === 'ar' ? 'القبلة'    : 'Qibla',
-    quran:    lang === 'ar' ? 'القرآن'    : 'Quran',
-  };
+  const tr = t(lang);
 
   return (
     <Tabs
@@ -73,7 +68,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: labels.index,
+          title: tr.prayers,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="moon-outline" size={size} color={color} />
           ),
@@ -82,7 +77,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: labels.calendar,
+          title: tr.today,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -91,7 +86,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="qibla"
         options={{
-          title: labels.qibla,
+          title: tr.qibla,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="compass-outline" size={size} color={color} />
           ),
@@ -100,7 +95,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="quran"
         options={{
-          title: labels.quran,
+          title: tr.quran,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="book-open-page-variant-outline" size={size} color={color} />
           ),

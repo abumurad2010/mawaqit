@@ -10,19 +10,20 @@ import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { PrayerNotifType } from '@/contexts/AppContext';
-import { t } from '@/constants/i18n';
+import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
+import type { SecondLang } from '@/contexts/AppContext';
 
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
+    isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment,
     prayerNotifications,
     updateSettings,
@@ -30,6 +31,7 @@ export default function SettingsScreen() {
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
+  const isRtl = isRtlLang(lang);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -43,7 +45,9 @@ export default function SettingsScreen() {
   const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifType>>(
     prayerNotifications ?? {}
   );
+  const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [showMethodModal, setShowMethodModal] = useState(false);
+  const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
 
   const recommendedMethod = getMethodForCountry(countryCode);
@@ -70,10 +74,13 @@ export default function SettingsScreen() {
     draftFontSize !== fontSize ||
     draftAdjustment !== (maghribAdjustment ?? 0) ||
     draftHijri !== (hijriAdjustment ?? 0) ||
+    draftSecondLang !== (secondLang ?? 'auto') ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const resolvedDraft = draftSecondLang === 'auto' ? detectSecondLang(countryCode) : draftSecondLang;
+    const newLang = lang !== 'ar' ? resolvedDraft : lang;
     updateSettings({
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
@@ -81,6 +88,8 @@ export default function SettingsScreen() {
       maghribAdjustment: draftAdjustment,
       hijriAdjustment: draftHijri,
       prayerNotifications: draftNotifications,
+      secondLang: draftSecondLang,
+      lang: newLang,
     });
     router.back();
   };
@@ -110,9 +119,9 @@ export default function SettingsScreen() {
   }: { label: string; right: React.ReactNode; noBorder?: boolean }) => (
     <View style={[
       styles.settingRow,
-      { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isAr ? 'row-reverse' : 'row' }
+      { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' }
     ]}>
-      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
         {label}
       </Text>
       <View style={styles.rightSide}>{right}</View>
@@ -137,14 +146,14 @@ export default function SettingsScreen() {
     <View style={[styles.root, { backgroundColor: C.background }]}>
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
           style={({ pressed }) => [styles.closeBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
         >
           <Ionicons name="close" size={20} color={C.textSecond} />
         </Pressable>
-        <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : undefined }]}>
           {tr.settings}
         </Text>
         <View style={styles.headerActions}>
@@ -169,8 +178,86 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
 
+        {/* Language */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+          {tr.language}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <Pressable
+            onPress={() => setShowLangModal(true)}
+            style={({ pressed }) => [
+              styles.settingRow,
+              { borderBottomColor: C.separator, borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'العربية' : tr.arabic} ↔ {draftSecondLang === 'auto'
+                  ? `${tr.auto} · ${LANG_META[resolvedSecondLang].native}`
+                  : LANG_META[draftSecondLang].native}
+              </Text>
+            </View>
+            <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
+          </Pressable>
+        </View>
+
+        {/* Language picker modal */}
+        <Modal
+          visible={showLangModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowLangModal(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: C.background }}>
+            <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : undefined }]}>
+                {tr.language}
+              </Text>
+              <Pressable
+                onPress={() => setShowLangModal(false)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+              >
+                <Ionicons name="close" size={24} color={C.textMuted} />
+              </Pressable>
+            </View>
+            <ScrollView>
+              {/* Auto option */}
+              {[{ value: 'auto' as SecondLang, native: tr.auto, label: `${LANG_META[resolvedSecondLang].native} (${tr.auto.toLowerCase()})` },
+                ...(['en','fr','es','ru','zh','tr','ur','id','bn','fa','ms','pt','sw','ha'] as const).map(l => ({
+                  value: l as SecondLang,
+                  native: LANG_META[l].native,
+                  label: LANG_META[l].label,
+                }))
+              ].map((item, idx, arr) => {
+                const isLast = idx === arr.length - 1;
+                const isSelected = draftSecondLang === item.value;
+                return (
+                  <Pressable
+                    key={item.value}
+                    onPress={() => { Haptics.selectionAsync(); setDraftSecondLang(item.value); setShowLangModal(false); }}
+                    style={({ pressed }) => [
+                      styles.settingRow,
+                      { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row', paddingHorizontal: 20, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <Text style={{ fontSize: 16, color: C.text, fontWeight: '500', textAlign: isRtl ? 'right' : 'left' }}>
+                        {item.native}
+                      </Text>
+                      <Text style={{ fontSize: 13, color: C.textSecond, textAlign: isRtl ? 'right' : 'left' }}>
+                        {item.label}
+                      </Text>
+                    </View>
+                    {isSelected && <Ionicons name="checkmark" size={20} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </Modal>
+
         {/* Quran font */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'خط القرآن' : 'Quran Font'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -188,15 +275,15 @@ export default function SettingsScreen() {
         </View>
 
         {/* Hijri date adjustment */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isAr ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
               {tr.hijriAdjustment}
             </Text>
-            <View style={[styles.stepperRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
               <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
                 <Pressable
                   onPress={() => { Haptics.selectionAsync(); setDraftHijri(v => Math.max(v - 1, -2)); }}
@@ -214,7 +301,7 @@ export default function SettingsScreen() {
                   <Ionicons name="add" size={18} color={C.tint} />
                 </Pressable>
               </View>
-              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : undefined }]}>
                 {isAr ? 'يوم' : draftHijri === 0 ? 'no offset' : Math.abs(draftHijri) === 1 ? 'day' : 'days'}
               </Text>
               {draftHijri !== 0 && (
@@ -229,31 +316,31 @@ export default function SettingsScreen() {
         </View>
 
         {/* Prayer Calculation */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {/* Calculation method — dropdown row */}
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowMethodModal(true); }}
-            style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isAr ? 'row-reverse' : 'row' }]}
+            style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
           >
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
                 {tr.calculationMethod}
               </Text>
-              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }} numberOfLines={1}>
+              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
                 {tr.methods[draftCalcMethod] ?? draftCalcMethod}
               </Text>
             </View>
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
+            <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
           </Pressable>
 
           {/* Method picker modal */}
           <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
-                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : undefined }]}>
                   {tr.calculationMethod}
                 </Text>
                 <Pressable onPress={() => setShowMethodModal(false)}>
@@ -276,7 +363,7 @@ export default function SettingsScreen() {
                       }}
                       style={[
                         styles.methodRow,
-                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isAr ? 'row-reverse' : 'row' },
+                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' },
                         isSelected && { backgroundColor: C.tint + '18' },
                       ]}
                     >
@@ -284,15 +371,15 @@ export default function SettingsScreen() {
                         <Text style={{
                           fontSize: 13, fontWeight: isSelected ? '700' : '500',
                           color: isSelected ? C.tint : C.text,
-                          fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-                          textAlign: isAr ? 'right' : 'left',
+                          fontFamily: isRtl ? 'Amiri_400Regular' : undefined,
+                          textAlign: isRtl ? 'right' : 'left',
                         }}>
                           {label}
                         </Text>
                         {isRecommended && (
-                          <View style={[styles.recommendedBadge, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                          <View style={[styles.recommendedBadge, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                             <Ionicons name="location-outline" size={11} color={C.tint} />
-                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
+                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : undefined }}>
                               {tr.recommendedForLocation}
                             </Text>
                           </View>
@@ -318,13 +405,13 @@ export default function SettingsScreen() {
           />
 
           {/* Maghrib offset — base + stepper */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isAr ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
               {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
             </Text>
 
             {/* Recommended base */}
-            <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
               <Ionicons name="location-outline" size={13} color={C.tint} />
               <Text style={[styles.autoOffsetText, { color: C.tint }]}>
                 {isAr
@@ -334,8 +421,8 @@ export default function SettingsScreen() {
             </View>
 
             {/* Stepper row */}
-            <View style={[styles.stepperRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : undefined }]}>
                 {isAr ? 'تعديل:' : 'Adjustment:'}
               </Text>
               <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
@@ -372,7 +459,7 @@ export default function SettingsScreen() {
               </Pressable>
             )}
 
-            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
               {isAr
                 ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
                 : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
@@ -381,7 +468,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Notifications */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, textAlign: isAr ? 'right' : 'left', marginLeft: isAr ? 0 : 4, marginRight: isAr ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'الإشعارات' : 'Notifications'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -398,10 +485,10 @@ export default function SettingsScreen() {
                 { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 }
               ]}>
                 {/* Main row: name + 3 type chips */}
-                <View style={[styles.notifRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   <Text style={[
                     styles.notifLabel,
-                    { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }
+                    { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
                     {isAr ? prayer.ar : prayer.en}
                   </Text>
@@ -453,7 +540,7 @@ export default function SettingsScreen() {
 
                 {/* Sub-row: Full / Abbreviated + Preview — only when athan active */}
                 {isAthan && (
-                  <View style={[styles.notifSubRow, { borderTopColor: C.separator, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                  <View style={[styles.notifSubRow, { borderTopColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                     <Pressable
                       onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
                       style={[styles.subChip, {

@@ -3,7 +3,7 @@ import { Image, StyleSheet } from 'react-native';
 
 interface AppLogoProps {
   tintColor?: string;
-  lang?: 'ar' | 'en';
+  lang?: string;
 }
 
 export default function AppLogo(_props: AppLogoProps) {

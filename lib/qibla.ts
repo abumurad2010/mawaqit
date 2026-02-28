@@ -41,7 +41,7 @@ export function getDistanceToMecca(lat: number, lng: number): number {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export function formatDistance(km: number, lang: 'ar' | 'en'): string {
+export function formatDistance(km: number, lang: string): string {
   if (km < 1000) return lang === 'ar' ? `${Math.round(km)} كم` : `${Math.round(km)} km`;
   return lang === 'ar'
     ? `${(km / 1000).toFixed(1)} ألف كم`
