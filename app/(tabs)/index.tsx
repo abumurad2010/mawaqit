@@ -330,12 +330,12 @@ export default function PrayerTimesScreen() {
                   <MaterialCommunityIcons
                     name={PRAYER_ICONS[key] as any}
                     size={18}
-                    color={active ? C.tint : passed ? C.textMuted : C.textSecond}
+                    color={active ? C.tint : passed ? (isDark ? 'rgba(255,255,255,0.50)' : '#777777') : (isDark ? 'rgba(255,255,255,0.80)' : '#333333')}
                   />
                   <Text style={[
                     styles.prayerName,
                     {
-                      color: active ? C.tint : passed ? C.textMuted : C.text,
+                      color: active ? C.tint : passed ? (isDark ? 'rgba(255,255,255,0.50)' : '#777777') : (isDark ? '#FFFFFF' : '#111111'),
                       fontWeight: active ? '700' : '400',
                       fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
                       fontSize: isAr ? 17 : 15,
@@ -346,7 +346,7 @@ export default function PrayerTimesScreen() {
                 </View>
                 <Text style={[
                   styles.prayerTime,
-                  { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : '400' }
+                  { color: active ? C.tint : passed ? (isDark ? 'rgba(255,255,255,0.50)' : '#777777') : (isDark ? '#FFFFFF' : '#111111'), fontWeight: active ? '700' : '400' }
                 ]}>
                   {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                 </Text>

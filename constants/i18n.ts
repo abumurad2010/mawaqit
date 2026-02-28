@@ -44,7 +44,7 @@ const translations = {
     locationPermission: 'يلزم إذن الموقع',
     requestPermission: 'منح الإذن',
     dua: 'لا تنسونا من صالح دعائكم',
-    freeApp: 'تطبيق مجاني · بلا إعلانات · للأبد إن شاء الله',
+    freeApp: 'تطبيق مجاني · بلا إعلانات · دائماً إن شاء الله',
     surahList: 'قائمة السور',
     search: 'بحث',
     searchPlaceholder: 'ابحث في القرآن...',
