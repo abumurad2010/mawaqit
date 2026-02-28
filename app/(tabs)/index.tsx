@@ -524,8 +524,8 @@ const styles = StyleSheet.create({
   },
   heroCardEmpty: { alignItems: 'center', paddingVertical: 10, flexDirection: 'row', justifyContent: 'center' },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 1 },
-  heroPrayerName: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 1, lineHeight: 12 },
+  heroPrayerName: { color: '#fff', fontSize: 15, fontWeight: '700', lineHeight: 20 },
   heroCountdown: {
     color: '#fff',
     fontSize: 22,
