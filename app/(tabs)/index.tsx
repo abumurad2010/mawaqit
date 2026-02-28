@@ -237,12 +237,14 @@ export default function PrayerTimesScreen() {
           </View>
         </View>
 
-        {/* Row 2: date · hijri · location */}
-        <View style={styles.metaRow}>
+        {/* Row 2: dates stacked and centered */}
+        <View style={styles.datesBlock}>
           <Text style={[styles.dateText, { color: C.text }]} numberOfLines={1}>{gregorianStr}</Text>
-          <Text style={[styles.metaDot, { color: C.textMuted }]}>·</Text>
-          <Text style={[styles.metaText, { color: C.textMuted }]} numberOfLines={1}>{hijriStr}</Text>
-          <Text style={[styles.metaDot, { color: C.textMuted }]}>·</Text>
+          <Text style={[styles.hijriText, { color: C.textMuted }]} numberOfLines={1}>{hijriStr}</Text>
+        </View>
+
+        {/* Row 3: location */}
+        <View style={styles.metaRow}>
           <Ionicons name="location-sharp" size={10} color={C.textMuted} />
           <Text style={[styles.metaText, { color: C.textMuted, flexShrink: 1 }]} numberOfLines={1}>
             {loadingLoc
@@ -444,12 +446,14 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
 
   /* Header */
-  headerWrap: { gap: 6, paddingBottom: 4 },
+  headerWrap: { gap: 4, paddingBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateText: { fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'nowrap' },
-  metaText: { fontSize: 12 },
-  metaDot: { fontSize: 12, marginHorizontal: 1 },
+  datesBlock: { alignItems: 'center', gap: 1 },
+  dateText: { fontSize: 12, fontWeight: '600', letterSpacing: -0.1 },
+  hijriText: { fontSize: 11, fontWeight: '400' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
+  metaText: { fontSize: 11 },
+  metaDot: { fontSize: 11, marginHorizontal: 1 },
   headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
