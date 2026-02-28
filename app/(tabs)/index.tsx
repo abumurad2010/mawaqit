@@ -256,25 +256,25 @@ export default function PrayerTimesScreen() {
         </View>
       </View>
 
-      {/* ── Next prayer hero card ── */}
-      <View style={{ paddingHorizontal: 16, marginTop: 12, marginBottom: 12 }}>
+      {/* ── Next prayer hero strip ── */}
+      <View style={{ paddingHorizontal: 16, marginTop: 6, marginBottom: 6 }}>
         {nextPrayer && times ? (
           <Animated.View
             entering={FadeIn.duration(500)}
             style={[styles.heroCard, { backgroundColor: C.tint }]}
           >
-            <View style={styles.heroTop}>
+            <Animated.View style={pulseStyle}>
+              <MaterialCommunityIcons
+                name={PRAYER_ICONS[nextPrayer.name] as any}
+                size={16} color="rgba(255,255,255,0.55)"
+              />
+            </Animated.View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.heroLabel}>{tr.nextPrayer}</Text>
-              <Animated.View style={pulseStyle}>
-                <MaterialCommunityIcons
-                  name={PRAYER_ICONS[nextPrayer.name] as any}
-                  size={20} color="rgba(255,255,255,0.6)"
-                />
-              </Animated.View>
+              <Text style={[styles.heroPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+                {prayerLabel(nextPrayer.name)}
+              </Text>
             </View>
-            <Text style={[styles.heroPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-              {prayerLabel(nextPrayer.name)}
-            </Text>
             <Text style={styles.heroCountdown}>{countdown}</Text>
           </Animated.View>
         ) : (
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   /* Header */
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   appName: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5 },
-  dateText: { fontSize: 22, fontWeight: '600', marginTop: 3, letterSpacing: -0.3 },
+  dateText: { fontSize: 15, fontWeight: '600', marginTop: 2, letterSpacing: -0.1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'nowrap' },
   metaText: { fontSize: 12 },
   metaDot: { fontSize: 12, marginHorizontal: 2 },
@@ -457,19 +457,22 @@ const styles = StyleSheet.create({
 
   /* Next prayer hero */
   heroCard: {
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  heroCardEmpty: { alignItems: 'center', paddingVertical: 14 },
+  heroCardEmpty: { alignItems: 'center', paddingVertical: 10, flexDirection: 'row', justifyContent: 'center' },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' },
-  heroPrayerName: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 2 },
+  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 9, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 1 },
+  heroPrayerName: { color: '#fff', fontSize: 15, fontWeight: '700' },
   heroCountdown: {
     color: '#fff',
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: '300',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
     fontVariant: ['tabular-nums'],
   },
   heroEmptyText: { fontSize: 13 },
