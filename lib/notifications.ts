@@ -99,7 +99,7 @@ export async function schedulePrayerNotifications(params: {
           data: { prayerKey, playAthan: isAthan, athanType },
           sound: notifType === 'banner' ? 'default' : null,
         },
-        trigger: { date: prayerTime },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
       });
     }
   }
