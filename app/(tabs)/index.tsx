@@ -226,7 +226,7 @@ export default function PrayerTimesScreen() {
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <Image
         source={require('@/assets/images/bg-prayer.png')}
-        style={styles.bgPrayer}
+        style={[styles.bgPrayer, { opacity: isDark ? 0.22 : 0.18 }]}
         resizeMode="cover"
         pointerEvents="none"
       />
@@ -477,7 +477,6 @@ const styles = StyleSheet.create({
     top: 0, left: 0, right: 0, bottom: 0,
     width: '100%',
     height: '100%',
-    opacity: 0.13,
     zIndex: 0,
   },
 
