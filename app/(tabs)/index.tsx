@@ -233,8 +233,8 @@ export default function PrayerTimesScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const pageText  = isDark ? '#FFFFFF' : C.text;
-  const pageMuted = isDark ? '#FFFFFF' : C.textMuted;
+  const pageText  = C.text;
+  const pageMuted = C.textMuted;
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -353,12 +353,12 @@ export default function PrayerTimesScreen() {
                   <MaterialCommunityIcons
                     name={PRAYER_ICONS[key] as any}
                     size={18}
-                    color={active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#333333')}
+                    color={active ? C.tint : passed ? C.textMuted : C.text}
                   />
                   <Text style={[
                     styles.prayerName,
                     {
-                      color: active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#111111'),
+                      color: active ? C.tint : passed ? C.textMuted : C.text,
                       fontWeight: active ? '700' : '400',
                       fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
                       fontSize: 15,
@@ -370,7 +370,7 @@ export default function PrayerTimesScreen() {
                 </View>
                 <Text style={[
                   styles.prayerTime,
-                  { color: active ? C.tint : passed ? (isDark ? '#FFFFFF' : '#777777') : (isDark ? '#FFFFFF' : '#111111'), fontWeight: active ? '700' : '400' }
+                  { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : '400' }
                 ]}>
                   {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                 </Text>

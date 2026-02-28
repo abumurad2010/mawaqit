@@ -87,7 +87,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       backgroundCard:   '#FFFFFF',
       text:             '#000000',
       textSecond:       '#000000',
-      textMuted:        '#3C3C3C',
+      textMuted:        '#000000',       // HC: all text pure black for maximum contrast
       tint:             '#000000',       // black on white = 21:1 ✓✓✓
       tintLight:        'rgba(0,0,0,0.06)',
       tintDark:         '#000000',
