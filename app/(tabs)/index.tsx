@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
@@ -252,6 +253,7 @@ export default function PrayerTimesScreen() {
             >
               <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={19} color={C.tint} />
             </Pressable>
+            <ThemeToggle />
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}

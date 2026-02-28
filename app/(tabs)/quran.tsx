@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import PageBackground from '@/components/PageBackground';
 import React from 'react';
 import {
@@ -81,6 +82,7 @@ export default function QuranScreen() {
           <View style={{ flex: 1 }} />
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
+            <ThemeToggle />
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}

@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
@@ -178,6 +179,7 @@ export default function QiblaScreen() {
               )}
             </>
           )}
+          <ThemeToggle />
         </View>
       </View>
 

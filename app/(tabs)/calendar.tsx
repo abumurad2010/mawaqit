@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -141,7 +142,8 @@ export default function CalendarScreen() {
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
           <View style={{ flex: 1 }} />
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+            <ThemeToggle />
             <Pressable
               onPress={goToToday}
               style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}

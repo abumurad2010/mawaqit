@@ -19,7 +19,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
     isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
-    maghribAdjustment, locationMode, themeMode, fontSize, updateSettings,
+    maghribAdjustment, locationMode, fontSize, updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
@@ -30,7 +30,6 @@ export default function SettingsScreen() {
 
   // Local draft state — nothing is saved until the user taps Save
   const [draftLang, setDraftLang] = useState(lang);
-  const [draftTheme, setDraftTheme] = useState(themeMode);
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
@@ -39,7 +38,6 @@ export default function SettingsScreen() {
 
   const hasChanges =
     draftLang !== lang ||
-    draftTheme !== themeMode ||
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
@@ -50,7 +48,6 @@ export default function SettingsScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateSettings({
       lang: draftLang,
-      themeMode: draftTheme,
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
@@ -131,16 +128,6 @@ export default function SettingsScreen() {
               <View style={styles.chips}>
                 <Chip value={tr.arabic}   selected={draftLang === 'ar'} onPress={() => setDraftLang('ar')} />
                 <Chip value={tr.english}  selected={draftLang === 'en'} onPress={() => setDraftLang('en')} />
-              </View>
-            }
-          />
-          <Row
-            label={tr.theme}
-            right={
-              <View style={styles.chips}>
-                <Chip value={isAr ? 'فاتح'   : 'Light'} selected={draftTheme === 'light'} onPress={() => setDraftTheme('light')} />
-                <Chip value={isAr ? 'تلقائي' : 'Auto'}  selected={draftTheme === 'auto'}  onPress={() => setDraftTheme('auto')} />
-                <Chip value={isAr ? 'داكن'   : 'Dark'}  selected={draftTheme === 'dark'}  onPress={() => setDraftTheme('dark')} />
               </View>
             }
             noBorder
