@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Platform,
+  View, Text, StyleSheet, Pressable, Platform, Alert,
   ScrollView, PanResponder, Animated, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -104,7 +104,8 @@ export default function QuranReaderScreen() {
 
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { isDark, lang, fontSize, setLastReadPage, updateSettings } = useApp();
+  const { isDark, lang, fontSize, setLastReadPage, updateSettings,
+          addBookmark, removeBookmark, isBookmarked } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -145,6 +146,39 @@ export default function QuranReaderScreen() {
 
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
+
+  const handleLongPressAyah = useCallback((ayah: PageAyah) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
+    const surahName = SURAH_META[ayah.surahNum - 1];
+    const label = isAr
+      ? `${surahName?.arabic ?? ''} — آية ${toArabicIndic(ayah.ayahNum)}`
+      : `${surahName?.transliteration ?? ''} — Ayah ${ayah.ayahNum}`;
+    Alert.alert(
+      bookmarked ? (isAr ? 'إزالة الإشارة' : 'Remove Bookmark') : (isAr ? 'إضافة إشارة' : 'Bookmark Ayah'),
+      label,
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: bookmarked ? (isAr ? 'إزالة' : 'Remove') : (isAr ? 'إضافة' : 'Add'),
+          onPress: () => {
+            if (bookmarked) {
+              removeBookmark(ayah.surahNum, ayah.ayahNum);
+            } else {
+              addBookmark({
+                surahNumber: ayah.surahNum,
+                surahName: surahName?.transliteration ?? '',
+                ayahNumber: ayah.ayahNum,
+                ayahText: ayah.text,
+                timestamp: Date.now(),
+              });
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  }, [isBookmarked, addBookmark, removeBookmark, isAr]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -313,10 +347,18 @@ export default function QuranReaderScreen() {
                       if (ayah.ayahNum === 1 && showBismillah) {
                         text = stripBismillah(text);
                       }
+                      const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
                       return (
                         <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
                           {text}
-                          <Text style={{ color: C.tint, fontSize: arabicFontSize * 0.7 }}>
+                          <Text
+                            suppressHighlighting
+                            onLongPress={() => handleLongPressAyah(ayah)}
+                            style={{
+                              color: bookmarked ? '#C8860A' : C.tint,
+                              fontSize: arabicFontSize * 0.7,
+                            }}
+                          >
                             {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
                           </Text>
                         </React.Fragment>
