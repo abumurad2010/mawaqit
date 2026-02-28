@@ -42,6 +42,7 @@ interface AppSettings {
   notificationPrayers: string[];
   notificationBanner: boolean;
   notificationAthan: boolean;
+  athanType: 'full' | 'abbreviated';
 }
 
 interface AppContextValue extends AppSettings {
@@ -77,6 +78,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   notificationPrayers: [],
   notificationBanner: true,
   notificationAthan: false,
+  athanType: 'full',
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -132,7 +134,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!location) return;
-    const { notificationPrayers, notificationBanner, notificationAthan, lang, calcMethod, asrMethod } = settings;
+    const { notificationPrayers, notificationBanner, notificationAthan, athanType, lang, calcMethod, asrMethod } = settings;
     if (notificationPrayers.length === 0 || (!notificationBanner && !notificationAthan)) {
       cancelAllPrayerNotifications();
       return;
@@ -145,9 +147,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notificationPrayers,
       notificationBanner,
       notificationAthan,
+      athanType,
       lang,
     });
-  }, [location, settings.notificationPrayers, settings.notificationBanner, settings.notificationAthan, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
+  }, [location, settings.notificationPrayers, settings.notificationBanner, settings.notificationAthan, settings.athanType, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

@@ -30,6 +30,7 @@ export async function schedulePrayerNotifications(params: {
   notificationPrayers: string[];
   notificationBanner: boolean;
   notificationAthan: boolean;
+  athanType: 'full' | 'abbreviated';
   lang: 'ar' | 'en';
   daysAhead?: number;
 }) {
@@ -65,7 +66,11 @@ export async function schedulePrayerNotifications(params: {
         content: {
           title: labels[prayerKey as NotifiablePrayer] ?? prayerKey,
           body: params.lang === 'ar' ? 'حان وقت الصلاة' : 'It\'s time to pray',
-          data: { prayerKey, playAthan: params.notificationAthan },
+          data: {
+            prayerKey,
+            playAthan: params.notificationAthan,
+            athanType: params.athanType,
+          },
           sound: params.notificationBanner ? 'default' : null,
         },
         trigger: { date: prayerTime },

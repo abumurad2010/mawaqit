@@ -21,7 +21,7 @@ export default function SettingsScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment,
-    notificationPrayers, notificationBanner, notificationAthan,
+    notificationPrayers, notificationBanner, notificationAthan, athanType,
     updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
@@ -40,6 +40,7 @@ export default function SettingsScreen() {
   const [draftPrayers, setDraftPrayers] = useState<string[]>(notificationPrayers ?? []);
   const [draftBanner, setDraftBanner] = useState(notificationBanner ?? true);
   const [draftAthan, setDraftAthan] = useState(notificationAthan ?? false);
+  const [draftAthanType, setDraftAthanType] = useState<'full' | 'abbreviated'>(athanType ?? 'full');
 
   const notifEnabled = draftPrayers.length > 0;
 
@@ -51,7 +52,8 @@ export default function SettingsScreen() {
     draftHijri !== (hijriAdjustment ?? 0) ||
     JSON.stringify(draftPrayers.sort()) !== JSON.stringify([...(notificationPrayers ?? [])].sort()) ||
     draftBanner !== (notificationBanner ?? true) ||
-    draftAthan !== (notificationAthan ?? false);
+    draftAthan !== (notificationAthan ?? false) ||
+    draftAthanType !== (athanType ?? 'full');
 
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -64,6 +66,7 @@ export default function SettingsScreen() {
       notificationPrayers: draftPrayers,
       notificationBanner: draftBanner,
       notificationAthan: draftAthan,
+      athanType: draftAthanType,
     });
     router.back();
   };
@@ -416,6 +419,42 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
               </Pressable>
+
+              {draftAthan && notifEnabled && (
+                <View style={{
+                  marginTop: 2, marginLeft: 54,
+                  flexDirection: isAr ? 'row-reverse' : 'row', gap: 8,
+                }}>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftAthanType('full'); }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: draftAthanType === 'full' ? C.tint : C.backgroundSecond,
+                        borderColor: draftAthanType === 'full' ? C.tint : C.separator,
+                      }
+                    ]}
+                  >
+                    <Text style={{ color: draftAthanType === 'full' ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
+                      {isAr ? 'أذان كامل' : 'Full'}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftAthanType('abbreviated'); }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: draftAthanType === 'abbreviated' ? C.tint : C.backgroundSecond,
+                        borderColor: draftAthanType === 'abbreviated' ? C.tint : C.separator,
+                      }
+                    ]}
+                  >
+                    <Text style={{ color: draftAthanType === 'abbreviated' ? '#fff' : C.textSecond, fontSize: 12, fontWeight: '600', fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
+                      {isAr ? 'الله أكبر × ٢' : 'Abbreviated'}
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
           </View>
 
