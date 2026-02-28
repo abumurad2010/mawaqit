@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import PageBackground from '@/components/PageBackground';
 import React from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform,
@@ -70,6 +71,7 @@ export default function QuranScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
+      <PageBackground />
 
       {/* Header */}
       <View style={[styles.topHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>

@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Platform,
@@ -131,6 +132,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
+      <PageBackground />
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 10, paddingBottom: 12 }]}
         showsVerticalScrollIndicator={false}

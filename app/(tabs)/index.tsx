@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
@@ -224,6 +225,7 @@ export default function PrayerTimesScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
+      <PageBackground />
 
       {/* ── Header ── */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>

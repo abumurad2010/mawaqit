@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -149,6 +150,7 @@ export default function QiblaScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
+      <PageBackground />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
