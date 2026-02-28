@@ -1,5 +1,6 @@
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
+import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
@@ -160,8 +161,9 @@ export default function QiblaScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
           <ThemeToggle />
+          <LangToggle />
         </View>
         <AppLogo tintColor={C.tint} lang={lang} />
         <View style={[styles.badgeRow, { flex: 1 }]}>

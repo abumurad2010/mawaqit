@@ -29,14 +29,12 @@ export default function SettingsScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   // Local draft state — nothing is saved until the user taps Save
-  const [draftLang, setDraftLang] = useState(lang);
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
 
   const hasChanges =
-    draftLang !== lang ||
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
@@ -45,7 +43,6 @@ export default function SettingsScreen() {
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateSettings({
-      lang: draftLang,
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
@@ -113,23 +110,6 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* Appearance */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-          {isAr ? 'المظهر' : 'Appearance'}
-        </Text>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Row
-            label={tr.language}
-            right={
-              <View style={styles.chips}>
-                <Chip value={tr.arabic}   selected={draftLang === 'ar'} onPress={() => setDraftLang('ar')} />
-                <Chip value={tr.english}  selected={draftLang === 'en'} onPress={() => setDraftLang('en')} />
-              </View>
-            }
-            noBorder
-          />
-        </View>
 
         {/* Quran font */}
         <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
