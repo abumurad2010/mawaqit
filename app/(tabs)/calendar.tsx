@@ -146,12 +146,7 @@ export default function CalendarScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
-          <View>
-            <Text style={[styles.title, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-              {isAr ? 'التقويم' : 'Calendar'}
-            </Text>
-            <MosqueSilhouette color={C.tint} />
-          </View>
+          <MosqueSilhouette color={C.tint} size={0.7} />
           <Pressable
             onPress={goToToday}
             style={[styles.todayBtn, { backgroundColor: C.surface }]}
