@@ -79,6 +79,9 @@ const translations = {
     small: 'صغير',
     medium: 'متوسط',
     large: 'كبير',
+    hijriAdjustment: 'ضبط التاريخ الهجري',
+    notifications: 'إشعارات الصلاة',
+    notificationsDesc: 'تنبيه قبل كل صلاة',
   },
   en: {
     prayers: 'Prayer Times',
@@ -158,6 +161,9 @@ const translations = {
     small: 'Small',
     medium: 'Medium',
     large: 'Large',
+    hijriAdjustment: 'Hijri Date Adjustment',
+    notifications: 'Prayer Notifications',
+    notificationsDesc: 'Alert before each prayer',
   },
 };
 

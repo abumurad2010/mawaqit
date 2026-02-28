@@ -38,7 +38,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset,
+    updateSettings, locationUtcOffset, hijriAdjustment,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
@@ -225,7 +225,9 @@ export default function PrayerTimesScreen() {
     isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
   );
-  const hijri = gregorianToHijri(locationNow.getFullYear(), locationNow.getMonth() + 1, locationNow.getDate());
+  const hijriBase = new Date(locationNow);
+  hijriBase.setDate(hijriBase.getDate() + (hijriAdjustment ?? 0));
+  const hijri = gregorianToHijri(hijriBase.getFullYear(), hijriBase.getMonth() + 1, hijriBase.getDate());
   const hijriStr = formatHijriDate(hijri, lang);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;

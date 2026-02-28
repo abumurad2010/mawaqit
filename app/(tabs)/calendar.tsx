@@ -51,7 +51,7 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -94,11 +94,12 @@ export default function CalendarScreen() {
       cells.push({ day: null, hijri: null });
     }
     for (let d = 1; d <= daysInMonth; d++) {
-      const h = gregorianToHijri(viewYear, viewMonth, d);
+      const shifted = new Date(viewYear, viewMonth - 1, d + (hijriAdjustment ?? 0));
+      const h = gregorianToHijri(shifted.getFullYear(), shifted.getMonth() + 1, shifted.getDate());
       cells.push({ day: d, hijri: { d: h.day, m: h.month } });
     }
     return cells;
-  }, [viewYear, viewMonth]);
+  }, [viewYear, viewMonth, hijriAdjustment]);
 
   const goToPrevMonth = () => {
     Haptics.selectionAsync();
@@ -169,8 +170,10 @@ export default function CalendarScreen() {
             </Text>
             <Text style={[styles.hijriMonthLabel, { color: C.tint }]}>
               {(() => {
-                const h1 = gregorianToHijri(viewYear, viewMonth, 1);
-                const h2 = gregorianToHijri(viewYear, viewMonth, getDaysInGregorianMonth(viewYear, viewMonth));
+                const s1 = new Date(viewYear, viewMonth - 1, 1 + (hijriAdjustment ?? 0));
+                const s2 = new Date(viewYear, viewMonth - 1, getDaysInGregorianMonth(viewYear, viewMonth) + (hijriAdjustment ?? 0));
+                const h1 = gregorianToHijri(s1.getFullYear(), s1.getMonth() + 1, s1.getDate());
+                const h2 = gregorianToHijri(s2.getFullYear(), s2.getMonth() + 1, s2.getDate());
                 const m1 = hijriMonthName(h1.month, lang);
                 const m2 = hijriMonthName(h2.month, lang);
                 const yr = h1.month !== h2.month

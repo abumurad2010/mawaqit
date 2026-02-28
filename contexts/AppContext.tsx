@@ -37,6 +37,8 @@ interface AppSettings {
   manualLocation: LocationData | null;
   fontSize: 'small' | 'medium' | 'large';
   maghribAdjustment: number;
+  hijriAdjustment: number;
+  notificationsEnabled: boolean;
 }
 
 interface AppContextValue extends AppSettings {
@@ -68,6 +70,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   manualLocation: null,
   fontSize: 'medium',
   maghribAdjustment: 0,
+  hijriAdjustment: 0,
+  notificationsEnabled: false,
 };
 
 const AppContext = createContext<AppContextValue | null>(null);

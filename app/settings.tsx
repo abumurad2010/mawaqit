@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Platform,
+  Platform, Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
@@ -19,7 +20,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
     isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
-    maghribAdjustment, fontSize, updateSettings,
+    maghribAdjustment, fontSize, hijriAdjustment, notificationsEnabled, updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
@@ -33,12 +34,16 @@ export default function SettingsScreen() {
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
+  const [draftHijri, setDraftHijri] = useState(hijriAdjustment ?? 0);
+  const [draftNotifications, setDraftNotifications] = useState(notificationsEnabled ?? false);
 
   const hasChanges =
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
-    draftAdjustment !== (maghribAdjustment ?? 0);
+    draftAdjustment !== (maghribAdjustment ?? 0) ||
+    draftHijri !== (hijriAdjustment ?? 0) ||
+    draftNotifications !== (notificationsEnabled ?? false);
 
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -47,8 +52,19 @@ export default function SettingsScreen() {
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
       maghribAdjustment: draftAdjustment,
+      hijriAdjustment: draftHijri,
+      notificationsEnabled: draftNotifications,
     });
     router.back();
+  };
+
+  const handleNotificationsToggle = async (value: boolean) => {
+    Haptics.selectionAsync();
+    if (value && Platform.OS !== 'web') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') return;
+    }
+    setDraftNotifications(value);
   };
 
   const Row = ({
@@ -127,6 +143,47 @@ export default function SettingsScreen() {
             }
             noBorder
           />
+        </View>
+
+        {/* Hijri date adjustment */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+          {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              {tr.hijriAdjustment}
+            </Text>
+            <View style={styles.stepperRow}>
+              <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setDraftHijri(v => Math.max(v - 1, -2)); }}
+                  style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Ionicons name="remove" size={18} color={C.tint} />
+                </Pressable>
+                <Text style={[styles.stepperValue, { color: C.text }]}>
+                  {draftHijri > 0 ? `+${draftHijri}` : draftHijri}
+                </Text>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setDraftHijri(v => Math.min(v + 1, 2)); }}
+                  style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Ionicons name="add" size={18} color={C.tint} />
+                </Pressable>
+              </View>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {isAr ? 'يوم' : draftHijri === 0 ? 'no offset' : Math.abs(draftHijri) === 1 ? 'day' : 'days'}
+              </Text>
+              {draftHijri !== 0 && (
+                <Pressable onPress={() => { Haptics.selectionAsync(); setDraftHijri(0); }}>
+                  <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600' }}>
+                    {isAr ? 'إعادة ضبط' : 'Reset'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
         </View>
 
         {/* Prayer Calculation */}
@@ -238,6 +295,25 @@ export default function SettingsScreen() {
                 : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
             </Text>
           </View>
+        </View>
+
+        {/* Notifications */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+          {isAr ? 'الإشعارات' : 'Notifications'}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <Row
+            label={tr.notifications}
+            right={
+              <Switch
+                value={draftNotifications}
+                onValueChange={handleNotificationsToggle}
+                trackColor={{ false: C.separator, true: C.tint }}
+                thumbColor="#FFFFFF"
+              />
+            }
+            noBorder
+          />
         </View>
 
         {/* Dua */}
