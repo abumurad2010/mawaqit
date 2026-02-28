@@ -11,6 +11,7 @@ import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import type { Lang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
+import { schedulePrayerNotifications, cancelAllPrayerNotifications } from '@/lib/notifications';
 
 export interface Bookmark {
   surahNumber: number;
@@ -38,7 +39,9 @@ interface AppSettings {
   fontSize: 'small' | 'medium' | 'large';
   maghribAdjustment: number;
   hijriAdjustment: number;
-  notificationsEnabled: boolean;
+  notificationPrayers: string[];
+  notificationBanner: boolean;
+  notificationAthan: boolean;
 }
 
 interface AppContextValue extends AppSettings {
@@ -71,7 +74,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 'medium',
   maghribAdjustment: 0,
   hijriAdjustment: 0,
-  notificationsEnabled: false,
+  notificationPrayers: [],
+  notificationBanner: true,
+  notificationAthan: false,
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -124,6 +129,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       : settings.themeMode === 'light'
       ? false
       : systemScheme === 'dark';
+
+  useEffect(() => {
+    if (!location) return;
+    const { notificationPrayers, notificationBanner, notificationAthan, lang, calcMethod, asrMethod } = settings;
+    if (notificationPrayers.length === 0 || (!notificationBanner && !notificationAthan)) {
+      cancelAllPrayerNotifications();
+      return;
+    }
+    schedulePrayerNotifications({
+      location,
+      calcMethod,
+      asrMethod,
+      maghribOffset,
+      notificationPrayers,
+      notificationBanner,
+      notificationAthan,
+      lang,
+    });
+  }, [location, settings.notificationPrayers, settings.notificationBanner, settings.notificationAthan, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
