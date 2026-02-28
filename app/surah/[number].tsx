@@ -51,6 +51,7 @@ export default function SurahScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const ayahPositions = useRef<Record<number, number>>({});
+  const ayahsBlockY = useRef(0);
   const scrolled = useRef(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const transitioningRef = useRef(false);
@@ -67,6 +68,7 @@ export default function SurahScreen() {
     setPage(prev => ({ ...prev, surahNum: num, loading: true, error: null }));
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     ayahPositions.current = {};
+    ayahsBlockY.current = 0;
     scrolled.current = false;
     try {
       const data = await fetchSurah(num);
@@ -87,7 +89,10 @@ export default function SurahScreen() {
       const pos = ayahPositions.current[targetAyah];
       if (pos !== undefined) {
         scrolled.current = true;
-        setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, pos - 80), animated: true }), 300);
+        setTimeout(() => {
+          const scrollY = Math.max(0, ayahsBlockY.current + pos - 80);
+          scrollRef.current?.scrollTo({ y: scrollY, animated: true });
+        }, 400);
       }
     }
   }, [targetAyah, page.ayahs]);
@@ -291,7 +296,10 @@ export default function SurahScreen() {
             </Text>
 
             {/* Ayahs */}
-            <View style={styles.ayahsBlock}>
+            <View
+              style={styles.ayahsBlock}
+              onLayout={(e) => { ayahsBlockY.current = e.nativeEvent.layout.y; }}
+            >
               {page.ayahs.map((ayah) => {
                 const bookmarked = isBookmarked(surahNum, ayah.numberInSurah);
                 return (
@@ -303,7 +311,10 @@ export default function SurahScreen() {
                       ayahPositions.current[ayah.numberInSurah] = y;
                       if (targetAyah && ayah.numberInSurah === targetAyah && !scrolled.current) {
                         scrolled.current = true;
-                        setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 80), animated: true }), 300);
+                        setTimeout(() => {
+                          const scrollY = Math.max(0, ayahsBlockY.current + y - 80);
+                          scrollRef.current?.scrollTo({ y: scrollY, animated: true });
+                        }, 300);
                       }
                     }}
                     style={[

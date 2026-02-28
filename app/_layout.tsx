@@ -50,7 +50,7 @@ function RootLayoutNav() {
       <Stack.Screen name="surah/[number]" options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="quran-toc" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="bookmarks" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen name="bookmarks" options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="search" options={{ headerShown: false, presentation: 'modal' }} />
     </Stack>
   );

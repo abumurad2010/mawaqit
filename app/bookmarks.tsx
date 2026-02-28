@@ -7,7 +7,6 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
@@ -22,9 +21,8 @@ export default function BookmarksScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const renderItem = ({ item, index }: { item: Bookmark; index: number }) => (
-    <Animated.View entering={FadeInDown.delay(index * 50).duration(350)}>
-      <View style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+  const renderItem = ({ item }: { item: Bookmark }) => (
+    <View style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
@@ -54,8 +52,7 @@ export default function BookmarksScreen() {
         >
           <Ionicons name="trash-outline" size={18} color={C.danger} />
         </Pressable>
-      </View>
-    </Animated.View>
+    </View>
   );
 
   return (
