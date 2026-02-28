@@ -13,6 +13,8 @@ export type CalcMethod =
   | 'Jordan'
   | 'Kuwait'
   | 'Qatar'
+  | 'Algeria'
+  | 'Morocco'
   | 'Singapore'
   | 'Turkey'
   | 'France'
@@ -55,6 +57,8 @@ const METHODS: Record<CalcMethod, MethodParams> = {
   Jordan:       { fajrAngle: 18,   ishaAngle: 17 },
   Kuwait:       { fajrAngle: 18,   ishaAngle: 17.5 },
   Qatar:        { fajrAngle: 18,   ishaMins: 90 },
+  Algeria:      { fajrAngle: 18,   ishaAngle: 17 },
+  Morocco:      { fajrAngle: 18,   ishaAngle: 17 },
   Singapore:    { fajrAngle: 20,   ishaAngle: 18 },
   Turkey:       { fajrAngle: 18,   ishaAngle: 17 },
   France:       { fajrAngle: 12,   ishaAngle: 12 },

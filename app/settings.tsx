@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -10,20 +10,17 @@ import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import type { PrayerNotifType } from '@/contexts/AppContext';
-import { t } from '@/constants/i18n';
+import { t, type Lang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { playAthan, stopAthan } from '@/lib/audio';
+import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 
-const CALC_METHODS: CalcMethod[] = [
-  'MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi', 'Jordan',
-  'Kuwait', 'Qatar', 'Singapore', 'Turkey', 'France', 'Russia',
-];
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, calcMethod, asrMethod, maghribBase, countryCode,
+    isDark, lang, themeMode, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment,
     prayerNotifications,
     updateSettings,
@@ -36,6 +33,8 @@ export default function SettingsScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   // Local draft state — nothing is saved until the user taps Save
+  const [draftTheme, setDraftTheme] = useState<'auto' | 'light' | 'dark'>(themeMode);
+  const [draftLang, setDraftLang] = useState<Lang>(lang);
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftFontSize, setDraftFontSize] = useState(fontSize);
@@ -45,11 +44,16 @@ export default function SettingsScreen() {
     prayerNotifications ?? {}
   );
   const [playingAthan, setPlayingAthan] = useState(false);
+  const [showMethodModal, setShowMethodModal] = useState(false);
+
+  const recommendedMethod = getMethodForCountry(countryCode);
 
   const normNotif = (r: Record<string, PrayerNotifType>) =>
     JSON.stringify(Object.fromEntries(Object.entries(r).sort()));
 
   const hasChanges =
+    draftTheme !== themeMode ||
+    draftLang !== lang ||
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
     draftFontSize !== fontSize ||
@@ -60,6 +64,8 @@ export default function SettingsScreen() {
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateSettings({
+      themeMode: draftTheme,
+      lang: draftLang,
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
       fontSize: draftFontSize,
@@ -160,6 +166,33 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
 
+        {/* Display — Theme & Language */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+          {isAr ? 'العرض' : 'Display'}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <Row
+            label={tr.theme}
+            right={
+              <View style={styles.chips}>
+                <Chip value={isAr ? 'تلقائي' : 'Auto'}  selected={draftTheme === 'auto'}  onPress={() => setDraftTheme('auto')} />
+                <Chip value={isAr ? 'فاتح'   : 'Light'} selected={draftTheme === 'light'} onPress={() => setDraftTheme('light')} />
+                <Chip value={isAr ? 'داكن'   : 'Dark'}  selected={draftTheme === 'dark'}  onPress={() => setDraftTheme('dark')} />
+              </View>
+            }
+          />
+          <Row
+            label={tr.language}
+            noBorder
+            right={
+              <View style={styles.chips}>
+                <Chip value="العربية" selected={draftLang === 'ar'} onPress={() => setDraftLang('ar')} />
+                <Chip value="English" selected={draftLang === 'en'} onPress={() => setDraftLang('en')} />
+              </View>
+            }
+          />
+        </View>
+
         {/* Quran font */}
         <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
           {isAr ? 'خط القرآن' : 'Quran Font'}
@@ -224,37 +257,77 @@ export default function SettingsScreen() {
           {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={styles.settingRow}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-              {tr.calculationMethod}
-            </Text>
-          </View>
-          <View style={styles.methodGrid}>
-            {CALC_METHODS.map(m => {
-              const label = tr.methods[m] ?? m;
-              return (
-                <Pressable
-                  key={m}
-                  onPress={() => { Haptics.selectionAsync(); setDraftCalcMethod(m); }}
-                  style={[
-                    styles.methodChip,
-                    {
-                      backgroundColor: draftCalcMethod === m ? C.tint : C.backgroundSecond,
-                      borderColor: draftCalcMethod === m ? C.tint : C.separator,
-                    }
-                  ]}
-                >
-                  <Text style={{
-                    color: draftCalcMethod === m ? '#fff' : C.textSecond,
-                    fontSize: 11, fontWeight: '600', textAlign: 'center',
-                    fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-                  }} numberOfLines={2}>
-                    {label}
-                  </Text>
+          {/* Calculation method — dropdown row */}
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowMethodModal(true); }}
+            style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1 }]}
+          >
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {tr.calculationMethod}
+              </Text>
+              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isAr ? 'Amiri_400Regular' : undefined }} numberOfLines={1}>
+                {tr.methods[draftCalcMethod] ?? draftCalcMethod}
+              </Text>
+            </View>
+            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
+          </Pressable>
+
+          {/* Method picker modal */}
+          <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">
+            <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: C.separator }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+                  {tr.calculationMethod}
+                </Text>
+                <Pressable onPress={() => setShowMethodModal(false)}>
+                  <Ionicons name="close" size={22} color={C.textSecond} />
                 </Pressable>
-              );
-            })}
-          </View>
+              </View>
+              <ScrollView>
+                {ALL_CALC_METHODS.map((m, idx) => {
+                  const label = tr.methods[m] ?? m;
+                  const isSelected = draftCalcMethod === m;
+                  const isRecommended = recommendedMethod === m;
+                  const isLast = idx === ALL_CALC_METHODS.length - 1;
+                  return (
+                    <Pressable
+                      key={m}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setDraftCalcMethod(m);
+                        setShowMethodModal(false);
+                      }}
+                      style={[
+                        styles.methodRow,
+                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 },
+                        isSelected && { backgroundColor: C.tint + '18' },
+                      ]}
+                    >
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={{
+                          fontSize: 14, fontWeight: isSelected ? '700' : '500',
+                          color: isSelected ? C.tint : C.text,
+                          fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                        }}>
+                          {label}
+                        </Text>
+                        {isRecommended && (
+                          <View style={styles.recommendedBadge}>
+                            <Ionicons name="location-outline" size={11} color={C.tint} />
+                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
+                              {isAr ? tr.recommendedForLocation : tr.recommendedForLocation}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </Modal>
 
           {/* Asr method */}
           <Row
@@ -511,15 +584,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 20, borderWidth: 1,
   },
-  methodGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
-    paddingHorizontal: 16, paddingBottom: 12,
+  methodRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 14,
+    gap: 12,
   },
-  methodChip: {
-    paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 10, borderWidth: 1,
-    width: '46%',
+  recommendedBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
   },
+  modalContainer: {
+    flex: 1, marginTop: Platform.OS === 'ios' ? 40 : 0,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: { fontSize: 17, fontWeight: '700' },
   explain: { fontSize: 11, lineHeight: 17, paddingHorizontal: 16, paddingBottom: 12 },
   aboutText: { fontSize: 16, textAlign: 'center', width: '100%' },
   autoOffsetBadge: {

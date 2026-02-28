@@ -102,7 +102,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (s) {
           const parsed = JSON.parse(s);
           delete parsed.maghribOffset;
-          const VALID_CALC_METHODS = ['MWL','ISNA','Egypt','MakkahUmmQura','Karachi','Jordan','Kuwait','Qatar','Singapore','Turkey','France','Russia'];
+          const VALID_CALC_METHODS = ['MWL','ISNA','Egypt','MakkahUmmQura','Karachi','Jordan','Kuwait','Qatar','Algeria','Morocco','Singapore','Turkey','France','Russia'];
           if (parsed.calcMethod && !VALID_CALC_METHODS.includes(parsed.calcMethod)) {
             parsed.calcMethod = 'MWL';
           }
