@@ -160,9 +160,9 @@ export default function CalendarScreen() {
         </View>
 
         {/* Month navigation */}
-        <View style={[styles.monthNav, { paddingHorizontal: 16 }]}>
+        <View style={[styles.monthNav, { paddingHorizontal: 16, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
           <Pressable onPress={goToPrevMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
-            <Ionicons name="chevron-back" size={20} color={C.tint} />
+            <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
           </Pressable>
           <View style={styles.monthCenter}>
             <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
@@ -184,26 +184,29 @@ export default function CalendarScreen() {
             </Text>
           </View>
           <Pressable onPress={goToNextMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
-            <Ionicons name="chevron-forward" size={20} color={C.tint} />
+            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={20} color={C.tint} />
           </Pressable>
         </View>
 
         {/* Day headers */}
-        <View style={[styles.dayHeaderRow, { paddingHorizontal: 16 }]}>
-          {dayNames.map((d, i) => (
-            <View key={i} style={styles.dayHeaderCell}>
-              <Text style={[styles.dayHeaderText, {
-                color: i === 5 ? C.tint : C.textMuted,
-                fontFamily: isAr ? 'Amiri_400Regular' : undefined,
-              }]}>
-                {d}
-              </Text>
-            </View>
-          ))}
+        <View style={[styles.dayHeaderRow, { paddingHorizontal: 16, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+          {dayNames.map((d, i) => {
+            const isFri = isAr ? i === 5 : i === 5;
+            return (
+              <View key={i} style={styles.dayHeaderCell}>
+                <Text style={[styles.dayHeaderText, {
+                  color: isFri ? C.tint : C.textMuted,
+                  fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                }]}>
+                  {d}
+                </Text>
+              </View>
+            );
+          })}
         </View>
 
         {/* Calendar grid */}
-        <View style={[styles.grid, { paddingHorizontal: 16 }]}>
+        <View style={[styles.grid, { paddingHorizontal: 16, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
           {calendarDays.map((cell, idx) => {
             if (!cell.day) {
               return <View key={`empty-${idx}`} style={styles.cell} />;
@@ -245,14 +248,18 @@ export default function CalendarScreen() {
         {/* Prayer times for selected date */}
         {location ? (
           <View style={[styles.prayerSection, { paddingHorizontal: 16 }]}>
-            <Text style={[styles.sectionTitle, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            <Text style={[styles.sectionTitle, {
+              color: C.textSecond,
+              fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+              textAlign: isAr ? 'right' : 'left',
+            }]}>
               {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
             </Text>
             <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}>
               {PRAYER_ORDER.map((key, idx) => (
                 <View key={key}>
-                  <View style={styles.prayerRow}>
-                    <View style={styles.prayerLeft}>
+                  <View style={[styles.prayerRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                    <View style={[styles.prayerLeft, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
                       <MaterialCommunityIcons
                         name={PRAYER_ICONS[key] as any}
                         size={17} color={C.tint}
