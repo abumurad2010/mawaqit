@@ -280,8 +280,14 @@ export default function PrayerTimesScreen() {
 
         {/* Row 2: dates stacked and centered */}
         <View style={styles.datesBlock}>
-          <Text style={[styles.dateText, { color: pageText }]} numberOfLines={1}>{gregorianStr}</Text>
-          <Text style={[styles.hijriText, { color: pageMuted }]} numberOfLines={1}>{hijriStr}</Text>
+          <Text
+            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}
+            numberOfLines={1}
+          >{gregorianStr}</Text>
+          <Text
+            style={[styles.hijriText, { color: pageMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}
+            numberOfLines={1}
+          >{hijriStr}</Text>
         </View>
 
         {/* Row 3: location */}
@@ -504,9 +510,9 @@ const styles = StyleSheet.create({
   /* Header */
   headerWrap: { gap: 4, paddingBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  datesBlock: { alignItems: 'center', gap: 1 },
-  dateText: { fontSize: 12, fontWeight: '600', letterSpacing: -0.1 },
-  hijriText: { fontSize: 11, fontWeight: '400' },
+  datesBlock: { alignItems: 'center', gap: 0 },
+  dateText: { fontSize: 12, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
+  hijriText: { fontSize: 11, fontWeight: '400', lineHeight: 17 },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   metaText: { fontSize: 11 },
   metaDot: { fontSize: 11, marginHorizontal: 1 },
