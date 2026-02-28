@@ -44,6 +44,8 @@ interface AppContextValue extends AppSettings {
   setLocation: (loc: LocationData | null) => void;
   maghribOffset: number;
   countryCode: string | null;
+  /** UTC offset in whole hours for manual location (Math.round(lng/15)), or null for auto */
+  locationUtcOffset: number | null;
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
   removeBookmark: (surahNumber: number, ayahNumber: number) => void;
@@ -103,6 +105,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const maghribOffset = getMaghribOffset(countryCode);
 
+  const locationUtcOffset: number | null =
+    settings.locationMode === 'manual' && settings.manualLocation
+      ? Math.round(settings.manualLocation.lng / 15)
+      : null;
+
   const isDark =
     settings.themeMode === 'dark'
       ? true
@@ -161,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLocation,
       maghribOffset,
       countryCode,
+      locationUtcOffset,
       bookmarks,
       addBookmark,
       removeBookmark,
@@ -171,7 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastReadSurah,
       setLastReadSurah,
     }),
-    [settings, isDark, location, maghribOffset, countryCode, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, location, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
   );
 
   if (!loaded) return null;

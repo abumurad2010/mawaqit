@@ -11,11 +11,12 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { SURAH_META } from '@/lib/quran-api';
+import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
+import { MosqueSilhouette } from '@/components/MosqueFrame';
 
 export default function QuranScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, lastReadSurah } = useApp();
+  const { isDark, lang, lastReadSurah, lastReadPage } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -25,7 +26,8 @@ export default function QuranScreen() {
 
   const openSurah = (number: number) => {
     Haptics.selectionAsync();
-    router.push({ pathname: '/surah/[number]', params: { number: String(number) } });
+    const page = SURAH_START_PAGES[number] ?? 1;
+    router.push({ pathname: '/quran-reader', params: { page: String(page) } });
   };
 
   const renderItem = ({ item, index }: { item: typeof SURAH_META[0]; index: number }) => (
@@ -77,32 +79,46 @@ export default function QuranScreen() {
       />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 8, paddingHorizontal: 20 }]}>
-        <Text style={[styles.title, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+      <View style={[styles.topHeader, { paddingTop: topInset + 6, paddingHorizontal: 20 }]}>
+        <View style={styles.headerTop}>
+          <Text style={[styles.appNameSmall, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
+            {isAr ? 'مواقيت' : 'Mawaqit'}
+          </Text>
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="search" size={18} color={C.tint} />
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); router.push('/bookmarks'); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="bookmark-outline" size={18} color={C.tint} />
+            </Pressable>
+          </View>
+        </View>
+        <View style={styles.mosqueRow}>
+          <MosqueSilhouette color={C.tint} />
+        </View>
+        <Text style={[styles.title, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
           {tr.quran}
         </Text>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Ionicons name="search" size={18} color={C.tint} />
-          </Pressable>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); router.push('/bookmarks'); }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Ionicons name="bookmark-outline" size={18} color={C.tint} />
-          </Pressable>
-        </View>
       </View>
 
-      {/* Bismillah banner */}
-      <View style={[styles.bismillah, { backgroundColor: C.surface, marginHorizontal: 20, marginBottom: 10 }]}>
-        <Text style={[styles.bismillahText, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
-          بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-        </Text>
-      </View>
+      {/* Continue Reading */}
+      {lastReadPage > 1 && (
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/quran-reader', params: { page: String(lastReadPage) } }); }}
+          style={({ pressed }) => [styles.continueBtn, { backgroundColor: C.tint, opacity: pressed ? 0.85 : 1, marginHorizontal: 20, marginBottom: 10 }]}
+        >
+          <Ionicons name="book-outline" size={16} color="#fff" />
+          <Text style={[styles.continueBtnText, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            {isAr ? `متابعة القراءة — صفحة ${lastReadPage}` : `Continue Reading — Page ${lastReadPage}`}
+          </Text>
+        </Pressable>
+      )}
 
       <FlatList
         data={SURAH_META}
@@ -120,21 +136,24 @@ export default function QuranScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
+  topHeader: { marginBottom: 8 },
+  headerTop: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 10,
+    alignItems: 'center', marginBottom: 4,
   },
-  title: { fontSize: 26, fontWeight: '700' },
+  appNameSmall: { fontSize: 14, fontWeight: '700', letterSpacing: 1 },
+  mosqueRow: { alignItems: 'center', marginBottom: 2 },
+  title: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
   headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: {
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
   },
-  bismillah: {
-    paddingVertical: 12, paddingHorizontal: 16,
-    borderRadius: 14, alignItems: 'center',
+  continueBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
   },
-  bismillahText: { fontSize: 22, letterSpacing: 1 },
+  continueBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   surahRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 14, paddingVertical: 12,

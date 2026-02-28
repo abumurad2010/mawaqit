@@ -229,3 +229,42 @@ export const SURAH_META: Array<{
   { number: 113, arabic: 'الْفَلَق',           transliteration: 'Al-Falaq',         english: 'The Daybreak',          ayahs: 5,   type: 'Meccan',  hasBismillah: true },
   { number: 114, arabic: 'النَّاس',            transliteration: 'An-Nās',           english: 'Mankind',               ayahs: 6,   type: 'Meccan',  hasBismillah: true },
 ];
+
+export interface PageAyah {
+  surahNum: number;
+  ayahNum: number;
+  text: string;
+  juz: number;
+}
+
+// Build page index at module load time — synchronous, from bundled data
+const PAGE_INDEX_RAW: PageAyah[][] = Array.from({ length: 604 }, () => []);
+const SURAH_START_PAGES_RAW: Record<number, number> = {};
+
+for (let s = 1; s <= 114; s++) {
+  const raw = QURAN_DATA[String(s)];
+  if (!raw || raw.length === 0) continue;
+  SURAH_START_PAGES_RAW[s] = raw[0].p;
+  for (const a of raw) {
+    const pi = a.p - 1;
+    if (pi >= 0 && pi < 604) {
+      PAGE_INDEX_RAW[pi].push({ surahNum: s, ayahNum: a.n, text: a.t, juz: a.j });
+    }
+  }
+}
+
+export const PAGE_INDEX: PageAyah[][] = PAGE_INDEX_RAW;
+export const SURAH_START_PAGES: Record<number, number> = SURAH_START_PAGES_RAW;
+
+export function getQuranPage(pageNum: number): PageAyah[] {
+  if (pageNum < 1 || pageNum > 604) return [];
+  return PAGE_INDEX[pageNum - 1];
+}
+
+/** Returns the Quran page number for a given surah+ayah */
+export function getAyahPage(surahNum: number, ayahNum: number): number {
+  const raw = QURAN_DATA[String(surahNum)];
+  if (!raw) return 1;
+  const found = raw.find(a => a.n === ayahNum);
+  return found?.p ?? raw[0]?.p ?? 1;
+}

@@ -10,8 +10,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
+import { MosqueSilhouette } from '@/components/MosqueFrame';
 import {
-  calculatePrayerTimes, formatTime,
+  calculatePrayerTimes, formatTimeAtOffset,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import {
@@ -23,7 +24,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
   sunrise: 'weather-sunset-up',
-  dhuhr: 'weather-sunny',
+  dhuhr: 'brightness-7',
   asr: 'weather-partly-cloudy',
   maghrib: 'weather-sunset-down',
   isha: 'weather-night-partly-cloudy',
@@ -48,7 +49,7 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -145,9 +146,12 @@ export default function CalendarScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
-          <Text style={[styles.title, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-            {isAr ? 'التقويم' : 'Calendar'}
-          </Text>
+          <View>
+            <Text style={[styles.title, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              {isAr ? 'التقويم' : 'Calendar'}
+            </Text>
+            <MosqueSilhouette color={C.tint} />
+          </View>
           <Pressable
             onPress={goToToday}
             style={[styles.todayBtn, { backgroundColor: C.surface }]}
@@ -248,7 +252,7 @@ export default function CalendarScreen() {
           <View style={styles.selectedDates}>
             <Text style={[styles.selectedGregorian, { color: C.text }]}>
               {new Date(selectedDate.y, selectedDate.m - 1, selectedDate.d).toLocaleDateString(
-                isAr ? 'ar-SA' : 'en-US',
+                isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
                 { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
               )}
             </Text>
@@ -283,7 +287,7 @@ export default function CalendarScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.prayerTime, { color: C.text }]}>
-                  {prayerTimes ? formatTime(prayerTimes[key]) : '—'}
+                  {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
                 </Text>
               </View>
             ))}

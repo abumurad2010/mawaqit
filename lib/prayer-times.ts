@@ -189,6 +189,20 @@ export function formatTime(date: Date, use24h = false): string {
   return `${h12}:${m} ${period}`;
 }
 
+/** Format time at a specific UTC offset (for manual locations).
+ *  Pass null to fall back to device local time. */
+export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, use24h = false): string {
+  if (utcOffsetHours === null) return formatTime(date, use24h);
+  const utcMin = date.getUTCHours() * 60 + date.getUTCMinutes();
+  const localMin = ((utcMin + Math.round(utcOffsetHours) * 60) % 1440 + 1440) % 1440;
+  const h = Math.floor(localMin / 60);
+  const m = (localMin % 60).toString().padStart(2, '0');
+  if (use24h) return `${h.toString().padStart(2, '0')}:${m}`;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${period}`;
+}
+
 export function getNextPrayer(times: PrayerTimes): { name: keyof PrayerTimes; time: Date } | null {
   const now = new Date();
   const order: (keyof PrayerTimes)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];

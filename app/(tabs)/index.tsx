@@ -16,15 +16,17 @@ import Animated, {
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
+import { MosqueSilhouette } from '@/components/MosqueFrame';
 import {
-  calculatePrayerTimes, formatTime, getNextPrayer, getCountdown,
+  calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
+import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
   sunrise: 'weather-sunset-up',
-  dhuhr: 'weather-sunny',
+  dhuhr: 'brightness-7',
   asr: 'weather-partly-cloudy',
   maghrib: 'weather-sunset-down',
   isha: 'weather-night-partly-cloudy',
@@ -35,7 +37,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings,
+    updateSettings, locationUtcOffset,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
@@ -179,9 +181,12 @@ export default function PrayerTimesScreen() {
   const isNext = (key: keyof PrayerTimesType) => nextPrayer?.name === key;
   const isPassed = (key: keyof PrayerTimesType) => times ? times[key] < now : false;
 
-  const dateStr = now.toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const gregorianStr = now.toLocaleDateString(
+    isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  );
+  const hijri = gregorianToHijri(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const hijriStr = formatHijriDate(hijri, lang);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -204,7 +209,10 @@ export default function PrayerTimesScreen() {
             {isAr ? 'مواقيت' : 'Mawaqit'}
           </Text>
           <Text style={[styles.dateText, { color: C.textSecond }]} numberOfLines={1}>
-            {dateStr}
+            {gregorianStr}
+          </Text>
+          <Text style={[styles.hijriText, { color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]} numberOfLines={1}>
+            {hijriStr}
           </Text>
         </View>
         <View style={styles.headerActions}>
@@ -229,6 +237,11 @@ export default function PrayerTimesScreen() {
             <Ionicons name="settings-outline" size={20} color={C.tint} />
           </Pressable>
         </View>
+      </View>
+
+      {/* Mosque silhouette divider */}
+      <View style={{ alignItems: 'center', marginBottom: 4 }}>
+        <MosqueSilhouette color={C.tint} />
       </View>
 
       {/* Location line */}
@@ -310,7 +323,7 @@ export default function PrayerTimesScreen() {
                 styles.prayerTime,
                 { color: active ? '#fff' : passed ? C.textMuted : C.text }
               ]}>
-                {times ? formatTime(times[key]) : '—'}
+                {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
               </Text>
             </Animated.View>
           );
@@ -436,6 +449,7 @@ const styles = StyleSheet.create({
   },
   appName: { fontSize: 26, fontWeight: '700', letterSpacing: 0.5 },
   dateText: { fontSize: 12, marginTop: 2 },
+  hijriText: { fontSize: 12, marginTop: 1 },
   headerActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
   iconBtn: {
     width: 36, height: 36, borderRadius: 18,

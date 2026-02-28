@@ -12,7 +12,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { searchQuran, SURAH_META } from '@/lib/quran-api';
+import { searchQuran, SURAH_META, getAyahPage } from '@/lib/quran-api';
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
@@ -49,7 +49,8 @@ export default function SearchScreen() {
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            router.push({ pathname: '/surah/[number]', params: { number: String(item.surahNum), ayah: String(item.ayahNum) } });
+            const page = getAyahPage(item.surahNum, item.ayahNum);
+            router.push({ pathname: '/quran-reader', params: { page: String(page) } });
           }}
           style={[styles.result, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
         >
