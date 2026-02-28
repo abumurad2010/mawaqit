@@ -29,12 +29,12 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const doSearch = useCallback(async (q: string) => {
+  const doSearch = useCallback((q: string) => {
     if (!q.trim()) return;
     setLoading(true);
     setSearched(true);
     try {
-      const res = await searchQuran(q);
+      const res = searchQuran(q);
       setResults(res);
     } catch {
       setResults([]);
@@ -42,25 +42,23 @@ export default function SearchScreen() {
     setLoading(false);
   }, []);
 
-  const renderItem = ({ item, index }: { item: any; index: number }) => {
-    const surahNum = item.surah?.number ?? 1;
-    const ayahNum = item.ayah?.numberInSurah ?? item.numberInSurah ?? 1;
-    const meta = SURAH_META[surahNum - 1];
+  const renderItem = ({ item, index }: { item: { surahNum: number; ayahNum: number; text: string }; index: number }) => {
+    const meta = SURAH_META[item.surahNum - 1];
     return (
       <Animated.View entering={FadeInDown.delay(index * 30).duration(300)}>
         <Pressable
           onPress={() => {
             Haptics.selectionAsync();
-            router.push({ pathname: '/surah/[number]', params: { number: String(surahNum), ayah: String(ayahNum) } });
+            router.push({ pathname: '/surah/[number]', params: { number: String(item.surahNum), ayah: String(item.ayahNum) } });
           }}
           style={[styles.result, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
         >
           <View style={[styles.surahBadge, { backgroundColor: C.tint }]}>
-            <Text style={styles.badgeNum}>{surahNum}</Text>
+            <Text style={styles.badgeNum}>{item.surahNum}</Text>
           </View>
           <View style={styles.resultInfo}>
             <Text style={[styles.resultSurah, { color: C.tint }]}>
-              {meta?.arabic ?? ''} · {isAr ? 'آية' : 'Ayah'} {item.ayah?.numberInSurah ?? item.numberInSurah}
+              {meta?.arabic ?? ''} · {isAr ? 'آية' : 'Ayah'} {item.ayahNum}
             </Text>
             <Text style={[styles.resultText, { color: C.text, fontFamily: 'Amiri_400Regular' }]} numberOfLines={3}>
               {item.text}

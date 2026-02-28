@@ -71,14 +71,17 @@ export default function PrayerTimesScreen() {
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       let city: string | undefined;
+      let countryCode: string | undefined;
       try {
         const geo = await Location.reverseGeocodeAsync({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
         city = geo[0]?.city ?? geo[0]?.region ?? undefined;
+        countryCode = geo[0]?.isoCountryCode ?? undefined;
       } catch {}
       setLocation({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
         city,
+        countryCode,
       });
     } catch (e) {
       console.warn(e);

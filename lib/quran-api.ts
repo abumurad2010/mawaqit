@@ -1,7 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/**
+ * Quran data is fully embedded — no network calls, no caching.
+ * The full 114-surah Uthmani text is bundled in assets/quran.json.
+ */
 
-const BASE = 'https://api.alquran.cloud/v1';
-const CACHE_PREFIX = 'quran_v2_';
+const QURAN_DATA = require('../assets/quran.json') as Record<
+  string,
+  Array<{ n: number; t: string; j: number; p: number }>
+>;
 
 export interface Surah {
   number: number;
@@ -21,7 +26,7 @@ export interface Ayah {
   page: number;
   ruku: number;
   hizbQuarter: number;
-  sajda: boolean | { id: number; recommended: boolean; obligatory: boolean };
+  sajda: boolean;
 }
 
 export interface SurahData {
@@ -34,108 +39,70 @@ export interface SurahData {
   ayahs: Ayah[];
 }
 
-export interface PageData {
-  ayahs: (Ayah & { surah: Surah })[];
-  pageNumber: number;
+function rawToAyahs(surahNum: number, raw: Array<{ n: number; t: string; j: number; p: number }>): Ayah[] {
+  let globalNum = 0;
+  for (let i = 1; i < surahNum; i++) {
+    globalNum += SURAH_META[i - 1].ayahs;
+  }
+  return raw.map((a, idx) => ({
+    number: globalNum + idx + 1,
+    text: a.t,
+    numberInSurah: a.n,
+    juz: a.j,
+    manzil: 0,
+    page: a.p,
+    ruku: 0,
+    hizbQuarter: 0,
+    sajda: false,
+  }));
 }
 
-async function getCache<T>(key: string): Promise<T | null> {
-  try {
-    const raw = await AsyncStorage.getItem(CACHE_PREFIX + key);
-    if (!raw) return null;
-    const { data } = JSON.parse(raw);
-    return data as T;
-  } catch { return null; }
+export function getSurahList(): Surah[] {
+  return SURAH_META.map(m => ({
+    number: m.number,
+    name: m.arabic,
+    englishName: m.transliteration,
+    englishNameTranslation: m.english,
+    numberOfAyahs: m.ayahs,
+    revelationType: m.type,
+  }));
 }
 
-async function setCache(key: string, data: unknown) {
-  try {
-    await AsyncStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ data, ts: Date.now() }));
-  } catch {}
+export function getSurah(number: number): SurahData {
+  const meta = SURAH_META[number - 1];
+  if (!meta) throw new Error(`Invalid surah number: ${number}`);
+  const raw = QURAN_DATA[String(number)];
+  if (!raw) throw new Error(`Surah ${number} not found in bundled data`);
+  return {
+    number: meta.number,
+    name: meta.arabic,
+    englishName: meta.transliteration,
+    englishNameTranslation: meta.english,
+    numberOfAyahs: meta.ayahs,
+    revelationType: meta.type,
+    ayahs: rawToAyahs(number, raw),
+  };
 }
 
-async function fetchJSON(url: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+export function fetchSurah(number: number): Promise<SurahData> {
+  return Promise.resolve(getSurah(number));
 }
 
-export async function fetchSurahList(): Promise<Surah[]> {
-  const cached = await getCache<Surah[]>('surah_list');
-  if (cached) return cached;
-  const json = await fetchJSON(`${BASE}/surah`);
-  const data: Surah[] = json.data;
-  await setCache('surah_list', data);
-  return data;
-}
-
-export async function fetchSurah(number: number): Promise<SurahData> {
-  const key = `surah_${number}`;
-  const cached = await getCache<SurahData>(key);
-  if (cached) return cached;
-  const json = await fetchJSON(`${BASE}/surah/${number}/quran-uthmani`);
-  const data: SurahData = json.data;
-  await setCache(key, data);
-  return data;
-}
-
-export async function fetchPage(pageNumber: number): Promise<PageData> {
-  const key = `page_${pageNumber}`;
-  const cached = await getCache<PageData>(key);
-  if (cached) return cached;
-  const json = await fetchJSON(`${BASE}/page/${pageNumber}/quran-uthmani`);
-  const data: PageData = { ayahs: json.data.ayahs, pageNumber };
-  await setCache(key, data);
-  return data;
-}
-
-export async function searchQuran(query: string): Promise<{ surah: Surah; ayah: Ayah; text: string }[]> {
+export function searchQuran(query: string): { surahNum: number; ayahNum: number; text: string }[] {
   if (!query.trim()) return [];
-  try {
-    const json = await fetchJSON(`${BASE}/search/${encodeURIComponent(query)}/all/ar`);
-    if (!json.data || !json.data.matches) return [];
-    return json.data.matches.map((m: any) => ({
-      surah: m.surah,
-      ayah: m,
-      text: m.text,
-    }));
-  } catch { return []; }
-}
-
-export async function getDownloadedCount(): Promise<number> {
-  let count = 0;
-  for (let i = 1; i <= 114; i++) {
-    const key = `surah_${i}`;
-    const cached = await getCache(key);
-    if (cached) count++;
-  }
-  return count;
-}
-
-export async function isSurahDownloaded(number: number): Promise<boolean> {
-  const cached = await getCache(`surah_${number}`);
-  return cached !== null;
-}
-
-export async function downloadAllSurahs(
-  onProgress: (downloaded: number, total: number) => void
-): Promise<{ success: number; failed: number }> {
-  let success = 0;
-  let failed = 0;
-  const total = 114;
-
-  for (let i = 1; i <= total; i++) {
-    try {
-      await fetchSurah(i);
-      success++;
-    } catch {
-      failed++;
+  const q = query.trim().toLowerCase();
+  const results: { surahNum: number; ayahNum: number; text: string }[] = [];
+  for (let s = 1; s <= 114; s++) {
+    const raw = QURAN_DATA[String(s)];
+    if (!raw) continue;
+    for (const a of raw) {
+      if (a.t.includes(q)) {
+        results.push({ surahNum: s, ayahNum: a.n, text: a.t });
+        if (results.length >= 200) return results;
+      }
     }
-    onProgress(success + failed, total);
-    await new Promise(r => setTimeout(r, 80));
   }
-
-  return { success, failed };
+  return results;
 }
 
 export const SURAH_META: Array<{

@@ -14,14 +14,12 @@ import { t } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 
 const CALC_METHODS: CalcMethod[] = ['MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi', 'Jordan', 'Tehran', 'Jafari'];
-const MAGHRIB_OFFSETS = [0, 3, 5, 7, 10];
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
-
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, calcMethod, asrMethod, maghribOffset,
+    isDark, lang, calcMethod, asrMethod, maghribOffset, countryCode,
     locationMode, themeMode, fontSize, updateSettings,
   } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
@@ -189,25 +187,23 @@ export default function SettingsScreen() {
             }
           />
 
-          {/* Maghrib offset */}
-          <View>
-            <Row
-              label={tr.maghribOffset}
-              right={
-                <View style={styles.chips}>
-                  {MAGHRIB_OFFSETS.map(o => (
-                    <Chip
-                      key={o}
-                      value={String(o)}
-                      current={maghribOffset === o ? String(o) : ''}
-                      onPress={() => { Haptics.selectionAsync(); updateSettings({ maghribOffset: o }); }}
-                    />
-                  ))}
-                </View>
-              }
-            />
-            <Text style={[styles.explain, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-              {tr.offsetExplain}
+          {/* Maghrib offset — auto */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start', gap: 4 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
+            </Text>
+            <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55' }]}>
+              <Ionicons name="location-outline" size={14} color={C.tint} />
+              <Text style={[styles.autoOffsetText, { color: C.tint }]}>
+                {isAr
+                  ? `${maghribOffset} ${maghribOffset === 1 ? 'دقيقة' : 'دقائق'} — تلقائي بناءً على موقعك${countryCode ? ` (${countryCode})` : ''}`
+                  : `${maghribOffset} min — auto-set for your location${countryCode ? ` (${countryCode})` : ''}`}
+              </Text>
+            </View>
+            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              {isAr
+                ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
+                : 'Minutes added after astronomical sunset per your country\'s Islamic authority standard'}
             </Text>
           </View>
         </View>
@@ -285,4 +281,10 @@ const styles = StyleSheet.create({
   },
   explain: { fontSize: 11, lineHeight: 17, paddingHorizontal: 16, paddingBottom: 12 },
   aboutText: { fontSize: 16, textAlign: 'center', width: '100%' },
+  autoOffsetBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 10, borderWidth: 1,
+  },
+  autoOffsetText: { fontSize: 13, fontWeight: '600' },
 });

@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import type { Lang } from '@/constants/i18n';
+import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 
 export interface Bookmark {
   surahNumber: number;
@@ -24,6 +25,7 @@ export interface LocationData {
   lng: number;
   city?: string;
   country?: string;
+  countryCode?: string;
 }
 
 interface AppSettings {
@@ -31,7 +33,6 @@ interface AppSettings {
   themeMode: 'auto' | 'light' | 'dark';
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
-  maghribOffset: number;
   locationMode: 'auto' | 'manual';
   manualLocation: LocationData | null;
   fontSize: 'small' | 'medium' | 'large';
@@ -41,6 +42,8 @@ interface AppContextValue extends AppSettings {
   isDark: boolean;
   location: LocationData | null;
   setLocation: (loc: LocationData | null) => void;
+  maghribOffset: number;
+  countryCode: string | null;
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
   removeBookmark: (surahNumber: number, ayahNumber: number) => void;
@@ -57,7 +60,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   themeMode: 'auto',
   calcMethod: 'MWL',
   asrMethod: 'standard',
-  maghribOffset: 5,
   locationMode: 'auto',
   manualLocation: null,
   fontSize: 'medium',
@@ -69,6 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [location, setLocationState] = useState<LocationData | null>(null);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [lastReadPage, setLastReadPageState] = useState(1);
   const [lastReadSurah, setLastReadSurahState] = useState(1);
@@ -77,20 +80,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const [s, b, lrp, lrs] = await Promise.all([
+        const [s, b, lrp, lrs, cc] = await Promise.all([
           AsyncStorage.getItem('settings'),
           AsyncStorage.getItem('bookmarks'),
           AsyncStorage.getItem('lastReadPage'),
           AsyncStorage.getItem('lastReadSurah'),
+          AsyncStorage.getItem('countryCode'),
         ]);
-        if (s) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(s) });
+        if (s) {
+          const parsed = JSON.parse(s);
+          delete parsed.maghribOffset;
+          setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+        }
         if (b) setBookmarks(JSON.parse(b));
         if (lrp) setLastReadPageState(parseInt(lrp, 10));
         if (lrs) setLastReadSurahState(parseInt(lrs, 10));
+        if (cc) setCountryCode(cc);
       } catch {}
       setLoaded(true);
     })();
   }, []);
+
+  const maghribOffset = getMaghribOffset(countryCode);
 
   const isDark =
     settings.themeMode === 'dark'
@@ -107,6 +118,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setLocation = async (loc: LocationData | null) => {
     setLocationState(loc);
+    if (loc?.countryCode) {
+      setCountryCode(loc.countryCode);
+      await AsyncStorage.setItem('countryCode', loc.countryCode);
+    }
   };
 
   const addBookmark = async (b: Bookmark) => {
@@ -144,6 +159,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isDark,
       location,
       setLocation,
+      maghribOffset,
+      countryCode,
       bookmarks,
       addBookmark,
       removeBookmark,
@@ -154,7 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastReadSurah,
       setLastReadSurah,
     }),
-    [settings, isDark, location, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, location, maghribOffset, countryCode, bookmarks, lastReadPage, lastReadSurah],
   );
 
   if (!loaded) return null;
