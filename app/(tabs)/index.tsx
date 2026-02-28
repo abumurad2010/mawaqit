@@ -1,9 +1,8 @@
 import AppLogo from '@/components/AppLogo';
-import PageBackground from '@/components/PageBackground';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
-  Platform, Alert, Modal, TextInput, ScrollView
+  Platform, Alert, Modal, TextInput, ScrollView, Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -225,7 +224,12 @@ export default function PrayerTimesScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
-      <PageBackground />
+      <Image
+        source={require('@/assets/images/bg-prayer.png')}
+        style={styles.bgPrayer}
+        resizeMode="cover"
+        pointerEvents="none"
+      />
 
       {/* ── Header ── */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
@@ -468,6 +472,14 @@ export default function PrayerTimesScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  bgPrayer: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0.13,
+    zIndex: 0,
+  },
 
   /* Header */
   headerWrap: { gap: 4, paddingBottom: 4 },
