@@ -209,20 +209,10 @@ export default function PrayerTimesScreen() {
     <View style={[styles.root, { backgroundColor: C.background }]}>
 
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        {/* Left: brand + date + hijri */}
-        <View style={{ flex: 1 }}>
+      <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
+        {/* Row 1: logo left, buttons right — matches all other pages */}
+        <View style={styles.header}>
           <AppLogo tintColor={C.tint} lang={lang} />
-          <Text style={[styles.dateText, { color: C.text, marginTop: 6 }]} numberOfLines={1}>
-            {gregorianStr}
-          </Text>
-          <Text style={[styles.metaText, { color: C.textMuted, marginTop: 3 }]} numberOfLines={1}>
-            {hijriStr}
-          </Text>
-        </View>
-
-        {/* Right: icon buttons + location underneath */}
-        <View style={styles.headerRight}>
           <View style={styles.headerActions}>
             <Pressable
               onPress={() => {
@@ -245,16 +235,22 @@ export default function PrayerTimesScreen() {
               <Ionicons name="settings-outline" size={19} color={C.textSecond} />
             </Pressable>
           </View>
-          <View style={styles.locationRow}>
-            <Ionicons name="location-sharp" size={10} color={C.textMuted} />
-            <Text style={[styles.metaText, { color: C.textMuted }]} numberOfLines={1}>
-              {loadingLoc
-                ? tr.searching
-                : location
-                  ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
-                  : tr.locationPermission}
-            </Text>
-          </View>
+        </View>
+
+        {/* Row 2: date · hijri · location */}
+        <View style={styles.metaRow}>
+          <Text style={[styles.dateText, { color: C.text }]} numberOfLines={1}>{gregorianStr}</Text>
+          <Text style={[styles.metaDot, { color: C.textMuted }]}>·</Text>
+          <Text style={[styles.metaText, { color: C.textMuted }]} numberOfLines={1}>{hijriStr}</Text>
+          <Text style={[styles.metaDot, { color: C.textMuted }]}>·</Text>
+          <Ionicons name="location-sharp" size={10} color={C.textMuted} />
+          <Text style={[styles.metaText, { color: C.textMuted, flexShrink: 1 }]} numberOfLines={1}>
+            {loadingLoc
+              ? tr.searching
+              : location
+                ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
+                : tr.locationPermission}
+          </Text>
         </View>
       </View>
 
@@ -448,15 +444,13 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
 
   /* Header */
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  appName: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5 },
-  dateText: { fontSize: 15, fontWeight: '600', marginTop: 2, letterSpacing: -0.1 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4, flexWrap: 'nowrap' },
+  headerWrap: { gap: 6, paddingBottom: 4 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dateText: { fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'nowrap' },
   metaText: { fontSize: 12 },
-  metaDot: { fontSize: 12, marginHorizontal: 2 },
-  headerRight: { alignItems: 'flex-end', gap: 6 },
+  metaDot: { fontSize: 12, marginHorizontal: 1 },
   headerActions: { flexDirection: 'row', gap: 8 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   /* Next prayer hero */

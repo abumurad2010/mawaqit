@@ -1,28 +1,21 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 
 interface AppLogoProps {
-  tintColor: string;
-  lang: 'ar' | 'en';
+  tintColor?: string;
+  lang?: 'ar' | 'en';
 }
 
-export default function AppLogo({ tintColor, lang }: AppLogoProps) {
+export default function AppLogo(_props: AppLogoProps) {
   return (
-    <View style={styles.container}>
-      <Image
-        source={require('@/assets/images/logo.png')}
-        style={styles.image}
-        resizeMode="contain"
-      />
-      <Text style={[styles.name, { color: tintColor }]}>
-        {lang === 'ar' ? 'مواقيت' : 'Mawaqit'}
-      </Text>
-    </View>
+    <Image
+      source={require('@/assets/images/logo.png')}
+      style={styles.image}
+      resizeMode="contain"
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', gap: 3 },
   image: { width: 52, height: 52 },
-  name: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
 });
