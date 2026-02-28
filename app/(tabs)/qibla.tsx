@@ -157,23 +157,26 @@ export default function QiblaScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
+        <View style={{ flex: 1 }} />
         <AppLogo tintColor={C.tint} lang={lang} />
-        {qiblaBearing !== null && (
-          <View style={[styles.badgeRow]}>
-            <View style={[styles.badge, { backgroundColor: C.surface }]}>
-              <Text style={[styles.badgeText, { color: C.tint }]}>
-                {qiblaBearing.toFixed(1)}{tr.degrees}
-              </Text>
-            </View>
-            {distance !== null && (
+        <View style={[styles.badgeRow, { flex: 1 }]}>
+          {qiblaBearing !== null && (
+            <>
               <View style={[styles.badge, { backgroundColor: C.surface }]}>
                 <Text style={[styles.badgeText, { color: C.tint }]}>
-                  {formatDistance(distance, lang)}
+                  {qiblaBearing.toFixed(1)}{tr.degrees}
                 </Text>
               </View>
-            )}
-          </View>
-        )}
+              {distance !== null && (
+                <View style={[styles.badge, { backgroundColor: C.surface }]}>
+                  <Text style={[styles.badgeText, { color: C.tint }]}>
+                    {formatDistance(distance, lang)}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
       </View>
 
       {/* Compass area */}
@@ -305,7 +308,7 @@ export default function QiblaScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
   title: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1, marginLeft: 12 },

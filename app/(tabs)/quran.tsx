@@ -74,8 +74,9 @@ export default function QuranScreen() {
       {/* Header */}
       <View style={[styles.topHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
         <View style={styles.headerTop}>
+          <View style={{ flex: 1 }} />
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={styles.headerActions}>
+          <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
@@ -122,7 +123,7 @@ export default function QuranScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   topHeader: { marginBottom: 10 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
   title: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },

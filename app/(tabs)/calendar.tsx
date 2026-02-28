@@ -137,15 +137,18 @@ export default function CalendarScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
+          <View style={{ flex: 1 }} />
           <AppLogo tintColor={C.tint} lang={lang} />
-          <Pressable
-            onPress={goToToday}
-            style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}
-          >
-            <Text style={[styles.todayBtnText, { color: C.tint }]}>
-              {isAr ? 'اليوم' : 'Today'}
-            </Text>
-          </Pressable>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            <Pressable
+              onPress={goToToday}
+              style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}
+            >
+              <Text style={[styles.todayBtnText, { color: C.tint }]}>
+                {isAr ? 'اليوم' : 'Today'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Month navigation */}
@@ -288,7 +291,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scrollContent: { gap: 0 },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 16,
   },
   appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },

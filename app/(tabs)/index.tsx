@@ -227,10 +227,11 @@ export default function PrayerTimesScreen() {
 
       {/* ── Header ── */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        {/* Row 1: logo left, buttons right — matches all other pages */}
+        {/* Row 1: spacer | centered logo | buttons */}
         <View style={styles.header}>
+          <View style={{ flex: 1 }} />
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={styles.headerActions}>
+          <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
               onPress={() => {
                 Haptics.selectionAsync();
