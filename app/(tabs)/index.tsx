@@ -442,17 +442,17 @@ const styles = StyleSheet.create({
 
   /* Next prayer hero */
   heroCard: {
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
   },
-  heroCardEmpty: { alignItems: 'center', paddingVertical: 22 },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 11, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' },
-  heroPrayerName: { color: '#fff', fontSize: 26, fontWeight: '700', marginBottom: 6 },
+  heroCardEmpty: { alignItems: 'center', paddingVertical: 14 },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
+  heroLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase' },
+  heroPrayerName: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 2 },
   heroCountdown: {
     color: '#fff',
-    fontSize: 42,
+    fontSize: 30,
     fontWeight: '300',
     letterSpacing: -1,
     fontVariant: ['tabular-nums'],

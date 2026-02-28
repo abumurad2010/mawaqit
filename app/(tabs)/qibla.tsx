@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
@@ -135,6 +135,11 @@ export default function QiblaScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
@@ -268,11 +273,13 @@ export default function QiblaScreen() {
       </Animated.View>
 
       {/* Dua */}
-      <View style={{ paddingBottom: bottomInset + 60, alignItems: 'center' }}>
+      <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
       </View>
+
+      </ScrollView>
     </View>
   );
 }
@@ -285,10 +292,12 @@ const styles = StyleSheet.create({
   badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1, marginLeft: 12 },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 13, fontWeight: '600' },
+  scrollContent: { flexGrow: 1 },
   compassWrapper: {
     alignItems: 'center', justifyContent: 'center',
-    marginVertical: 20, flex: 1,
+    marginVertical: 16,
   },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24 },
   glow: {
     position: 'absolute',
     width: COMPASS_SIZE + 40,
@@ -312,5 +321,5 @@ const styles = StyleSheet.create({
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   coordText: { fontSize: 11, textAlign: 'center' },
   permTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
-  dua: { fontSize: 14 },
+  dua: { fontSize: 13, textAlign: 'center' },
 });

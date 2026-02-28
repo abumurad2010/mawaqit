@@ -133,7 +133,7 @@ export default function CalendarScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 10, paddingBottom: bottomInset + 80 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 10, paddingBottom: 12 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -299,11 +299,14 @@ export default function CalendarScreen() {
           </View>
         )}
 
-        {/* Dua */}
+      </ScrollView>
+
+      {/* Dua — fixed footer */}
+      <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -356,5 +359,6 @@ const styles = StyleSheet.create({
   prayerTime: { fontSize: 14, fontVariant: ['tabular-nums'] },
   noLocation: { alignItems: 'center', gap: 8, paddingVertical: 20, marginBottom: 16 },
   noLocationText: { fontSize: 14, textAlign: 'center' },
-  dua: { fontSize: 13, textAlign: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24 },
+  dua: { fontSize: 13, textAlign: 'center' },
 });
