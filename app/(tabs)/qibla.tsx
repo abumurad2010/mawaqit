@@ -23,7 +23,7 @@ const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
 
 export default function QiblaScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location } = useApp();
+  const { isDark, lang, location: appLocation } = useApp();
   const C = isDark ? Colors.dark : Colors.light;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -33,6 +33,11 @@ export default function QiblaScreen() {
   const [distance, setDistance] = useState<number | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [magnetometerAvailable, setMagnetometerAvailable] = useState(true);
+  // Real GPS coords used for Qibla — independent of manual location setting
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // The location used for Qibla is always real GPS; falls back to app location only if GPS fails
+  const location = gpsCoords ?? appLocation;
 
   const rotation = useSharedValue(0);
   const qiblaRotation = useSharedValue(0);
@@ -40,7 +45,7 @@ export default function QiblaScreen() {
   const prevHeading = useRef(0);
   const hapticFired = useRef(false);
 
-  // Compute Qibla
+  // Compute Qibla whenever real GPS coords change
   useEffect(() => {
     if (!location) return;
     const bearing = getQiblaBearing(location.lat, location.lng);
@@ -49,11 +54,19 @@ export default function QiblaScreen() {
     setDistance(dist);
   }, [location]);
 
-  // Location permission
+  // Location permission + fetch actual device GPS
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       setHasPermission(status === 'granted');
+      if (status === 'granted') {
+        try {
+          const pos = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+          setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        } catch {}
+      }
     })();
   }, []);
 
