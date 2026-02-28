@@ -315,13 +315,13 @@ export default function PrayerTimesScreen() {
       </View>
 
       {/* ── Prayer list ── */}
-      <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.55)' : 'rgba(255,255,255,0.68)', marginHorizontal: 16 }]}>
+      <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)', marginHorizontal: 16 }]}>
         {PRAYER_ORDER.map((key, idx) => {
           const active = isNext(key);
           const passed = !active && isPassed(key);
           const isLast = idx === PRAYER_ORDER.length - 1;
           return (
-            <View key={key}>
+            <View key={key} style={!isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }}>
               <View style={[
                 styles.prayerRow,
                 active && { backgroundColor: C.tintLight },
