@@ -230,6 +230,9 @@ export default function PrayerTimesScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
+  const pageText  = isDark ? '#FFFFFF' : C.text;
+  const pageMuted = isDark ? 'rgba(255,255,255,0.70)' : C.textMuted;
+
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <Image
@@ -273,14 +276,14 @@ export default function PrayerTimesScreen() {
 
         {/* Row 2: dates stacked and centered */}
         <View style={styles.datesBlock}>
-          <Text style={[styles.dateText, { color: C.text }]} numberOfLines={1}>{gregorianStr}</Text>
-          <Text style={[styles.hijriText, { color: C.textMuted }]} numberOfLines={1}>{hijriStr}</Text>
+          <Text style={[styles.dateText, { color: pageText }]} numberOfLines={1}>{gregorianStr}</Text>
+          <Text style={[styles.hijriText, { color: pageMuted }]} numberOfLines={1}>{hijriStr}</Text>
         </View>
 
         {/* Row 3: location */}
         <View style={styles.metaRow}>
-          <Ionicons name="location-sharp" size={10} color={C.textMuted} />
-          <Text style={[styles.metaText, { color: C.textMuted, flexShrink: 1 }]} numberOfLines={1}>
+          <Ionicons name="location-sharp" size={10} color={pageMuted} />
+          <Text style={[styles.metaText, { color: pageMuted, flexShrink: 1 }]} numberOfLines={1}>
             {loadingLoc
               ? tr.searching
               : location
