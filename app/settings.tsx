@@ -13,7 +13,10 @@ import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 
-const CALC_METHODS: CalcMethod[] = ['MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi', 'Jordan', 'Tehran', 'Jafari'];
+const CALC_METHODS: CalcMethod[] = [
+  'MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi', 'Jordan',
+  'Kuwait', 'Qatar', 'Singapore', 'Turkey', 'France', 'Russia',
+];
 const FONT_SIZES = ['small', 'medium', 'large'] as const;
 
 export default function SettingsScreen() {

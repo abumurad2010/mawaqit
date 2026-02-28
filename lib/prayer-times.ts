@@ -10,9 +10,13 @@ export type CalcMethod =
   | 'Egypt'
   | 'MakkahUmmQura'
   | 'Karachi'
-  | 'Tehran'
-  | 'Jafari'
-  | 'Jordan';
+  | 'Jordan'
+  | 'Kuwait'
+  | 'Qatar'
+  | 'Singapore'
+  | 'Turkey'
+  | 'France'
+  | 'Russia';
 
 export type AsrMethod = 'standard' | 'hanafi';
 
@@ -48,9 +52,13 @@ const METHODS: Record<CalcMethod, MethodParams> = {
   Egypt:        { fajrAngle: 19.5, ishaAngle: 17.5 },
   MakkahUmmQura:{ fajrAngle: 18.5, ishaMins: 90 },
   Karachi:      { fajrAngle: 18,   ishaAngle: 18 },
-  Tehran:       { fajrAngle: 17.7, maghribAngle: 4.5, ishaAngle: 14 },
-  Jafari:       { fajrAngle: 16,   maghribAngle: 4,   ishaAngle: 14 },
   Jordan:       { fajrAngle: 18,   ishaAngle: 17 },
+  Kuwait:       { fajrAngle: 18,   ishaAngle: 17.5 },
+  Qatar:        { fajrAngle: 18,   ishaMins: 90 },
+  Singapore:    { fajrAngle: 20,   ishaAngle: 18 },
+  Turkey:       { fajrAngle: 18,   ishaAngle: 17 },
+  France:       { fajrAngle: 12,   ishaAngle: 12 },
+  Russia:       { fajrAngle: 16,   ishaAngle: 15 },
 };
 
 function toRad(d: number) { return d * Math.PI / 180; }
