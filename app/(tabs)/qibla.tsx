@@ -1,3 +1,4 @@
+import AppLogo from '@/components/AppLogo';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -156,14 +157,7 @@ export default function QiblaScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        <View>
-          <Text style={[styles.appNameSmall, { color: C.tint }]}>
-            {isAr ? 'مواقيت' : 'MAWAQIT'}
-          </Text>
-          <Text style={[styles.title, { color: C.text }]}>
-            {tr.qibla}
-          </Text>
-        </View>
+        <AppLogo tintColor={C.tint} lang={lang} />
         {qiblaBearing !== null && (
           <View style={[styles.badgeRow]}>
             <View style={[styles.badge, { backgroundColor: C.surface }]}>

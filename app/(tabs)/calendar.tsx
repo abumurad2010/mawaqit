@@ -1,3 +1,4 @@
+import AppLogo from '@/components/AppLogo';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Platform,
@@ -136,14 +137,7 @@ export default function CalendarScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: 20 }]}>
-          <View>
-            <Text style={[styles.appNameSmall, { color: C.tint }]}>
-              {isAr ? 'مواقيت' : 'MAWAQIT'}
-            </Text>
-            <Text style={[styles.screenTitle, { color: C.text }]}>
-              {isAr ? 'التقويم' : 'Calendar'}
-            </Text>
-          </View>
+          <AppLogo tintColor={C.tint} lang={lang} />
           <Pressable
             onPress={goToToday}
             style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}

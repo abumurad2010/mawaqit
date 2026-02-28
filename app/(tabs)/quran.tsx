@@ -1,3 +1,4 @@
+import AppLogo from '@/components/AppLogo';
 import React from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform,
@@ -73,14 +74,7 @@ export default function QuranScreen() {
       {/* Header */}
       <View style={[styles.topHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={[styles.appNameSmall, { color: C.tint }]}>
-              {isAr ? 'مواقيت' : 'MAWAQIT'}
-            </Text>
-            <Text style={[styles.title, { color: C.text }]}>
-              {tr.quran}
-            </Text>
-          </View>
+          <AppLogo tintColor={C.tint} lang={lang} />
           <View style={styles.headerActions}>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}

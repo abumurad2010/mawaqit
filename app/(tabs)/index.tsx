@@ -1,3 +1,4 @@
+import AppLogo from '@/components/AppLogo';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
@@ -211,10 +212,8 @@ export default function PrayerTimesScreen() {
       <View style={[styles.header, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
         {/* Left: brand + date + hijri */}
         <View style={{ flex: 1 }}>
-          <Text style={[styles.appName, { color: C.tint }]}>
-            {isAr ? 'مواقيت' : 'MAWAQIT'}
-          </Text>
-          <Text style={[styles.dateText, { color: C.text }]} numberOfLines={1}>
+          <AppLogo tintColor={C.tint} lang={lang} />
+          <Text style={[styles.dateText, { color: C.text, marginTop: 6 }]} numberOfLines={1}>
             {gregorianStr}
           </Text>
           <Text style={[styles.metaText, { color: C.textMuted, marginTop: 3 }]} numberOfLines={1}>
