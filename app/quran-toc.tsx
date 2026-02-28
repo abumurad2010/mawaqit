@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, Pressable,
   Platform, TextInput,
 } from 'react-native';
+import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,7 +69,7 @@ export default function QuranTOCScreen() {
         >
           <Ionicons name="close" size={20} color={C.tint} />
         </Pressable>
-        <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
           {tr.surahList}
         </Text>
         <View style={{ width: 36 }} />

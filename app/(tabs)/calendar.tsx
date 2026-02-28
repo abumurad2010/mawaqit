@@ -2,6 +2,7 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
+import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Platform,
@@ -166,7 +167,7 @@ export default function CalendarScreen() {
             <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
           </Pressable>
           <View style={styles.monthCenter}>
-            <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+            <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
               {monthName} {isAr ? toArabicIndic(viewYear) : viewYear}
             </Text>
             <Text style={[styles.hijriMonthLabel, { color: C.tint }]}>
@@ -197,7 +198,7 @@ export default function CalendarScreen() {
               <View key={i} style={styles.dayHeaderCell}>
                 <Text style={[styles.dayHeaderText, {
                   color: isFri ? C.tint : C.textMuted,
-                  fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                  fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
                 }]}>
                   {d}
                 </Text>
@@ -252,7 +253,7 @@ export default function CalendarScreen() {
           <View style={[styles.prayerSection, { paddingHorizontal: 16 }]}>
             <Text style={[styles.sectionTitle, {
               color: C.textSecond,
-              fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+              fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
               textAlign: isAr ? 'right' : 'left',
             }]}>
               {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
@@ -269,7 +270,7 @@ export default function CalendarScreen() {
                       <Text style={[styles.prayerName, {
                         color: C.text,
                         fontWeight: fw,
-                        fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+                        fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
                         fontSize: isAr ? 16 : 14,
                       }]}>
                         {prayerLabels[key]}
@@ -289,7 +290,7 @@ export default function CalendarScreen() {
         ) : (
           <View style={[styles.noLocation, { paddingHorizontal: 16 }]}>
             <Ionicons name="location-outline" size={32} color={C.textMuted} />
-            <Text style={[styles.noLocationText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            <Text style={[styles.noLocationText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
               {isAr ? 'يرجى تحديد الموقع لعرض أوقات الصلاة' : 'Set your location to see prayer times'}
             </Text>
           </View>

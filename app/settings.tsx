@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
 } from 'react-native';
+import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -142,7 +143,7 @@ export default function SettingsScreen() {
       styles.settingRow,
       { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' }
     ]}>
-      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
         {label}
       </Text>
       <View style={styles.rightSide}>{right}</View>
@@ -174,7 +175,7 @@ export default function SettingsScreen() {
         >
           <Ionicons name="close" size={20} color={C.textSecond} />
         </Pressable>
-        <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
           {tr.settings}
         </Text>
         <View style={styles.headerActions}>
@@ -200,7 +201,7 @@ export default function SettingsScreen() {
       >
 
         {/* Language */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {tr.language}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -212,7 +213,7 @@ export default function SettingsScreen() {
             ]}
           >
             <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'العربية' : tr.arabic} ↔ {draftSecondLang === 'auto'
                   ? `${tr.auto} · ${LANG_META[resolvedSecondLang].native}`
                   : LANG_META[draftSecondLang].native}
@@ -231,7 +232,7 @@ export default function SettingsScreen() {
         >
           <View style={{ flex: 1, backgroundColor: C.background }}>
             <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : undefined }]}>
+              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
                 {tr.language}
               </Text>
               <Pressable
@@ -278,7 +279,7 @@ export default function SettingsScreen() {
         </Modal>
 
         {/* Quran font */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'خط القرآن' : 'Quran Font'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -296,11 +297,11 @@ export default function SettingsScreen() {
         </View>
 
         {/* Accessibility */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'إمكانية الوصول' : 'Accessibility'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Text style={[styles.explain, { color: C.textMuted, paddingTop: 12, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+          <Text style={[styles.explain, { color: C.textMuted, paddingTop: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
             {isAr
               ? 'اختر نظام ألوان مناسب لاحتياجاتك البصرية'
               : 'Choose a colour theme suited to your visual needs'}
@@ -364,13 +365,13 @@ export default function SettingsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={[
                     styles.accessThemeLabel,
-                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }
+                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
                     {theme.label}
                   </Text>
                   <Text style={[
                     styles.accessThemeDesc,
-                    { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }
+                    { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
                     {theme.desc}
                   </Text>
@@ -382,12 +383,12 @@ export default function SettingsScreen() {
         </View>
 
         {/* Hijri date adjustment */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
               {tr.hijriAdjustment}
             </Text>
             <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
@@ -408,7 +409,7 @@ export default function SettingsScreen() {
                   <Ionicons name="add" size={18} color={C.tint} />
                 </Pressable>
               </View>
-              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : undefined }]}>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
                 {isAr ? 'يوم' : draftHijri === 0 ? 'no offset' : Math.abs(draftHijri) === 1 ? 'day' : 'days'}
               </Text>
               {draftHijri !== 0 && (
@@ -423,7 +424,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Prayer Calculation */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -433,10 +434,10 @@ export default function SettingsScreen() {
             style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
           >
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
                 {tr.calculationMethod}
               </Text>
-              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
+              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
                 {tr.methods[draftCalcMethod] ?? draftCalcMethod}
               </Text>
             </View>
@@ -447,7 +448,7 @@ export default function SettingsScreen() {
           <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
               <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : undefined }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
                   {tr.calculationMethod}
                 </Text>
                 <Pressable onPress={() => setShowMethodModal(false)}>
@@ -478,7 +479,7 @@ export default function SettingsScreen() {
                         <Text style={{
                           fontSize: 13, fontWeight: isSelected ? '700' : '500',
                           color: isSelected ? C.tint : C.text,
-                          fontFamily: isRtl ? 'Amiri_400Regular' : undefined,
+                          fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN,
                           textAlign: isRtl ? 'right' : 'left',
                         }}>
                           {label}
@@ -486,7 +487,7 @@ export default function SettingsScreen() {
                         {isRecommended && (
                           <View style={[styles.recommendedBadge, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                             <Ionicons name="location-outline" size={11} color={C.tint} />
-                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : undefined }}>
+                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }}>
                               {tr.recommendedForLocation}
                             </Text>
                           </View>
@@ -513,7 +514,7 @@ export default function SettingsScreen() {
 
           {/* Maghrib offset — base + stepper */}
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
               {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
             </Text>
 
@@ -529,7 +530,7 @@ export default function SettingsScreen() {
 
             {/* Stepper row */}
             <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : undefined }]}>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
                 {isAr ? 'تعديل:' : 'Adjustment:'}
               </Text>
               <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
@@ -566,7 +567,7 @@ export default function SettingsScreen() {
               </Pressable>
             )}
 
-            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }]}>
+            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
               {isAr
                 ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
                 : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
@@ -575,7 +576,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Notifications */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : undefined, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
           {isAr ? 'الإشعارات' : 'Notifications'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -594,7 +595,7 @@ export default function SettingsScreen() {
                 <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   <Text style={[
                     styles.notifLabel,
-                    { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined, textAlign: isRtl ? 'right' : 'left' }
+                    { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
                     {isAr ? prayer.ar : prayer.en}
                   </Text>

@@ -4,8 +4,9 @@ import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, Pressable, Platform, ScrollView,
+  View, Text, StyleSheet, FlatList, Pressable, Platform, Modal, ScrollView,
 } from 'react-native';
+import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,7 @@ export default function QuranScreen() {
   const isAr = lang === 'ar';
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
+  const [showLangPicker, setShowLangPicker] = useState(false);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -71,11 +73,11 @@ export default function QuranScreen() {
           <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
             {item.arabic}
           </Text>
-          <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw }]}>
+          <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw, fontFamily: SERIF_EN }]}>
             {item.transliteration}
             {isAr ? '' : ` · ${item.english}`}
           </Text>
-          <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw }]}>
+          <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
             {item.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
             {' · '}
             {item.ayahs} {isAr ? 'آية' : 'verses'}
@@ -144,39 +146,76 @@ export default function QuranScreen() {
           </Pressable>
         </View>
 
-        {/* Translation language chips — only in transliteration mode */}
+        {/* Translation language dropdown — only in transliteration mode */}
         {mode === 'transliteration' && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.langChips}
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
+            style={({ pressed }) => [
+              styles.langDropdown,
+              {
+                backgroundColor: C.backgroundCard,
+                borderColor: C.separator,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
           >
-            {SUPPORTED_TRANSLIT_LANGS.map(l => {
-              const active = l === translitLang;
-              const isRtl = isRtlLang(l);
-              return (
-                <Pressable
-                  key={l}
-                  onPress={() => setTranslitLang(l)}
-                  style={[
-                    styles.langChip,
-                    {
-                      backgroundColor: active ? C.tint : C.backgroundCard,
-                      borderColor: active ? C.tint : C.separator,
-                    },
-                  ]}
-                >
-                  <Text style={[
-                    styles.langChipNative,
-                    { color: active ? C.tintText : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined },
-                  ]}>
-                    {LANG_META[l]?.native ?? l}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+            <Ionicons name="language-outline" size={15} color={C.tint} />
+            <Text style={[styles.langDropdownText, { color: C.text, fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }]}>
+              {LANG_META[translitLang]?.native ?? translitLang}
+            </Text>
+            <Text style={[styles.langDropdownLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+              {LANG_META[translitLang]?.label ?? ''}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+          </Pressable>
         )}
+
+        {/* Language picker modal */}
+        <Modal
+          visible={showLangPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowLangPicker(false)}
+        >
+          <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
+            <Pressable
+              style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
+              onPress={e => e.stopPropagation()}
+            >
+              <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
+                <Text style={[styles.pickerTitle, { color: C.text, fontFamily: SERIF_EN }]}>
+                  {isAr ? 'لغة الترجمة' : 'Translation language'}
+                </Text>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {SUPPORTED_TRANSLIT_LANGS.map(l => {
+                  const active = l === translitLang;
+                  const rtl = isRtlLang(l);
+                  return (
+                    <Pressable
+                      key={l}
+                      onPress={() => { setTranslitLang(l); setShowLangPicker(false); }}
+                      style={({ pressed }) => [
+                        styles.pickerRow,
+                        { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
+                      ]}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                          {LANG_META[l]?.native ?? l}
+                        </Text>
+                        <Text style={[styles.pickerLang, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+                          {LANG_META[l]?.label ?? l}
+                        </Text>
+                      </View>
+                      {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
 
       {/* Continue Reading — only in Mushaf mode */}
@@ -186,7 +225,7 @@ export default function QuranScreen() {
           style={({ pressed }) => [styles.continueBtn, { backgroundColor: C.tint, opacity: pressed ? 0.85 : 1, marginHorizontal: 16, marginBottom: 8 }]}
         >
           <Ionicons name="book-outline" size={15} color={C.tintText} />
-          <Text style={[styles.continueBtnText, { color: C.tintText, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Text style={[styles.continueBtnText, { color: C.tintText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
             {isAr ? `متابعة القراءة — صفحة ${lastReadPage}` : `Continue Reading — Page ${lastReadPage}`}
           </Text>
         </Pressable>
@@ -231,14 +270,33 @@ const styles = StyleSheet.create({
     gap: 5, paddingVertical: 8, borderRadius: 10,
   },
   segmentLabel: { fontSize: 12, fontWeight: '600' },
-  langChips: {
-    paddingTop: 10, paddingBottom: 2, gap: 6, flexDirection: 'row',
+  langDropdown: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginTop: 10, paddingHorizontal: 12, paddingVertical: 9,
+    borderRadius: 12, borderWidth: StyleSheet.hairlineWidth,
   },
-  langChip: {
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1,
+  langDropdownText: { fontSize: 14, fontWeight: '600' },
+  langDropdownLabel: { fontSize: 12, opacity: 0.6 },
+  pickerBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center', alignItems: 'center',
   },
-  langChipNative: { fontSize: 13, fontWeight: '600' },
+  pickerSheet: {
+    width: '88%', maxHeight: 420, borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
+  },
+  pickerHeader: {
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  pickerTitle: { fontSize: 16, fontWeight: '600' },
+  pickerRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  pickerNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
+  pickerLang: { fontSize: 12 },
   continueBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 16, paddingVertical: 11, borderRadius: 12,

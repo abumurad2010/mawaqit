@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform,
 } from 'react-native';
+import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,7 +89,7 @@ export default function BookmarksScreen() {
         >
           <Ionicons name="arrow-back" size={20} color={C.tint} />
         </Pressable>
-        <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
           {tr.bookmarks}
         </Text>
         <View style={{ width: 36 }} />
@@ -97,7 +98,7 @@ export default function BookmarksScreen() {
       {bookmarks.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="bookmark-outline" size={56} color={C.textMuted} />
-          <Text style={[styles.emptyText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Text style={[styles.emptyText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
             {tr.noBookmarks}
           </Text>
         </View>

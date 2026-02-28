@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform,
 } from 'react-native';
+import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -187,7 +188,7 @@ export default function SurahTransliterationScreen() {
                     {tlit.translation.length > 0 && (
                       <Text style={[
                         styles.translationText,
-                        { color: C.textSecond, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : undefined }
+                        { color: C.textSecond, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : SERIF_EN }
                       ]}>
                         {tlit.translation}
                       </Text>

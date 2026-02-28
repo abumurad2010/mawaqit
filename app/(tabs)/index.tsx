@@ -2,6 +2,7 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { SERIF_EN } from '@/constants/typography';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
   Platform, Alert, Modal, TextInput, ScrollView, Image
@@ -282,11 +283,11 @@ export default function PrayerTimesScreen() {
         {/* Row 2: dates stacked and centered */}
         <View style={styles.datesBlock}>
           <Text
-            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}
+            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}
             numberOfLines={1}
           >{gregorianStr}</Text>
           <Text
-            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}
+            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}
             numberOfLines={1}
           >{hijriStr}</Text>
         </View>
@@ -323,7 +324,7 @@ export default function PrayerTimesScreen() {
                   ? tr.tomorrowFajr
                   : tr.nextPrayer}
               </Text>
-              <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
                 {prayerLabel(displayNext.name)}
               </Text>
             </View>
@@ -361,7 +362,7 @@ export default function PrayerTimesScreen() {
                     {
                       color: active ? C.tint : passed ? C.textMuted : C.text,
                       fontWeight: active ? '700' : fw,
-                      fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : undefined,
+                      fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : SERIF_EN,
                       fontSize: 15,
                       lineHeight: 20,
                     }
@@ -400,7 +401,7 @@ export default function PrayerTimesScreen() {
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} keyboardShouldPersistTaps="handled">
             <View style={[styles.modalBox, { backgroundColor: C.backgroundCard }]}>
-              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
                 {tr.manualLocation}
               </Text>
 

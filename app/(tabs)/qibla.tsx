@@ -2,6 +2,7 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
+import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -136,7 +137,7 @@ export default function QiblaScreen() {
   if (hasPermission === false) {
     return (
       <View style={[styles.root, { backgroundColor: C.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={[styles.permTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+        <Text style={[styles.permTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
           {tr.locationPermission}
         </Text>
         <Pressable onPress={async () => {
@@ -275,7 +276,7 @@ export default function QiblaScreen() {
           <Text style={[styles.instrText, {
             color: C.textSecond,
             fontWeight: fw,
-            fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+            fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
           }]}>
             {tr.pointToMecca}
           </Text>
@@ -295,7 +296,7 @@ export default function QiblaScreen() {
             <Text style={[styles.calibrateText, {
               color: C.textMuted,
               fontWeight: fw,
-              fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+              fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
               textAlign: isAr ? 'right' : 'left',
             }]}>
               {tr.calibrateHint}
