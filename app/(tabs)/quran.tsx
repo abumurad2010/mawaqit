@@ -16,7 +16,8 @@ import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
-import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
+import { SUPPORTED_TRANSLIT_LANGS, fetchSurahNamesByLang } from '@/lib/quran-transliteration';
+import { useQuery } from '@tanstack/react-query';
 
 type QuranMode = 'mushaf' | 'transliteration';
 
@@ -30,6 +31,13 @@ export default function QuranScreen() {
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
   const [showLangPicker, setShowLangPicker] = useState(false);
+
+  const { data: surahNamesMap } = useQuery<Record<number, string>>({
+    queryKey: ['/surah-names', translitLang],
+    queryFn: () => fetchSurahNamesByLang(translitLang),
+    enabled: mode === 'transliteration',
+    staleTime: 1000 * 60 * 60 * 24,
+  });
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -75,7 +83,14 @@ export default function QuranScreen() {
           </Text>
           <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw, fontFamily: SERIF_EN }]}>
             {item.transliteration}
-            {isAr ? '' : ` · ${item.english}`}
+            {mode === 'transliteration'
+              ? surahNamesMap
+                ? <Text style={{ fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }}>
+                    {` · ${surahNamesMap[item.number] ?? item.english}`}
+                  </Text>
+                : ` · ${item.english}`
+              : (!isAr ? ` · ${item.english}` : '')
+            }
           </Text>
           <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
             {item.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
@@ -235,6 +250,7 @@ export default function QuranScreen() {
         data={SURAH_META}
         keyExtractor={item => String(item.number)}
         renderItem={renderItem}
+        extraData={surahNamesMap}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
         ListFooterComponent={
           <View style={[styles.duaRow, { paddingBottom: 8 }]}>

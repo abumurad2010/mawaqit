@@ -1,6 +1,36 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Lang } from '@/constants/i18n';
 
+const QURANCOM_LANG_MAP: Partial<Record<Lang, string>> = {
+  en: 'en', fr: 'fr', es: 'es', ru: 'ru', zh: 'zh',
+  tr: 'tr', ur: 'ur', id: 'id', bn: 'bn', fa: 'fa',
+  ms: 'ms', pt: 'pt', sw: 'sw', ha: 'ha',
+};
+
+const NAMES_CACHE_VERSION = 'v1';
+
+export async function fetchSurahNamesByLang(lang: Lang): Promise<Record<number, string>> {
+  const cacheK = `quran_surah_names_${NAMES_CACHE_VERSION}_${lang}`;
+  const cached = await AsyncStorage.getItem(cacheK);
+  if (cached) return JSON.parse(cached) as Record<number, string>;
+
+  const qlang = QURANCOM_LANG_MAP[lang] ?? 'en';
+  const res = await fetch(`https://api.quran.com/api/v4/chapters?language=${qlang}`);
+  if (!res.ok) throw new Error(`chapters API error: ${res.status}`);
+
+  const json = await res.json() as {
+    chapters: { id: number; translated_name: { name: string } }[];
+  };
+
+  const map: Record<number, string> = {};
+  for (const ch of json.chapters) {
+    map[ch.id] = ch.translated_name?.name ?? '';
+  }
+
+  await AsyncStorage.setItem(cacheK, JSON.stringify(map));
+  return map;
+}
+
 export interface TranslitAyah {
   number: number;
   transliteration: string;
