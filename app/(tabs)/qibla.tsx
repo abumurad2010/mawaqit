@@ -277,6 +277,18 @@ export default function QiblaScreen() {
             {location.lat.toFixed(4)}°, {location.lng.toFixed(4)}°
           </Text>
         )}
+        {magnetometerAvailable && (
+          <View style={[styles.calibrateBox, { backgroundColor: C.surface, borderColor: C.separator }]}>
+            <Text style={styles.calibrateSymbol}>∞</Text>
+            <Text style={[styles.calibrateText, {
+              color: C.textMuted,
+              fontFamily: isAr ? 'Amiri_400Regular' : undefined,
+              textAlign: isAr ? 'right' : 'left',
+            }]}>
+              {tr.calibrateHint}
+            </Text>
+          </View>
+        )}
       </Animated.View>
 
       {/* Dua */}
@@ -324,9 +336,16 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     zIndex: 10,
   },
-  instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 16, gap: 4 },
+  instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 16, gap: 6 },
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   coordText: { fontSize: 11, textAlign: 'center' },
+  calibrateBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginTop: 6, paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 12, borderWidth: 1,
+  },
+  calibrateSymbol: { fontSize: 26, lineHeight: 30, color: '#888' },
+  calibrateText: { flex: 1, fontSize: 13, lineHeight: 19 },
   permTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
   dua: { fontSize: 13, textAlign: 'center' },
 });
