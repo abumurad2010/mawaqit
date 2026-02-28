@@ -1,5 +1,5 @@
 import AppLogo from '@/components/AppLogo';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
   Platform, Alert, Modal, TextInput, ScrollView
@@ -111,18 +111,35 @@ export default function PrayerTimesScreen() {
     setTimes(computed);
   }, [location, now, calcMethod, asrMethod, maghribOffset]);
 
+  const nextPrayer = times ? getNextPrayer(times) : null;
+
+  // When all today's prayers have passed, calculate tomorrow's Fajr
+  const tomorrowFajr = useMemo(() => {
+    if (nextPrayer || !location || !times) return null;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const t = calculatePrayerTimes({
+      lat: location.lat, lng: location.lng,
+      date: tomorrow, method: calcMethod, asrMethod, maghribOffset,
+    });
+    return t.fajr;
+  }, [nextPrayer, location, times, calcMethod, asrMethod, maghribOffset]);
+
+  // displayNext: either today's next prayer, or tomorrow's Fajr
+  const displayNext = nextPrayer
+    ?? (tomorrowFajr ? { name: 'fajr' as const, time: tomorrowFajr, isTomorrow: true } : null);
+
   useEffect(() => {
     const id = setInterval(() => {
       setNow(new Date());
       if (times) {
         const next = getNextPrayer(times);
-        if (next) setCountdown(getCountdown(next.time));
+        const target = next?.time ?? tomorrowFajr;
+        if (target) setCountdown(getCountdown(target));
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [times]);
-
-  const nextPrayer = times ? getNextPrayer(times) : null;
+  }, [times, tomorrowFajr]);
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
@@ -258,21 +275,25 @@ export default function PrayerTimesScreen() {
 
       {/* ── Next prayer hero strip ── */}
       <View style={{ paddingHorizontal: 16, marginTop: 6, marginBottom: 6 }}>
-        {nextPrayer && times ? (
+        {displayNext && times ? (
           <Animated.View
             entering={FadeIn.duration(500)}
             style={[styles.heroCard, { backgroundColor: C.tint }]}
           >
             <Animated.View style={pulseStyle}>
               <MaterialCommunityIcons
-                name={PRAYER_ICONS[nextPrayer.name] as any}
+                name={PRAYER_ICONS[displayNext.name] as any}
                 size={16} color="rgba(255,255,255,0.55)"
               />
             </Animated.View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroLabel}>{tr.nextPrayer}</Text>
+              <Text style={styles.heroLabel}>
+                {'isTomorrow' in displayNext && displayNext.isTomorrow
+                  ? tr.tomorrowFajr
+                  : tr.nextPrayer}
+              </Text>
               <Text style={[styles.heroPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-                {prayerLabel(nextPrayer.name)}
+                {prayerLabel(displayNext.name)}
               </Text>
             </View>
             <Text style={styles.heroCountdown}>{countdown}</Text>
@@ -280,7 +301,7 @@ export default function PrayerTimesScreen() {
         ) : (
           <View style={[styles.heroCard, styles.heroCardEmpty, { backgroundColor: C.backgroundCard }]}>
             <Text style={[styles.heroEmptyText, { color: C.textMuted }]}>
-              {loadingLoc ? tr.searching : tr.locationPermission}
+              {loadingLoc ? tr.searching : !location ? tr.locationPermission : tr.searching}
             </Text>
           </View>
         )}
