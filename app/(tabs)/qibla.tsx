@@ -283,7 +283,7 @@ export default function QiblaScreen() {
           </Text>
         )}
         {magnetometerAvailable && (
-          <View style={[styles.calibrateBox, { backgroundColor: C.surface, borderColor: C.separator }]}>
+          <View style={[styles.calibrateBox, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)', borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]}>
             <Text style={styles.calibrateSymbol}>∞</Text>
             <Text style={[styles.calibrateText, {
               color: C.textMuted,

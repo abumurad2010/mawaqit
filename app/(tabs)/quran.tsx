@@ -37,7 +37,9 @@ export default function QuranScreen() {
         style={({ pressed }) => [
           styles.surahRow,
           {
-            backgroundColor: item.number === lastReadSurah ? C.tintLight : C.backgroundCard,
+            backgroundColor: item.number === lastReadSurah ? C.tintLight : isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)',
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
             opacity: pressed ? 0.75 : 1,
           },
         ]}

@@ -240,7 +240,7 @@ export default function CalendarScreen() {
             <Text style={[styles.sectionTitle, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
               {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
             </Text>
-            <View style={[styles.prayerCard, { backgroundColor: C.backgroundCard }]}>
+            <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}>
               {PRAYER_ORDER.map((key, idx) => (
                 <View key={key}>
                   <View style={styles.prayerRow}>
@@ -262,7 +262,7 @@ export default function CalendarScreen() {
                     </Text>
                   </View>
                   {idx < PRAYER_ORDER.length - 1 && (
-                    <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
+                    <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
                   )}
                 </View>
               ))}
