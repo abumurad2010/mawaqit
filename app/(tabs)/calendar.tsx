@@ -14,7 +14,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import {
-  gregorianToHijri, hijriMonthName, formatHijriDate,
+  gregorianToHijri, hijriMonthName,
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -121,8 +121,6 @@ export default function CalendarScreen() {
 
   const monthName = isAr ? GREGORIAN_MONTHS_AR[viewMonth - 1] : GREGORIAN_MONTHS_EN[viewMonth - 1];
   const dayNames = isAr ? DAYS_AR : DAYS_EN;
-
-  const selectedHijri = gregorianToHijri(selectedDate.y, selectedDate.m, selectedDate.d);
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
   const prayerLabels: Record<string, string> = {
@@ -237,25 +235,6 @@ export default function CalendarScreen() {
           })}
         </View>
 
-        {/* Selected date info */}
-        <Animated.View
-          entering={FadeInDown.duration(300)}
-          key={`${selectedDate.y}-${selectedDate.m}-${selectedDate.d}`}
-          style={[styles.selectedInfo, { backgroundColor: C.backgroundCard, marginHorizontal: 16 }]}
-        >
-          <View style={styles.selectedDates}>
-            <Text style={[styles.selectedGregorian, { color: C.text }]}>
-              {new Date(selectedDate.y, selectedDate.m - 1, selectedDate.d).toLocaleDateString(
-                isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
-                { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-              )}
-            </Text>
-            <Text style={[styles.selectedHijri, { color: C.tint, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-              {formatHijriDate(selectedHijri, lang)}
-            </Text>
-          </View>
-        </Animated.View>
-
         {/* Prayer times for selected date */}
         {location ? (
           <View style={[styles.prayerSection, { paddingHorizontal: 16 }]}>
@@ -342,10 +321,6 @@ const styles = StyleSheet.create({
   cell: { width: `${100 / 7}%`, paddingVertical: 6, alignItems: 'center' },
   cellDay: { fontSize: 14 },
   cellHijri: { fontSize: 9, marginTop: 1 },
-  selectedInfo: { borderRadius: 16, padding: 16, marginBottom: 12 },
-  selectedDates: { gap: 4 },
-  selectedGregorian: { fontSize: 14, fontWeight: '600' },
-  selectedHijri: { fontSize: 16 },
   prayerSection: { gap: 6, marginBottom: 16 },
   sectionTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
   prayerCard: { borderRadius: 16, overflow: 'hidden' },
