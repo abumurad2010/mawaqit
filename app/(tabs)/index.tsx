@@ -315,7 +315,7 @@ export default function PrayerTimesScreen() {
       </View>
 
       {/* ── Prayer list ── */}
-      <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.72)' : 'rgba(255,255,255,0.68)', marginHorizontal: 16 }]}>
+      <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.55)' : 'rgba(255,255,255,0.68)', marginHorizontal: 16 }]}>
         {PRAYER_ORDER.map((key, idx) => {
           const active = isNext(key);
           const passed = !active && isPassed(key);
