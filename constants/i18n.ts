@@ -39,7 +39,7 @@ const translations = {
     degrees: 'درجة',
     searching: 'جاري البحث...',
     pointToMecca: 'وجّه الجهاز نحو مكة المكرمة',
-    calibrateHint: 'لمعايرة البوصلة، حرّك الجهاز برسم حرف ∞',
+    calibrateHint: 'لمعايرة البوصلة، حرّك الجهاز برسم ∞',
     compassNotAvailable: 'البوصلة غير متاحة',
     locationPermission: 'يلزم إذن الموقع',
     requestPermission: 'منح الإذن',
