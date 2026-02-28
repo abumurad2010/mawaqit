@@ -393,76 +393,104 @@ export default function SettingsScreen() {
 
             return (
               <View key={prayer.key} style={[
-                styles.notifRow,
+                styles.notifItem,
                 { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1 }
               ]}>
-                <Text style={[
-                  styles.notifLabel,
-                  { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }
-                ]}>
-                  {isAr ? prayer.ar : prayer.en}
-                </Text>
-                <View style={styles.notifChips}>
+                {/* Main row: name + 3 type chips */}
+                <View style={styles.notifRow}>
+                  <Text style={[
+                    styles.notifLabel,
+                    { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }
+                  ]}>
+                    {isAr ? prayer.ar : prayer.en}
+                  </Text>
+                  <View style={styles.notifChips}>
 
-                  {/* None */}
-                  <Pressable
-                    onPress={() => setPrayerNotif(prayer.key, 'none')}
-                    style={[styles.iconChip, {
-                      backgroundColor: isNone ? C.tint : C.backgroundSecond,
-                      borderColor: isNone ? C.tint : C.separator,
-                    }]}
-                  >
-                    <Text style={{ color: isNone ? '#fff' : C.textSecond, fontSize: 13, fontWeight: '600' }}>—</Text>
-                  </Pressable>
-
-                  {/* Banner / bell */}
-                  <Pressable
-                    onPress={() => setPrayerNotif(prayer.key, 'banner')}
-                    style={[styles.iconChip, {
-                      backgroundColor: isBanner ? C.tint : C.backgroundSecond,
-                      borderColor: isBanner ? C.tint : C.separator,
-                    }]}
-                  >
-                    <Ionicons
-                      name={isBanner ? 'notifications' : 'notifications-outline'}
-                      size={16}
-                      color={isBanner ? '#fff' : C.textSecond}
-                    />
-                  </Pressable>
-
-                  {/* Athan / speaker */}
-                  <Pressable
-                    onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
-                    style={[styles.iconChip, {
-                      backgroundColor: isAthan ? C.tint : C.backgroundSecond,
-                      borderColor: isAthan ? C.tint : C.separator,
-                    }]}
-                  >
-                    <Ionicons
-                      name={isAthan ? 'volume-high' : 'volume-mute'}
-                      size={16}
-                      color={isAthan ? '#fff' : C.textSecond}
-                    />
-                  </Pressable>
-
-                  {/* Preview — only when athan selected */}
-                  {isAthan && (
+                    {/* None */}
                     <Pressable
-                      onPress={() => handlePreview(prayer.key)}
+                      onPress={() => setPrayerNotif(prayer.key, 'none')}
                       style={[styles.iconChip, {
-                        backgroundColor: previewing === prayer.key ? C.tint + 'CC' : C.backgroundSecond,
-                        borderColor: C.separator,
+                        backgroundColor: isNone ? C.tint : C.backgroundSecond,
+                        borderColor: isNone ? C.tint : C.separator,
+                      }]}
+                    >
+                      <Text style={{ color: isNone ? '#fff' : C.textSecond, fontSize: 13, fontWeight: '600' }}>—</Text>
+                    </Pressable>
+
+                    {/* Banner / bell */}
+                    <Pressable
+                      onPress={() => setPrayerNotif(prayer.key, 'banner')}
+                      style={[styles.iconChip, {
+                        backgroundColor: isBanner ? C.tint : C.backgroundSecond,
+                        borderColor: isBanner ? C.tint : C.separator,
                       }]}
                     >
                       <Ionicons
-                        name={previewing === prayer.key ? 'stop' : 'play'}
-                        size={14}
-                        color={previewing === prayer.key ? '#fff' : C.textSecond}
+                        name={isBanner ? 'notifications' : 'notifications-outline'}
+                        size={16}
+                        color={isBanner ? '#fff' : C.textSecond}
                       />
                     </Pressable>
-                  )}
 
+                    {/* Athan / speaker */}
+                    <Pressable
+                      onPress={() => setPrayerNotif(prayer.key, isAthan ? type : 'athan_full')}
+                      style={[styles.iconChip, {
+                        backgroundColor: isAthan ? C.tint : C.backgroundSecond,
+                        borderColor: isAthan ? C.tint : C.separator,
+                      }]}
+                    >
+                      <Ionicons
+                        name={isAthan ? 'volume-high' : 'volume-mute'}
+                        size={16}
+                        color={isAthan ? '#fff' : C.textSecond}
+                      />
+                    </Pressable>
+
+                  </View>
                 </View>
+
+                {/* Sub-row: Full / Abbreviated + Preview — only when athan active */}
+                {isAthan && (
+                  <View style={[styles.notifSubRow, { borderTopColor: C.separator }]}>
+                    <Pressable
+                      onPress={() => setPrayerNotif(prayer.key, 'athan_full')}
+                      style={[styles.subChip, {
+                        backgroundColor: type === 'athan_full' ? C.tint + '20' : 'transparent',
+                        borderColor: type === 'athan_full' ? C.tint : C.separator,
+                      }]}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: type === 'athan_full' ? C.tint : C.textSecond }}>
+                        {isAr ? 'كامل' : 'Full'}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setPrayerNotif(prayer.key, 'athan_abbreviated')}
+                      style={[styles.subChip, {
+                        backgroundColor: type === 'athan_abbreviated' ? C.tint + '20' : 'transparent',
+                        borderColor: type === 'athan_abbreviated' ? C.tint : C.separator,
+                      }]}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: type === 'athan_abbreviated' ? C.tint : C.textSecond }}>
+                        {isAr ? 'مختصر' : 'Abbr.'}
+                      </Text>
+                    </Pressable>
+                    <View style={{ flex: 1 }} />
+                    <Pressable
+                      onPress={() => handlePreview(prayer.key)}
+                      style={[styles.previewBtn, { borderColor: C.separator }]}
+                    >
+                      <Ionicons
+                        name={previewing === prayer.key ? 'stop-circle-outline' : 'play-circle-outline'}
+                        size={14}
+                        color={previewing === prayer.key ? C.tint : C.textSecond}
+                      />
+                      <Text style={{ fontSize: 11, color: previewing === prayer.key ? C.tint : C.textSecond, fontWeight: '500' }}>
+                        {isAr ? 'معاينة' : 'Preview'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                )}
               </View>
             );
           })}
@@ -559,14 +587,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
   },
   totalBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  notifItem: {
+    paddingHorizontal: 16, paddingVertical: 10,
+  },
   notifRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10, gap: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8,
   },
   notifLabel: { fontSize: 13, fontWeight: '500', flex: 1 },
   notifChips: { flexDirection: 'row', gap: 6, flexShrink: 0 },
   iconChip: {
     width: 34, height: 34, borderRadius: 10, borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
+  },
+  notifSubRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 8,
+  },
+  subChip: {
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 8, borderWidth: 1,
+  },
+  previewBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 8, borderWidth: 1,
   },
 });
