@@ -159,7 +159,7 @@ export default function CalendarScreen() {
         {/* Month navigation */}
         <View style={[styles.monthNav, { paddingHorizontal: 16 }]}>
           <Pressable onPress={goToPrevMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
-            <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
+            <Ionicons name="chevron-back" size={20} color={C.tint} />
           </Pressable>
           <View style={styles.monthCenter}>
             <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
@@ -179,7 +179,7 @@ export default function CalendarScreen() {
             </Text>
           </View>
           <Pressable onPress={goToNextMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={20} color={C.tint} />
+            <Ionicons name="chevron-forward" size={20} color={C.tint} />
           </Pressable>
         </View>
 

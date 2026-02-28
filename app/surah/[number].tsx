@@ -210,7 +210,7 @@ export default function SurahScreen() {
           style={styles.swipeHintBtn}
           disabled={prev === null}
         >
-          <Ionicons name="chevron-back" size={14} color={prev !== null ? C.tint : C.separator} />
+          <Ionicons name="chevron-forward" size={14} color={prev !== null ? C.tint : C.separator} />
           {prev !== null && (
             <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]} numberOfLines={1}>
               {SURAH_META[prev - 1]?.arabic}
@@ -232,7 +232,7 @@ export default function SurahScreen() {
               {SURAH_META[next - 1]?.arabic}
             </Text>
           )}
-          <Ionicons name="chevron-forward" size={14} color={next !== null ? C.tint : C.separator} />
+          <Ionicons name="chevron-back" size={14} color={next !== null ? C.tint : C.separator} />
         </Pressable>
       </View>
 
@@ -338,7 +338,7 @@ export default function SurahScreen() {
                   onPress={() => navigateTo('prev')}
                   style={[styles.navBtn, { backgroundColor: C.surface }]}
                 >
-                  <Ionicons name="arrow-back" size={16} color={C.tint} />
+                  <Ionicons name="arrow-forward" size={16} color={C.tint} />
                   <Text style={[styles.navBtnText, { color: C.tint, fontFamily: 'Amiri_400Regular' }]}>
                     {SURAH_META[prev - 1]?.arabic ?? ''}
                   </Text>
@@ -353,7 +353,7 @@ export default function SurahScreen() {
                   <Text style={[styles.navBtnText, { color: C.tint, fontFamily: 'Amiri_400Regular', textAlign: 'right' }]}>
                     {SURAH_META[next - 1]?.arabic ?? ''}
                   </Text>
-                  <Ionicons name="arrow-forward" size={16} color={C.tint} />
+                  <Ionicons name="arrow-back" size={16} color={C.tint} />
                 </Pressable>
               ) : <View style={{ flex: 1 }} />}
             </View>
