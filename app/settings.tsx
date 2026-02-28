@@ -293,19 +293,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* About */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-          {isAr ? 'عن التطبيق' : 'About'}
-        </Text>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
-            <Text style={[styles.aboutText, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
-              {tr.dua}
-            </Text>
-          </View>
-        </View>
-
-        {/* Save button (also in footer for easy reach) */}
+        {/* Save button */}
         <Pressable
           onPress={handleSave}
           style={({ pressed }) => [
@@ -317,6 +305,11 @@ export default function SettingsScreen() {
             {isAr ? 'حفظ الإعدادات' : 'Save Settings'}
           </Text>
         </Pressable>
+
+        {/* Dua */}
+        <Text style={[styles.aboutText, { color: C.textMuted, fontFamily: 'Amiri_400Regular', marginTop: 20, textAlign: 'center' }]}>
+          {tr.dua}
+        </Text>
 
       </ScrollView>
     </View>
