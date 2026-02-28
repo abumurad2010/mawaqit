@@ -423,8 +423,8 @@ export default function PrayerTimesScreen() {
                   style={[styles.searchBtn, { backgroundColor: C.tint }]}
                 >
                   {cityLoading
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : <Ionicons name="search" size={18} color="#fff" />}
+                    ? <ActivityIndicator size="small" color={C.tintText} />
+                    : <Ionicons name="search" size={18} color={C.tintText} />}
                 </Pressable>
               </View>
 
@@ -486,7 +486,7 @@ export default function PrayerTimesScreen() {
                   onPress={saveManualLocation}
                   style={[styles.modalBtn, { backgroundColor: C.tint }]}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '600' }}>{isAr ? 'حفظ' : 'Save'}</Text>
+                  <Text style={{ color: C.tintText, fontWeight: '600' }}>{isAr ? 'حفظ' : 'Save'}</Text>
                 </Pressable>
               </View>
             </View>

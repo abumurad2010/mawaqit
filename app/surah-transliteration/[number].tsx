@@ -152,7 +152,7 @@ export default function SurahTransliterationScreen() {
               {/* Top row: badge + bookmark */}
               <View style={styles.ayahTopRow}>
                 <View style={[styles.numBadge, { backgroundColor: C.tint }]}>
-                  <Text style={styles.numText}>{ayahNum}</Text>
+                  <Text style={[styles.numText, { color: C.tintText }]}>{ayahNum}</Text>
                 </View>
                 <Pressable
                   onPress={() => toggleBookmark(ayahNum, item.text)}
@@ -234,7 +234,7 @@ export default function SurahTransliterationScreen() {
                         },
                       ]}
                     >
-                      <Text style={{ color: p === currentPage ? '#fff' : C.textMuted, fontSize: 12, fontWeight: '600' }}>
+                      <Text style={{ color: p === currentPage ? C.tintText : C.textMuted, fontSize: 12, fontWeight: '600' }}>
                         {p}
                       </Text>
                     </Pressable>
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 9,
     alignItems: 'center', justifyContent: 'center',
   },
-  numText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  numText: { fontSize: 11, fontWeight: '700' },
   ayahContent: { gap: 6 },
   arabicText: { fontSize: 19, lineHeight: 32, textAlign: 'right' },
   shimmer: { gap: 6, marginTop: 4 },

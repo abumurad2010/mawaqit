@@ -55,7 +55,7 @@ export default function SearchScreen() {
           style={[styles.result, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
         >
           <View style={[styles.surahBadge, { backgroundColor: C.tint }]}>
-            <Text style={styles.badgeNum}>{item.surahNum}</Text>
+            <Text style={[styles.badgeNum, { color: C.tintText }]}>{item.surahNum}</Text>
           </View>
           <View style={styles.resultInfo}>
             <Text style={[styles.resultSurah, { color: C.tint }]}>
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  badgeNum: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  badgeNum: { fontSize: 12, fontWeight: '700' },
   resultInfo: { flex: 1 },
   resultSurah: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
   resultText: { fontSize: 18, lineHeight: 30 },

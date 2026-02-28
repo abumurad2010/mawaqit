@@ -228,7 +228,7 @@ export default function CalendarScreen() {
                 ]}
               >
                 <Text style={[styles.cellDay, {
-                  color: sel ? '#fff' : tod ? C.tint : isFriday ? C.tint : C.text,
+                  color: sel ? C.tintText : tod ? C.tint : isFriday ? C.tint : C.text,
                   fontWeight: sel || tod ? '700' : '400',
                 }]}>
                   {isAr ? toArabicIndic(cell.day) : cell.day}

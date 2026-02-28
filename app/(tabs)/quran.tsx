@@ -63,7 +63,7 @@ export default function QuranScreen() {
         ]}
       >
         <View style={[styles.numBadge, { backgroundColor: C.tint }]}>
-          <Text style={styles.numText}>{item.number}</Text>
+          <Text style={[styles.numText, { color: C.tintText }]}>{item.number}</Text>
         </View>
 
         <View style={styles.surahInfo}>
@@ -126,8 +126,8 @@ export default function QuranScreen() {
             onPress={() => { Haptics.selectionAsync(); setMode('mushaf'); }}
             style={[styles.segmentBtn, mode === 'mushaf' && { backgroundColor: C.tint }]}
           >
-            <Ionicons name="book" size={13} color={mode === 'mushaf' ? '#fff' : C.textMuted} />
-            <Text style={[styles.segmentLabel, { color: mode === 'mushaf' ? '#fff' : C.textMuted }]}>
+            <Ionicons name="book" size={13} color={mode === 'mushaf' ? C.tintText : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: mode === 'mushaf' ? C.tintText : C.textMuted }]}>
               {isAr ? 'المصحف' : 'Mushaf'}
             </Text>
           </Pressable>
@@ -136,8 +136,8 @@ export default function QuranScreen() {
             onPress={() => { Haptics.selectionAsync(); setMode('transliteration'); }}
             style={[styles.segmentBtn, mode === 'transliteration' && { backgroundColor: C.tint }]}
           >
-            <Ionicons name="language" size={13} color={mode === 'transliteration' ? '#fff' : C.textMuted} />
-            <Text style={[styles.segmentLabel, { color: mode === 'transliteration' ? '#fff' : C.textMuted }]}>
+            <Ionicons name="language" size={13} color={mode === 'transliteration' ? C.tintText : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: mode === 'transliteration' ? C.tintText : C.textMuted }]}>
               {isAr ? 'النقل الحرفي' : 'Transliteration'}
             </Text>
           </Pressable>
@@ -167,7 +167,7 @@ export default function QuranScreen() {
                 >
                   <Text style={[
                     styles.langChipNative,
-                    { color: active ? '#fff' : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined },
+                    { color: active ? C.tintText : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : undefined },
                   ]}>
                     {LANG_META[l]?.native ?? l}
                   </Text>
@@ -184,8 +184,8 @@ export default function QuranScreen() {
           onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/quran-reader', params: { page: String(lastReadPage) } }); }}
           style={({ pressed }) => [styles.continueBtn, { backgroundColor: C.tint, opacity: pressed ? 0.85 : 1, marginHorizontal: 16, marginBottom: 8 }]}
         >
-          <Ionicons name="book-outline" size={15} color="#fff" />
-          <Text style={[styles.continueBtnText, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Ionicons name="book-outline" size={15} color={C.tintText} />
+          <Text style={[styles.continueBtnText, { color: C.tintText, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
             {isAr ? `متابعة القراءة — صفحة ${lastReadPage}` : `Continue Reading — Page ${lastReadPage}`}
           </Text>
         </Pressable>
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 16, paddingVertical: 11, borderRadius: 12,
   },
-  continueBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  continueBtnText: { fontSize: 13, fontWeight: '600' },
   surahRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingHorizontal: 14, paddingVertical: 12,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
   },
-  numText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  numText: { fontSize: 12, fontWeight: '700' },
   surahInfo: { flex: 1 },
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4, marginTop: 16 },
   dua: { fontSize: 13, textAlign: 'center' },

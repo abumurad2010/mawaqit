@@ -157,7 +157,7 @@ export default function SettingsScreen() {
         { backgroundColor: selected ? C.tint : C.backgroundSecond, borderColor: C.separator },
       ]}
     >
-      <Text style={{ color: selected ? '#fff' : C.textSecond, fontSize: 11, fontWeight: '600' }}>
+      <Text style={{ color: selected ? C.tintText : C.textSecond, fontSize: 11, fontWeight: '600' }}>
         {value}
       </Text>
     </Pressable>
@@ -187,7 +187,7 @@ export default function SettingsScreen() {
               { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
             ]}
           >
-            <Text style={[styles.saveBtnText, { color: hasChanges ? '#fff' : C.tint }]}>
+            <Text style={[styles.saveBtnText, { color: hasChanges ? C.tintText : C.tint }]}>
               {isAr ? 'حفظ' : 'Save'}
             </Text>
           </Pressable>
@@ -334,6 +334,15 @@ export default function SettingsScreen() {
             const isSelected = draftAccessibilityTheme === theme.key;
             const isLast = idx === arr.length - 1;
             const swatch = isDark ? theme.swatchDark : theme.swatchLight;
+            const swatchCheckmark = ((): string => {
+              const hex = swatch.replace('#', '');
+              const r = parseInt(hex.slice(0, 2), 16) / 255;
+              const g = parseInt(hex.slice(2, 4), 16) / 255;
+              const b = parseInt(hex.slice(4, 6), 16) / 255;
+              const linearize = (c: number) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+              const L = 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+              return L > 0.35 ? '#000000' : '#FFFFFF';
+            })();
             return (
               <Pressable
                 key={theme.key}
@@ -350,7 +359,7 @@ export default function SettingsScreen() {
               >
                 {/* Colour swatch */}
                 <View style={[styles.accessSwatch, { backgroundColor: swatch }]}>
-                  {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  {isSelected && <Ionicons name="checkmark" size={14} color={swatchCheckmark} />}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[
@@ -541,7 +550,7 @@ export default function SettingsScreen() {
                 </Pressable>
               </View>
               <View style={[styles.totalBadge, { backgroundColor: C.tint }]}>
-                <Text style={styles.totalBadgeText}>
+                <Text style={[styles.totalBadgeText, { color: C.tintText }]}>
                   {isAr
                     ? `= ${maghribBase + draftAdjustment} د`
                     : `= ${maghribBase + draftAdjustment} min`}
@@ -602,7 +611,7 @@ export default function SettingsScreen() {
                       <Ionicons
                         name={hasBanner ? 'notifications' : 'notifications-outline'}
                         size={16}
-                        color={hasBanner ? '#fff' : C.textSecond}
+                        color={hasBanner ? C.tintText : C.textSecond}
                       />
                     </Pressable>
 
@@ -617,7 +626,7 @@ export default function SettingsScreen() {
                       <Ionicons
                         name={hasAthan ? 'volume-high' : 'volume-mute'}
                         size={16}
-                        color={hasAthan ? '#fff' : C.textSecond}
+                        color={hasAthan ? C.tintText : C.textSecond}
                       />
                     </Pressable>
 
@@ -765,7 +774,7 @@ const styles = StyleSheet.create({
   totalBadge: {
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10,
   },
-  totalBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  totalBadgeText: { fontSize: 13, fontWeight: '700' },
   notifItem: {
     paddingHorizontal: 16, paddingVertical: 10,
   },

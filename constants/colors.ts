@@ -10,6 +10,7 @@ export interface ColorPalette {
   tint:             string;
   tintLight:        string;
   tintDark:         string;
+  tintText:         string; // text colour on a tint-coloured background
   tabIconDefault:   string;
   tabIconSelected:  string;
   separator:        string;
@@ -38,6 +39,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#1a7a4a',       // dark green — 7.0:1 on white ✓
       tintLight:        'rgba(26,122,74,0.09)',
       tintDark:         '#155e3a',
+      tintText:         '#FFFFFF',
       tabIconDefault:   '#AEAEB2',
       tabIconSelected:  '#1a7a4a',
       separator:        'rgba(60,60,67,0.18)',
@@ -59,6 +61,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#34C759',       // bright green — for text/icons on dark bg
       tintLight:        'rgba(52,199,89,0.14)',
       tintDark:         '#30D158',
+      tintText:         '#000000',       // black on #34C759 = 9.5:1 ✓
       tabIconDefault:   'rgba(255,255,255,0.28)',
       tabIconSelected:  '#34C759',
       separator:        'rgba(255,255,255,0.10)',
@@ -88,6 +91,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#000000',       // black on white = 21:1 ✓✓✓
       tintLight:        'rgba(0,0,0,0.06)',
       tintDark:         '#000000',
+      tintText:         '#FFFFFF',
       tabIconDefault:   '#6C6C6C',
       tabIconSelected:  '#000000',
       separator:        'rgba(0,0,0,0.40)',
@@ -109,6 +113,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#FFFFFF',       // white on black = 21:1 ✓✓✓
       tintLight:        'rgba(255,255,255,0.10)',
       tintDark:         '#FFFFFF',
+      tintText:         '#000000',       // black on white background ✓
       tabIconDefault:   'rgba(255,255,255,0.45)',
       tabIconSelected:  '#FFFFFF',
       separator:        'rgba(255,255,255,0.35)',
@@ -136,6 +141,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#0055CC',       // dark blue — 6.9:1 on white ✓
       tintLight:        'rgba(0,85,204,0.09)',
       tintDark:         '#003D99',
+      tintText:         '#FFFFFF',
       tabIconDefault:   '#AEAEB2',
       tabIconSelected:  '#0055CC',
       separator:        'rgba(60,60,67,0.18)',
@@ -157,6 +163,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#409CFF',       // iOS system blue dark — for text/icons ✓
       tintLight:        'rgba(64,156,255,0.14)',
       tintDark:         '#5AACFF',
+      tintText:         '#000000',       // black on #409CFF = 7.4:1 ✓
       tabIconDefault:   'rgba(255,255,255,0.28)',
       tabIconSelected:  '#409CFF',
       separator:        'rgba(255,255,255,0.10)',
@@ -184,6 +191,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#8C6400',       // dark amber — 5.6:1 on warm-white ✓
       tintLight:        'rgba(140,100,0,0.10)',
       tintDark:         '#6B4C00',
+      tintText:         '#FFFFFF',
       tabIconDefault:   '#A08060',
       tabIconSelected:  '#8C6400',
       separator:        'rgba(100,60,30,0.22)',
@@ -205,6 +213,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       tint:             '#E8A000',       // amber — for text/icons on dark bg ✓
       tintLight:        'rgba(232,160,0,0.15)',
       tintDark:         '#D49200',
+      tintText:         '#000000',       // dark amber is bright enough to need dark text
       tabIconDefault:   'rgba(255,180,100,0.40)',
       tabIconSelected:  '#E8A000',
       separator:        'rgba(255,180,100,0.18)',

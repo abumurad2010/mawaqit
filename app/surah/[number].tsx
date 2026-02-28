@@ -270,11 +270,11 @@ export default function SurahScreen() {
           >
             {/* Surah banner */}
             <View style={[styles.surahHeader, { backgroundColor: C.tint }]}>
-              <Text style={[styles.surahArabicName, { fontFamily: 'Amiri_700Bold' }]}>
+              <Text style={[styles.surahArabicName, { fontFamily: 'Amiri_700Bold', color: C.tintText }]}>
                 {meta?.arabic ?? ''}
               </Text>
-              <Text style={styles.surahEnglishName}>{meta?.transliteration}</Text>
-              <Text style={styles.surahMeta}>
+              <Text style={[styles.surahEnglishName, { color: C.tintText, opacity: 0.8 }]}>{meta?.transliteration}</Text>
+              <Text style={[styles.surahMeta, { color: C.tintText, opacity: 0.65 }]}>
                 {meta?.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
                 {' · '}
                 {meta?.ayahs} {isAr ? 'آية' : 'verses'}
@@ -389,9 +389,9 @@ export default function SurahScreen() {
             >
               <Ionicons
                 name={selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah) ? 'bookmark' : 'bookmark-outline'}
-                size={18} color="#fff"
+                size={18} color={selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah) ? '#fff' : C.tintText}
               />
-              <Text style={styles.modalBtnText}>
+              <Text style={[styles.modalBtnText, { color: selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah) ? '#fff' : C.tintText }]}>
                 {selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah)
                   ? (isAr ? 'إزالة الإشارة' : 'Remove Bookmark')
                   : (isAr ? 'إضافة إشارة' : 'Add Bookmark')}
@@ -441,9 +441,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingVertical: 20, paddingHorizontal: 20,
     borderRadius: 20, marginTop: 12, marginBottom: 0, gap: 4,
   },
-  surahArabicName: { fontSize: 30, color: '#fff' },
-  surahEnglishName: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
-  surahMeta: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
+  surahArabicName: { fontSize: 30 },
+  surahEnglishName: { fontSize: 14 },
+  surahMeta: { fontSize: 12 },
   bismillahRow: {
     alignItems: 'center', paddingVertical: 16,
     borderBottomWidth: 1, marginBottom: 8,
@@ -472,5 +472,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, paddingVertical: 13, borderRadius: 12, marginTop: 4,
   },
-  modalBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  modalBtnText: { fontSize: 15, fontWeight: '600' },
 });
