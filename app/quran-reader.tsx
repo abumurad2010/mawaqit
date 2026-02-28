@@ -221,7 +221,7 @@ export default function QuranReaderScreen() {
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
         >
-          <Ionicons name="chevron-forward" size={20} color={C.tint} />
+          <Ionicons name="chevron-back" size={20} color={C.tint} />
         </Pressable>
 
         <View style={styles.headerCenter}>
@@ -395,7 +395,7 @@ export default function QuranReaderScreen() {
             { backgroundColor: C.backgroundCard, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
           ]}
         >
-          <Ionicons name="chevron-forward" size={16} color={C.tint} />
+          <Ionicons name="chevron-back" size={16} color={C.tint} />
           <Text style={[styles.navBtnText, { color: C.tint }]}>
             {isAr ? 'السابقة' : 'Prev'}
           </Text>
@@ -412,7 +412,7 @@ export default function QuranReaderScreen() {
           <Text style={[styles.navBtnText, { color: C.tint }]}>
             {isAr ? 'التالية' : 'Next'}
           </Text>
-          <Ionicons name="chevron-back" size={16} color={C.tint} />
+          <Ionicons name="chevron-forward" size={16} color={C.tint} />
         </Pressable>
       </View>
     </View>
