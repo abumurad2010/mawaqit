@@ -66,7 +66,8 @@ export async function playAthan(
     await setAudioModeAsync({ playsInSilentMode: true });
   } catch {}
 
-  const backendUrl = new URL('/api/adhan', getApiUrl()).toString();
+  const adhanPath = type === 'abbreviated' ? '/api/adhan/abbreviated' : '/api/adhan';
+  const backendUrl = new URL(adhanPath, getApiUrl()).toString();
 
   try {
     const player = createAudioPlayer(backendUrl);
