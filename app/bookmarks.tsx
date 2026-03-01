@@ -59,9 +59,22 @@ export default function BookmarksScreen() {
                 </View>
               )}
             </View>
-            <Text style={[styles.ayahNum, { color: C.textSecond, fontWeight: fw }]}>
-              {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
-            </Text>
+            <View style={styles.metaRow}>
+              <Text style={[styles.ayahNum, { color: C.textSecond, fontWeight: fw }]}>
+                {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
+              </Text>
+              {!!item.timestamp && (
+                <Text style={[styles.timestamp, { color: C.textMuted, fontWeight: fw }]}>
+                  {new Date(item.timestamp).toLocaleDateString(lang === 'ar' ? 'ar-SA' : undefined, {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                  })}
+                  {' · '}
+                  {new Date(item.timestamp).toLocaleTimeString(lang === 'ar' ? 'ar-SA' : undefined, {
+                    hour: '2-digit', minute: '2-digit',
+                  })}
+                </Text>
+              )}
+            </View>
             <Text style={[styles.preview, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
               {item.ayahText}…
             </Text>
@@ -148,7 +161,9 @@ const styles = StyleSheet.create({
     borderRadius: 6, borderWidth: 1,
   },
   typeBadgeText: { fontSize: 10, fontWeight: '600' },
-  ayahNum: { fontSize: 12, marginBottom: 4 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 4 },
+  ayahNum: { fontSize: 12 },
+  timestamp: { fontSize: 11 },
   preview: { fontSize: 14, lineHeight: 22 },
   deleteBtn: { padding: 14, paddingLeft: 8 },
 });
