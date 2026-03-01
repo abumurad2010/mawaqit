@@ -28,7 +28,7 @@ export default function SettingsScreen() {
   const {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment, accessibilityTheme,
-    prayerNotifications, colors,
+    firstAdhanOffset, prayerNotifications, colors,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -50,6 +50,7 @@ export default function SettingsScreen() {
   );
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
+  const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<0 | 10 | 20 | 30>(firstAdhanOffset ?? 0);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -80,6 +81,7 @@ export default function SettingsScreen() {
     draftHijri !== (hijriAdjustment ?? 0) ||
     draftSecondLang !== (secondLang ?? 'auto') ||
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
+    draftFirstAdhanOffset !== (firstAdhanOffset ?? 0) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
@@ -96,6 +98,7 @@ export default function SettingsScreen() {
       secondLang: draftSecondLang,
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
+      firstAdhanOffset: draftFirstAdhanOffset,
     });
     router.back();
   };
@@ -592,6 +595,29 @@ export default function SettingsScreen() {
                 ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
                 : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
             </Text>
+          </View>
+
+          {/* First Adhan */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {tr.firstAdhanSetting}
+            </Text>
+            <View style={styles.chips}>
+              {([0, 10, 20, 30]).map((mins: 0 | 10 | 20 | 30) => (
+                <Chip
+                  key={mins}
+                  value={
+                    mins === 0
+                      ? (isAr ? 'إيقاف' : 'Off')
+                      : isAr
+                        ? `${mins} د قبل`
+                        : `${mins} min`
+                  }
+                  selected={draftFirstAdhanOffset === mins}
+                  onPress={() => setDraftFirstAdhanOffset(mins)}
+                />
+              ))}
+            </View>
           </View>
         </View>
 

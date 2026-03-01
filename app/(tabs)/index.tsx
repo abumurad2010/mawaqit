@@ -41,7 +41,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, hijriAdjustment, colors,
+    updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -277,6 +277,40 @@ export default function PrayerTimesScreen() {
 
       {/* ── Prayer list ── */}
       <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)', marginHorizontal: 16 }]}>
+        {/* First Adhan row — shown above Fajr when offset > 0 */}
+        {(firstAdhanOffset ?? 0) > 0 && times && (() => {
+          const firstAdhanTime = new Date(times.fajr.getTime() - (firstAdhanOffset ?? 0) * 60000);
+          const passed = firstAdhanTime < now;
+          return (
+            <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }}>
+              <View style={[styles.prayerRow]}>
+                <View style={styles.prayerLeft}>
+                  <MaterialCommunityIcons
+                    name="mosque"
+                    size={18}
+                    color={passed ? C.textMuted : C.text}
+                  />
+                  <Text style={[
+                    styles.prayerName,
+                    {
+                      color: passed ? C.textMuted : C.text,
+                      fontWeight: fw,
+                      fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+                      fontSize: 15,
+                      lineHeight: 20,
+                    }
+                  ]}>
+                    {tr.firstAdhan}
+                  </Text>
+                </View>
+                <Text style={[styles.prayerTime, { color: passed ? C.textMuted : C.text, fontWeight: fw }]}>
+                  {formatTimeAtOffset(firstAdhanTime, locationUtcOffset)}
+                </Text>
+              </View>
+              <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
+            </View>
+          );
+        })()}
         {PRAYER_ORDER.map((key, idx) => {
           const active = isNext(key);
           const passed = !active && isPassed(key);

@@ -8,7 +8,8 @@ import type { Lang } from '@/constants/i18n';
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
   return {
-    fajr: tr.fajr, dhuha: tr.dhuha, dhuhr: tr.dhuhr,
+    fajr: tr.fajr, fajrFirst: tr.firstAdhan,
+    dhuha: tr.dhuha, dhuhr: tr.dhuhr,
     asr: tr.asr, maghrib: tr.maghrib, isha: tr.isha, qiyam: tr.qiyam,
   };
 }
@@ -38,6 +39,7 @@ export async function schedulePrayerNotifications(params: {
   maghribOffset: number;
   prayerNotifications: Record<string, PrayerNotifConfig>;
   lang: Lang;
+  firstAdhanOffset?: 0 | 10 | 20 | 30;
   countryCode?: string | null;
   locationUtcOffset?: number | null;
   daysAhead?: number;
@@ -73,7 +75,9 @@ export async function schedulePrayerNotifications(params: {
       maghribOffsetMinutes: params.maghribOffset,
     });
 
+    const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;
     const prayerTimeMap: Record<string, Date | null> = {
+      fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs) : null,
       fajr: times.fajr,
       dhuha: getDhuhaTime(times.sunrise),
       dhuhr: times.dhuhr,

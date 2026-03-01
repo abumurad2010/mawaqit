@@ -59,6 +59,7 @@ interface AppSettings {
   fontSize: 'small' | 'medium' | 'large';
   maghribAdjustment: number;
   hijriAdjustment: number;
+  firstAdhanOffset: 0 | 10 | 20 | 30;
   prayerNotifications: Record<string, PrayerNotifType>;
 
 }
@@ -98,6 +99,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 'medium',
   maghribAdjustment: 0,
   hijriAdjustment: 0,
+  firstAdhanOffset: 0,
   prayerNotifications: {},
 
 };
@@ -229,10 +231,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       maghribOffset,
       prayerNotifications,
       lang,
+      firstAdhanOffset: settings.firstAdhanOffset ?? 0,
       countryCode: effectiveCountryCode,
       locationUtcOffset,
     });
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, effectiveCountryCode, locationUtcOffset]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
