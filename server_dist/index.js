@@ -142,6 +142,10 @@ function configureExpoAndLanding(app2) {
       return serveExpoManifest(platform, res);
     }
     if (req.path === "/") {
+      const distIndex = path.resolve(process.cwd(), "dist", "index.html");
+      if (fs.existsSync(distIndex)) {
+        return res.sendFile(distIndex);
+      }
       return serveLandingPage({
         req,
         res,
@@ -152,6 +156,7 @@ function configureExpoAndLanding(app2) {
     next();
   });
   app2.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
+  app2.use(express.static(path.resolve(process.cwd(), "dist")));
   app2.use(express.static(path.resolve(process.cwd(), "public")));
   app2.use(express.static(path.resolve(process.cwd(), "static-build")));
   log("Expo routing: Checking expo-platform header on / and /manifest");
