@@ -107,6 +107,7 @@ export default function SettingsScreen() {
     { key: 'fajr',    ar: 'الفجر',       en: 'Fajr' },
     { key: 'dhuha',   ar: 'الضحى',       en: 'Dhuha' },
     { key: 'dhuhr',   ar: 'الظهر',       en: 'Dhuhr' },
+    { key: 'jumaa',   ar: 'الجمعة',      en: "Jumu'ah (Fri)" },
     { key: 'asr',     ar: 'العصر',       en: 'Asr' },
     { key: 'maghrib', ar: 'المغرب',      en: 'Maghrib' },
     { key: 'isha',    ar: 'العشاء',      en: 'Isha' },

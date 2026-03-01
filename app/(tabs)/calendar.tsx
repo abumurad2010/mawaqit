@@ -23,6 +23,7 @@ import {
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { resolveJumaaMode, getJumaaTime } from '@/lib/jumaa';
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
@@ -52,7 +53,7 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors, jumaaMode, countryCode } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
@@ -134,6 +135,16 @@ export default function CalendarScreen() {
     fajr: tr.fajr, sunrise: tr.sunrise, dhuhr: tr.dhuhr,
     asr: tr.asr, maghrib: tr.maghrib, isha: tr.isha,
   };
+
+  const selectedIsFriday = useMemo(
+    () => new Date(selectedDate.y, selectedDate.m - 1, selectedDate.d).getDay() === 5,
+    [selectedDate],
+  );
+  const jumaaDate = useMemo(() => {
+    if (!selectedIsFriday || !prayerTimes) return null;
+    const resolved = resolveJumaaMode(jumaaMode, countryCode);
+    return getJumaaTime(resolved, prayerTimes.dhuhr, locationUtcOffset);
+  }, [selectedIsFriday, prayerTimes, jumaaMode, countryCode, locationUtcOffset]);
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -259,31 +270,52 @@ export default function CalendarScreen() {
               {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
             </Text>
             <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}>
-              {PRAYER_ORDER.map((key, idx) => (
-                <View key={key}>
-                  <View style={[styles.prayerRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
-                    <View style={[styles.prayerLeft, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
-                      <MaterialCommunityIcons
-                        name={PRAYER_ICONS[key] as any}
-                        size={17} color={C.tint}
-                      />
-                      <Text style={[styles.prayerName, {
-                        color: C.text,
-                        fontWeight: fw,
-                        fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
-                        fontSize: isAr ? 16 : 14,
-                      }]}>
-                        {prayerLabels[key]}
+              {PRAYER_ORDER.map((key) => (
+                <React.Fragment key={key}>
+                  <View>
+                    <View style={[styles.prayerRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                      <View style={[styles.prayerLeft, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                        <MaterialCommunityIcons
+                          name={PRAYER_ICONS[key] as any}
+                          size={17} color={C.tint}
+                        />
+                        <Text style={[styles.prayerName, {
+                          color: C.text,
+                          fontWeight: fw,
+                          fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+                          fontSize: isAr ? 16 : 14,
+                        }]}>
+                          {prayerLabels[key]}
+                        </Text>
+                      </View>
+                      <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw }]}>
+                        {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
                       </Text>
                     </View>
-                    <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw }]}>
-                      {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
-                    </Text>
-                  </View>
-                  {idx < PRAYER_ORDER.length - 1 && (
                     <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
+                  </View>
+                  {key === 'dhuhr' && jumaaDate && (
+                    <View>
+                      <View style={[styles.prayerRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                        <View style={[styles.prayerLeft, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                          <MaterialCommunityIcons name="mosque" size={17} color={C.tint} />
+                          <Text style={[styles.prayerName, {
+                            color: C.tint,
+                            fontWeight: fw,
+                            fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+                            fontSize: isAr ? 16 : 14,
+                          }]}>
+                            {tr.jumaa}
+                          </Text>
+                        </View>
+                        <Text style={[styles.prayerTime, { color: C.tint, fontWeight: fw }]}>
+                          {formatTimeAtOffset(jumaaDate, locationUtcOffset)}
+                        </Text>
+                      </View>
+                      <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
+                    </View>
                   )}
-                </View>
+                </React.Fragment>
               ))}
             </View>
           </View>

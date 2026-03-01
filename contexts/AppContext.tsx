@@ -221,8 +221,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       maghribOffset,
       prayerNotifications,
       lang,
+      jumaaMode: settings.jumaaMode,
+      countryCode,
+      locationUtcOffset,
     });
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.jumaaMode, countryCode, locationUtcOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
