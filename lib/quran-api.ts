@@ -91,8 +91,7 @@ export function fetchSurah(number: number): Promise<SurahData> {
 function stripArabicDiacritics(text: string): string {
   return text
     .replace(/[\u064B-\u065F\u0670\u0610-\u061A]/g, '')
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ى/g, 'ي');
+    .replace(/[أإآٱ]/g, 'ا');
 }
 
 function normalizeForSearch(text: string): string {
