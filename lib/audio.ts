@@ -1,41 +1,53 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
-import * as FileSystem from 'expo-file-system/legacy';
 
-const ADHAN_CDN = 'https://cdn.islamic.network/adhan/adhan-haramain-gapless.mp3';
-const CACHED_PATH = (FileSystem.documentDirectory ?? '') + 'athan_cached.mp3';
+const ADHAN_URLS = [
+  'https://cdn.islamic.network/adhan/adhan-haramain-gapless.mp3',
+  'https://islamicnetwork.b-cdn.net/adhan/adhan-haramain-gapless.mp3',
+];
 const BUNDLED_WAV = require('@/assets/sounds/athan.wav');
 
 let playerRef: AudioPlayer | null = null;
 let stopTimer: ReturnType<typeof setTimeout> | null = null;
+let onStopCallback: (() => void) | null = null;
 
-async function getAthanSource(): Promise<string | number> {
-  try {
-    const info = await FileSystem.getInfoAsync(CACHED_PATH);
-    if (info.exists && info.size && info.size > 10000) {
-      return CACHED_PATH;
-    }
-    const result = await FileSystem.downloadAsync(ADHAN_CDN, CACHED_PATH);
-    if (result.status === 200) {
-      return CACHED_PATH;
-    }
-  } catch {}
-  return BUNDLED_WAV;
-}
-
-export async function playAthan(type: 'full' | 'abbreviated' = 'full') {
+export async function playAthan(
+  type: 'full' | 'abbreviated' = 'full',
+  onStop?: () => void,
+) {
   try {
     await stopAthan();
+    onStopCallback = onStop ?? null;
+
     await setAudioModeAsync({ playsInSilentMode: true });
-    const source = await getAthanSource();
-    const player = createAudioPlayer(source);
+
+    const source = ADHAN_URLS[0];
+    let player: AudioPlayer;
+    try {
+      player = createAudioPlayer(source);
+    } catch {
+      player = createAudioPlayer(BUNDLED_WAV);
+    }
+
     playerRef = player;
+
+    player.addListener('playbackStatusUpdate', (status: { didJustFinish: boolean }) => {
+      if (status.didJustFinish) {
+        playerRef = null;
+        onStopCallback?.();
+        onStopCallback = null;
+      }
+    });
+
     player.play();
+
     if (type === 'abbreviated') {
       stopTimer = setTimeout(() => stopAthan(), 8000);
     }
   } catch (e) {
     console.warn('[audio] playAthan failed:', e);
+    onStopCallback?.();
+    onStopCallback = null;
   }
 }
 
@@ -48,4 +60,6 @@ export async function stopAthan() {
     try { playerRef.remove(); } catch {}
     playerRef = null;
   }
+  onStopCallback?.();
+  onStopCallback = null;
 }

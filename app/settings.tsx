@@ -65,8 +65,7 @@ export default function SettingsScreen() {
     } else {
       if (previewing) await stopAthan();
       setPreviewing(key);
-      await playAthan('full');
-      setPreviewing(null);
+      playAthan('full', () => setPreviewing(null));
     }
   };
 
