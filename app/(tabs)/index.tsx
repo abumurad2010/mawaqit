@@ -25,7 +25,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
-import { resolveJumaaOffset, getJumaaTime } from '@/lib/jumaa';
+
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
@@ -42,7 +42,6 @@ export default function PrayerTimesScreen() {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors,
-    jumaaMode, jumaaOffsetMinutes, countryCode,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -166,15 +165,6 @@ export default function PrayerTimesScreen() {
     const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utcMs + locationUtcOffset * 3600000);
   }, [now, locationUtcOffset]);
-
-  // Friday / Jumu'ah
-  const isFriday = locationNow.getDay() === 5;
-  const jumaaDate = useMemo(() => {
-    if (!isFriday || !times) return null;
-    const offsetMins = resolveJumaaOffset(jumaaMode, jumaaOffsetMinutes ?? 0, countryCode);
-    return getJumaaTime(offsetMins, times.dhuhr);
-  }, [isFriday, times, jumaaMode, jumaaOffsetMinutes, countryCode]);
-  const jumaaPassed = jumaaDate ? jumaaDate < now : false;
 
   const gregorianStr = locationNow.toLocaleDateString(
     isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
@@ -327,35 +317,6 @@ export default function PrayerTimesScreen() {
                 </View>
                 {!isLast && <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />}
               </View>
-              {key === 'dhuhr' && isFriday && jumaaDate && (
-                <View style={dividerStyle}>
-                  <View style={[styles.prayerRow, !jumaaPassed && { backgroundColor: C.tintLight + '80' }]}>
-                    <View style={styles.prayerLeft}>
-                      <MaterialCommunityIcons
-                        name="mosque"
-                        size={18}
-                        color={jumaaPassed ? C.textMuted : C.tint}
-                      />
-                      <Text style={[
-                        styles.prayerName,
-                        {
-                          color: jumaaPassed ? C.textMuted : C.tint,
-                          fontWeight: fw,
-                          fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
-                          fontSize: 15,
-                          lineHeight: 20,
-                        }
-                      ]}>
-                        {tr.jumaa}
-                      </Text>
-                    </View>
-                    <Text style={[styles.prayerTime, { color: jumaaPassed ? C.textMuted : C.tint, fontWeight: fw }]}>
-                      {formatTimeAtOffset(jumaaDate, locationUtcOffset)}
-                    </Text>
-                  </View>
-                  <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
-                </View>
-              )}
             </React.Fragment>
           );
         })}

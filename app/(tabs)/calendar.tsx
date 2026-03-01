@@ -25,7 +25,7 @@ import {
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { resolveJumaaOffset, getJumaaTime } from '@/lib/jumaa';
+
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
@@ -55,7 +55,7 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors, jumaaMode, jumaaOffsetMinutes, countryCode, locationMode } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors, locationMode } = useApp();
   const [showLocModal, setShowLocModal] = useState(false);
   const C = colors;
   const fw = C.fontWeightNormal;
@@ -138,16 +138,6 @@ export default function CalendarScreen() {
     fajr: tr.fajr, sunrise: tr.sunrise, dhuhr: tr.dhuhr,
     asr: tr.asr, maghrib: tr.maghrib, isha: tr.isha,
   };
-
-  const selectedIsFriday = useMemo(
-    () => new Date(selectedDate.y, selectedDate.m - 1, selectedDate.d).getDay() === 5,
-    [selectedDate],
-  );
-  const jumaaDate = useMemo(() => {
-    if (!selectedIsFriday || !prayerTimes) return null;
-    const offsetMins = resolveJumaaOffset(jumaaMode, jumaaOffsetMinutes ?? 0, countryCode);
-    return getJumaaTime(offsetMins, prayerTimes.dhuhr);
-  }, [selectedIsFriday, prayerTimes, jumaaMode, jumaaOffsetMinutes, countryCode]);
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -309,27 +299,6 @@ export default function CalendarScreen() {
                     </View>
                     <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
                   </View>
-                  {key === 'dhuhr' && jumaaDate && (
-                    <View>
-                      <View style={[styles.prayerRow, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
-                        <View style={[styles.prayerLeft, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
-                          <MaterialCommunityIcons name="mosque" size={17} color={C.tint} />
-                          <Text style={[styles.prayerName, {
-                            color: C.tint,
-                            fontWeight: fw,
-                            fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
-                            fontSize: isAr ? 16 : 14,
-                          }]}>
-                            {tr.jumaa}
-                          </Text>
-                        </View>
-                        <Text style={[styles.prayerTime, { color: C.tint, fontWeight: fw }]}>
-                          {formatTimeAtOffset(jumaaDate, locationUtcOffset)}
-                        </Text>
-                      </View>
-                      <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
-                    </View>
-                  )}
                 </React.Fragment>
               ))}
             </View>

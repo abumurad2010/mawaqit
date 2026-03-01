@@ -9,7 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
-import type { JumaaMode } from '@/lib/jumaa';
+
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
@@ -60,8 +60,7 @@ interface AppSettings {
   maghribAdjustment: number;
   hijriAdjustment: number;
   prayerNotifications: Record<string, PrayerNotifType>;
-  jumaaMode: JumaaMode;
-  jumaaOffsetMinutes: number;
+
 }
 
 interface AppContextValue extends AppSettings {
@@ -100,8 +99,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   maghribAdjustment: 0,
   hijriAdjustment: 0,
   prayerNotifications: {},
-  jumaaMode: 'auto',
-  jumaaOffsetMinutes: 0,
+
 };
 
 const VALID_CALC_METHODS = [
@@ -173,15 +171,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!parsed.secondLang) {
             parsed.secondLang = 'auto';
           }
-          // Migrate old fixed-time jumaaMode strings to new 'auto'/'offset' format
-          if (parsed.jumaaMode && !['auto', 'offset'].includes(parsed.jumaaMode)) {
-            if (parsed.jumaaMode === 'dhuhr') {
-              parsed.jumaaMode = 'offset';
-              parsed.jumaaOffsetMinutes = 0;
-            } else {
-              parsed.jumaaMode = 'auto';
-            }
-          }
           setSettings({ ...DEFAULT_SETTINGS, ...parsed });
         }
         if (b) setBookmarks(JSON.parse(b));
@@ -240,12 +229,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       maghribOffset,
       prayerNotifications,
       lang,
-      jumaaMode: settings.jumaaMode,
-      jumaaOffsetMinutes: settings.jumaaOffsetMinutes,
       countryCode: effectiveCountryCode,
       locationUtcOffset,
     });
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.jumaaMode, settings.jumaaOffsetMinutes, effectiveCountryCode, locationUtcOffset]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, effectiveCountryCode, locationUtcOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
