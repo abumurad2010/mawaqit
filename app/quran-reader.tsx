@@ -44,7 +44,7 @@ function SurahBanner({ surahNum, color, textColor, mutedColor }: {
 
           <View style={banner.center}>
             <Text style={[banner.surahWord, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
-              سُورَةُ
+              {toArabicIndic(surahNum)} · سُورَةُ
             </Text>
             <Text style={[banner.surahName, { color: textColor, fontFamily: 'Amiri_700Bold' }]}>
               {meta.arabic}

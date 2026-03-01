@@ -188,7 +188,9 @@ export default function SurahScreen() {
             {meta?.arabic ?? `Surah ${surahNum}`}
           </Text>
           <Text style={[styles.topSub, { color: C.textMuted }]}>
-            {surahNum}/114
+            {isAr
+              ? `سورة ${toArabicIndic(surahNum)} · ${toArabicIndic(meta?.ayahs ?? 0)} آية`
+              : `Surah ${surahNum} · ${meta?.transliteration ?? ''}`}
           </Text>
         </View>
 

@@ -88,18 +88,48 @@ export function fetchSurah(number: number): Promise<SurahData> {
   return Promise.resolve(getSurah(number));
 }
 
-export function searchQuran(query: string): { surahNum: number; ayahNum: number; text: string }[] {
-  if (!query.trim()) return [];
-  const q = query.trim().toLowerCase();
-  const results: { surahNum: number; ayahNum: number; text: string }[] = [];
+function stripArabicDiacritics(text: string): string {
+  return text
+    .replace(/[\u064B-\u065F\u0670\u0610-\u061A]/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ى/g, 'ي');
+}
+
+function normalizeForSearch(text: string): string {
+  return stripArabicDiacritics(text)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+type NormEntry = { surahNum: number; ayahNum: number; text: string; norm: string };
+let _normalizedIndex: NormEntry[] | null = null;
+
+function getNormalizedIndex(): NormEntry[] {
+  if (_normalizedIndex) return _normalizedIndex;
+  const idx: NormEntry[] = [];
   for (let s = 1; s <= 114; s++) {
     const raw = QURAN_DATA[String(s)];
     if (!raw) continue;
     for (const a of raw) {
-      if (a.t.includes(q)) {
-        results.push({ surahNum: s, ayahNum: a.n, text: a.t });
-        if (results.length >= 200) return results;
-      }
+      idx.push({ surahNum: s, ayahNum: a.n, text: a.t, norm: normalizeForSearch(a.t) });
+    }
+  }
+  _normalizedIndex = idx;
+  return idx;
+}
+
+export function searchQuran(query: string): { surahNum: number; ayahNum: number; text: string }[] {
+  if (!query.trim()) return [];
+  const q = normalizeForSearch(query);
+  if (!q) return [];
+  const results: { surahNum: number; ayahNum: number; text: string }[] = [];
+  const index = getNormalizedIndex();
+  for (const entry of index) {
+    if (entry.norm.includes(q)) {
+      results.push({ surahNum: entry.surahNum, ayahNum: entry.ayahNum, text: entry.text });
+      if (results.length >= 200) return results;
     }
   }
   return results;

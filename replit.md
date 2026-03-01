@@ -28,8 +28,9 @@ A full-featured, free Islamic app with GPS-based prayer times, Qibla compass, fu
 ### Quran
 - Complete Arabic Quran text (Uthmani script) bundled in-app — zero network calls
 - Page-by-page Mushaf reading (604 pages)
+- Surah number displayed in every banner header (Arabic-Indic numerals: ١، ٢، etc.) alongside the surah name
 - Surah list with table of contents
-- Full-text search across all 6,236 ayahs
+- Full-text search across all 6,236 ayahs — diacritic/accent-insensitive (Arabic harakat and Latin combining marks stripped before matching, with lazy-initialized normalized index)
 - Bookmarks on individual ayahs with timestamps; bookmark navigates to the correct Mushaf page and briefly highlights the target ayah number marker
 - Bismillah handling (stripped from Surah Al-Fatiha and At-Tawbah, displayed as a header for others)
 - Adjustable Arabic font size
