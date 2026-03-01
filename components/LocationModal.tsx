@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Modal, View, Text, TextInput, Pressable, ScrollView,
-  Alert, StyleSheet, ActivityIndicator,
+  Alert, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -121,12 +121,19 @@ export default function LocationModal({ visible, onClose }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={[styles.box, { backgroundColor: C.backgroundCard }]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <Pressable style={styles.backdrop} onPress={onClose} />
+        <View style={[styles.sheet, { backgroundColor: C.backgroundCard }]}>
+          <View style={styles.handle} />
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            contentContainerStyle={styles.content}
+          >
             <Text style={[styles.title, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
               {tr.manualLocation}
             </Text>
@@ -155,16 +162,31 @@ export default function LocationModal({ visible, onClose }: Props) {
               {isAr ? 'ابحث عن مدينة' : 'Search by city'}
             </Text>
             <View style={styles.cityRow}>
-              <TextInput
-                style={[styles.input, { color: C.text, borderColor: C.separator, backgroundColor: C.backgroundSecond, flex: 1 }]}
-                value={cityQuery}
-                onChangeText={setCityQuery}
-                placeholder={isAr ? 'أدخل اسم المدينة...' : 'Enter city name...'}
-                placeholderTextColor={C.textMuted}
-                onSubmitEditing={searchCity}
-                returnKeyType="search"
-                textAlign={isAr ? 'right' : 'left'}
-              />
+              <View style={[styles.inputWrap, { borderColor: C.separator, backgroundColor: C.backgroundSecond }]}>
+                <TextInput
+                  style={[styles.inputInner, { color: C.text }]}
+                  value={cityQuery}
+                  onChangeText={text => {
+                    setCityQuery(text);
+                    if (!text) setCityResults([]);
+                  }}
+                  placeholder={isAr ? 'أدخل اسم المدينة...' : 'Enter city name...'}
+                  placeholderTextColor={C.textMuted}
+                  onSubmitEditing={searchCity}
+                  returnKeyType="search"
+                  textAlign={isAr ? 'right' : 'left'}
+                  autoCorrect={false}
+                />
+                {cityQuery.length > 0 && (
+                  <Pressable
+                    onPress={() => { setCityQuery(''); setCityResults([]); }}
+                    hitSlop={8}
+                    style={styles.clearBtn}
+                  >
+                    <Ionicons name="close-circle" size={17} color={C.textMuted} />
+                  </Pressable>
+                )}
+              </View>
               <Pressable onPress={searchCity} style={[styles.searchBtn, { backgroundColor: C.tint }]}>
                 {cityLoading
                   ? <ActivityIndicator size="small" color={C.tintText} />
@@ -229,16 +251,30 @@ export default function LocationModal({ visible, onClose }: Props) {
                 <Text style={{ color: C.tintText, fontWeight: '600' }}>{isAr ? 'حفظ' : 'Save'}</Text>
               </Pressable>
             </View>
-          </View>
-        </ScrollView>
-      </View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  box: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, gap: 14 },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+  },
+  handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(128,128,128,0.35)',
+    alignSelf: 'center',
+    marginTop: 10, marginBottom: 4,
+  },
+  content: { padding: 24, gap: 14, paddingBottom: 32 },
   title: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
   gpsBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -248,9 +284,20 @@ const styles = StyleSheet.create({
   divider: { borderTopWidth: 1, alignItems: 'center', paddingTop: 12, marginTop: 2 },
   dividerText: { fontSize: 11, marginTop: -18, paddingHorizontal: 10 },
   label: { fontSize: 13, fontWeight: '500' },
+  cityRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  inputWrap: {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1, borderRadius: 10,
+    paddingHorizontal: 14,
+  },
+  inputInner: {
+    flex: 1, paddingVertical: 10, fontSize: 15,
+  },
+  clearBtn: {
+    paddingLeft: 6,
+  },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15 },
   inputRow: { gap: 6 },
-  cityRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   searchBtn: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   cityList: { borderWidth: 1, borderRadius: 10, overflow: 'hidden' },
   cityItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
