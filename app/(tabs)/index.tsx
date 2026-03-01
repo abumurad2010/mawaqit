@@ -1,11 +1,12 @@
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
+import LocationModal from '@/components/LocationModal';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { SERIF_EN } from '@/constants/typography';
 import {
-  View, Text, StyleSheet, Pressable, ActivityIndicator,
-  Platform, Alert, Modal, TextInput, ScrollView, Image
+  View, Text, StyleSheet, Pressable,
+  Platform, Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -52,11 +53,6 @@ export default function PrayerTimesScreen() {
   const [countdown, setCountdown] = useState('');
   const [now, setNow] = useState(new Date());
   const [showManual, setShowManual] = useState(false);
-  const [manLat, setManLat] = useState(manualLocation?.lat?.toString() ?? '');
-  const [manLng, setManLng] = useState(manualLocation?.lng?.toString() ?? '');
-  const [cityQuery, setCityQuery] = useState('');
-  const [cityResults, setCityResults] = useState<Array<{ name: string; lat: number; lng: number; countryCode?: string }>>([]);
-  const [cityLoading, setCityLoading] = useState(false);
 
   const pulse = useSharedValue(1);
   useEffect(() => {
@@ -148,59 +144,6 @@ export default function PrayerTimesScreen() {
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-  const saveManualLocation = async () => {
-    const lat = parseFloat(manLat);
-    const lng = parseFloat(manLng);
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      Alert.alert('Invalid', 'Please enter valid coordinates');
-      return;
-    }
-    const matchedResult = cityResults.find(c => c.lat === lat && c.lng === lng);
-    const cityName = (matchedResult?.name ?? cityQuery.trim()) || undefined;
-    let countryCode = matchedResult?.countryCode;
-
-    // If the user typed raw coordinates (no city search result), reverse-geocode for country code
-    if (!countryCode) {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-          { headers: { 'User-Agent': 'MawaqitApp/1.0' } }
-        );
-        const data = await res.json();
-        countryCode = data.address?.country_code?.toUpperCase();
-      } catch {}
-    }
-
-    updateSettings({ locationMode: 'manual', manualLocation: { lat, lng, city: cityName, countryCode } });
-    setLocation({ lat, lng, city: cityName, countryCode });
-    setShowManual(false);
-    setCityResults([]);
-    setCityQuery('');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-  };
-
-  const searchCity = useCallback(async () => {
-    if (!cityQuery.trim()) return;
-    setCityLoading(true);
-    setCityResults([]);
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityQuery)}&format=json&limit=5&addressdetails=1`,
-        { headers: { 'Accept-Language': isAr ? 'ar' : 'en', 'User-Agent': 'MawaqitApp/1.0' } }
-      );
-      const data = await res.json();
-      const places = data.map((p: any) => ({
-        name: p.display_name?.split(',').slice(0, 2).join(',') ?? p.name,
-        lat: parseFloat(p.lat),
-        lng: parseFloat(p.lon),
-        countryCode: p.address?.country_code?.toUpperCase() as string | undefined,
-      }));
-      setCityResults(places);
-    } catch {
-      Alert.alert('Error', 'Could not find city. Please enter coordinates manually.');
-    }
-    setCityLoading(false);
-  }, [cityQuery, isAr]);
 
   const prayerLabel = (key: keyof PrayerTimesType) => {
     const map: Record<keyof PrayerTimesType, string> = {
@@ -269,18 +212,10 @@ export default function PrayerTimesScreen() {
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                if (locationMode === 'auto') {
-                  setShowManual(true);
-                } else {
-                  updateSettings({ locationMode: 'auto' });
-                  fetchAutoLocation();
-                }
-              }}
+              onPress={() => { Haptics.selectionAsync(); setShowManual(true); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
             >
-              <Ionicons name={locationMode === 'auto' ? 'locate' : 'location-outline'} size={19} color={C.tint} />
+              <Ionicons name={locationMode === 'manual' ? 'location-outline' : 'locate'} size={19} color={C.tint} />
             </Pressable>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
@@ -439,105 +374,7 @@ export default function PrayerTimesScreen() {
         </Text>
       </View>
 
-      {/* Manual location modal */}
-      <Modal visible={showManual} transparent animationType="slide" onRequestClose={() => setShowManual(false)}>
-        <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }} keyboardShouldPersistTaps="handled">
-            <View style={[styles.modalBox, { backgroundColor: C.backgroundCard }]}>
-              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
-                {tr.manualLocation}
-              </Text>
-
-              {/* City search */}
-              <Text style={[styles.inputLabel, { color: C.textSecond }]}>
-                {isAr ? 'ابحث عن مدينة' : 'Search by city'}
-              </Text>
-              <View style={[styles.cityRow]}>
-                <TextInput
-                  style={[styles.input, { color: C.text, borderColor: C.separator, backgroundColor: C.backgroundSecond, flex: 1 }]}
-                  value={cityQuery}
-                  onChangeText={setCityQuery}
-                  placeholder={isAr ? 'أدخل اسم المدينة...' : 'Enter city name...'}
-                  placeholderTextColor={C.textMuted}
-                  onSubmitEditing={searchCity}
-                  returnKeyType="search"
-                  textAlign={isAr ? 'right' : 'left'}
-                />
-                <Pressable
-                  onPress={searchCity}
-                  style={[styles.searchBtn, { backgroundColor: C.tint }]}
-                >
-                  {cityLoading
-                    ? <ActivityIndicator size="small" color={C.tintText} />
-                    : <Ionicons name="search" size={18} color={C.tintText} />}
-                </Pressable>
-              </View>
-
-              {/* City results */}
-              {cityResults.length > 0 && (
-                <View style={[styles.cityList, { borderColor: C.separator }]}>
-                  {cityResults.map((c, i) => (
-                    <Pressable
-                      key={i}
-                      onPress={() => {
-                        setManLat(c.lat.toFixed(6));
-                        setManLng(c.lng.toFixed(6));
-                        setCityResults([]);
-                        setCityQuery(c.name);
-                      }}
-                      style={[styles.cityItem, i < cityResults.length - 1 && { borderBottomWidth: 1, borderBottomColor: C.separator }]}
-                    >
-                      <Ionicons name="location-outline" size={14} color={C.tint} />
-                      <Text style={[styles.cityItemText, { color: C.text }]} numberOfLines={2}>{c.name}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-
-              <View style={[styles.divider, { borderColor: C.separator }]}>
-                <Text style={[styles.dividerText, { color: C.textMuted }]}>{isAr ? 'أو أدخل الإحداثيات' : 'or enter coordinates'}</Text>
-              </View>
-
-              <View style={styles.inputRow}>
-                <Text style={[styles.inputLabel, { color: C.textSecond }]}>{tr.latitude}</Text>
-                <TextInput
-                  style={[styles.input, { color: C.text, borderColor: C.separator, backgroundColor: C.backgroundSecond }]}
-                  value={manLat}
-                  onChangeText={setManLat}
-                  keyboardType="decimal-pad"
-                  placeholder="e.g. 31.9516"
-                  placeholderTextColor={C.textMuted}
-                />
-              </View>
-              <View style={styles.inputRow}>
-                <Text style={[styles.inputLabel, { color: C.textSecond }]}>{tr.longitude}</Text>
-                <TextInput
-                  style={[styles.input, { color: C.text, borderColor: C.separator, backgroundColor: C.backgroundSecond }]}
-                  value={manLng}
-                  onChangeText={setManLng}
-                  keyboardType="decimal-pad"
-                  placeholder="e.g. 35.9239"
-                  placeholderTextColor={C.textMuted}
-                />
-              </View>
-              <View style={styles.modalBtns}>
-                <Pressable
-                  onPress={() => { setShowManual(false); setCityResults([]); setCityQuery(''); }}
-                  style={[styles.modalBtn, { backgroundColor: C.backgroundSecond }]}
-                >
-                  <Text style={{ color: C.textSecond }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
-                </Pressable>
-                <Pressable
-                  onPress={saveManualLocation}
-                  style={[styles.modalBtn, { backgroundColor: C.tint }]}
-                >
-                  <Text style={{ color: C.tintText, fontWeight: '600' }}>{isAr ? 'حفظ' : 'Save'}</Text>
-                </Pressable>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
+      <LocationModal visible={showManual} onClose={() => setShowManual(false)} />
     </View>
   );
 }
@@ -600,21 +437,4 @@ const styles = StyleSheet.create({
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
   dua: { fontSize: 13, textAlign: 'center' },
   freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
-
-  /* Location modal */
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalBox: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, gap: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
-  inputRow: { gap: 6 },
-  inputLabel: { fontSize: 13, fontWeight: '500' },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15 },
-  modalBtns: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  modalBtn: { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  cityRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  searchBtn: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  cityList: { borderWidth: 1, borderRadius: 10, overflow: 'hidden' },
-  cityItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
-  cityItemText: { fontSize: 13, flex: 1 },
-  divider: { borderTopWidth: 1, alignItems: 'center', paddingTop: 12, marginTop: 4 },
-  dividerText: { fontSize: 11, marginTop: -18, paddingHorizontal: 8 },
 });

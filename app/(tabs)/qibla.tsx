@@ -2,14 +2,16 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
+import LocationModal from '@/components/LocationModal';
 import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming,
   FadeIn, interpolate, Extrapolation,
@@ -37,11 +39,12 @@ const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
 
 export default function QiblaScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location: appLocation, colors } = useApp();
+  const { isDark, lang, location: appLocation, colors, locationMode } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
+  const [showLocModal, setShowLocModal] = useState(false);
 
   const [heading, setHeading] = useState(0);
   const [qiblaBearing, setQiblaBearing] = useState<number | null>(null);
@@ -191,23 +194,19 @@ export default function QiblaScreen() {
           <LangToggle />
         </View>
         <AppLogo tintColor={C.tint} lang={lang} />
-        <View style={[styles.badgeRow, { flex: 1 }]}>
-          {qiblaBearing !== null && (
-            <>
-              <View style={[styles.badge, { backgroundColor: C.surface }]}>
-                <Text style={[styles.badgeText, { color: C.tint }]}>
-                  {qiblaBearing.toFixed(1)}{tr.degrees}
-                </Text>
-              </View>
-              {distance !== null && (
-                <View style={[styles.badge, { backgroundColor: C.surface }]}>
-                  <Text style={[styles.badgeText, { color: C.tint }]}>
-                    {formatDistance(distance, lang)}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
+        <View style={[styles.badgeRow, { flex: 1, justifyContent: 'flex-end' }]}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowLocModal(true); }}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Ionicons name={locationMode === 'manual' ? 'location-outline' : 'locate'} size={19} color={C.tint} />
+          </Pressable>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Ionicons name="settings-outline" size={19} color={C.textSecond} />
+          </Pressable>
         </View>
       </View>
 
@@ -339,6 +338,7 @@ export default function QiblaScreen() {
           {tr.freeApp}
         </Text>
       </View>
+      <LocationModal visible={showLocModal} onClose={() => setShowLocModal(false)} />
     </View>
   );
 }
@@ -349,6 +349,10 @@ const styles = StyleSheet.create({
   appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
   title: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   badgeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1, marginLeft: 12 },
+  iconBtn: {
+    width: 34, height: 34, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   badgeText: { fontSize: 13, fontWeight: '600' },
   scrollContent: { flexGrow: 1 },
