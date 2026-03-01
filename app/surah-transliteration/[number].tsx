@@ -12,7 +12,7 @@ import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, getSurah } from '@/lib/quran-api';
-import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
+import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS, isLangBundled } from '@/lib/quran-transliteration';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
 
@@ -173,7 +173,12 @@ export default function SurahTransliterationScreen() {
                         {LANG_META[l]?.label ?? l}
                       </Text>
                     </View>
-                    {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      {!isLangBundled(l) && !active && (
+                        <Ionicons name="cloud-download-outline" size={14} color={C.textMuted} />
+                      )}
+                      {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    </View>
                   </Pressable>
                 );
               })}
