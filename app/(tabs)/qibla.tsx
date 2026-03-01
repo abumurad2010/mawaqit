@@ -6,6 +6,7 @@ import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
@@ -58,6 +59,17 @@ export default function QiblaScreen() {
   const aligned = useSharedValue(0);
   const prevHeading = useRef(0);
   const hapticFired = useRef(false);
+  const isFocused = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      isFocused.current = true;
+      return () => {
+        isFocused.current = false;
+        hapticFired.current = false;
+      };
+    }, [])
+  );
 
   // Compute Qibla whenever real GPS coords change
   useEffect(() => {
@@ -118,7 +130,7 @@ export default function QiblaScreen() {
       const isAligned = diff < 5;
       aligned.value = withTiming(isAligned ? 1 : 0, { duration: 300 });
 
-      if (isAligned && !hapticFired.current) {
+      if (isAligned && !hapticFired.current && isFocused.current) {
         hapticFired.current = true;
         // Lock-in vibration: heavy thunk → medium settle → success chime
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
