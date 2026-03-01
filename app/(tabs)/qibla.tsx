@@ -23,6 +23,14 @@ const COMPASS_SIZE = 280;
 const NEEDLE_LENGTH = COMPASS_SIZE / 2 - 20;
 const CENTER = COMPASS_SIZE / 2;
 
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 const DIRECTIONS_AR = ['ش', 'شرق', 'ج', 'غرب'];
 const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
 
@@ -112,7 +120,10 @@ export default function QiblaScreen() {
 
       if (isAligned && !hapticFired.current) {
         hapticFired.current = true;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Lock-in vibration: heavy thunk → medium settle → success chime
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 130);
+        setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 280);
       } else if (!isAligned) {
         hapticFired.current = false;
       }
@@ -199,7 +210,7 @@ export default function QiblaScreen() {
           <Animated.View style={[{ width: COMPASS_SIZE, height: COMPASS_SIZE }, compassStyle]}>
             <Svg width={COMPASS_SIZE} height={COMPASS_SIZE}>
               {/* Outer circle */}
-              <Circle cx={CENTER} cy={CENTER} r={CENTER - 2} fill={isDark ? '#111d15' : '#fff'} stroke={C.separator} strokeWidth={1.5} />
+              <Circle cx={CENTER} cy={CENTER} r={CENTER - 2} fill={C.backgroundCard} stroke={C.separator} strokeWidth={1.5} />
 
               {/* Degree marks */}
               {Array.from({ length: 72 }).map((_, i) => {
@@ -213,7 +224,7 @@ export default function QiblaScreen() {
                 const y2 = CENTER - outer2 * Math.cos(angle);
                 return (
                   <Line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-                    stroke={isMajor ? (isDark ? '#4d7a5e' : '#aacfb8') : (isDark ? '#1a3323' : '#d6ecde')}
+                    stroke={isMajor ? hexToRgba(C.tint, 0.55) : hexToRgba(C.tint, 0.22)}
                     strokeWidth={isMajor ? 1.5 : 0.8}
                   />
                 );
@@ -231,7 +242,7 @@ export default function QiblaScreen() {
                     key={d}
                     x={x} y={y + 5}
                     textAnchor="middle"
-                    fill={isN ? '#e74c3c' : (isDark ? '#8fc4a0' : '#3a6649')}
+                    fill={isN ? C.danger : C.textMuted}
                     fontSize={isN ? 16 : 13}
                     fontWeight={isN ? 'bold' : '600'}
                   >
