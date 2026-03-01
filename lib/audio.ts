@@ -3,44 +3,55 @@ import type { AudioPlayer } from 'expo-audio';
 import { getApiUrl } from '@/lib/query-client';
 
 const BUNDLED = require('@/assets/sounds/athan.wav');
-const CDN_TIMEOUT_MS = 12000;
 
-const ABBREVIATED_PREVIEW_SECS = 25;
-const FULL_PREVIEW_SECS = 300;
-
-let playerRef: AudioPlayer | null = null;
+let mainPlayer: AudioPlayer | null = null;
+let pendingPlayer: AudioPlayer | null = null;
 let stopTimer: ReturnType<typeof setTimeout> | null = null;
-let cdnTimer: ReturnType<typeof setTimeout> | null = null;
+let loadTimer: ReturnType<typeof setTimeout> | null = null;
 let onStopCb: (() => void) | null = null;
 
-function attachFinishListener(player: AudioPlayer) {
-  player.addListener('playbackStatusUpdate', (status: {
-    didJustFinish: boolean;
-  }) => {
-    if (playerRef !== player) return;
-    if (status.didJustFinish) {
-      playerRef = null;
-      const cb = onStopCb;
-      onStopCb = null;
-      cb?.();
-    }
-  });
-}
-
-function startBundled() {
-  const player = createAudioPlayer(BUNDLED);
-  playerRef = player;
-  attachFinishListener(player);
-  player.play();
-}
-
-function cleanupCdnTimer() {
-  if (cdnTimer) { clearTimeout(cdnTimer); cdnTimer = null; }
-}
-
-function setPreviewStopTimer(type: 'full' | 'abbreviated') {
+function clearTimers() {
   if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
-  const secs = type === 'abbreviated' ? ABBREVIATED_PREVIEW_SECS : FULL_PREVIEW_SECS;
+  if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
+}
+
+function killPlayer(p: AudioPlayer | null) {
+  if (!p) return;
+  try { p.remove(); } catch {}
+}
+
+export async function stopAthan() {
+  clearTimers();
+  killPlayer(pendingPlayer); pendingPlayer = null;
+  killPlayer(mainPlayer); mainPlayer = null;
+  const cb = onStopCb; onStopCb = null;
+  cb?.();
+}
+
+function onFinished(player: AudioPlayer) {
+  if (mainPlayer !== player) return;
+  clearTimers();
+  mainPlayer = null;
+  const cb = onStopCb; onStopCb = null;
+  cb?.();
+}
+
+function startPlaying(player: AudioPlayer, type: 'full' | 'abbreviated') {
+  mainPlayer = player;
+  player.play();
+  const secs = type === 'abbreviated' ? 25 : 300;
+  stopTimer = setTimeout(() => stopAthan(), secs * 1000);
+}
+
+function playBundled(type: 'full' | 'abbreviated') {
+  const player = createAudioPlayer(BUNDLED);
+  pendingPlayer = null;
+  mainPlayer = player;
+  player.addListener('playbackStatusUpdate', (s: { didJustFinish: boolean }) => {
+    if (s.didJustFinish) onFinished(player);
+  });
+  player.play();
+  const secs = type === 'abbreviated' ? 8 : 300;
   stopTimer = setTimeout(() => stopAthan(), secs * 1000);
 }
 
@@ -48,72 +59,47 @@ export async function playAthan(
   type: 'full' | 'abbreviated' = 'full',
   onStop?: () => void,
 ) {
+  await stopAthan();
+  onStopCb = onStop ?? null;
+
   try {
-    await stopAthan();
-    onStopCb = onStop ?? null;
     await setAudioModeAsync({ playsInSilentMode: true });
+  } catch {}
 
-    let cdnLoaded = false;
-    let cdnPlayer: AudioPlayer | null = null;
+  const backendUrl = new URL('/api/adhan', getApiUrl()).toString();
 
-    const adhanUrl = new URL('/api/adhan', getApiUrl()).toString();
+  try {
+    const player = createAudioPlayer(backendUrl);
+    pendingPlayer = player;
 
-    try {
-      cdnPlayer = createAudioPlayer(adhanUrl);
-
-      cdnPlayer.addListener('playbackStatusUpdate', (status: {
-        isLoaded: boolean; didJustFinish: boolean;
-      }) => {
-        if (cdnLoaded) return;
-        if (status.isLoaded) {
-          cdnLoaded = true;
-          cleanupCdnTimer();
-          if (playerRef) {
-            try { playerRef.remove(); } catch {}
-            playerRef = null;
-          }
-          playerRef = cdnPlayer!;
-          attachFinishListener(cdnPlayer!);
-          cdnPlayer!.play();
-          setPreviewStopTimer(type);
-        }
-        if (status.didJustFinish && !cdnLoaded) {
-          cleanupCdnTimer();
-          try { cdnPlayer?.remove(); } catch {}
-          cdnPlayer = null;
-        }
-      });
-    } catch {
-      cdnPlayer = null;
-    }
-
-    cdnTimer = setTimeout(() => {
-      cleanupCdnTimer();
-      if (!cdnLoaded) {
-        if (cdnPlayer) { try { cdnPlayer.remove(); } catch {} }
-        cdnPlayer = null;
+    player.addListener('playbackStatusUpdate', (s: {
+      isLoaded: boolean; didJustFinish: boolean;
+    }) => {
+      if (s.isLoaded && pendingPlayer === player) {
+        clearTimers();
+        pendingPlayer = null;
+        player.addListener('playbackStatusUpdate', (s2: { didJustFinish: boolean }) => {
+          if (s2.didJustFinish) onFinished(player);
+        });
+        startPlaying(player, type);
+        return;
       }
-    }, CDN_TIMEOUT_MS);
+      if (s.didJustFinish && pendingPlayer === player) {
+        pendingPlayer = null;
+        playBundled(type);
+      }
+    });
 
-    startBundled();
-    setPreviewStopTimer(type);
+    loadTimer = setTimeout(() => {
+      loadTimer = null;
+      if (pendingPlayer === player) {
+        killPlayer(player);
+        pendingPlayer = null;
+        playBundled(type);
+      }
+    }, 10000);
 
-  } catch (e) {
-    console.warn('[audio] playAthan failed:', e);
-    const cb = onStopCb;
-    onStopCb = null;
-    cb?.();
+  } catch {
+    playBundled(type);
   }
-}
-
-export async function stopAthan() {
-  cleanupCdnTimer();
-  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
-  if (playerRef) {
-    try { playerRef.remove(); } catch {}
-    playerRef = null;
-  }
-  const cb = onStopCb;
-  onStopCb = null;
-  cb?.();
 }
