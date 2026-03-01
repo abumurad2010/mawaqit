@@ -1,9 +1,12 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
+import { getApiUrl } from '@/lib/query-client';
 
-const ADHAN_CDN = 'https://cdn.islamic.network/adhan/adhan-haramain-gapless.mp3';
 const BUNDLED = require('@/assets/sounds/athan.wav');
-const CDN_TIMEOUT_MS = 5000;
+const CDN_TIMEOUT_MS = 12000;
+
+const ABBREVIATED_PREVIEW_SECS = 25;
+const FULL_PREVIEW_SECS = 300;
 
 let playerRef: AudioPlayer | null = null;
 let stopTimer: ReturnType<typeof setTimeout> | null = null;
@@ -24,18 +27,21 @@ function attachFinishListener(player: AudioPlayer) {
   });
 }
 
-function startBundled(type: 'full' | 'abbreviated') {
+function startBundled() {
   const player = createAudioPlayer(BUNDLED);
   playerRef = player;
   attachFinishListener(player);
   player.play();
-  if (type === 'abbreviated') {
-    stopTimer = setTimeout(() => stopAthan(), 8000);
-  }
 }
 
 function cleanupCdnTimer() {
   if (cdnTimer) { clearTimeout(cdnTimer); cdnTimer = null; }
+}
+
+function setPreviewStopTimer(type: 'full' | 'abbreviated') {
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  const secs = type === 'abbreviated' ? ABBREVIATED_PREVIEW_SECS : FULL_PREVIEW_SECS;
+  stopTimer = setTimeout(() => stopAthan(), secs * 1000);
 }
 
 export async function playAthan(
@@ -50,8 +56,10 @@ export async function playAthan(
     let cdnLoaded = false;
     let cdnPlayer: AudioPlayer | null = null;
 
+    const adhanUrl = new URL('/api/adhan', getApiUrl()).toString();
+
     try {
-      cdnPlayer = createAudioPlayer(ADHAN_CDN);
+      cdnPlayer = createAudioPlayer(adhanUrl);
 
       cdnPlayer.addListener('playbackStatusUpdate', (status: {
         isLoaded: boolean; didJustFinish: boolean;
@@ -67,9 +75,7 @@ export async function playAthan(
           playerRef = cdnPlayer!;
           attachFinishListener(cdnPlayer!);
           cdnPlayer!.play();
-          if (type === 'abbreviated') {
-            stopTimer = setTimeout(() => stopAthan(), 8000);
-          }
+          setPreviewStopTimer(type);
         }
         if (status.didJustFinish && !cdnLoaded) {
           cleanupCdnTimer();
@@ -86,13 +92,11 @@ export async function playAthan(
       if (!cdnLoaded) {
         if (cdnPlayer) { try { cdnPlayer.remove(); } catch {} }
         cdnPlayer = null;
-        if (!playerRef) {
-          startBundled(type);
-        }
       }
     }, CDN_TIMEOUT_MS);
 
-    startBundled(type);
+    startBundled();
+    setPreviewStopTimer(type);
 
   } catch (e) {
     console.warn('[audio] playAthan failed:', e);

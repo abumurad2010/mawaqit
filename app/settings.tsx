@@ -65,7 +65,8 @@ export default function SettingsScreen() {
     } else {
       if (previewing) await stopAthan();
       setPreviewing(key);
-      playAthan('full', () => setPreviewing(null));
+      const athanType = (draftNotifications[key]?.athan === 'abbreviated') ? 'abbreviated' : 'full';
+      playAthan(athanType, () => setPreviewing(null));
     }
   };
 
