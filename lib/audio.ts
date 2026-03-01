@@ -1,6 +1,6 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const ADHAN_CDN = 'https://cdn.islamic.network/adhan/adhan-haramain-gapless.mp3';
 const CACHED_PATH = (FileSystem.documentDirectory ?? '') + 'athan_cached.mp3';
