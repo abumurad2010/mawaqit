@@ -2,14 +2,12 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import LocationModal from '@/components/LocationModal';
 import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -55,8 +53,7 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors, locationMode } = useApp();
-  const [showLocModal, setShowLocModal] = useState(false);
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
@@ -161,18 +158,6 @@ export default function CalendarScreen() {
               <Text style={[styles.todayBtnText, { color: C.tint }]}>
                 {isAr ? 'اليوم' : 'Today'}
               </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowLocModal(true); }}
-              style={[styles.iconBtn, { backgroundColor: C.backgroundCard }]}
-            >
-              <Ionicons name={locationMode === 'manual' ? 'location-outline' : 'locate'} size={19} color={C.tint} />
-            </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
-              style={[styles.iconBtn, { backgroundColor: C.backgroundCard }]}
-            >
-              <Ionicons name="settings-outline" size={19} color={C.textSecond} />
             </Pressable>
           </View>
         </View>
@@ -323,7 +308,6 @@ export default function CalendarScreen() {
           {tr.freeApp}
         </Text>
       </View>
-      <LocationModal visible={showLocModal} onClose={() => setShowLocModal(false)} />
     </View>
   );
 }

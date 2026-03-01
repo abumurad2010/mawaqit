@@ -2,7 +2,6 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import LocationModal from '@/components/LocationModal';
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform, Modal, ScrollView,
@@ -24,12 +23,11 @@ type QuranMode = 'mushaf' | 'transliteration';
 
 export default function QuranScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, updateSettings, locationMode } = useApp();
+  const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, updateSettings } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
-  const [showLocModal, setShowLocModal] = useState(false);
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
   const [showLangPicker, setShowLangPicker] = useState(false);
@@ -136,18 +134,6 @@ export default function QuranScreen() {
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
             >
               <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
-            </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowLocModal(true); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-            >
-              <Ionicons name={locationMode === 'manual' ? 'location-outline' : 'locate'} size={19} color={C.tint} />
-            </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-            >
-              <Ionicons name="settings-outline" size={19} color={C.textSecond} />
             </Pressable>
           </View>
         </View>
@@ -281,7 +267,6 @@ export default function QuranScreen() {
         initialNumToRender={20}
         maxToRenderPerBatch={20}
       />
-      <LocationModal visible={showLocModal} onClose={() => setShowLocModal(false)} />
     </View>
   );
 }

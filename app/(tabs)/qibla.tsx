@@ -2,12 +2,11 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import LocationModal from '@/components/LocationModal';
 import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
@@ -39,12 +38,11 @@ const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
 
 export default function QiblaScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location: appLocation, colors, locationMode } = useApp();
+  const { isDark, lang, location: appLocation, colors } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
-  const [showLocModal, setShowLocModal] = useState(false);
 
   const [heading, setHeading] = useState(0);
   const [qiblaBearing, setQiblaBearing] = useState<number | null>(null);
@@ -195,18 +193,6 @@ export default function QiblaScreen() {
         </View>
         <AppLogo tintColor={C.tint} lang={lang} />
         <View style={[styles.badgeRow, { flex: 1, justifyContent: 'flex-end' }]}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setShowLocModal(true); }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Ionicons name={locationMode === 'manual' ? 'location-outline' : 'locate'} size={19} color={C.tint} />
-          </Pressable>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-          >
-            <Ionicons name="settings-outline" size={19} color={C.textSecond} />
-          </Pressable>
         </View>
       </View>
 
@@ -338,7 +324,6 @@ export default function QiblaScreen() {
           {tr.freeApp}
         </Text>
       </View>
-      <LocationModal visible={showLocModal} onClose={() => setShowLocModal(false)} />
     </View>
   );
 }
