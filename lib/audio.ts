@@ -17,14 +17,21 @@ function clearTimers() {
 
 function killPlayer(p: AudioPlayer | null) {
   if (!p) return;
+  try { p.pause(); } catch {}
+  try { p.volume = 0; } catch {}
   try { p.remove(); } catch {}
 }
 
 export async function stopAthan() {
   clearTimers();
-  killPlayer(pendingPlayer); pendingPlayer = null;
-  killPlayer(mainPlayer); mainPlayer = null;
-  const cb = onStopCb; onStopCb = null;
+  const pending = pendingPlayer;
+  const main = mainPlayer;
+  pendingPlayer = null;
+  mainPlayer = null;
+  killPlayer(pending);
+  killPlayer(main);
+  const cb = onStopCb;
+  onStopCb = null;
   cb?.();
 }
 
@@ -32,7 +39,8 @@ function onFinished(player: AudioPlayer) {
   if (mainPlayer !== player) return;
   clearTimers();
   mainPlayer = null;
-  const cb = onStopCb; onStopCb = null;
+  const cb = onStopCb;
+  onStopCb = null;
   cb?.();
 }
 
@@ -48,6 +56,7 @@ function playBundled(type: 'full' | 'abbreviated') {
   pendingPlayer = null;
   mainPlayer = player;
   player.addListener('playbackStatusUpdate', (s: { didJustFinish: boolean }) => {
+    if (mainPlayer !== player) return;
     if (s.didJustFinish) onFinished(player);
   });
   player.play();
@@ -76,6 +85,10 @@ export async function playAthan(
     player.addListener('playbackStatusUpdate', (s: {
       isLoaded: boolean; didJustFinish: boolean;
     }) => {
+      if (pendingPlayer !== player && mainPlayer !== player) {
+        killPlayer(player);
+        return;
+      }
       if (s.isLoaded && pendingPlayer === player) {
         clearTimers();
         pendingPlayer = null;
