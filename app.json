@@ -35,7 +35,16 @@
       }
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Mawaqit – Prayer Times & Quran",
+      "shortName": "Mawaqit",
+      "description": "Free Islamic prayer times, Qibla compass, and full Quran with transliteration. Works completely offline.",
+      "display": "standalone",
+      "orientation": "portrait",
+      "themeColor": "#1a7a4a",
+      "backgroundColor": "#1a5c38",
+      "lang": "en",
+      "scope": "/"
     },
     "plugins": [
       [

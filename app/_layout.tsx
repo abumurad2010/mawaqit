@@ -26,6 +26,12 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   useEffect(() => {
+    if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
     if (Platform.OS === 'web') return;
 
     const foregroundSub = Notifications.addNotificationReceivedListener(notification => {
