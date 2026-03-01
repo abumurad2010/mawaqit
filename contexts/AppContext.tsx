@@ -193,7 +193,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const maghribBase = getMaghribOffset(countryCode);
+  // Prefer the country code stored with the manual location when in manual mode.
+  // This ensures Jumu'ah "Auto (by location)" works from both manual and GPS locations,
+  // not just when device GPS has been used recently.
+  const effectiveCountryCode: string | null =
+    settings.locationMode === 'manual' && settings.manualLocation?.countryCode
+      ? settings.manualLocation.countryCode
+      : countryCode;
+
+  const maghribBase = getMaghribOffset(effectiveCountryCode);
   const maghribOffset = maghribBase + (settings.maghribAdjustment ?? 0);
 
   const locationUtcOffset: number | null =
@@ -210,7 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const resolvedSecondLang: Lang =
     settings.secondLang === 'auto'
-      ? detectSecondLang(countryCode)
+      ? detectSecondLang(effectiveCountryCode)
       : settings.secondLang;
 
   const isRtl = isRtlLang(settings.lang);
@@ -234,10 +242,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lang,
       jumaaMode: settings.jumaaMode,
       jumaaOffsetMinutes: settings.jumaaOffsetMinutes,
-      countryCode,
+      countryCode: effectiveCountryCode,
       locationUtcOffset,
     });
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.jumaaMode, settings.jumaaOffsetMinutes, countryCode, locationUtcOffset]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.jumaaMode, settings.jumaaOffsetMinutes, effectiveCountryCode, locationUtcOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
@@ -293,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLocation,
       maghribBase,
       maghribOffset,
-      countryCode,
+      countryCode: effectiveCountryCode,
       locationUtcOffset,
       bookmarks,
       addBookmark,
@@ -305,7 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastReadSurah,
       setLastReadSurah,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, countryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
   );
 
   if (!loaded) return null;
