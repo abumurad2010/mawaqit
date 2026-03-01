@@ -1,4 +1,11 @@
-export type AccessibilityTheme = 'default' | 'high-contrast' | 'colorblind' | 'warm';
+export type AccessibilityTheme =
+  | 'default'
+  | 'high-contrast'
+  | 'colorblind'
+  | 'warm'
+  | 'blossom'
+  | 'ocean'
+  | 'violet';
 
 export interface ColorPalette {
   background:       string;
@@ -10,7 +17,7 @@ export interface ColorPalette {
   tint:             string;
   tintLight:        string;
   tintDark:         string;
-  tintText:         string; // text colour on a tint-coloured background
+  tintText:         string;
   tabIconDefault:   string;
   tabIconSelected:  string;
   separator:        string;
@@ -21,14 +28,12 @@ export interface ColorPalette {
   heroCardBg:           string;
   heroCardText:         string;
   heroCardSubtext:      string;
-  fontWeightNormal:     '400' | '700'; // '700' in HC for bold-everywhere accessibility
+  fontWeightNormal:     '400' | '700';
 }
 
 const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPalette }> = {
 
   // ── Default ─────────────────────────────────────────────────────────────────
-  // Apple-style green accent. Hero card uses a deep forest green so white text
-  // passes WCAG AA (≥4.5:1) in both light and dark.
   default: {
     light: {
       background:       '#F2F2F7',
@@ -37,7 +42,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#0c2a1a',
       textSecond:       '#1e4832',
       textMuted:        '#3a6b4e',
-      tint:             '#1a7a4a',       // dark green — 7.0:1 on white ✓
+      tint:             '#1a7a4a',
       tintLight:        'rgba(26,122,74,0.09)',
       tintDark:         '#155e3a',
       tintText:         '#FFFFFF',
@@ -48,9 +53,9 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       goldLight:        '#FFF8E0',
       danger:           '#FF3B30',
       surface:          'rgba(26,122,74,0.08)',
-      heroCardBg:       '#1a7a4a',       // white on #1a7a4a = 7.0:1 ✓
+      heroCardBg:       'rgba(26,122,74,0.82)',
       heroCardText:     '#FFFFFF',
-      heroCardSubtext:  'rgba(255,255,255,0.70)',
+      heroCardSubtext:  'rgba(255,255,255,0.72)',
       fontWeightNormal: '400',
     },
     dark: {
@@ -60,10 +65,10 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#FFFFFF',
       textSecond:       '#EBEBF5',
       textMuted:        '#AEAEB2',
-      tint:             '#34C759',       // bright green — for text/icons on dark bg
+      tint:             '#34C759',
       tintLight:        'rgba(52,199,89,0.14)',
       tintDark:         '#30D158',
-      tintText:         '#000000',       // black on #34C759 = 9.5:1 ✓
+      tintText:         '#000000',
       tabIconDefault:   'rgba(255,255,255,0.28)',
       tabIconSelected:  '#34C759',
       separator:        'rgba(255,255,255,0.10)',
@@ -71,18 +76,14 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       goldLight:        'rgba(255,214,10,0.14)',
       danger:           '#FF453A',
       surface:          'rgba(52,199,89,0.10)',
-      heroCardBg:       '#1C5E35',       // deep forest green — white on #1C5E35 = 8.5:1 ✓
+      heroCardBg:       'rgba(28,94,53,0.84)',
       heroCardText:     '#FFFFFF',
-      heroCardSubtext:  'rgba(255,255,255,0.65)',
+      heroCardSubtext:  'rgba(255,255,255,0.68)',
       fontWeightNormal: '400',
     },
   },
 
   // ── High Contrast ───────────────────────────────────────────────────────────
-  // Follows Apple's "Increase Contrast" + "Smart Invert" principles:
-  // no chromatic colour in backgrounds, pure black/white structure, bold separators.
-  // Tint = pure black (light) / pure white (dark) so every interactive element
-  // has maximum contrast. Hero card is solid black/white.
   'high-contrast': {
     light: {
       background:       '#FFFFFF',
@@ -90,8 +91,8 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       backgroundCard:   '#FFFFFF',
       text:             '#000000',
       textSecond:       '#000000',
-      textMuted:        '#000000',       // HC: all text pure black for maximum contrast
-      tint:             '#000000',       // black on white = 21:1 ✓✓✓
+      textMuted:        '#000000',
+      tint:             '#000000',
       tintLight:        'rgba(0,0,0,0.06)',
       tintDark:         '#000000',
       tintText:         '#FFFFFF',
@@ -102,9 +103,9 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       goldLight:        '#FFF3C0',
       danger:           '#CC0000',
       surface:          'rgba(0,0,0,0.06)',
-      heroCardBg:       '#000000',       // white on black = 21:1 ✓✓✓
+      heroCardBg:       'rgba(0,0,0,0.88)',
       heroCardText:     '#FFFFFF',
-      heroCardSubtext:  'rgba(255,255,255,0.75)',
+      heroCardSubtext:  'rgba(255,255,255,0.78)',
       fontWeightNormal: '700',
     },
     dark: {
@@ -114,10 +115,10 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#FFFFFF',
       textSecond:       '#FFFFFF',
       textMuted:        '#CCCCCC',
-      tint:             '#FFFFFF',       // white on black = 21:1 ✓✓✓
+      tint:             '#FFFFFF',
       tintLight:        'rgba(255,255,255,0.10)',
       tintDark:         '#FFFFFF',
-      tintText:         '#000000',       // black on white background ✓
+      tintText:         '#000000',
       tabIconDefault:   'rgba(255,255,255,0.45)',
       tabIconSelected:  '#FFFFFF',
       separator:        'rgba(255,255,255,0.35)',
@@ -125,16 +126,14 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       goldLight:        'rgba(255,224,51,0.18)',
       danger:           '#FF5555',
       surface:          'rgba(255,255,255,0.08)',
-      heroCardBg:       '#FFFFFF',       // black on white = 21:1 ✓✓✓
+      heroCardBg:       'rgba(255,255,255,0.92)',
       heroCardText:     '#000000',
-      heroCardSubtext:  'rgba(0,0,0,0.60)',
+      heroCardSubtext:  'rgba(0,0,0,0.62)',
       fontWeightNormal: '700',
     },
   },
 
   // ── Color Blind (deuteranopia-friendly) ─────────────────────────────────────
-  // Replaces all green with blue. Chosen shades pass WCAG AA on their respective
-  // backgrounds. Uses orange/amber for gold to distinguish from blue.
   colorblind: {
     light: {
       background:       '#F2F2F7',
@@ -143,20 +142,20 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#001A33',
       textSecond:       '#002952',
       textMuted:        '#3A5A80',
-      tint:             '#0055CC',       // dark blue — 6.9:1 on white ✓
+      tint:             '#0055CC',
       tintLight:        'rgba(0,85,204,0.09)',
       tintDark:         '#003D99',
       tintText:         '#FFFFFF',
       tabIconDefault:   '#AEAEB2',
       tabIconSelected:  '#0055CC',
       separator:        'rgba(60,60,67,0.18)',
-      gold:             '#CC6600',       // orange — distinguishable from blue
+      gold:             '#CC6600',
       goldLight:        '#FFF0D9',
       danger:           '#CC0000',
       surface:          'rgba(0,85,204,0.08)',
-      heroCardBg:       '#003D99',       // white on #003D99 = 9.7:1 ✓
+      heroCardBg:       'rgba(0,61,153,0.82)',
       heroCardText:     '#FFFFFF',
-      heroCardSubtext:  'rgba(255,255,255,0.70)',
+      heroCardSubtext:  'rgba(255,255,255,0.72)',
       fontWeightNormal: '400',
     },
     dark: {
@@ -166,27 +165,25 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#FFFFFF',
       textSecond:       '#EBEBF5',
       textMuted:        '#AEAEB2',
-      tint:             '#409CFF',       // iOS system blue dark — for text/icons ✓
+      tint:             '#409CFF',
       tintLight:        'rgba(64,156,255,0.14)',
       tintDark:         '#5AACFF',
-      tintText:         '#000000',       // black on #409CFF = 7.4:1 ✓
+      tintText:         '#000000',
       tabIconDefault:   'rgba(255,255,255,0.28)',
       tabIconSelected:  '#409CFF',
       separator:        'rgba(255,255,255,0.10)',
-      gold:             '#FF9F0A',       // orange
+      gold:             '#FF9F0A',
       goldLight:        'rgba(255,159,10,0.15)',
       danger:           '#FF6B6B',
       surface:          'rgba(64,156,255,0.10)',
-      heroCardBg:       '#003D99',       // white on #003D99 = 9.7:1 ✓
+      heroCardBg:       'rgba(0,50,130,0.84)',
       heroCardText:     '#FFFFFF',
-      heroCardSubtext:  'rgba(255,255,255,0.65)',
+      heroCardSubtext:  'rgba(255,255,255,0.68)',
       fontWeightNormal: '400',
     },
   },
 
   // ── Warm (amber / reduced blue-light) ───────────────────────────────────────
-  // Sepia-toned palette for night reading. Dark amber is used as tint.
-  // Hero card uses a deep brown so white text is comfortably readable.
   warm: {
     light: {
       background:       '#FDF6E3',
@@ -195,7 +192,7 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#2C1810',
       textSecond:       '#3D2B20',
       textMuted:        '#6B4C3B',
-      tint:             '#8C6400',       // dark amber — 5.6:1 on warm-white ✓
+      tint:             '#8C6400',
       tintLight:        'rgba(140,100,0,0.10)',
       tintDark:         '#6B4C00',
       tintText:         '#FFFFFF',
@@ -206,9 +203,9 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       goldLight:        '#FFF3CC',
       danger:           '#CC3300',
       surface:          'rgba(140,100,0,0.09)',
-      heroCardBg:       '#6B4C00',       // white on #6B4C00 = 9.1:1 ✓
+      heroCardBg:       'rgba(107,76,0,0.82)',
       heroCardText:     '#FFFFFF',
-      heroCardSubtext:  'rgba(255,255,255,0.70)',
+      heroCardSubtext:  'rgba(255,255,255,0.72)',
       fontWeightNormal: '400',
     },
     dark: {
@@ -218,10 +215,10 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       text:             '#FFE4B5',
       textSecond:       '#FFCC99',
       textMuted:        '#CC9966',
-      tint:             '#E8A000',       // amber — for text/icons on dark bg ✓
+      tint:             '#E8A000',
       tintLight:        'rgba(232,160,0,0.15)',
       tintDark:         '#D49200',
-      tintText:         '#000000',       // dark amber is bright enough to need dark text
+      tintText:         '#000000',
       tabIconDefault:   'rgba(255,180,100,0.40)',
       tabIconSelected:  '#E8A000',
       separator:        'rgba(255,180,100,0.18)',
@@ -229,9 +226,159 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       goldLight:        'rgba(255,208,96,0.15)',
       danger:           '#FF6633',
       surface:          'rgba(232,160,0,0.10)',
-      heroCardBg:       '#4A3000',       // warm-white on #4A3000 = 9.8:1 ✓
+      heroCardBg:       'rgba(74,48,0,0.84)',
       heroCardText:     '#FFE4B5',
-      heroCardSubtext:  'rgba(255,228,181,0.65)',
+      heroCardSubtext:  'rgba(255,228,181,0.68)',
+      fontWeightNormal: '400',
+    },
+  },
+
+  // ── Blossom (rose / soft pink) ───────────────────────────────────────────────
+  blossom: {
+    light: {
+      background:       '#FFF5F7',
+      backgroundSecond: '#FFE8EC',
+      backgroundCard:   '#FFFFFF',
+      text:             '#2D0F17',
+      textSecond:       '#4A1F2A',
+      textMuted:        '#8B4A58',
+      tint:             '#B83255',
+      tintLight:        'rgba(184,50,85,0.09)',
+      tintDark:         '#902840',
+      tintText:         '#FFFFFF',
+      tabIconDefault:   '#AEAEB2',
+      tabIconSelected:  '#B83255',
+      separator:        'rgba(180,60,90,0.18)',
+      gold:             '#B87200',
+      goldLight:        '#FFF0E0',
+      danger:           '#CC2244',
+      surface:          'rgba(184,50,85,0.08)',
+      heroCardBg:       'rgba(184,50,85,0.80)',
+      heroCardText:     '#FFFFFF',
+      heroCardSubtext:  'rgba(255,255,255,0.74)',
+      fontWeightNormal: '400',
+    },
+    dark: {
+      background:       '#1A070C',
+      backgroundSecond: '#2A1018',
+      backgroundCard:   '#3D1825',
+      text:             '#FFE8EC',
+      textSecond:       '#FFCCDD',
+      textMuted:        '#DD8899',
+      tint:             '#FF7AA0',
+      tintLight:        'rgba(255,122,160,0.14)',
+      tintDark:         '#FF6090',
+      tintText:         '#1A0009',
+      tabIconDefault:   'rgba(255,150,180,0.40)',
+      tabIconSelected:  '#FF7AA0',
+      separator:        'rgba(255,120,155,0.18)',
+      gold:             '#FFAD60',
+      goldLight:        'rgba(255,173,96,0.15)',
+      danger:           '#FF5577',
+      surface:          'rgba(255,122,160,0.10)',
+      heroCardBg:       'rgba(140,35,70,0.84)',
+      heroCardText:     '#FFFFFF',
+      heroCardSubtext:  'rgba(255,255,255,0.68)',
+      fontWeightNormal: '400',
+    },
+  },
+
+  // ── Ocean (sky blue / serene) ────────────────────────────────────────────────
+  ocean: {
+    light: {
+      background:       '#F0F8FF',
+      backgroundSecond: '#DFF0FA',
+      backgroundCard:   '#FFFFFF',
+      text:             '#001833',
+      textSecond:       '#00264D',
+      textMuted:        '#3A6080',
+      tint:             '#0B6FAA',
+      tintLight:        'rgba(11,111,170,0.09)',
+      tintDark:         '#085585',
+      tintText:         '#FFFFFF',
+      tabIconDefault:   '#AEAEB2',
+      tabIconSelected:  '#0B6FAA',
+      separator:        'rgba(60,90,120,0.18)',
+      gold:             '#CC8800',
+      goldLight:        '#FFF4D6',
+      danger:           '#CC2200',
+      surface:          'rgba(11,111,170,0.08)',
+      heroCardBg:       'rgba(11,111,170,0.80)',
+      heroCardText:     '#FFFFFF',
+      heroCardSubtext:  'rgba(255,255,255,0.74)',
+      fontWeightNormal: '400',
+    },
+    dark: {
+      background:       '#020E1A',
+      backgroundSecond: '#061828',
+      backgroundCard:   '#0D253F',
+      text:             '#E0F0FF',
+      textSecond:       '#C0DEFF',
+      textMuted:        '#80AACC',
+      tint:             '#4FC3F7',
+      tintLight:        'rgba(79,195,247,0.14)',
+      tintDark:         '#60CFFF',
+      tintText:         '#000A14',
+      tabIconDefault:   'rgba(100,180,240,0.40)',
+      tabIconSelected:  '#4FC3F7',
+      separator:        'rgba(100,180,240,0.18)',
+      gold:             '#FFB830',
+      goldLight:        'rgba(255,184,48,0.15)',
+      danger:           '#FF4433',
+      surface:          'rgba(79,195,247,0.10)',
+      heroCardBg:       'rgba(8,60,110,0.84)',
+      heroCardText:     '#E0F0FF',
+      heroCardSubtext:  'rgba(224,240,255,0.68)',
+      fontWeightNormal: '400',
+    },
+  },
+
+  // ── Violet (lavender / dreamy) ───────────────────────────────────────────────
+  violet: {
+    light: {
+      background:       '#F8F4FF',
+      backgroundSecond: '#EEE5FF',
+      backgroundCard:   '#FFFFFF',
+      text:             '#1C0A33',
+      textSecond:       '#2E1455',
+      textMuted:        '#6B4A8A',
+      tint:             '#6B3FA0',
+      tintLight:        'rgba(107,63,160,0.09)',
+      tintDark:         '#52307A',
+      tintText:         '#FFFFFF',
+      tabIconDefault:   '#AEAEB2',
+      tabIconSelected:  '#6B3FA0',
+      separator:        'rgba(100,60,150,0.18)',
+      gold:             '#B8860B',
+      goldLight:        '#FFF8E0',
+      danger:           '#CC2255',
+      surface:          'rgba(107,63,160,0.08)',
+      heroCardBg:       'rgba(107,63,160,0.80)',
+      heroCardText:     '#FFFFFF',
+      heroCardSubtext:  'rgba(255,255,255,0.74)',
+      fontWeightNormal: '400',
+    },
+    dark: {
+      background:       '#0D0418',
+      backgroundSecond: '#180828',
+      backgroundCard:   '#28103F',
+      text:             '#F0E8FF',
+      textSecond:       '#E0D0FF',
+      textMuted:        '#B090DD',
+      tint:             '#C084FC',
+      tintLight:        'rgba(192,132,252,0.14)',
+      tintDark:         '#D09AFF',
+      tintText:         '#1A0033',
+      tabIconDefault:   'rgba(180,130,250,0.40)',
+      tabIconSelected:  '#C084FC',
+      separator:        'rgba(180,130,250,0.18)',
+      gold:             '#FFD060',
+      goldLight:        'rgba(255,208,96,0.15)',
+      danger:           '#FF5588',
+      surface:          'rgba(192,132,252,0.10)',
+      heroCardBg:       'rgba(60,20,100,0.84)',
+      heroCardText:     '#F0E8FF',
+      heroCardSubtext:  'rgba(240,232,255,0.68)',
       fontWeightNormal: '400',
     },
   },

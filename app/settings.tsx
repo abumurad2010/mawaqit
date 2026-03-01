@@ -310,7 +310,7 @@ export default function SettingsScreen() {
             {
               key: 'default' as AccessibilityTheme,
               label: isAr ? 'الافتراضي' : 'Default',
-              desc: isAr ? 'النظام الأخضر القياسي' : 'Standard green theme',
+              desc: isAr ? 'النظام الأخضر القياسي' : 'Classic green, crisp and familiar',
               swatchLight: '#1a7a4a', swatchDark: '#34C759',
             },
             {
@@ -328,8 +328,26 @@ export default function SettingsScreen() {
             {
               key: 'warm' as AccessibilityTheme,
               label: isAr ? 'دافئ' : 'Warm',
-              desc: isAr ? 'يُخفف الضوء الأزرق — مريح للعيون' : 'Amber tones, reduced blue light',
+              desc: isAr ? 'درجات العنبر — يُخفف الضوء الأزرق' : 'Amber tones, easy on the eyes',
               swatchLight: '#8C6400', swatchDark: '#E8A000',
+            },
+            {
+              key: 'blossom' as AccessibilityTheme,
+              label: isAr ? 'الوردي' : 'Blossom',
+              desc: isAr ? 'درجات وردية ناعمة ودافئة' : 'Soft rose tones, warm and inviting',
+              swatchLight: '#B83255', swatchDark: '#FF7AA0',
+            },
+            {
+              key: 'ocean' as AccessibilityTheme,
+              label: isAr ? 'المحيط' : 'Ocean',
+              desc: isAr ? 'أزرق سماوي هادئ وصافٍ' : 'Sky blue, calm and serene',
+              swatchLight: '#0B6FAA', swatchDark: '#4FC3F7',
+            },
+            {
+              key: 'violet' as AccessibilityTheme,
+              label: isAr ? 'البنفسجي' : 'Violet',
+              desc: isAr ? 'لافندر حالم وناعم' : 'Lavender tones, gentle and dreamy',
+              swatchLight: '#6B3FA0', swatchDark: '#C084FC',
             },
           ] as const).map((theme, idx, arr) => {
             const isSelected = draftAccessibilityTheme === theme.key;
