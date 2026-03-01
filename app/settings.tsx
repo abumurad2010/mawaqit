@@ -28,7 +28,7 @@ export default function SettingsScreen() {
   const {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment, accessibilityTheme,
-    prayerNotifications, colors, jumaaMode,
+    prayerNotifications, colors, jumaaMode, jumaaOffsetMinutes,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -51,6 +51,7 @@ export default function SettingsScreen() {
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
   const [draftJumaaMode, setDraftJumaaMode] = useState<JumaaMode>(jumaaMode ?? 'auto');
+  const [draftJumaaOffset, setDraftJumaaOffset] = useState<number>(jumaaOffsetMinutes ?? 0);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -82,6 +83,7 @@ export default function SettingsScreen() {
     draftSecondLang !== (secondLang ?? 'auto') ||
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
     draftJumaaMode !== (jumaaMode ?? 'auto') ||
+    draftJumaaOffset !== (jumaaOffsetMinutes ?? 0) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
@@ -99,6 +101,7 @@ export default function SettingsScreen() {
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
       jumaaMode: draftJumaaMode,
+      jumaaOffsetMinutes: draftJumaaOffset,
     });
     router.back();
   };
@@ -540,25 +543,51 @@ export default function SettingsScreen() {
             <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
               {tr.jumaaTime}
             </Text>
-            <View style={[styles.chips, { flexWrap: 'wrap' }]}>
-              {([
-                { value: 'auto',  label: tr.jumaaAuto },
-                { value: 'dhuhr', label: tr.dhuhr },
-                { value: '1200',  label: '12:00' },
-                { value: '1215',  label: '12:15' },
-                { value: '1230',  label: '12:30' },
-                { value: '1300',  label: '13:00' },
-                { value: '1315',  label: '13:15' },
-                { value: '1330',  label: '13:30' },
-              ] as { value: JumaaMode; label: string }[]).map(({ value, label }) => (
-                <Chip
-                  key={value}
-                  value={label}
-                  selected={draftJumaaMode === value}
-                  onPress={() => setDraftJumaaMode(value)}
-                />
-              ))}
+            <View style={[styles.chips]}>
+              <Chip
+                value={tr.jumaaAuto}
+                selected={draftJumaaMode === 'auto'}
+                onPress={() => setDraftJumaaMode('auto')}
+              />
+              <Chip
+                value={isAr ? 'مخصص' : 'Custom'}
+                selected={draftJumaaMode === 'offset'}
+                onPress={() => setDraftJumaaMode('offset')}
+              />
             </View>
+            {draftJumaaMode === 'offset' && (
+              <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                  {isAr ? 'من الظهر:' : 'From Dhuhr:'}
+                </Text>
+                <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftJumaaOffset(v => Math.max(v - 5, -120)); }}
+                    style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Ionicons name="remove" size={18} color={C.tint} />
+                  </Pressable>
+                  <Text style={[styles.stepperValue, { color: C.text }]}>
+                    {draftJumaaOffset > 0 ? `+${draftJumaaOffset}` : draftJumaaOffset}
+                  </Text>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftJumaaOffset(v => Math.min(v + 5, 120)); }}
+                    style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Ionicons name="add" size={18} color={C.tint} />
+                  </Pressable>
+                </View>
+                <View style={[styles.totalBadge, { backgroundColor: draftJumaaOffset === 0 ? C.tint + 'aa' : C.tint }]}>
+                  <Text style={[styles.totalBadgeText, { color: C.tintText }]}>
+                    {draftJumaaOffset === 0
+                      ? (isAr ? '= الظهر' : '= Dhuhr')
+                      : isAr
+                        ? `${draftJumaaOffset > 0 ? '+' : ''}${draftJumaaOffset} د`
+                        : `${draftJumaaOffset > 0 ? '+' : ''}${draftJumaaOffset} min`}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Maghrib offset — base + stepper */}

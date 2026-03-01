@@ -1,4 +1,4 @@
-export type JumaaMode = 'auto' | 'dhuhr' | '1200' | '1215' | '1230' | '1300' | '1315' | '1330';
+export type JumaaMode = 'auto' | 'offset';
 
 const DHUHR_COUNTRIES = new Set([
   'SA', 'AE', 'KW', 'QA', 'BH', 'OM', 'YE', 'IQ', 'IR', 'AF',
@@ -9,52 +9,19 @@ const DHUHR_COUNTRIES = new Set([
   'TD', 'CM', 'KM', 'SL', 'GM', 'GW', 'MZ',
 ]);
 
-export function resolveJumaaMode(
+export function resolveJumaaOffset(
   mode: JumaaMode,
+  offsetMinutes: number,
   countryCode: string | null,
-): Exclude<JumaaMode, 'auto'> {
-  if (mode !== 'auto') return mode;
-  if (countryCode && DHUHR_COUNTRIES.has(countryCode)) return 'dhuhr';
-  return '1300';
+): number {
+  if (mode === 'offset') return offsetMinutes;
+  if (countryCode && DHUHR_COUNTRIES.has(countryCode)) return 0;
+  return 30;
 }
 
 export function getJumaaTime(
-  resolvedMode: Exclude<JumaaMode, 'auto'>,
+  offsetMinutes: number,
   dhuhrDate: Date,
-  locationUtcOffset: number | null,
 ): Date {
-  if (resolvedMode === 'dhuhr') return dhuhrDate;
-
-  const hour = parseInt(resolvedMode.slice(0, 2), 10);
-  const minute = parseInt(resolvedMode.slice(2), 10);
-
-  if (locationUtcOffset !== null) {
-    const utcDecimalHours = hour + minute / 60 - locationUtcOffset;
-    const utcMidnight = Date.UTC(
-      dhuhrDate.getFullYear(),
-      dhuhrDate.getMonth(),
-      dhuhrDate.getDate(),
-    );
-    return new Date(utcMidnight + utcDecimalHours * 3600 * 1000);
-  }
-
-  return new Date(
-    dhuhrDate.getFullYear(),
-    dhuhrDate.getMonth(),
-    dhuhrDate.getDate(),
-    hour,
-    minute,
-    0,
-    0,
-  );
-}
-
-export function jumaaLabel(mode: JumaaMode): string {
-  if (mode === 'auto') return 'Auto';
-  if (mode === 'dhuhr') return 'Dhuhr';
-  const h = parseInt(mode.slice(0, 2), 10);
-  const m = mode.slice(2);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${h12}:${m} ${period}`;
+  return new Date(dhuhrDate.getTime() + offsetMinutes * 60 * 1000);
 }

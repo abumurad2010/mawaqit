@@ -25,7 +25,7 @@ import {
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { resolveJumaaMode, getJumaaTime } from '@/lib/jumaa';
+import { resolveJumaaOffset, getJumaaTime } from '@/lib/jumaa';
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
@@ -55,7 +55,7 @@ function toArabicIndic(n: number): string {
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors, jumaaMode, countryCode, locationMode } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors, jumaaMode, jumaaOffsetMinutes, countryCode, locationMode } = useApp();
   const [showLocModal, setShowLocModal] = useState(false);
   const C = colors;
   const fw = C.fontWeightNormal;
@@ -145,9 +145,9 @@ export default function CalendarScreen() {
   );
   const jumaaDate = useMemo(() => {
     if (!selectedIsFriday || !prayerTimes) return null;
-    const resolved = resolveJumaaMode(jumaaMode, countryCode);
-    return getJumaaTime(resolved, prayerTimes.dhuhr, locationUtcOffset);
-  }, [selectedIsFriday, prayerTimes, jumaaMode, countryCode, locationUtcOffset]);
+    const offsetMins = resolveJumaaOffset(jumaaMode, jumaaOffsetMinutes ?? 0, countryCode);
+    return getJumaaTime(offsetMins, prayerTimes.dhuhr);
+  }, [selectedIsFriday, prayerTimes, jumaaMode, jumaaOffsetMinutes, countryCode]);
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>

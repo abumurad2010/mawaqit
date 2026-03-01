@@ -25,7 +25,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
-import { resolveJumaaMode, getJumaaTime } from '@/lib/jumaa';
+import { resolveJumaaOffset, getJumaaTime } from '@/lib/jumaa';
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
@@ -42,7 +42,7 @@ export default function PrayerTimesScreen() {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors,
-    jumaaMode, countryCode,
+    jumaaMode, jumaaOffsetMinutes, countryCode,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -171,9 +171,9 @@ export default function PrayerTimesScreen() {
   const isFriday = locationNow.getDay() === 5;
   const jumaaDate = useMemo(() => {
     if (!isFriday || !times) return null;
-    const resolved = resolveJumaaMode(jumaaMode, countryCode);
-    return getJumaaTime(resolved, times.dhuhr, locationUtcOffset);
-  }, [isFriday, times, jumaaMode, countryCode, locationUtcOffset]);
+    const offsetMins = resolveJumaaOffset(jumaaMode, jumaaOffsetMinutes ?? 0, countryCode);
+    return getJumaaTime(offsetMins, times.dhuhr);
+  }, [isFriday, times, jumaaMode, jumaaOffsetMinutes, countryCode]);
   const jumaaPassed = jumaaDate ? jumaaDate < now : false;
 
   const gregorianStr = locationNow.toLocaleDateString(

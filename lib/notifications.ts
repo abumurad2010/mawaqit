@@ -5,7 +5,7 @@ import type { CalcMethod, AsrMethod } from './prayer-times';
 import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
-import { resolveJumaaMode, getJumaaTime } from './jumaa';
+import { resolveJumaaOffset, getJumaaTime } from './jumaa';
 import type { JumaaMode } from './jumaa';
 
 function getPrayerLabels(lang: Lang): Record<string, string> {
@@ -43,6 +43,7 @@ export async function schedulePrayerNotifications(params: {
   prayerNotifications: Record<string, PrayerNotifConfig>;
   lang: Lang;
   jumaaMode?: JumaaMode;
+  jumaaOffsetMinutes?: number;
   countryCode?: string | null;
   locationUtcOffset?: number | null;
   daysAhead?: number;
@@ -54,7 +55,7 @@ export async function schedulePrayerNotifications(params: {
   const labels = getPrayerLabels(lang);
   const daysAhead = params.daysAhead ?? 7;
   const now = new Date();
-  const resolvedJumaaMode = resolveJumaaMode(params.jumaaMode ?? 'auto', params.countryCode ?? null);
+  const resolvedJumaaOffsetMins = resolveJumaaOffset(params.jumaaMode ?? 'auto', params.jumaaOffsetMinutes ?? 0, params.countryCode ?? null);
 
   for (let d = 0; d < daysAhead; d++) {
     const date = new Date();
@@ -89,7 +90,7 @@ export async function schedulePrayerNotifications(params: {
       maghrib: times.maghrib,
       isha: times.isha,
       qiyam: getQiyamTime(times.isha, nextTimes.fajr),
-      jumaa: isFriday ? getJumaaTime(resolvedJumaaMode, times.dhuhr, params.locationUtcOffset ?? null) : null,
+      jumaa: isFriday ? getJumaaTime(resolvedJumaaOffsetMins, times.dhuhr) : null,
     };
 
     for (const [prayerKey, cfg] of Object.entries(prayerNotifications)) {
