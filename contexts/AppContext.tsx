@@ -9,6 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import type { JumaaMode } from '@/lib/jumaa';
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
@@ -59,6 +60,7 @@ interface AppSettings {
   maghribAdjustment: number;
   hijriAdjustment: number;
   prayerNotifications: Record<string, PrayerNotifType>;
+  jumaaMode: JumaaMode;
 }
 
 interface AppContextValue extends AppSettings {
@@ -97,6 +99,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   maghribAdjustment: 0,
   hijriAdjustment: 0,
   prayerNotifications: {},
+  jumaaMode: 'auto',
 };
 
 const VALID_CALC_METHODS = [

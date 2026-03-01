@@ -15,6 +15,7 @@ import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
+import type { JumaaMode } from '@/lib/jumaa';
 import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
@@ -27,7 +28,7 @@ export default function SettingsScreen() {
   const {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, fontSize, hijriAdjustment, accessibilityTheme,
-    prayerNotifications, colors,
+    prayerNotifications, colors, jumaaMode,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -49,6 +50,7 @@ export default function SettingsScreen() {
   );
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
+  const [draftJumaaMode, setDraftJumaaMode] = useState<JumaaMode>(jumaaMode ?? 'auto');
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -79,6 +81,7 @@ export default function SettingsScreen() {
     draftHijri !== (hijriAdjustment ?? 0) ||
     draftSecondLang !== (secondLang ?? 'auto') ||
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
+    draftJumaaMode !== (jumaaMode ?? 'auto') ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
@@ -95,6 +98,7 @@ export default function SettingsScreen() {
       secondLang: draftSecondLang,
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
+      jumaaMode: draftJumaaMode,
     });
     router.back();
   };
@@ -529,6 +533,32 @@ export default function SettingsScreen() {
               </View>
             }
           />
+
+          {/* Jumu'ah / Friday prayer */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {tr.jumaaTime}
+            </Text>
+            <View style={[styles.chips, { flexWrap: 'wrap' }]}>
+              {([
+                { value: 'auto',  label: tr.jumaaAuto },
+                { value: 'dhuhr', label: tr.dhuhr },
+                { value: '1200',  label: '12:00' },
+                { value: '1215',  label: '12:15' },
+                { value: '1230',  label: '12:30' },
+                { value: '1300',  label: '13:00' },
+                { value: '1315',  label: '13:15' },
+                { value: '1330',  label: '13:30' },
+              ] as { value: JumaaMode; label: string }[]).map(({ value, label }) => (
+                <Chip
+                  key={value}
+                  value={label}
+                  selected={draftJumaaMode === value}
+                  onPress={() => setDraftJumaaMode(value)}
+                />
+              ))}
+            </View>
+          </View>
 
           {/* Maghrib offset — base + stepper */}
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>

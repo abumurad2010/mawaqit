@@ -24,6 +24,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
+import { resolveJumaaMode, getJumaaTime } from '@/lib/jumaa';
 
 const PRAYER_ICONS: Record<string, string> = {
   fajr: 'weather-night',
@@ -40,6 +41,7 @@ export default function PrayerTimesScreen() {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors,
+    jumaaMode, countryCode,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -222,6 +224,15 @@ export default function PrayerTimesScreen() {
     return new Date(utcMs + locationUtcOffset * 3600000);
   }, [now, locationUtcOffset]);
 
+  // Friday / Jumu'ah
+  const isFriday = locationNow.getDay() === 5;
+  const jumaaDate = useMemo(() => {
+    if (!isFriday || !times) return null;
+    const resolved = resolveJumaaMode(jumaaMode, countryCode);
+    return getJumaaTime(resolved, times.dhuhr, locationUtcOffset);
+  }, [isFriday, times, jumaaMode, countryCode, locationUtcOffset]);
+  const jumaaPassed = jumaaDate ? jumaaDate < now : false;
+
   const gregorianStr = locationNow.toLocaleDateString(
     isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
@@ -345,40 +356,72 @@ export default function PrayerTimesScreen() {
           const active = isNext(key);
           const passed = !active && isPassed(key);
           const isLast = idx === PRAYER_ORDER.length - 1;
+          const dividerStyle = { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' };
           return (
-            <View key={key} style={!isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }}>
-              <View style={[
-                styles.prayerRow,
-                active && { backgroundColor: C.tintLight },
-              ]}>
-                <View style={styles.prayerLeft}>
-                  <MaterialCommunityIcons
-                    name={PRAYER_ICONS[key] as any}
-                    size={18}
-                    color={active ? C.tint : passed ? C.textMuted : C.text}
-                  />
+            <React.Fragment key={key}>
+              <View style={!isLast ? dividerStyle : undefined}>
+                <View style={[
+                  styles.prayerRow,
+                  active && { backgroundColor: C.tintLight },
+                ]}>
+                  <View style={styles.prayerLeft}>
+                    <MaterialCommunityIcons
+                      name={PRAYER_ICONS[key] as any}
+                      size={18}
+                      color={active ? C.tint : passed ? C.textMuted : C.text}
+                    />
+                    <Text style={[
+                      styles.prayerName,
+                      {
+                        color: active ? C.tint : passed ? C.textMuted : C.text,
+                        fontWeight: active ? '700' : fw,
+                        fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : SERIF_EN,
+                        fontSize: 15,
+                        lineHeight: 20,
+                      }
+                    ]}>
+                      {prayerLabel(key)}
+                    </Text>
+                  </View>
                   <Text style={[
-                    styles.prayerName,
-                    {
-                      color: active ? C.tint : passed ? C.textMuted : C.text,
-                      fontWeight: active ? '700' : fw,
-                      fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : SERIF_EN,
-                      fontSize: 15,
-                      lineHeight: 20,
-                    }
+                    styles.prayerTime,
+                    { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw }
                   ]}>
-                    {prayerLabel(key)}
+                    {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                   </Text>
                 </View>
-                <Text style={[
-                  styles.prayerTime,
-                  { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw }
-                ]}>
-                  {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
-                </Text>
+                {!isLast && <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />}
               </View>
-              {!isLast && <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />}
-            </View>
+              {key === 'dhuhr' && isFriday && jumaaDate && (
+                <View style={dividerStyle}>
+                  <View style={[styles.prayerRow, !jumaaPassed && { backgroundColor: C.tintLight + '80' }]}>
+                    <View style={styles.prayerLeft}>
+                      <MaterialCommunityIcons
+                        name="mosque"
+                        size={18}
+                        color={jumaaPassed ? C.textMuted : C.tint}
+                      />
+                      <Text style={[
+                        styles.prayerName,
+                        {
+                          color: jumaaPassed ? C.textMuted : C.tint,
+                          fontWeight: fw,
+                          fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+                          fontSize: 15,
+                          lineHeight: 20,
+                        }
+                      ]}>
+                        {tr.jumaa}
+                      </Text>
+                    </View>
+                    <Text style={[styles.prayerTime, { color: jumaaPassed ? C.textMuted : C.tint, fontWeight: fw }]}>
+                      {formatTimeAtOffset(jumaaDate, locationUtcOffset)}
+                    </Text>
+                  </View>
+                  <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
+                </View>
+              )}
+            </React.Fragment>
           );
         })}
       </View>
