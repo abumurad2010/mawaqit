@@ -155,6 +155,32 @@ function configureExpoAndLanding(app2) {
     }
     next();
   });
+  app2.use((req, res, next) => {
+    const acceptsGzip = (req.headers["accept-encoding"] || "").includes("gzip");
+    if (!acceptsGzip) return next();
+    const distRoot = path.resolve(process.cwd(), "dist");
+    const gzFile = path.join(distRoot, req.path + ".gz");
+    try {
+      const stat = fs.statSync(gzFile);
+      const ext = path.extname(req.path);
+      const mimeTypes = {
+        ".js": "application/javascript; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".html": "text/html; charset=utf-8",
+        ".json": "application/json; charset=utf-8"
+      };
+      res.writeHead(200, {
+        "Content-Encoding": "gzip",
+        "Content-Type": mimeTypes[ext] || "application/octet-stream",
+        "Content-Length": stat.size,
+        "Vary": "Accept-Encoding",
+        "Cache-Control": "public, max-age=31536000, immutable"
+      });
+      fs.createReadStream(gzFile).pipe(res);
+    } catch {
+      next();
+    }
+  });
   app2.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app2.use(express.static(path.resolve(process.cwd(), "dist")));
   app2.use(express.static(path.resolve(process.cwd(), "public")));

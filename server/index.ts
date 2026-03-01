@@ -203,6 +203,36 @@ function configureExpoAndLanding(app: express.Application) {
     next();
   });
 
+  // Serve pre-gzipped files from dist/ when browser accepts gzip
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const acceptsGzip = (req.headers['accept-encoding'] || '').includes('gzip');
+    if (!acceptsGzip) return next();
+
+    const distRoot = path.resolve(process.cwd(), 'dist');
+    const gzFile = path.join(distRoot, req.path + '.gz');
+
+    try {
+      const stat = fs.statSync(gzFile);
+      const ext = path.extname(req.path);
+      const mimeTypes: Record<string, string> = {
+        '.js': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.html': 'text/html; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+      };
+      res.writeHead(200, {
+        'Content-Encoding': 'gzip',
+        'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+        'Content-Length': stat.size,
+        'Vary': 'Accept-Encoding',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      });
+      fs.createReadStream(gzFile).pipe(res);
+    } catch {
+      next();
+    }
+  });
+
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
   app.use(express.static(path.resolve(process.cwd(), "dist")));
   app.use(express.static(path.resolve(process.cwd(), "public")));
