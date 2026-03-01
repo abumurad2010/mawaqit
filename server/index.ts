@@ -187,6 +187,11 @@ function configureExpoAndLanding(app: express.Application) {
     }
 
     if (req.path === "/") {
+      // Serve the compiled web app if it exists, otherwise fall back to landing page
+      const distIndex = path.resolve(process.cwd(), "dist", "index.html");
+      if (fs.existsSync(distIndex)) {
+        return res.sendFile(distIndex);
+      }
       return serveLandingPage({
         req,
         res,
@@ -199,6 +204,7 @@ function configureExpoAndLanding(app: express.Application) {
   });
 
   app.use("/assets", express.static(path.resolve(process.cwd(), "assets")));
+  app.use(express.static(path.resolve(process.cwd(), "dist")));
   app.use(express.static(path.resolve(process.cwd(), "public")));
   app.use(express.static(path.resolve(process.cwd(), "static-build")));
 
