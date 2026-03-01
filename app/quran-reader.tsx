@@ -99,8 +99,10 @@ const banner = StyleSheet.create({
 });
 
 export default function QuranReaderScreen() {
-  const params = useLocalSearchParams<{ page?: string }>();
+  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
+  const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
+  const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
 
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -115,6 +117,18 @@ export default function QuranReaderScreen() {
 
   const [pageNum, setPageNum] = useState(initialPage);
   const [showFontPanel, setShowFontPanel] = useState(false);
+  const [highlightTarget, setHighlightTarget] = useState<{ surah: number; ayah: number } | null>(
+    highlightSurahParam && highlightAyahParam
+      ? { surah: highlightSurahParam, ayah: highlightAyahParam }
+      : null
+  );
+
+  // Auto-clear highlight after 2.5 s
+  useEffect(() => {
+    if (!highlightTarget) return;
+    const t = setTimeout(() => setHighlightTarget(null), 2500);
+    return () => clearTimeout(t);
+  }, [highlightTarget]);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -348,6 +362,7 @@ export default function QuranReaderScreen() {
                         text = stripBismillah(text);
                       }
                       const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
+                      const isHighlighted = highlightTarget?.surah === ayah.surahNum && highlightTarget?.ayah === ayah.ayahNum;
                       return (
                         <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
                           {text}
@@ -355,7 +370,9 @@ export default function QuranReaderScreen() {
                             suppressHighlighting
                             onLongPress={() => handleLongPressAyah(ayah)}
                             style={{
-                              color: bookmarked ? '#C8860A' : C.tint,
+                              color: isHighlighted ? C.tintText : (bookmarked ? '#C8860A' : C.tint),
+                              backgroundColor: isHighlighted ? C.tint : undefined,
+                              borderRadius: 4,
                               fontSize: arabicFontSize * 0.7,
                             }}
                           >

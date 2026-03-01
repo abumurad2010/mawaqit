@@ -37,7 +37,11 @@ export default function BookmarksScreen() {
         const page = getAyahPage(item.surahNumber, item.ayahNumber);
         router.push({
           pathname: '/quran-reader',
-          params: { page: String(page) },
+          params: {
+            page: String(page),
+            highlightSurah: String(item.surahNumber),
+            highlightAyah: String(item.ayahNumber),
+          },
         });
       }
     };
