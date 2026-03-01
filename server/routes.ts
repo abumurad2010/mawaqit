@@ -9,8 +9,8 @@ const CACHE_DIR = path.resolve(process.cwd(), "server", "cache");
 
 const DOWNLOADABLE_LANGS = new Set(['zh','tr','id','bn','fa','ms','pt','sw','ha']);
 
-const ADHAN_SOURCE = 'https://archive.org/download/MakkahAdhanAl-asr7-11-13SheikhSaeedFallatah/MakkahAdhanAl-asr7-11-13SheikhSaeedFallatah.mp3';
-const ADHAN_CACHE = path.join(CACHE_DIR, 'adhan_makkah.mp3');
+const ADHAN_SOURCE = 'https://archive.org/download/azan-madinah/AZAN%20MADINAH%20-%20%20%20.mp3';
+const ADHAN_CACHE = path.join(CACHE_DIR, 'adhan_madinah.mp3');
 
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
