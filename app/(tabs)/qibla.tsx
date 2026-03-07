@@ -155,9 +155,9 @@ export default function QiblaScreen() {
   }));
 
   const mecCardOpacity = useSharedValue(0);
-  const showMecCard = isNearlyAligned && distance !== null;
+  const showMecCard = distance !== null;
   useEffect(() => {
-    mecCardOpacity.value = withTiming(showMecCard ? 1 : 0, { duration: showMecCard ? 300 : 200 });
+    mecCardOpacity.value = withTiming(showMecCard ? 1 : 0, { duration: showMecCard ? 400 : 200 });
   }, [showMecCard]);
   const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity.value }));
 
