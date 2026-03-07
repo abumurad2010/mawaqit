@@ -41,7 +41,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset,
+    updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -182,6 +182,20 @@ export default function PrayerTimesScreen() {
   const pageMuted = C.textMuted;
   const fw = C.fontWeightNormal;
 
+  const FONT_STEPS = ['small', 'medium', 'large'] as const;
+  const pFS = fontSize === 'small' ? 13 : fontSize === 'large' ? 18 : 15;
+  const pLH = pFS + 6;
+  const canDecrease = fontSize !== 'small';
+  const canIncrease = fontSize !== 'large';
+  const decreaseFont = () => {
+    const i = FONT_STEPS.indexOf(fontSize);
+    if (i > 0) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[i - 1] }); }
+  };
+  const increaseFont = () => {
+    const i = FONT_STEPS.indexOf(fontSize);
+    if (i < 2) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[i + 1] }); }
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <Image
@@ -201,6 +215,20 @@ export default function PrayerTimesScreen() {
           </View>
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
+            <Pressable
+              onPress={decreaseFont}
+              style={({ pressed }) => [styles.iconBtn, styles.fontBtn, { backgroundColor: C.backgroundCard, opacity: (!canDecrease || pressed) ? 0.35 : 1 }]}
+              disabled={!canDecrease}
+            >
+              <Text style={[styles.fontBtnLabel, { color: C.textSecond, fontSize: 11 }]}>A−</Text>
+            </Pressable>
+            <Pressable
+              onPress={increaseFont}
+              style={({ pressed }) => [styles.iconBtn, styles.fontBtn, { backgroundColor: C.backgroundCard, opacity: (!canIncrease || pressed) ? 0.35 : 1 }]}
+              disabled={!canIncrease}
+            >
+              <Text style={[styles.fontBtnLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
+            </Pressable>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); setShowManual(true); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
@@ -290,20 +318,20 @@ export default function PrayerTimesScreen() {
                     size={18}
                     color={passed ? C.textMuted : C.text}
                   />
-                  <Text style={[
+                  <Text numberOfLines={1} style={[
                     styles.prayerName,
                     {
                       color: passed ? C.textMuted : C.text,
                       fontWeight: fw,
                       fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
-                      fontSize: 15,
-                      lineHeight: 20,
+                      fontSize: pFS,
+                      lineHeight: pLH,
                     }
                   ]}>
                     {tr.firstAdhan}
                   </Text>
                 </View>
-                <Text style={[styles.prayerTime, { color: passed ? C.textMuted : C.text, fontWeight: fw }]}>
+                <Text style={[styles.prayerTime, { color: passed ? C.textMuted : C.text, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
                   {formatTimeAtOffset(firstAdhanTime, locationUtcOffset)}
                 </Text>
               </View>
@@ -329,14 +357,14 @@ export default function PrayerTimesScreen() {
                       size={18}
                       color={active ? C.tint : passed ? C.textMuted : C.text}
                     />
-                    <Text style={[
+                    <Text numberOfLines={1} style={[
                       styles.prayerName,
                       {
                         color: active ? C.tint : passed ? C.textMuted : C.text,
                         fontWeight: active ? '700' : fw,
                         fontFamily: isAr ? (active ? 'Amiri_700Bold' : 'Amiri_400Regular') : SERIF_EN,
-                        fontSize: 15,
-                        lineHeight: 20,
+                        fontSize: pFS,
+                        lineHeight: pLH,
                       }
                     ]}>
                       {prayerLabel(key)}
@@ -344,7 +372,7 @@ export default function PrayerTimesScreen() {
                   </View>
                   <Text style={[
                     styles.prayerTime,
-                    { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw }
+                    { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw, fontSize: pFS, lineHeight: pLH }
                   ]}>
                     {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                   </Text>
@@ -425,8 +453,10 @@ const styles = StyleSheet.create({
   },
   rowDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
   prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  prayerName: { fontSize: 15, lineHeight: 20 },
-  prayerTime: { fontSize: 15, lineHeight: 20, fontVariant: ['tabular-nums'] },
+  prayerName: { lineHeight: 20 },
+  prayerTime: { lineHeight: 20, fontVariant: ['tabular-nums'] },
+  fontBtn: { minWidth: 30, paddingHorizontal: 4 },
+  fontBtnLabel: { fontWeight: '600', letterSpacing: 0.2, textAlign: 'center' },
 
   /* Dua */
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
