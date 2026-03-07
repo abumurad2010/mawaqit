@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming,
-  FadeIn, interpolate, Extrapolation,
+  FadeIn, FadeOut, interpolate, Extrapolation,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path, Text as SvgText, G } from 'react-native-svg';
 import Colors from '@/constants/colors';
@@ -38,6 +38,7 @@ export default function QiblaScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [magnetometerAvailable, setMagnetometerAvailable] = useState(true);
   const [isAlignedState, setIsAlignedState] = useState(false);
+  const [isNearlyAligned, setIsNearlyAligned] = useState(false);
 
   const rotation = useSharedValue(0);
   const qiblaRotation = useSharedValue(0);
@@ -95,6 +96,7 @@ export default function QiblaScreen() {
       const diff = Math.abs(((qiblaBearing - heading + 180 + 360) % 360) - 180);
       const isAligned = diff < 5;
       setIsAlignedState(isAligned);
+      setIsNearlyAligned(diff < 15);
       aligned.value = withTiming(isAligned ? 1 : 0, { duration: 300 });
 
       if (isAligned && !hapticFired.current) {
@@ -229,9 +231,9 @@ export default function QiblaScreen() {
         )}
       </Animated.View>
 
-      {/* Mecca info card */}
-      {(location || qiblaBearing !== null) && (
-        <Animated.View entering={FadeIn.delay(400)} style={[styles.mecCard, { borderTopColor: C.separator, borderBottomColor: C.separator }]}>
+      {/* Mecca info card — visible only when pointing near Mecca (±15°) */}
+      {isNearlyAligned && (location || qiblaBearing !== null) && (
+        <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)} style={[styles.mecCard, { borderTopColor: C.separator, borderBottomColor: C.separator }]}>
           {/* Caption */}
           <Text style={[styles.mecCardTitle, { color: C.textMuted }]}>
             {isAr ? '🕋  الكعبة المشرفة' : '🕋  Al-Kaaba · Mecca'}
@@ -266,7 +268,7 @@ export default function QiblaScreen() {
       )}
 
       {/* Dua */}
-      <View style={[styles.duaRow, { paddingBottom: bottomInset + 60 }]}>
+      <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
         </Text>
