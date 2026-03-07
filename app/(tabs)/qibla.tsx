@@ -295,8 +295,8 @@ export default function QiblaScreen() {
                 {/* Row 2: fixed Qibla bearing | distance */}
                 <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{qiblaBearing !== null ? qiblaBearing.toFixed(2) : '—'}°</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'اتجاه القبلة' : 'Qibla'}</Text>
+                    <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
+                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
                   </View>
                   <View style={styles.mecCell}>
                     <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
