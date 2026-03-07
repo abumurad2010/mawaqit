@@ -13,7 +13,7 @@ import Svg, { Circle, Line, Path, Text as SvgText, G } from 'react-native-svg';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQiblaBearing, getDistanceToMecca, getDestinationPoint, formatDistance } from '@/lib/qibla';
+import { getQiblaBearing, getDistanceToMecca, formatDistance } from '@/lib/qibla';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
@@ -124,7 +124,7 @@ export default function QiblaScreen() {
   }));
 
   const mecCardOpacity = useSharedValue(0);
-  const showMecCard = isNearlyAligned && location !== null && distance !== null;
+  const showMecCard = isNearlyAligned && distance !== null;
   useEffect(() => {
     mecCardOpacity.value = withTiming(showMecCard ? 1 : 0, { duration: showMecCard ? 300 : 200 });
   }, [showMecCard]);
@@ -249,34 +249,19 @@ export default function QiblaScreen() {
           bottom: bottomInset + 100,
         }, mecCardAnimStyle]}
       >
-        {location !== null && distance !== null && (() => {
-          const dest = getDestinationPoint(location.lat, location.lng, heading, distance);
+        {distance !== null && (() => {
           const col = isAlignedState ? C.tint : C.textMuted;
           return (
-            <>
-              {/* Row 1: live destination Lat | Lng */}
-              <View style={styles.mecRow}>
-                <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                  <Text style={[styles.mecValue, { color: col }]}>{dest.lat.toFixed(4)}°</Text>
-                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
-                </View>
-                <View style={styles.mecCell}>
-                  <Text style={[styles.mecValue, { color: col }]}>{dest.lng.toFixed(4)}°</Text>
-                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
-                </View>
+            <View style={styles.mecRow}>
+              <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
+                <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Bearing'}</Text>
               </View>
-              {/* Row 2: live compass heading | fixed distance */}
-              <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
-                <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                  <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
-                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Compass'}</Text>
-                </View>
-                <View style={styles.mecCell}>
-                  <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
-                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
-                </View>
+              <View style={styles.mecCell}>
+                <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
+                <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
               </View>
-            </>
+            </View>
           );
         })()}
       </Animated.View>
