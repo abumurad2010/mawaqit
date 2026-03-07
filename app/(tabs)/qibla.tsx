@@ -231,35 +231,33 @@ export default function QiblaScreen() {
 
       {/* Mecca info card */}
       {(location || qiblaBearing !== null) && (
-        <Animated.View entering={FadeIn.delay(400)} style={[styles.mecCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          {/* Card header */}
-          <View style={[styles.mecCardHeader, { borderBottomColor: C.separator }]}>
-            <Text style={[styles.mecCardTitle, { color: C.textMuted }]}>
-              {isAr ? '🕋  الكعبة المشرفة — مكة المكرمة' : '🕋  Al-Kaaba · Mecca'}
-            </Text>
-          </View>
+        <Animated.View entering={FadeIn.delay(400)} style={[styles.mecCard, { borderTopColor: C.separator, borderBottomColor: C.separator }]}>
+          {/* Caption */}
+          <Text style={[styles.mecCardTitle, { color: C.textMuted }]}>
+            {isAr ? '🕋  الكعبة المشرفة' : '🕋  Al-Kaaba · Mecca'}
+          </Text>
           {/* Row 1: Lat | Lng */}
           {location && (
             <View style={styles.mecRow}>
-              <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: C.textSecond }]}>{location.lat.toFixed(6)}°</Text>
+              <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                <Text style={[styles.mecValue, { color: C.textMuted }]}>{location.lat.toFixed(6)}°</Text>
                 <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
               </View>
-              <View style={[styles.mecCell, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: C.textSecond }]}>{location.lng.toFixed(6)}°</Text>
+              <View style={styles.mecCell}>
+                <Text style={[styles.mecValue, { color: C.textMuted }]}>{location.lng.toFixed(6)}°</Text>
                 <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
               </View>
             </View>
           )}
           {/* Row 2: Bearing | Distance */}
           {qiblaBearing !== null && (
-            <View style={styles.mecRow}>
+            <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
               <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: C.textSecond }]}>{qiblaBearing.toFixed(1)}°</Text>
+                <Text style={[styles.mecValue, { color: C.textMuted }]}>{qiblaBearing.toFixed(1)}°</Text>
                 <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
               </View>
               <View style={styles.mecCell}>
-                <Text style={[styles.mecValue, { color: C.textSecond }]}>{distance !== null ? `${Math.round(distance).toLocaleString()} km` : '—'}</Text>
+                <Text style={[styles.mecValue, { color: C.textMuted }]}>{distance !== null ? `${Math.round(distance).toLocaleString()} km` : '—'}</Text>
                 <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
               </View>
             </View>
@@ -302,18 +300,15 @@ const styles = StyleSheet.create({
     position: 'absolute', width: 14, height: 14, borderRadius: 7, zIndex: 10,
   },
   mecCard: {
-    marginHorizontal: 20, marginBottom: 10, borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
+    marginHorizontal: 24, marginBottom: 8,
+    borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: 6,
   },
-  mecCardHeader: {
-    paddingVertical: 7, paddingHorizontal: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth, alignItems: 'center',
-  },
-  mecCardTitle: { fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' },
+  mecCardTitle: { fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center', opacity: 0.5, marginBottom: 4 },
   mecRow: { flexDirection: 'row' },
-  mecCell: { flex: 1, alignItems: 'center', paddingVertical: 10 },
-  mecValue: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
-  mecLabel: { fontSize: 9, marginTop: 3, letterSpacing: 0.5, textTransform: 'uppercase' },
+  mecCell: { flex: 1, alignItems: 'center', paddingVertical: 7 },
+  mecValue: { fontSize: 11, fontWeight: '400', letterSpacing: 0.1 },
+  mecLabel: { fontSize: 8, marginTop: 2, letterSpacing: 0.4, textTransform: 'uppercase', opacity: 0.7 },
   instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 12, gap: 4 },
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },

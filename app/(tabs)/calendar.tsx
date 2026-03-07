@@ -140,6 +140,7 @@ export default function CalendarScreen() {
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <PageBackground />
       <ScrollView
+        style={{ flex: 1 }}
         contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 10, paddingBottom: 12 }]}
         showsVerticalScrollIndicator={false}
       >
