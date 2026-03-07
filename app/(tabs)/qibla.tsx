@@ -43,9 +43,11 @@ export default function QiblaScreen() {
   const rotation = useSharedValue(0);
   const qiblaRotation = useSharedValue(0);
   const aligned = useSharedValue(0);
-  const prevHeading = useRef(0);
+  const prevHeading = useRef(-1);          // -1 = "no reading yet"
+  const prevCompassRot = useRef(0);        // accumulated (unwrapped) compass rotation
+  const prevQiblaRot = useRef(0);          // accumulated (unwrapped) Qibla rotation
   const hapticFired = useRef(false);
-  const lockedRef = useRef(false); // hysteresis: lock at 2°, unlock at 6°
+  const lockedRef = useRef(false);
   const qiblaAnchor = useRef<{ lat: number; lng: number } | null>(null);
 
   // Compute Qibla — anchored: only recompute if user has moved > 1 km from
@@ -79,15 +81,23 @@ export default function QiblaScreen() {
     (async () => {
       const avail = await Magnetometer.isAvailableAsync();
       if (!avail) { setMagnetometerAvailable(false); return; }
-      Magnetometer.setUpdateInterval(100);
+      Magnetometer.setUpdateInterval(50); // 20 Hz
       sub = Magnetometer.addListener(({ x, y }) => {
         let angle = Math.atan2(-x, y) * (180 / Math.PI);
         angle = (angle + 360) % 360;
-        // Smooth
+
+        // Snap to first real reading so the compass starts correct immediately
+        if (prevHeading.current < 0) {
+          prevHeading.current = angle;
+          setHeading(angle);
+          return;
+        }
+
+        // Light low-pass filter (α=0.3 at 20 Hz is ~3-cycle lag — responsive but stable)
         let diff = angle - prevHeading.current;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
-        const smoothed = (prevHeading.current + diff * 0.06 + 360) % 360;
+        const smoothed = (prevHeading.current + diff * 0.3 + 360) % 360;
         prevHeading.current = smoothed;
         setHeading(smoothed);
       });
@@ -95,12 +105,24 @@ export default function QiblaScreen() {
     return () => sub?.remove();
   }, []);
 
-  // Animate compass rotation
+  // Animate compass rotation — shortest-path unwrapped to prevent spin-around
   useEffect(() => {
-    rotation.value = withTiming(-heading, { duration: 150 });
+    // Compass rose: always rotates opposite to heading
+    const targetCompass = -heading;
+    let cDelta = targetCompass - prevCompassRot.current;
+    if (cDelta > 180) cDelta -= 360;
+    if (cDelta < -180) cDelta += 360;
+    prevCompassRot.current += cDelta;
+    rotation.value = withTiming(prevCompassRot.current, { duration: 80 });
+
     if (qiblaBearing !== null) {
-      const qiblaAngle = qiblaBearing - heading;
-      qiblaRotation.value = withTiming(qiblaAngle, { duration: 150 });
+      // Qibla needle: absolute angle = qiblaBearing - heading
+      const targetQibla = qiblaBearing - heading;
+      let qDelta = targetQibla - prevQiblaRot.current;
+      if (qDelta > 180) qDelta -= 360;
+      if (qDelta < -180) qDelta += 360;
+      prevQiblaRot.current += qDelta;
+      qiblaRotation.value = withTiming(prevQiblaRot.current, { duration: 80 });
 
       // Check alignment with hysteresis: lock at ≤2°, unlock at >6°
       const diff = Math.abs(((qiblaBearing - heading + 180 + 360) % 360) - 180);
@@ -259,22 +281,22 @@ export default function QiblaScreen() {
             const col = isAlignedState ? C.tint : C.textMuted;
             return (
               <>
-                {/* Row 1: Kaaba latitude | longitude (static) */}
+                {/* Row 1: Kaaba latitude | longitude (static, full precision) */}
                 <View style={styles.mecRow}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LAT.toFixed(4)}°N</Text>
+                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LAT}°N</Text>
                     <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
                   </View>
                   <View style={styles.mecCell}>
-                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LNG.toFixed(4)}°E</Text>
+                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LNG}°E</Text>
                     <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
                   </View>
                 </View>
-                {/* Row 2: live bearing | distance */}
+                {/* Row 2: fixed Qibla bearing | distance */}
                 <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{Math.round(heading)}°</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Bearing'}</Text>
+                    <Text style={[styles.mecValue, { color: col }]}>{qiblaBearing !== null ? qiblaBearing.toFixed(2) : '—'}°</Text>
+                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'اتجاه القبلة' : 'Qibla'}</Text>
                   </View>
                   <View style={styles.mecCell}>
                     <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
