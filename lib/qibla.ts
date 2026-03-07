@@ -48,6 +48,28 @@ export function getDistanceToMecca(lat, lng) {
   const ds=B*ss*(c2sm+B/4*(cs*(-1+2*c2sm*c2sm)-B/6*c2sm*(-3+4*ss*ss)*(-3+4*c2sm*c2sm)));
   return(WGS84_B*A*(sig-ds))/1000;
 }
+/**
+ * Compute the lat/lng of the point you'd reach travelling from (lat,lng)
+ * at the given bearing (degrees) for distKm kilometres (spherical earth).
+ * When bearing === qiblaBearing, the result converges on the Kaaba.
+ */
+export function getDestinationPoint(lat: number, lng: number, bearingDeg: number, distKm: number): { lat: number; lng: number } {
+  const R = 6371;
+  const d = distKm / R;
+  const lat1 = toRad(lat);
+  const lng1 = toRad(lng);
+  const br  = toRad(bearingDeg);
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(d) +
+    Math.cos(lat1) * Math.sin(d) * Math.cos(br)
+  );
+  const lng2 = lng1 + Math.atan2(
+    Math.sin(br) * Math.sin(d) * Math.cos(lat1),
+    Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+  );
+  return { lat: toDeg(lat2), lng: ((toDeg(lng2) + 540) % 360) - 180 };
+}
+
 export function formatDistance(km, lang) {
   if(km<1000) return Math.round(km)+' km';
   return (km/1000).toFixed(1)+'k km';
