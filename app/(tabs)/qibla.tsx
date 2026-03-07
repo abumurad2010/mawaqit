@@ -171,6 +171,19 @@ export default function QiblaScreen() {
         </View>
       </View>
 
+      {/* Instruction — above compass */}
+      <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
+        {isAlignedState ? (
+          <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+            {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
+          </Text>
+        ) : (
+          <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
+          </Text>
+        )}
+      </Animated.View>
+
       {/* Compass */}
       <View style={styles.compassWrapper}>
         <Animated.View style={[styles.glow, { backgroundColor: C.tint }, glowStyle]} />
@@ -227,19 +240,6 @@ export default function QiblaScreen() {
           <View style={[styles.centerDot, { backgroundColor: C.tint }]} />
         </View>
       </View>
-
-      {/* Instruction — right below compass */}
-      <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
-        {isAlignedState ? (
-          <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-            {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
-          </Text>
-        ) : (
-          <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-            {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
-          </Text>
-        )}
-      </Animated.View>
 
       {/* Mecca info card — always mounted, opacity-driven so it never re-enters the normal flow */}
       <Animated.View
