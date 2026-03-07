@@ -19,16 +19,13 @@ import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
-import FontSizeSlider from '@/components/FontSizeSlider';
 import type { SecondLang } from '@/contexts/AppContext';
-
-const FONT_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
-    maghribAdjustment, fontSize, hijriAdjustment, accessibilityTheme,
+    maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     updateSettings,
   } = useApp();
@@ -43,7 +40,6 @@ export default function SettingsScreen() {
   // Local draft state — nothing is saved until the user taps Save
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
-  const [draftFontSize, setDraftFontSize] = useState(fontSize);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
   const [draftHijri, setDraftHijri] = useState(hijriAdjustment ?? 0);
   const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifConfig>>(
@@ -273,7 +269,6 @@ export default function SettingsScreen() {
   const hasChanges =
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
-    draftFontSize !== fontSize ||
     draftAdjustment !== (maghribAdjustment ?? 0) ||
     draftHijri !== (hijriAdjustment ?? 0) ||
     draftSecondLang !== (secondLang ?? 'auto') ||
@@ -288,7 +283,6 @@ export default function SettingsScreen() {
     updateSettings({
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
-      fontSize: draftFontSize,
       maghribAdjustment: draftAdjustment,
       hijriAdjustment: draftHijri,
       prayerNotifications: draftNotifications,
@@ -485,36 +479,6 @@ export default function SettingsScreen() {
             </ScrollView>
           </View>
         </Modal>
-
-        {/* Quran font */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'خط القرآن' : 'Quran Font'}
-          </Text>
-          <HelpBtn helpKey="fontSize" />
-        </View>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={[styles.fontPreviewRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}>
-            <Text style={[styles.fontPreviewLabel, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {tr.fontSize}
-            </Text>
-            <Text style={[styles.fontPreviewArabic, { color: C.text, fontFamily: 'Amiri_400Regular', fontSize: 14 + (FONT_SIZES.indexOf(draftFontSize as any) * 4) }]}>
-              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-            </Text>
-          </View>
-          <View style={styles.fontSliderWrap}>
-            <Text style={[styles.fontSliderA, { color: C.textMuted, fontSize: 11, fontFamily: 'Amiri_400Regular' }]}>أ</Text>
-            <View style={{ flex: 1 }}>
-              <FontSizeSlider
-                value={draftFontSize}
-                onChange={v => setDraftFontSize(v)}
-                tint={C.tint}
-                track={C.separator}
-              />
-            </View>
-            <Text style={[styles.fontSliderA, { color: C.textMuted, fontSize: 18, fontFamily: 'Amiri_400Regular' }]}>أ</Text>
-          </View>
-        </View>
 
         {/* Accessibility */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
