@@ -216,40 +216,8 @@ export default function QiblaScreen() {
         </View>
       </View>
 
-      {/* User coordinates */}
-      {location && (
-        <Animated.View entering={FadeIn.delay(250)} style={[styles.coordsRow, { borderBottomColor: C.separator }]}>
-          <View style={styles.coordCell}>
-            <Text style={[styles.coordLabel, { color: C.textMuted }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
-            <Text style={[styles.coordValue, { color: C.text }]}>{location.lat.toFixed(6)}°</Text>
-          </View>
-          <View style={[styles.infoDivider, { backgroundColor: C.separator }]} />
-          <View style={styles.coordCell}>
-            <Text style={[styles.coordLabel, { color: C.textMuted }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
-            <Text style={[styles.coordValue, { color: C.text }]}>{location.lng.toFixed(6)}°</Text>
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Bearing & distance */}
-      {qiblaBearing !== null && (
-        <Animated.View entering={FadeIn.delay(300)} style={[styles.infoStrip, { borderTopColor: C.separator, borderBottomColor: C.separator }]}>
-          <View style={styles.infoCell}>
-            <Text style={[styles.infoValue, { color: C.text }]}>{qiblaBearing.toFixed(1)}°</Text>
-            <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
-          </View>
-          <View style={[styles.infoDivider, { backgroundColor: C.separator }]} />
-          {distance !== null && (
-            <View style={styles.infoCell}>
-              <Text style={[styles.infoValue, { color: C.text }]}>{Math.round(distance).toLocaleString()} km</Text>
-              <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'إلى مكة' : 'Distance'}</Text>
-            </View>
-          )}
-        </Animated.View>
-      )}
-
-      {/* Instruction */}
-      <Animated.View entering={FadeIn.delay(400)} style={styles.instruction}>
+      {/* Instruction — right below compass */}
+      <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
         {isAlignedState ? (
           <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
             {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
@@ -260,6 +228,44 @@ export default function QiblaScreen() {
           </Text>
         )}
       </Animated.View>
+
+      {/* Mecca info card */}
+      {(location || qiblaBearing !== null) && (
+        <Animated.View entering={FadeIn.delay(400)} style={[styles.mecCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          {/* Card header */}
+          <View style={[styles.mecCardHeader, { borderBottomColor: C.separator }]}>
+            <Text style={[styles.mecCardTitle, { color: C.textMuted }]}>
+              {isAr ? '🕋  الكعبة المشرفة — مكة المكرمة' : '🕋  Al-Kaaba · Mecca'}
+            </Text>
+          </View>
+          {/* Row 1: Lat | Lng */}
+          {location && (
+            <View style={styles.mecRow}>
+              <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}>
+                <Text style={[styles.mecValue, { color: C.textSecond }]}>{location.lat.toFixed(6)}°</Text>
+                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
+              </View>
+              <View style={[styles.mecCell, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}>
+                <Text style={[styles.mecValue, { color: C.textSecond }]}>{location.lng.toFixed(6)}°</Text>
+                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
+              </View>
+            </View>
+          )}
+          {/* Row 2: Bearing | Distance */}
+          {qiblaBearing !== null && (
+            <View style={styles.mecRow}>
+              <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                <Text style={[styles.mecValue, { color: C.textSecond }]}>{qiblaBearing.toFixed(1)}°</Text>
+                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
+              </View>
+              <View style={styles.mecCell}>
+                <Text style={[styles.mecValue, { color: C.textSecond }]}>{distance !== null ? `${Math.round(distance).toLocaleString()} km` : '—'}</Text>
+                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
+              </View>
+            </View>
+          )}
+        </Animated.View>
+      )}
 
       {/* Dua */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 60 }]}>
@@ -295,24 +301,19 @@ const styles = StyleSheet.create({
   centerDot: {
     position: 'absolute', width: 14, height: 14, borderRadius: 7, zIndex: 10,
   },
-  // Subtle info strip between compass and instruction
-  infoStrip: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly',
-    paddingVertical: 10, marginHorizontal: 20, marginBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
+  mecCard: {
+    marginHorizontal: 20, marginBottom: 10, borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
   },
-  infoCell: { alignItems: 'center', flex: 1 },
-  infoValue: { fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
-  infoLabel: { fontSize: 10, marginTop: 2, letterSpacing: 0.3 },
-  infoDivider: { width: StyleSheet.hairlineWidth, height: 28 },
-  coordsRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly',
-    paddingVertical: 8, marginHorizontal: 20, marginBottom: 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  mecCardHeader: {
+    paddingVertical: 7, paddingHorizontal: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth, alignItems: 'center',
   },
-  coordCell: { alignItems: 'center', flex: 1 },
-  coordLabel: { fontSize: 9, letterSpacing: 0.4, marginBottom: 2, textTransform: 'uppercase' },
-  coordValue: { fontSize: 11, fontWeight: '500', letterSpacing: 0.2 },
+  mecCardTitle: { fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' },
+  mecRow: { flexDirection: 'row' },
+  mecCell: { flex: 1, alignItems: 'center', paddingVertical: 10 },
+  mecValue: { fontSize: 12, fontWeight: '500', letterSpacing: 0.2 },
+  mecLabel: { fontSize: 9, marginTop: 3, letterSpacing: 0.5, textTransform: 'uppercase' },
   instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 12, gap: 4 },
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },
