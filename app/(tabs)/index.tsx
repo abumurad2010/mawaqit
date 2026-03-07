@@ -5,7 +5,7 @@ import LocationModal from '@/components/LocationModal';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { SERIF_EN } from '@/constants/typography';
 import {
-  View, Text, StyleSheet, Pressable,
+  View, Text, StyleSheet, Pressable, ScrollView,
   Platform, Image
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -312,6 +312,13 @@ export default function PrayerTimesScreen() {
         )}
       </View>
 
+      {/* ── Prayer list + dua (scrollable so dua always reachable) ── */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* ── Prayer list ── */}
       <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)', marginHorizontal: 16 }]}>
         {/* First Adhan row — shown above Fajr when offset > 0 */}
@@ -393,7 +400,7 @@ export default function PrayerTimesScreen() {
         })}
       </View>
 
-      {/* Spacer */}
+      {/* Spacer pushes dua to bottom when content is short */}
       <View style={{ flex: 1 }} />
 
       {/* ── Dua ── */}
@@ -405,6 +412,7 @@ export default function PrayerTimesScreen() {
           {tr.freeApp}
         </Text>
       </View>
+      </ScrollView>
 
       <LocationModal visible={showManual} onClose={() => setShowManual(false)} />
     </View>

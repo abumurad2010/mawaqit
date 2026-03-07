@@ -19,9 +19,10 @@ import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
+import FontSizeSlider from '@/components/FontSizeSlider';
 import type { SecondLang } from '@/contexts/AppContext';
 
-const FONT_SIZES = ['small', 'medium', 'large'] as const;
+const FONT_SIZES = ['small', 'medium', 'large', 'xlarge'] as const;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -493,17 +494,26 @@ export default function SettingsScreen() {
           <HelpBtn helpKey="fontSize" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Row
-            label={tr.fontSize}
-            right={
-              <View style={styles.chips}>
-                <Chip value={tr.small}  selected={draftFontSize === 'small'}  onPress={() => setDraftFontSize('small')} />
-                <Chip value={tr.medium} selected={draftFontSize === 'medium'} onPress={() => setDraftFontSize('medium')} />
-                <Chip value={tr.large}  selected={draftFontSize === 'large'}  onPress={() => setDraftFontSize('large')} />
-              </View>
-            }
-            noBorder
-          />
+          <View style={[styles.fontPreviewRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}>
+            <Text style={[styles.fontPreviewLabel, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+              {tr.fontSize}
+            </Text>
+            <Text style={[styles.fontPreviewArabic, { color: C.text, fontFamily: 'Amiri_400Regular', fontSize: 14 + (FONT_SIZES.indexOf(draftFontSize as any) * 4) }]}>
+              بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+            </Text>
+          </View>
+          <View style={styles.fontSliderWrap}>
+            <Text style={[styles.fontSliderA, { color: C.textMuted, fontSize: 11, fontFamily: 'Amiri_400Regular' }]}>أ</Text>
+            <View style={{ flex: 1 }}>
+              <FontSizeSlider
+                value={draftFontSize}
+                onChange={v => setDraftFontSize(v)}
+                tint={C.tint}
+                track={C.separator}
+              />
+            </View>
+            <Text style={[styles.fontSliderA, { color: C.textMuted, fontSize: 18, fontFamily: 'Amiri_400Regular' }]}>أ</Text>
+          </View>
         </View>
 
         {/* Accessibility */}
@@ -1024,6 +1034,17 @@ const styles = StyleSheet.create({
   },
   settingLabel: { fontSize: 13, fontWeight: '500', flexShrink: 1 },
   rightSide: { flexShrink: 0 },
+  fontPreviewRow: {
+    paddingHorizontal: 16, paddingVertical: 12,
+    alignItems: 'center', gap: 6,
+  },
+  fontPreviewLabel: { fontSize: 12, opacity: 0.6 },
+  fontPreviewArabic: { textAlign: 'center', lineHeight: 28 },
+  fontSliderWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14, gap: 12,
+  },
+  fontSliderA: { lineHeight: 22 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
     paddingHorizontal: 10, paddingVertical: 5,

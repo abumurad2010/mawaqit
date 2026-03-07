@@ -242,25 +242,25 @@ export default function QiblaScreen() {
           {location && (
             <View style={styles.mecRow}>
               <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: C.textMuted }]}>{location.lat.toFixed(6)}°</Text>
-                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
+                <Text style={[styles.mecValue, { color: isAlignedState ? C.tint : C.textMuted }]}>{location.lat.toFixed(6)}°</Text>
+                <Text style={[styles.mecLabel, { color: isAlignedState ? C.tint : C.textMuted }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
               </View>
               <View style={styles.mecCell}>
-                <Text style={[styles.mecValue, { color: C.textMuted }]}>{location.lng.toFixed(6)}°</Text>
-                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
+                <Text style={[styles.mecValue, { color: isAlignedState ? C.tint : C.textMuted }]}>{location.lng.toFixed(6)}°</Text>
+                <Text style={[styles.mecLabel, { color: isAlignedState ? C.tint : C.textMuted }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
               </View>
             </View>
           )}
-          {/* Row 2: Bearing | Distance */}
+          {/* Row 2: Compass heading (live) | Distance */}
           {qiblaBearing !== null && (
             <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
               <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: C.textMuted }]}>{qiblaBearing.toFixed(1)}°</Text>
-                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
+                <Text style={[styles.mecValue, { color: isAlignedState ? C.tint : C.textMuted }]}>{heading.toFixed(1)}°</Text>
+                <Text style={[styles.mecLabel, { color: isAlignedState ? C.tint : C.textMuted }]}>{isAr ? 'بوصلتك' : 'Compass'}</Text>
               </View>
               <View style={styles.mecCell}>
-                <Text style={[styles.mecValue, { color: C.textMuted }]}>{distance !== null ? `${Math.round(distance).toLocaleString()} km` : '—'}</Text>
-                <Text style={[styles.mecLabel, { color: C.textMuted }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
+                <Text style={[styles.mecValue, { color: isAlignedState ? C.tint : C.textMuted }]}>{distance !== null ? `${Math.round(distance).toLocaleString()} km` : '—'}</Text>
+                <Text style={[styles.mecLabel, { color: isAlignedState ? C.tint : C.textMuted }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
               </View>
             </View>
           )}
