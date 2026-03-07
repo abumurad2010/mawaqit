@@ -133,7 +133,7 @@ export default function QuranReaderScreen() {
   const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const fontScale = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.22 : 1.0;
+  const fontScale = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.22 : fontSize === 'xlarge' ? 1.45 : 1.0;
   const arabicFontSize = 22 * fontScale;
 
   useEffect(() => {

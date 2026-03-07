@@ -182,18 +182,20 @@ export default function PrayerTimesScreen() {
   const pageMuted = C.textMuted;
   const fw = C.fontWeightNormal;
 
-  const FONT_STEPS = ['small', 'medium', 'large'] as const;
-  const pFS = fontSize === 'small' ? 13 : fontSize === 'large' ? 18 : 15;
+  const FONT_STEPS = ['small', 'medium', 'large', 'xlarge'] as const;
+  const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
+  const pFS = [12, 15, 18, 22][fsIdx] ?? 15;
   const pLH = pFS + 6;
-  const canDecrease = fontSize !== 'small';
-  const canIncrease = fontSize !== 'large';
+  // Date / location scale alongside prayer rows
+  const dFS  = [10, 12, 14, 17][fsIdx] ?? 12;   // Gregorian date
+  const hFS  = [9,  11, 13, 15][fsIdx] ?? 11;   // Hijri + location
+  const canDecrease = fsIdx > 0;
+  const canIncrease = fsIdx < FONT_STEPS.length - 1;
   const decreaseFont = () => {
-    const i = FONT_STEPS.indexOf(fontSize);
-    if (i > 0) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[i - 1] }); }
+    if (fsIdx > 0) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[fsIdx - 1] }); }
   };
   const increaseFont = () => {
-    const i = FONT_STEPS.indexOf(fontSize);
-    if (i < 2) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[i + 1] }); }
+    if (fsIdx < FONT_STEPS.length - 1) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[fsIdx + 1] }); }
   };
 
   return (
@@ -216,20 +218,6 @@ export default function PrayerTimesScreen() {
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
-              onPress={decreaseFont}
-              style={({ pressed }) => [styles.iconBtn, styles.fontBtn, { backgroundColor: C.backgroundCard, opacity: (!canDecrease || pressed) ? 0.35 : 1 }]}
-              disabled={!canDecrease}
-            >
-              <Text style={[styles.fontBtnLabel, { color: C.textSecond, fontSize: 11 }]}>A−</Text>
-            </Pressable>
-            <Pressable
-              onPress={increaseFont}
-              style={({ pressed }) => [styles.iconBtn, styles.fontBtn, { backgroundColor: C.backgroundCard, opacity: (!canIncrease || pressed) ? 0.35 : 1 }]}
-              disabled={!canIncrease}
-            >
-              <Text style={[styles.fontBtnLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
-            </Pressable>
-            <Pressable
               onPress={() => { Haptics.selectionAsync(); setShowManual(true); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
             >
@@ -247,19 +235,19 @@ export default function PrayerTimesScreen() {
         {/* Row 2: dates stacked and centered */}
         <View style={styles.datesBlock}>
           <Text
-            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}
+            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6 }]}
             numberOfLines={1}
           >{gregorianStr}</Text>
           <Text
-            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}
+            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5 }]}
             numberOfLines={1}
           >{hijriStr}</Text>
         </View>
 
         {/* Row 3: location */}
         <View style={styles.metaRow}>
-          <Ionicons name="location-sharp" size={10} color={pageMuted} />
-          <Text style={[styles.metaText, { color: pageMuted, fontWeight: fw, flexShrink: 1 }]} numberOfLines={1}>
+          <Ionicons name="location-sharp" size={hFS - 2} color={pageMuted} />
+          <Text style={[styles.metaText, { color: pageMuted, fontWeight: fw, flexShrink: 1, fontSize: hFS }]} numberOfLines={1}>
             {loadingLoc
               ? tr.searching
               : location
@@ -269,8 +257,29 @@ export default function PrayerTimesScreen() {
         </View>
       </View>
 
+      {/* ── Font size controls ── */}
+      <View style={styles.fontControlRow}>
+        <Pressable
+          onPress={decreaseFont}
+          style={({ pressed }) => [styles.fontPill, { backgroundColor: C.backgroundCard, opacity: (!canDecrease || pressed) ? 0.3 : 1 }]}
+          disabled={!canDecrease}
+        >
+          <Text style={[styles.fontPillLabel, { color: C.textSecond, fontSize: 11 }]}>A−</Text>
+        </Pressable>
+        {FONT_STEPS.map((_, i) => (
+          <View key={i} style={[styles.fontDot, { backgroundColor: i === fsIdx ? C.tint : C.separator }]} />
+        ))}
+        <Pressable
+          onPress={increaseFont}
+          style={({ pressed }) => [styles.fontPill, { backgroundColor: C.backgroundCard, opacity: (!canIncrease || pressed) ? 0.3 : 1 }]}
+          disabled={!canIncrease}
+        >
+          <Text style={[styles.fontPillLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
+        </Pressable>
+      </View>
+
       {/* ── Next prayer hero strip ── */}
-      <View style={{ paddingHorizontal: 16, marginTop: 6, marginBottom: 6 }}>
+      <View style={{ paddingHorizontal: 16, marginTop: 4, marginBottom: 6 }}>
         {displayNext && times ? (
           <Animated.View
             entering={FadeIn.duration(500)}
@@ -455,8 +464,13 @@ const styles = StyleSheet.create({
   prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   prayerName: { lineHeight: 20 },
   prayerTime: { lineHeight: 20, fontVariant: ['tabular-nums'] },
-  fontBtn: { minWidth: 30, paddingHorizontal: 4 },
-  fontBtnLabel: { fontWeight: '600', letterSpacing: 0.2, textAlign: 'center' },
+  fontControlRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
+    paddingHorizontal: 16, gap: 6, marginBottom: 2,
+  },
+  fontPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, minWidth: 32, alignItems: 'center' },
+  fontPillLabel: { fontWeight: '600', letterSpacing: 0.2 },
+  fontDot: { width: 5, height: 5, borderRadius: 3 },
 
   /* Dua */
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },

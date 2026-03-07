@@ -56,7 +56,7 @@ interface AppSettings {
   asrMethod: AsrMethod;
   locationMode: 'auto' | 'manual';
   manualLocation: LocationData | null;
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: 'small' | 'medium' | 'large' | 'xlarge';
   maghribAdjustment: number;
   hijriAdjustment: number;
   firstAdhanOffset: 0 | 10 | 20 | 30;
