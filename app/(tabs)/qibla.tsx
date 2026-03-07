@@ -155,10 +155,14 @@ export default function QiblaScreen() {
   }));
 
   const mecCardOpacity = useSharedValue(0);
-  const showMecCard = isNearlyAligned && distance !== null;
+  const showMecCard = distance !== null;
   useEffect(() => {
-    mecCardOpacity.value = withTiming(showMecCard ? 1 : 0, { duration: showMecCard ? 400 : 200 });
-  }, [showMecCard]);
+    if (!showMecCard) {
+      mecCardOpacity.value = withTiming(0, { duration: 200 });
+    } else {
+      mecCardOpacity.value = withTiming(isNearlyAligned ? 1 : 0.35, { duration: 300 });
+    }
+  }, [showMecCard, isNearlyAligned]);
   const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity.value }));
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
