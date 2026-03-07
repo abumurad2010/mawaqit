@@ -46,14 +46,23 @@ export default function QiblaScreen() {
   const prevHeading = useRef(0);
   const hapticFired = useRef(false);
   const lockedRef = useRef(false); // hysteresis: lock at 2°, unlock at 6°
+  const qiblaAnchor = useRef<{ lat: number; lng: number } | null>(null);
 
-  // Compute Qibla
+  // Compute Qibla — anchored: only recompute if user has moved > 1 km from
+  // the location where the bearing was last established. This prevents GPS
+  // jitter (typically < 50 m) from causing tiny but visible bearing shifts
+  // between sessions or during a single session.
   useEffect(() => {
     if (!location) return;
-    const bearing = getQiblaBearing(location.lat, location.lng);
-    const dist = getDistanceToMecca(location.lat, location.lng);
-    setQiblaBearing(bearing);
-    setDistance(dist);
+    if (qiblaAnchor.current) {
+      const dlat = location.lat - qiblaAnchor.current.lat;
+      const dlng = location.lng - qiblaAnchor.current.lng;
+      const approxKm = Math.sqrt(dlat * dlat + dlng * dlng) * 111;
+      if (approxKm < 1.0) return; // GPS jitter — ignore
+    }
+    qiblaAnchor.current = { lat: location.lat, lng: location.lng };
+    setQiblaBearing(getQiblaBearing(location.lat, location.lng));
+    setDistance(getDistanceToMecca(location.lat, location.lng));
   }, [location]);
 
   // Location permission
@@ -78,7 +87,7 @@ export default function QiblaScreen() {
         let diff = angle - prevHeading.current;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
-        const smoothed = (prevHeading.current + diff * 0.18 + 360) % 360;
+        const smoothed = (prevHeading.current + diff * 0.06 + 360) % 360;
         prevHeading.current = smoothed;
         setHeading(smoothed);
       });
@@ -254,7 +263,7 @@ export default function QiblaScreen() {
           return (
             <View style={styles.mecRow}>
               <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
+                <Text style={[styles.mecValue, { color: col }]}>{Math.round(heading)}°</Text>
                 <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Bearing'}</Text>
               </View>
               <View style={styles.mecCell}>
