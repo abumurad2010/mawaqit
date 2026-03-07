@@ -130,7 +130,7 @@ export default function QiblaScreen() {
       const isAligned = wasLocked ? diff <= 6 : diff <= 2;
       lockedRef.current = isAligned;
       setIsAlignedState(isAligned);
-      setIsNearlyAligned(diff < 45);
+      setIsNearlyAligned(diff < 30);
       aligned.value = withTiming(isAligned ? 1 : 0, { duration: 300 });
 
       if (isAligned && !hapticFired.current) {
