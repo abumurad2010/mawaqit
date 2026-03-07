@@ -216,30 +216,35 @@ export default function QiblaScreen() {
         </View>
       </View>
 
-      {/* Subtle info strip */}
+      {/* User coordinates */}
+      {location && (
+        <Animated.View entering={FadeIn.delay(250)} style={[styles.coordsRow, { borderBottomColor: C.separator }]}>
+          <View style={styles.coordCell}>
+            <Text style={[styles.coordLabel, { color: C.textMuted }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
+            <Text style={[styles.coordValue, { color: C.text }]}>{location.lat.toFixed(6)}°</Text>
+          </View>
+          <View style={[styles.infoDivider, { backgroundColor: C.separator }]} />
+          <View style={styles.coordCell}>
+            <Text style={[styles.coordLabel, { color: C.textMuted }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
+            <Text style={[styles.coordValue, { color: C.text }]}>{location.lng.toFixed(6)}°</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Bearing & distance */}
       {qiblaBearing !== null && (
         <Animated.View entering={FadeIn.delay(300)} style={[styles.infoStrip, { borderTopColor: C.separator, borderBottomColor: C.separator }]}>
-          {/* Bearing */}
           <View style={styles.infoCell}>
             <Text style={[styles.infoValue, { color: C.text }]}>{qiblaBearing.toFixed(1)}°</Text>
-            <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'الاتجاه' : 'bearing'}</Text>
+            <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
           </View>
-          {/* Divider */}
           <View style={[styles.infoDivider, { backgroundColor: C.separator }]} />
-          {/* Distance */}
           {distance !== null && (
             <View style={styles.infoCell}>
               <Text style={[styles.infoValue, { color: C.text }]}>{Math.round(distance).toLocaleString()} km</Text>
-              <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'إلى مكة' : 'to Mecca'}</Text>
+              <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'إلى مكة' : 'Distance'}</Text>
             </View>
           )}
-          {/* Divider */}
-          <View style={[styles.infoDivider, { backgroundColor: C.separator }]} />
-          {/* Kaaba coords */}
-          <View style={styles.infoCell}>
-            <Text style={[styles.infoValue, { color: C.text, fontSize: 11 }]}>21.4202°N 39.8223°E</Text>
-            <Text style={[styles.infoLabel, { color: C.textMuted }]}>{isAr ? 'الكعبة' : 'Kaaba'}</Text>
-          </View>
         </Animated.View>
       )}
 
@@ -297,6 +302,14 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
   infoLabel: { fontSize: 10, marginTop: 2, letterSpacing: 0.3 },
   infoDivider: { width: StyleSheet.hairlineWidth, height: 28 },
+  coordsRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly',
+    paddingVertical: 8, marginHorizontal: 20, marginBottom: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  coordCell: { alignItems: 'center', flex: 1 },
+  coordLabel: { fontSize: 9, letterSpacing: 0.4, marginBottom: 2, textTransform: 'uppercase' },
+  coordValue: { fontSize: 11, fontWeight: '500', letterSpacing: 0.2 },
   instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 12, gap: 4 },
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },
