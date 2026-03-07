@@ -45,6 +45,7 @@ export default function QiblaScreen() {
   const aligned = useSharedValue(0);
   const prevHeading = useRef(0);
   const hapticFired = useRef(false);
+  const lockedRef = useRef(false); // hysteresis: lock at 2°, unlock at 6°
 
   // Compute Qibla
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function QiblaScreen() {
         let diff = angle - prevHeading.current;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
-        const smoothed = (prevHeading.current + diff * 0.3 + 360) % 360;
+        const smoothed = (prevHeading.current + diff * 0.18 + 360) % 360;
         prevHeading.current = smoothed;
         setHeading(smoothed);
       });
@@ -92,9 +93,11 @@ export default function QiblaScreen() {
       const qiblaAngle = qiblaBearing - heading;
       qiblaRotation.value = withTiming(qiblaAngle, { duration: 150 });
 
-      // Check alignment
+      // Check alignment with hysteresis: lock at ≤2°, unlock at >6°
       const diff = Math.abs(((qiblaBearing - heading + 180 + 360) % 360) - 180);
-      const isAligned = diff < 5;
+      const wasLocked = lockedRef.current;
+      const isAligned = wasLocked ? diff <= 6 : diff <= 2;
+      lockedRef.current = isAligned;
       setIsAlignedState(isAligned);
       setIsNearlyAligned(diff < 15);
       aligned.value = withTiming(isAligned ? 1 : 0, { duration: 300 });
