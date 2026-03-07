@@ -4,63 +4,39 @@ import { getApiUrl } from '@/lib/query-client';
 
 const BUNDLED = require('@/assets/sounds/athan.wav');
 
-let mainPlayer: AudioPlayer | null = null;
-let pendingPlayer: AudioPlayer | null = null;
+let sessionId = 0;
+let activePlayer: AudioPlayer | null = null;
 let stopTimer: ReturnType<typeof setTimeout> | null = null;
 let loadTimer: ReturnType<typeof setTimeout> | null = null;
 let onStopCb: (() => void) | null = null;
+
+function killPlayer(p: AudioPlayer | null) {
+  if (!p) return;
+  try { p.pause(); } catch {}
+  try { (p as any).muted = true; } catch {}
+  try { p.volume = 0; } catch {}
+  try { p.remove(); } catch {}
+}
 
 function clearTimers() {
   if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
   if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
 }
 
-function killPlayer(p: AudioPlayer | null) {
-  if (!p) return;
-  try { p.pause(); } catch {}
-  try { p.volume = 0; } catch {}
-  try { p.remove(); } catch {}
-}
-
 export async function stopAthan() {
   clearTimers();
-  const pending = pendingPlayer;
-  const main = mainPlayer;
-  pendingPlayer = null;
-  mainPlayer = null;
-  killPlayer(pending);
-  killPlayer(main);
+  sessionId++;
+  const player = activePlayer;
+  activePlayer = null;
+  killPlayer(player);
   const cb = onStopCb;
   onStopCb = null;
   cb?.();
 }
 
-function onFinished(player: AudioPlayer) {
-  if (mainPlayer !== player) return;
-  clearTimers();
-  mainPlayer = null;
-  const cb = onStopCb;
-  onStopCb = null;
-  cb?.();
-}
-
-function startPlaying(player: AudioPlayer, type: 'full' | 'abbreviated') {
-  mainPlayer = player;
-  player.play();
-  const secs = type === 'abbreviated' ? 25 : 300;
-  stopTimer = setTimeout(() => stopAthan(), secs * 1000);
-}
-
-function playBundled(type: 'full' | 'abbreviated') {
-  const player = createAudioPlayer(BUNDLED);
-  pendingPlayer = null;
-  mainPlayer = player;
-  player.addListener('playbackStatusUpdate', (s: { didJustFinish: boolean }) => {
-    if (mainPlayer !== player) return;
-    if (s.didJustFinish) onFinished(player);
-  });
-  player.play();
-  const secs = type === 'abbreviated' ? 8 : 300;
+function scheduleStop(type: 'full' | 'abbreviated') {
+  if (stopTimer) clearTimeout(stopTimer);
+  const secs = type === 'abbreviated' ? 28 : 300;
   stopTimer = setTimeout(() => stopAthan(), secs * 1000);
 }
 
@@ -69,51 +45,88 @@ export async function playAthan(
   onStop?: () => void,
 ) {
   await stopAthan();
+
+  const sid = ++sessionId;
   onStopCb = onStop ?? null;
 
   try {
     await setAudioModeAsync({ playsInSilentMode: true });
   } catch {}
 
+  function isCurrentSession() {
+    return sessionId === sid;
+  }
+
+  function finishCurrentSession() {
+    if (!isCurrentSession()) return;
+    clearTimers();
+    activePlayer = null;
+    const cb = onStopCb;
+    onStopCb = null;
+    cb?.();
+  }
+
+  function activatePlayer(player: AudioPlayer) {
+    if (!isCurrentSession()) {
+      killPlayer(player);
+      return;
+    }
+    clearTimers();
+    activePlayer = player;
+    player.addListener('playbackStatusUpdate', (s: { didJustFinish: boolean }) => {
+      if (!isCurrentSession()) { killPlayer(player); return; }
+      if (s.didJustFinish) finishCurrentSession();
+    });
+    player.play();
+    scheduleStop(type);
+  }
+
   const adhanPath = type === 'abbreviated' ? '/api/adhan/abbreviated' : '/api/adhan';
   const backendUrl = new URL(adhanPath, getApiUrl()).toString();
 
-  try {
-    const player = createAudioPlayer(backendUrl);
-    pendingPlayer = player;
+  let backendPlayer: AudioPlayer | null = null;
 
-    player.addListener('playbackStatusUpdate', (s: {
+  try {
+    backendPlayer = createAudioPlayer(backendUrl);
+
+    backendPlayer.addListener('playbackStatusUpdate', (s: {
       isLoaded: boolean; didJustFinish: boolean;
     }) => {
-      if (pendingPlayer !== player && mainPlayer !== player) {
-        killPlayer(player);
+      if (!isCurrentSession()) {
+        killPlayer(backendPlayer);
         return;
       }
-      if (s.isLoaded && pendingPlayer === player) {
+      if (s.isLoaded) {
         clearTimers();
-        pendingPlayer = null;
-        player.addListener('playbackStatusUpdate', (s2: { didJustFinish: boolean }) => {
-          if (s2.didJustFinish) onFinished(player);
-        });
-        startPlaying(player, type);
+        activatePlayer(backendPlayer!);
         return;
       }
-      if (s.didJustFinish && pendingPlayer === player) {
-        pendingPlayer = null;
-        playBundled(type);
+      if (s.didJustFinish) {
+        killPlayer(backendPlayer);
+        backendPlayer = null;
+        useBundled();
       }
     });
 
     loadTimer = setTimeout(() => {
       loadTimer = null;
-      if (pendingPlayer === player) {
-        killPlayer(player);
-        pendingPlayer = null;
-        playBundled(type);
-      }
+      if (!isCurrentSession()) { killPlayer(backendPlayer); return; }
+      killPlayer(backendPlayer);
+      backendPlayer = null;
+      useBundled();
     }, 10000);
 
   } catch {
-    playBundled(type);
+    useBundled();
+  }
+
+  function useBundled() {
+    if (!isCurrentSession()) return;
+    try {
+      const p = createAudioPlayer(BUNDLED);
+      activatePlayer(p);
+    } catch {
+      finishCurrentSession();
+    }
   }
 }
