@@ -292,16 +292,16 @@ export default function PrayerTimesScreen() {
               />
             </Animated.View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.heroLabel, { color: C.heroCardSubtext }]}>
+              <Text style={[styles.heroLabel, { color: C.heroCardSubtext, fontSize: [8,9,10,11][fsIdx] ?? 9, lineHeight: ([8,9,10,11][fsIdx] ?? 9) + 4 }]}>
                 {'isTomorrow' in displayNext && displayNext.isTomorrow
                   ? tr.tomorrowFajr
                   : tr.nextPrayer}
               </Text>
-              <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+              <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: pFS, lineHeight: pLH }]}>
                 {prayerLabel(displayNext.name)}
               </Text>
             </View>
-            <Text style={[styles.heroCountdown, { color: C.heroCardText, fontWeight: fw }]}>{countdown}</Text>
+            <Text style={[styles.heroCountdown, { color: C.heroCardText, fontWeight: fw, fontSize: [16,20,24,28][fsIdx] ?? 20 }]}>{countdown}</Text>
           </Animated.View>
         ) : (
           <View style={[styles.heroCard, styles.heroCardEmpty, { backgroundColor: C.backgroundCard }]}>
