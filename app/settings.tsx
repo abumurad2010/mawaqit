@@ -64,7 +64,7 @@ export default function SettingsScreen() {
       calcMethod: 'تحدد زاوية الشمس تحت الأفق لحساب وقتَي الفجر والعشاء.\n\n• رابطة العالم الإسلامي: الأوسع انتشاراً — فجر 18°، عشاء 17°\n• الأوقاف الأردنية: المعتمد في الأردن\n• أم القرى: المملكة والخليج — العشاء 90 دقيقة بعد المغرب\n• الهيئة المصرية: مصر وشمال أفريقيا — فجر 19.5°، عشاء 17.5°\n• ISNA: أمريكا الشمالية — فجر 15°، عشاء 15°\n• كراتشي: جنوب آسيا — فجر 18°، عشاء 18°\n• طهران / جعفري: للمذهب الشيعي',
       asrMethod: '• الجمهور (الشافعي، المالكي، الحنبلي): يبدأ العصر حين يساوي الظل طول الشيء — رأي الأغلبية.\n\n• الحنفي: يبدأ العصر حين يصبح الظل ضعفَي طول الشيء — يؤخر العصر نحو 30–60 دقيقة.',
       maghrib: 'الاحتياط الشرعي: يُضاف بعد الغروب الفلكي لضمان اكتمال الغروب المرئي فعلاً.\n\nالتطبيق يُوصي بالقيمة المعتمدة رسمياً في بلدك. يمكنك تعديلها يدوياً بالزيادة أو النقصان.',
-      firstAdhan: 'أذان تنبيهي قبل الفجر — للتنبيه على وقت السحور في رمضان ووقت الاستعداد للصلاة.\n\nالمملكة العربية السعودية تعتمد أذاناً واحداً فقط عند الفجر. أما مصر والشام وكثير من الدول فتُشغّل أذاناً أول قبل 20–30 دقيقة.\n\nإذا كنت في السعودية، اتركه على "إيقاف".',
+      firstAdhan: 'أذان تنبيهي قبل الفجر — للتنبيه على وقت السحور في رمضان ووقت الاستعداد للصلاة.\n\nالمملكة العربية السعودية تعتمد أذاناً واحداً فقط عند الفجر. أما مصر والشام وكثير من الدول فتُشغّل أذاناً أول قبل 20–30 دقيقة.\n\nإذا كنت في بلدٍ لا يُشغّل أذاناً أول، اتركه على "إيقاف".',
       notifications: 'لكل صلاة خيارَان مستقلّان:\n\n🔔 الراية: إشعار نصي صامت يظهر على الشاشة.\n🔊 الأذان: صوت الأذان الكامل أو المختصر.\n\nيمكنك تفعيل الاثنين معاً أو أحدهما أو لا شيء.',
     },
     en: {
@@ -86,7 +86,7 @@ export default function SettingsScreen() {
       calcMethod: 'Définit l\'angle solaire pour Fajr et Isha.\n\n• LIM: Fajr 18°, Isha 17°\n• Awqaf Jordanie: officiel en Jordanie\n• Umm Al-Qura: Arabie Saoudite — Isha 90 min après Maghrib\n• Égypte: Fajr 19.5°, Isha 17.5°\n• ISNA: Amérique du Nord\n• Karachi: Asie du Sud',
       asrMethod: '• Standard (Chafi\'i, Maliki, Hanbali): Asr quand l\'ombre = hauteur de l\'objet.\n\n• Hanafi: Asr quand l\'ombre = 2× la hauteur — retarde Asr de 30–60 min.',
       maghrib: 'Marge de précaution ajoutée après le coucher astronomique. L\'app recommande le standard officiel de votre pays.',
-      firstAdhan: 'Athan précoce avant Fajr pour le Suhoor pendant le Ramadan.\n\nArabie Saoudite: un seul Athan. Égypte/Levant: premier Athan 20–30 min avant.\n\nSi vous êtes en Arabie Saoudite, laissez sur Désactivé.',
+      firstAdhan: 'Athan précoce avant Fajr pour le Suhoor pendant le Ramadan.\n\nArabie Saoudite: un seul Athan. Égypte/Levant: premier Athan 20–30 min avant.\n\nSi vous êtes dans un pays sans premier Athan, laissez sur Désactivé.',
       notifications: 'Chaque prière a deux options:\n\n🔔 Bannière: notification visuelle silencieuse.\n🔊 Athan: audio complet ou abrégé.',
     },
     es: {
@@ -97,7 +97,7 @@ export default function SettingsScreen() {
       calcMethod: 'Define el ángulo solar para Fajr e Isha.\n\n• LMI: Fajr 18°, Isha 17°\n• Awqaf Jordania: oficial en Jordania\n• Umm Al-Qura: Arabia Saudita — Isha 90 min después del Maghrib\n• Egipto: Fajr 19.5°, Isha 17.5°\n• ISNA: América del Norte\n• Karachi: Asia del Sur',
       asrMethod: '• Estándar (Shafi\'i, Maliki, Hanbali): Asr cuando la sombra = altura del objeto.\n\n• Hanafi: Asr cuando la sombra = 2× la altura — retrasa Asr 30–60 min.',
       maghrib: 'Margen de precaución tras el ocaso astronómico. La app recomienda el estándar oficial de tu país.',
-      firstAdhan: 'Athan temprano antes del Fajr para el Suhoor durante el Ramadán.\n\nArabia Saudita: un solo Athan. Egipto/Levante: primer Athan 20–30 min antes.\n\nSi estás en Arabia Saudita, déjalo en Desactivado.',
+      firstAdhan: 'Athan temprano antes del Fajr para el Suhoor durante el Ramadán.\n\nArabia Saudita: un solo Athan. Egipto/Levante: primer Athan 20–30 min antes.\n\nSi estás en un país que no tiene primer Athan, déjalo en Desactivado.',
       notifications: 'Cada oración tiene dos opciones:\n\n🔔 Banner: notificación visual silenciosa.\n🔊 Athan: audio completo o abreviado.',
     },
     ru: {
@@ -108,7 +108,7 @@ export default function SettingsScreen() {
       calcMethod: 'Угол солнца для расчёта Фаджр и Иша.\n\n• ВИЛ: Фаджр 18°, Иша 17°\n• Иордания: официальный стандарт\n• Умм аль-Кура: Саудовская Аравия — Иша 90 мин после Магриба\n• Египет: Фаджр 19.5°, Иша 17.5°\n• ISNA: Северная Америка\n• Карачи: Южная Азия',
       asrMethod: '• Стандарт (Шафии, Малики, Ханбали): Аср когда тень = высоте объекта.\n\n• Ханафи: Аср когда тень = 2× высоте — задержка 30–60 мин.',
       maghrib: 'Предохранительный запас после астрономического захода. Приложение рекомендует официальный стандарт вашей страны.',
-      firstAdhan: 'Ранний азан перед Фаджром для Сухура в Рамадан.\n\nСаудовская Аравия: один азан. Египет/Левант: первый азан за 20–30 мин до Фаджра.',
+      firstAdhan: 'Ранний азан перед Фаджром для Сухура в Рамадан.\n\nСаудовская Аравия: один азан. Египет/Левант: первый азан за 20–30 мин до Фаджра.\n\nЕсли в вашей стране нет первого азана, оставьте его выключенным.',
       notifications: 'Для каждого намаза два варианта:\n\n🔔 Баннер: тихое визуальное уведомление.\n🔊 Азан: полный или сокращённый звук.',
     },
     zh: {
@@ -119,7 +119,7 @@ export default function SettingsScreen() {
       calcMethod: '设置计算晨礼和宵礼的太阳角度。\n\n• 世界伊斯兰联盟：晨礼18°，宵礼17°\n• 约旦宗教部：约旦官方标准\n• 乌姆古拉：沙特阿拉伯 — 宵礼在昏礼后90分钟\n• 埃及：晨礼19.5°，宵礼17.5°',
       asrMethod: '• 标准（沙菲仪、马利基、罕百里）：晡礼在阴影等于物体高度时开始。\n\n• 哈乃非：晡礼在阴影为两倍高度时开始，推迟30–60分钟。',
       maghrib: '天文日落后的预防性余量。应用程序推荐您所在国家的官方标准。',
-      firstAdhan: '斋月期间封斋前的早期宣礼。\n\n沙特阿拉伯只有一次宣礼。埃及和黎凡特提前20–30分钟。',
+      firstAdhan: '斋月期间封斋前的早期宣礼。\n\n沙特阿拉伯只有一次宣礼。埃及和黎凡特提前20–30分钟。\n\n如果您所在的国家没有第一遍宣礼，请将其关闭。',
       notifications: '每次礼拜有两个选项：\n\n🔔 横幅：静音视觉通知。\n🔊 宣礼：完整或简短音频。',
     },
     tr: {
@@ -130,7 +130,7 @@ export default function SettingsScreen() {
       calcMethod: 'Fecir ve Yatsı için güneş açısını belirler.\n\n• Dünya İslam Birliği: Fecir 18°, Yatsı 17°\n• Ürdün Diyanet: resmi standart\n• Ümmü\'l-Kura: Suudi Arabistan — Yatsı Akşamdan 90 dk sonra\n• Mısır: Fecir 19.5°, Yatsı 17.5°',
       asrMethod: '• Standart (Şafii, Maliki, Hanbeli): gölge = nesne boyu olduğunda.\n\n• Hanefi: gölge = 2× boy olduğunda — 30–60 dk geç başlar.',
       maghrib: 'Astronomik günbatımından sonra eklenen ihtiyat süresi. Uygulama ülkenizin resmi standardını önerir.',
-      firstAdhan: 'Fecirden önce erken ezan — Ramazan\'da Sahur için.\n\nSuudi Arabistan tek ezan okur. Mısır/Levant 20–30 dk önce okur.',
+      firstAdhan: 'Fecirden önce erken ezan — Ramazan\'da Sahur için.\n\nSuudi Arabistan tek ezan okur. Mısır/Levant 20–30 dk önce okur.\n\nÜlkenizde ilk ezan yoksa, bunu Kapalı bırakın.',
       notifications: 'Her namaz için iki seçenek:\n\n🔔 Banner: sessiz görsel bildirim.\n🔊 Ezan: tam veya kısa ses.',
     },
     ur: {
@@ -141,7 +141,7 @@ export default function SettingsScreen() {
       calcMethod: 'فجر اور عشاء کے لیے سورج کا زاویہ متعین کرتا ہے۔\n\n• عالمی اسلامی لیگ: فجر 18°، عشاء 17°\n• اردن اوقاف: اردن کا سرکاری معیار\n• ام القریٰ: سعودی عرب — عشاء مغرب کے 90 منٹ بعد\n• مصری ادارہ: فجر 19.5°، عشاء 17.5°\n• کراچی: جنوبی ایشیا',
       asrMethod: '• جمہور (شافعی، مالکی، حنبلی): سایہ = اونچائی پر عصر شروع۔\n\n• حنفی: سایہ = دو گنا اونچائی — تقریباً 30–60 منٹ تاخیر۔',
       maghrib: 'فلکی غروب کے بعد احتیاطی وقفہ۔ ایپ آپ کے ملک کا سرکاری معیار تجویز کرتی ہے۔',
-      firstAdhan: 'فجر سے پہلے ابتدائی اذان — رمضان میں سحری کے لیے۔\n\nسعودی عرب میں صرف ایک اذان ہوتی ہے۔ مصر اور شام میں 20–30 منٹ پہلے۔',
+      firstAdhan: 'فجر سے پہلے ابتدائی اذان — رمضان میں سحری کے لیے۔\n\nسعودی عرب میں صرف ایک اذان ہوتی ہے۔ مصر اور شام میں 20–30 منٹ پہلے۔\n\nاگر آپ کے ملک میں پہلی اذان نہیں ہوتی، تو اسے بند رکھیں۔',
       notifications: 'ہر نماز کے لیے دو آپشن:\n\n🔔 بینر: خاموش بصری اطلاع۔\n🔊 اذان: مکمل یا مختصر آڈیو۔',
     },
     id: {
@@ -152,7 +152,7 @@ export default function SettingsScreen() {
       calcMethod: 'Menetapkan sudut matahari untuk Subuh dan Isya.\n\n• Liga Muslim Dunia: Subuh 18°, Isya 17°\n• Yordania: standar resmi\n• Umm Al-Qura: Arab Saudi — Isya 90 menit setelah Maghrib\n• Mesir: Subuh 19.5°, Isya 17.5°',
       asrMethod: '• Standar (Syafi\'i, Maliki, Hambali): Asar saat bayangan = tinggi benda.\n\n• Hanafi: Asar saat bayangan = 2× tinggi — mundur 30–60 menit.',
       maghrib: 'Batas kehati-hatian setelah matahari terbenam secara astronomis. Aplikasi merekomendasikan standar resmi negara Anda.',
-      firstAdhan: 'Azan awal sebelum Subuh untuk Sahur selama Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 menit lebih awal.',
+      firstAdhan: 'Azan awal sebelum Subuh untuk Sahur selama Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 menit lebih awal.\n\nJika negara Anda tidak memiliki azan pertama, biarkan Nonaktif.',
       notifications: 'Setiap shalat memiliki dua opsi:\n\n🔔 Banner: notifikasi visual senyap.\n🔊 Azan: audio penuh atau singkat.',
     },
     bn: {
@@ -163,7 +163,7 @@ export default function SettingsScreen() {
       calcMethod: 'ফজর ও ইশার জন্য সূর্যের কোণ নির্ধারণ করে।\n\n• মুসলিম বিশ্ব লীগ: ফজর 18°, ইশা 17°\n• উম্মুল কুরা: সৌদি আরব — ইশা মাগরিবের ৯০ মিনিট পরে\n• মিশর: ফজর 19.5°, ইশা 17.5°',
       asrMethod: '• আদর্শ (শাফেয়ি, মালেকি, হাম্বলি): ছায়া = উচ্চতা হলে আসর শুরু।\n\n• হানাফি: ছায়া = ২× উচ্চতা হলে — ৩০–৬০ মিনিট দেরি।',
       maghrib: 'জ্যোতির্বিদ্যাগত সূর্যাস্তের পর সতর্কতামূলক ব্যবধান। অ্যাপ আপনার দেশের সরকারি মান সুপারিশ করে।',
-      firstAdhan: 'রমজানে সেহরির জন্য ফজরের আগে প্রাথমিক আজান।',
+      firstAdhan: 'রমজানে সেহরির জন্য ফজরের আগে প্রাথমিক আজান।\n\nসৌদি আরব: শুধুমাত্র একটি আজান। মিশর/লেভান্ট: ফজরের ২০–৩০ মিনিট আগে।\n\nআপনার দেশে প্রথম আজান না থাকলে, এটি বন্ধ রাখুন।',
       notifications: 'প্রতিটি নামাজের জন্য দুটি বিকল্প:\n\n🔔 ব্যানার: নীরব ভিজ্যুয়াল বিজ্ঞপ্তি।\n🔊 আজান: সম্পূর্ণ বা সংক্ষিপ্ত অডিও।',
     },
     fa: {
@@ -174,7 +174,7 @@ export default function SettingsScreen() {
       calcMethod: 'زاویه خورشید برای فجر و عشا را تعیین می‌کند.\n\n• رابطه جهان اسلام: فجر 18°، عشا 17°\n• اردن: استاندارد رسمی\n• ام‌القری: عربستان — عشا 90 دقیقه پس از مغرب\n• مصر: فجر 19.5°، عشا 17.5°',
       asrMethod: '• استاندارد (شافعی، مالکی، حنبلی): عصر زمانی که سایه = ارتفاع شیء.\n\n• حنفی: عصر زمانی که سایه = 2× ارتفاع — تأخیر 30–60 دقیقه.',
       maghrib: 'حاشیه احتیاطی پس از غروب نجومی. برنامه استاندارد رسمی کشور شما را توصیه می‌کند.',
-      firstAdhan: 'اذان اولیه قبل از فجر برای سحری در رمضان.\n\nعربستان سعودی: یک اذان. مصر/لوان: 20–30 دقیقه زودتر.',
+      firstAdhan: 'اذان اولیه قبل از فجر برای سحری در رمضان.\n\nعربستان سعودی: یک اذان. مصر/لوان: 20–30 دقیقه زودتر.\n\nاگر در کشوری هستید که اذان اول ندارد، آن را خاموش بگذارید.',
       notifications: 'برای هر نماز دو گزینه:\n\n🔔 بنر: اعلان بصری بی‌صدا.\n🔊 اذان: صدای کامل یا خلاصه.',
     },
     ms: {
@@ -185,7 +185,7 @@ export default function SettingsScreen() {
       calcMethod: 'Menetapkan sudut matahari untuk Subuh dan Isyak.\n\n• Liga Muslim Dunia: Subuh 18°, Isyak 17°\n• Jordan: standard rasmi\n• Umm Al-Qura: Arab Saudi — Isyak 90 minit selepas Maghrib',
       asrMethod: '• Standard (Syafi\'i, Maliki, Hanbali): Asar bila bayangan = tinggi benda.\n\n• Hanafi: Asar bila bayangan = 2× tinggi — lewat 30–60 min.',
       maghrib: 'Margin berjaga-jaga selepas matahari terbenam secara astronomik. Aplikasi mengesyorkan standard rasmi negara anda.',
-      firstAdhan: 'Azan awal sebelum Subuh untuk Sahur semasa Ramadan.',
+      firstAdhan: 'Azan awal sebelum Subuh untuk Sahur semasa Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 minit lebih awal.\n\nJika negara anda tidak mempunyai azan pertama, biarkan ia Mati.',
       notifications: 'Setiap sembahyang ada dua pilihan:\n\n🔔 Banner: pemberitahuan visual senyap.\n🔊 Azan: audio penuh atau ringkas.',
     },
     pt: {
@@ -196,7 +196,7 @@ export default function SettingsScreen() {
       calcMethod: 'Define o ângulo solar para Fajr e Isha.\n\n• Liga Mundial Islâmica: Fajr 18°, Isha 17°\n• Jordânia: padrão oficial\n• Umm Al-Qura: Arábia Saudita — Isha 90 min após Maghrib',
       asrMethod: '• Padrão (Shafi\'i, Maliki, Hanbali): Asr quando sombra = altura do objeto.\n\n• Hanafi: Asr quando sombra = 2× altura — atraso de 30–60 min.',
       maghrib: 'Margem de precaução após o pôr do sol astronômico. O app recomenda o padrão oficial do seu país.',
-      firstAdhan: 'Athan antecipado antes do Fajr para o Suhoor durante o Ramadã.',
+      firstAdhan: 'Athan antecipado antes do Fajr para o Suhoor durante o Ramadã.\n\nArábia Saudita: um único Athan. Egito/Levante: primeiro Athan 20–30 min antes.\n\nSe você estiver em um país que não tem o primeiro Athan, deixe-o Desativado.',
       notifications: 'Cada oração tem duas opções:\n\n🔔 Banner: notificação visual silenciosa.\n🔊 Athan: áudio completo ou abreviado.',
     },
     sw: {
@@ -207,7 +207,7 @@ export default function SettingsScreen() {
       calcMethod: 'Inaweka pembe ya jua kwa Alfajiri na Isha.\n\n• Ligi ya Ulimwengu wa Kiislamu: Alfajiri 18°, Isha 17°\n• Umm Al-Qura: Saudi Arabia — Isha dakika 90 baada ya Magharibi',
       asrMethod: '• Kawaida: Asr wakati kivuli = urefu wa kitu.\n\n• Hanafi: Asr wakati kivuli = mara 2 — kuchelewa dakika 30–60.',
       maghrib: 'Kiwango cha tahadhari baada ya machweo ya kiangalizi. Programu inakupendekeza kiwango rasmi cha nchi yako.',
-      firstAdhan: 'Adhana ya mapema kabla ya Alfajiri kwa Daku wakati wa Ramadhani.',
+      firstAdhan: 'Adhana ya mapema kabla ya Alfajiri kwa Daku wakati wa Ramadhani.\n\nSaudia Arabia: adhana moja tu. Misri/Levant: adhana ya kwanza dakika 20–30 mapema.\n\nIkiwa nchi yako haina adhana ya kwanza, iacha kwenye Imezimwa.',
       notifications: 'Kila sala ina chaguo mbili:\n\n🔔 Tangazo: arifa ya macho ya kimya.\n🔊 Adhana: sauti kamili au fupi.',
     },
     ha: {
@@ -218,7 +218,7 @@ export default function SettingsScreen() {
       calcMethod: 'Yana saita kusurwar rana don Asuba da Isha.\n\n• Ligi ta Duniya ta Kiislamu: Asuba 18°, Isha 17°\n• Umm Al-Qura: Saudi Arabia — Isha minti 90 bayan Magariba',
       asrMethod: '• Ma\'auni: Azahar lokacin inuwa = tsayin abu.\n\n• Hanafi: Azahar lokacin inuwa = ninki biyu — jinkiri minti 30–60.',
       maghrib: 'Kiwon kariya bayan faɗuwar rana na tauraron dan adam. Aikace-aikacen yana ba da shawarar ma\'aunin hukuma na ƙasarku.',
-      firstAdhan: 'Farkon azan kafin Asuba don Suhur a lokacin Azumi.',
+      firstAdhan: 'Farkon azan kafin Asuba don Suhur a lokacin Azumi.\n\nSaudi Arabia: azan guda ɗaya. Masar/Levant: farkon azan mintuna 20–30 kafin lokaci.\n\nIdan ƙasarku ba ta da farkon azan, bar ta a kashe.',
       notifications: 'Kowane sallah yana da zaɓuɓɓuka biyu:\n\n🔔 Sanarwa: sanarwa mai shiru ta gani.\n🔊 Azan: cikakken sauti ko taƙaitaccen.',
     },
   };
