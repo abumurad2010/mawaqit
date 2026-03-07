@@ -243,9 +243,6 @@ export default function QiblaScreen() {
                   <Line x1={CENTER} y1={CENTER} x2={CENTER} y2={20}
                     stroke={C.gold} strokeWidth={3} strokeLinecap="round" />
                   <Path d={`M ${CENTER} 12 L ${CENTER - 8} 28 L ${CENTER + 8} 28 Z`} fill={C.gold} />
-                  <SvgText x={CENTER} y={8} textAnchor="middle" fontSize={10} fill={C.gold}>
-                    {'\u06be'}
-                  </SvgText>
                 </Svg>
               </Animated.View>
             </View>
