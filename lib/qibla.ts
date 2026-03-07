@@ -1,8 +1,8 @@
 /**
  * Qibla direction calculator
  */
-const KAABA_LAT = 21.42016389;
-const KAABA_LNG = 39.82233056;
+export const KAABA_LAT = 21.42016389;
+export const KAABA_LNG = 39.82233056;
 const WGS84_A = 6378137.0;
 const WGS84_B = 6356752.314245;
 const WGS84_F = 1 / 298.257223563;

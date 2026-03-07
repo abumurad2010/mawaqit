@@ -13,7 +13,7 @@ import Svg, { Circle, Line, Path, Text as SvgText, G } from 'react-native-svg';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQiblaBearing, getDistanceToMecca, formatDistance } from '@/lib/qibla';
+import { getQiblaBearing, getDistanceToMecca, formatDistance, KAABA_LAT, KAABA_LNG } from '@/lib/qibla';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
@@ -180,100 +180,119 @@ export default function QiblaScreen() {
         </View>
       </View>
 
-      {/* Instruction — above compass */}
-      <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
-        {isAlignedState ? (
-          <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-            {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
-          </Text>
-        ) : (
-          <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-            {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
-          </Text>
-        )}
-      </Animated.View>
+      {/* Content group — instruction + compass + info card, positioned toward the top */}
+      <View style={styles.contentGroup}>
 
-      {/* Compass */}
-      <View style={styles.compassWrapper}>
-        <Animated.View style={[styles.glow, { backgroundColor: C.tint }, glowStyle]} />
-        <View style={[styles.compassOuter, { borderColor: C.separator }]}>
-          <Animated.View style={[{ width: COMPASS_SIZE, height: COMPASS_SIZE }, compassStyle]}>
-            <Svg width={COMPASS_SIZE} height={COMPASS_SIZE}>
-              <Circle cx={CENTER} cy={CENTER} r={CENTER - 2}
-                fill={isDark ? '#111d15' : '#fff'} stroke={C.separator} strokeWidth={1.5} />
-              {Array.from({ length: 72 }).map((_, i) => {
-                const angle = (i * 5 * Math.PI) / 180;
-                const isMajor = i % 6 === 0;
-                const inner = CENTER - (isMajor ? 22 : 15);
-                const outer2 = CENTER - 8;
-                const x1 = CENTER + inner * Math.sin(angle);
-                const y1 = CENTER - inner * Math.cos(angle);
-                const x2 = CENTER + outer2 * Math.sin(angle);
-                const y2 = CENTER - outer2 * Math.cos(angle);
-                return (
-                  <Line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-                    stroke={isMajor ? (isDark ? '#4d7a5e' : '#aacfb8') : (isDark ? '#1a3323' : '#d6ecde')}
-                    strokeWidth={isMajor ? 1.5 : 0.8}
-                  />
-                );
-              })}
-              {dirs.map((d, i) => {
-                const angle = (i * 90 * Math.PI) / 180;
-                const r = CENTER - 36;
-                const x = CENTER + r * Math.sin(angle);
-                const y = CENTER - r * Math.cos(angle);
-                const isN = i === 0;
-                return (
-                  <SvgText key={d} x={x} y={y + 5} textAnchor="middle"
-                    fill={isN ? '#e74c3c' : (isDark ? '#8fc4a0' : '#3a6649')}
-                    fontSize={isN ? 16 : 13} fontWeight={isN ? 'bold' : '600'}
-                  >{d}</SvgText>
-                );
-              })}
-            </Svg>
-          </Animated.View>
+        {/* Instruction — just above compass */}
+        <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
+          {isAlignedState ? (
+            <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
+            </Text>
+          ) : (
+            <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
+            </Text>
+          )}
+        </Animated.View>
 
-          {/* Qibla needle */}
-          <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
-            <Animated.View style={[{ width: COMPASS_SIZE, height: COMPASS_SIZE, position: 'absolute' }, kaabaStyle]}>
+        {/* Compass */}
+        <View style={styles.compassWrapper}>
+          <Animated.View style={[styles.glow, { backgroundColor: C.tint }, glowStyle]} />
+          <View style={[styles.compassOuter, { borderColor: C.separator }]}>
+            <Animated.View style={[{ width: COMPASS_SIZE, height: COMPASS_SIZE }, compassStyle]}>
               <Svg width={COMPASS_SIZE} height={COMPASS_SIZE}>
-                <Line x1={CENTER} y1={CENTER} x2={CENTER} y2={20}
-                  stroke={C.gold} strokeWidth={3} strokeLinecap="round" />
-                <Path d={`M ${CENTER} 12 L ${CENTER - 8} 28 L ${CENTER + 8} 28 Z`} fill={C.gold} />
-                <SvgText x={CENTER} y={8} textAnchor="middle" fontSize={10} fill={C.gold}>
-                  {'\u06be'}
-                </SvgText>
+                <Circle cx={CENTER} cy={CENTER} r={CENTER - 2}
+                  fill={isDark ? '#111d15' : '#fff'} stroke={C.separator} strokeWidth={1.5} />
+                {Array.from({ length: 72 }).map((_, i) => {
+                  const angle = (i * 5 * Math.PI) / 180;
+                  const isMajor = i % 6 === 0;
+                  const inner = CENTER - (isMajor ? 22 : 15);
+                  const outer2 = CENTER - 8;
+                  const x1 = CENTER + inner * Math.sin(angle);
+                  const y1 = CENTER - inner * Math.cos(angle);
+                  const x2 = CENTER + outer2 * Math.sin(angle);
+                  const y2 = CENTER - outer2 * Math.cos(angle);
+                  return (
+                    <Line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke={isMajor ? (isDark ? '#4d7a5e' : '#aacfb8') : (isDark ? '#1a3323' : '#d6ecde')}
+                      strokeWidth={isMajor ? 1.5 : 0.8}
+                    />
+                  );
+                })}
+                {dirs.map((d, i) => {
+                  const angle = (i * 90 * Math.PI) / 180;
+                  const r = CENTER - 36;
+                  const x = CENTER + r * Math.sin(angle);
+                  const y = CENTER - r * Math.cos(angle);
+                  const isN = i === 0;
+                  return (
+                    <SvgText key={d} x={x} y={y + 5} textAnchor="middle"
+                      fill={isN ? '#e74c3c' : (isDark ? '#8fc4a0' : '#3a6649')}
+                      fontSize={isN ? 16 : 13} fontWeight={isN ? 'bold' : '600'}
+                    >{d}</SvgText>
+                  );
+                })}
               </Svg>
             </Animated.View>
+
+            {/* Qibla needle */}
+            <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+              <Animated.View style={[{ width: COMPASS_SIZE, height: COMPASS_SIZE, position: 'absolute' }, kaabaStyle]}>
+                <Svg width={COMPASS_SIZE} height={COMPASS_SIZE}>
+                  <Line x1={CENTER} y1={CENTER} x2={CENTER} y2={20}
+                    stroke={C.gold} strokeWidth={3} strokeLinecap="round" />
+                  <Path d={`M ${CENTER} 12 L ${CENTER - 8} 28 L ${CENTER + 8} 28 Z`} fill={C.gold} />
+                  <SvgText x={CENTER} y={8} textAnchor="middle" fontSize={10} fill={C.gold}>
+                    {'\u06be'}
+                  </SvgText>
+                </Svg>
+              </Animated.View>
+            </View>
+            <View style={[styles.centerDot, { backgroundColor: C.tint }]} />
           </View>
-          <View style={[styles.centerDot, { backgroundColor: C.tint }]} />
         </View>
+
+        {/* Mecca info card — in-flow below compass, opacity-driven */}
+        <Animated.View
+          pointerEvents={showMecCard ? 'auto' : 'none'}
+          style={[styles.mecCard, { borderTopColor: C.separator, borderBottomColor: C.separator }, mecCardAnimStyle]}
+        >
+          {distance !== null && (() => {
+            const col = isAlignedState ? C.tint : C.textMuted;
+            return (
+              <>
+                {/* Row 1: Kaaba latitude | longitude (static) */}
+                <View style={styles.mecRow}>
+                  <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LAT.toFixed(4)}°N</Text>
+                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
+                  </View>
+                  <View style={styles.mecCell}>
+                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LNG.toFixed(4)}°E</Text>
+                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
+                  </View>
+                </View>
+                {/* Row 2: live bearing | distance */}
+                <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
+                  <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                    <Text style={[styles.mecValue, { color: col }]}>{Math.round(heading)}°</Text>
+                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Bearing'}</Text>
+                  </View>
+                  <View style={styles.mecCell}>
+                    <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
+                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
+                  </View>
+                </View>
+              </>
+            );
+          })()}
+        </Animated.View>
+
       </View>
 
-      {/* Mecca info card — always mounted, opacity-driven so it never re-enters the normal flow */}
-      <Animated.View
-        pointerEvents={showMecCard ? 'auto' : 'none'}
-        style={[styles.mecCard, {
-          borderTopColor: C.separator, borderBottomColor: C.separator,
-          bottom: bottomInset + 100,
-        }, mecCardAnimStyle]}
-      >
-        {distance !== null && (() => {
-          const col = isAlignedState ? C.tint : C.textMuted;
-          return (
-            <View style={styles.mecRow}>
-              <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                <Text style={[styles.mecValue, { color: col }]}>{Math.round(heading)}°</Text>
-                <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Bearing'}</Text>
-              </View>
-              <View style={styles.mecCell}>
-                <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
-                <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
-              </View>
-            </View>
-          );
-        })()}
-      </Animated.View>
+      {/* Flex spacer — keeps dua at the bottom */}
+      <View style={{ flex: 1 }} />
 
       {/* Dua */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
@@ -292,9 +311,13 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   headerWrap: { gap: 4, paddingBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  contentGroup: {
+    alignItems: 'center',
+    paddingTop: 12,
+  },
   compassWrapper: {
     alignItems: 'center', justifyContent: 'center',
-    marginVertical: 12, flex: 1,
+    marginBottom: 8,
   },
   glow: {
     position: 'absolute',
@@ -310,14 +333,14 @@ const styles = StyleSheet.create({
     position: 'absolute', width: 14, height: 14, borderRadius: 7, zIndex: 10,
   },
   mecCard: {
-    position: 'absolute', left: 24, right: 24, zIndex: 20,
+    alignSelf: 'stretch', marginHorizontal: 24, marginTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   mecRow: { flexDirection: 'row' },
   mecCell: { flex: 1, alignItems: 'center', paddingVertical: 7 },
   mecValue: { fontSize: 11, fontWeight: '400', letterSpacing: 0.1 },
   mecLabel: { fontSize: 8, marginTop: 2, letterSpacing: 0.4, textTransform: 'uppercase', opacity: 0.7 },
-  instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 12, gap: 4, minHeight: 48 },
+  instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 10, gap: 4, minHeight: 44 },
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },
   permTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
