@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming,
-  FadeIn, FadeOut, interpolate, Extrapolation,
+  FadeIn, interpolate, Extrapolation,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path, Text as SvgText, G } from 'react-native-svg';
 import Colors from '@/constants/colors';
@@ -123,6 +123,13 @@ export default function QiblaScreen() {
     opacity: interpolate(aligned.value, [0, 1], [0, 0.6], Extrapolation.CLAMP),
   }));
 
+  const mecCardOpacity = useSharedValue(0);
+  const showMecCard = isNearlyAligned && location !== null && distance !== null;
+  useEffect(() => {
+    mecCardOpacity.value = withTiming(showMecCard ? 1 : 0, { duration: showMecCard ? 300 : 200 });
+  }, [showMecCard]);
+  const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity.value }));
+
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
@@ -234,48 +241,45 @@ export default function QiblaScreen() {
         )}
       </Animated.View>
 
-      {/* Mecca info card — floats above dua, does not affect compass layout */}
-      {isNearlyAligned && location !== null && distance !== null && (
-        <Animated.View
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(200)}
-          style={[styles.mecCard, {
-            borderTopColor: C.separator, borderBottomColor: C.separator,
-            bottom: bottomInset + 100,
-          }]}
-        >
-          {(() => {
-            const dest = getDestinationPoint(location.lat, location.lng, heading, distance);
-            const col = isAlignedState ? C.tint : C.textMuted;
-            return (
-              <>
-                {/* Row 1: live destination Lat | Lng */}
-                <View style={styles.mecRow}>
-                  <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{dest.lat.toFixed(4)}°</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
-                  </View>
-                  <View style={styles.mecCell}>
-                    <Text style={[styles.mecValue, { color: col }]}>{dest.lng.toFixed(4)}°</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
-                  </View>
+      {/* Mecca info card — always mounted, opacity-driven so it never re-enters the normal flow */}
+      <Animated.View
+        pointerEvents={showMecCard ? 'auto' : 'none'}
+        style={[styles.mecCard, {
+          borderTopColor: C.separator, borderBottomColor: C.separator,
+          bottom: bottomInset + 100,
+        }, mecCardAnimStyle]}
+      >
+        {location !== null && distance !== null && (() => {
+          const dest = getDestinationPoint(location.lat, location.lng, heading, distance);
+          const col = isAlignedState ? C.tint : C.textMuted;
+          return (
+            <>
+              {/* Row 1: live destination Lat | Lng */}
+              <View style={styles.mecRow}>
+                <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                  <Text style={[styles.mecValue, { color: col }]}>{dest.lat.toFixed(4)}°</Text>
+                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
                 </View>
-                {/* Row 2: live compass heading | fixed distance */}
-                <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
-                  <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Compass'}</Text>
-                  </View>
-                  <View style={styles.mecCell}>
-                    <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
-                  </View>
+                <View style={styles.mecCell}>
+                  <Text style={[styles.mecValue, { color: col }]}>{dest.lng.toFixed(4)}°</Text>
+                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
                 </View>
-              </>
-            );
-          })()}
-        </Animated.View>
-      )}
+              </View>
+              {/* Row 2: live compass heading | fixed distance */}
+              <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
+                <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
+                  <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
+                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'بوصلتك' : 'Compass'}</Text>
+                </View>
+                <View style={styles.mecCell}>
+                  <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
+                  <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
+                </View>
+              </View>
+            </>
+          );
+        })()}
+      </Animated.View>
 
       {/* Dua */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
@@ -319,7 +323,7 @@ const styles = StyleSheet.create({
   mecCell: { flex: 1, alignItems: 'center', paddingVertical: 7 },
   mecValue: { fontSize: 11, fontWeight: '400', letterSpacing: 0.1 },
   mecLabel: { fontSize: 8, marginTop: 2, letterSpacing: 0.4, textTransform: 'uppercase', opacity: 0.7 },
-  instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 12, gap: 4 },
+  instruction: { alignItems: 'center', paddingHorizontal: 32, marginBottom: 12, gap: 4, minHeight: 48 },
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },
   permTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
