@@ -262,9 +262,12 @@ export default function QiblaScreen() {
       </Animated.View>
 
       {/* Dua */}
-      <View style={{ paddingBottom: bottomInset + 60, alignItems: 'center' }}>
+      <View style={[styles.duaRow, { paddingBottom: bottomInset + 60 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua}
+        </Text>
+        <Text style={[styles.freeApp, { color: C.textMuted }]}>
+          {tr.freeApp}
         </Text>
       </View>
     </View>
@@ -314,5 +317,7 @@ const styles = StyleSheet.create({
   instrText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },
   permTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
-  dua: { fontSize: 14 },
+  duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
+  dua: { fontSize: 14, textAlign: 'center' },
+  freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
 });
