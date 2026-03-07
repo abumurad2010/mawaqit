@@ -29,6 +29,14 @@ export default function QuranScreen() {
   const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
+  const fsIdx = fontSize === 'small' ? 0 : fontSize === 'large' ? 2 : fontSize === 'xlarge' ? 3 : 1;
+  const qFS = {
+    arabic:  [14, 18, 22, 26][fsIdx],
+    english: [10, 12, 14, 17][fsIdx],
+    meta:    [9,  11, 13, 15][fsIdx],
+    num:     [10, 12, 14, 16][fsIdx],
+    badge:   [30, 36, 42, 48][fsIdx],
+  };
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
   const [showLangPicker, setShowLangPicker] = useState(false);
@@ -74,15 +82,15 @@ export default function QuranScreen() {
           },
         ]}
       >
-        <View style={[styles.numBadge, { backgroundColor: C.tint }]}>
-          <Text style={[styles.numText, { color: C.tintText }]}>{item.number}</Text>
+        <View style={[styles.numBadge, { backgroundColor: C.tint, width: qFS.badge, height: qFS.badge, borderRadius: qFS.badge * 0.28 }]}>
+          <Text style={[styles.numText, { color: C.tintText, fontSize: qFS.num }]}>{item.number}</Text>
         </View>
 
         <View style={styles.surahInfo}>
-          <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+          <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold', fontSize: qFS.arabic }]}>
             {item.arabic}
           </Text>
-          <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw, fontFamily: SERIF_EN }]}>
+          <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw, fontFamily: SERIF_EN, fontSize: qFS.english }]}>
             {item.transliteration}
             {mode === 'transliteration'
               ? surahNamesMap
@@ -93,7 +101,7 @@ export default function QuranScreen() {
               : (!isAr ? ` · ${item.english}` : '')
             }
           </Text>
-          <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+          <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: qFS.meta }]}>
             {item.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
             {' · '}
             {item.ayahs} {isAr ? 'آية' : 'verses'}
