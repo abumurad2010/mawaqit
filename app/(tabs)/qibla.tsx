@@ -319,6 +319,6 @@ const styles = StyleSheet.create({
   alignedText: { fontSize: 15, fontWeight: '700', textAlign: 'center', letterSpacing: 0.5 },
   permTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center', paddingHorizontal: 32 },
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
-  dua: { fontSize: 14, textAlign: 'center' },
+  dua: { fontSize: 13, textAlign: 'center' },
   freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
 });
