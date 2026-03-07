@@ -24,7 +24,7 @@ export default function SurahTransliterationScreen() {
   const { number } = useLocalSearchParams<{ number: string }>();
   const surahNum = Number(number ?? '1');
   const insets = useSafeAreaInsets();
-  const { isDark, lang, translitLang, colors, isBookmarked, addBookmark, removeBookmark, updateSettings } = useApp();
+  const { isDark, lang, translitLang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const isAr = lang === 'ar';
@@ -34,6 +34,7 @@ export default function SurahTransliterationScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const isRtlTranslation = isRtlLang(translitLang);
+  const fontScale = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.22 : fontSize === 'xlarge' ? 1.45 : 1.0;
 
   const meta = SURAH_META[surahNum - 1];
   const arabicData = getSurah(surahNum);
@@ -196,10 +197,10 @@ export default function SurahTransliterationScreen() {
         {/* Bismillah */}
         {meta?.hasBismillah && surahNum !== 9 && currentPage === 1 && (
           <View style={[styles.bismillahCard, { backgroundColor: C.tintLight, borderColor: C.separator }]}>
-            <Text style={[styles.bismillahArabic, { color: C.tint, fontFamily: 'Amiri_700Bold' }]}>
+            <Text style={[styles.bismillahArabic, { color: C.tint, fontFamily: 'Amiri_700Bold', fontSize: 22 * fontScale }]}>
               {BISMILLAH}
             </Text>
-            <Text style={[styles.bismillahTranslit, { color: C.textSecond, fontFamily: SERIF_EN }]}>
+            <Text style={[styles.bismillahTranslit, { color: C.textSecond, fontFamily: SERIF_EN, fontSize: 12 * fontScale }]}>
               {BISMILLAH_TRANSLIT}
             </Text>
           </View>
@@ -254,7 +255,7 @@ export default function SurahTransliterationScreen() {
 
               <View style={styles.ayahContent}>
                 {/* Arabic */}
-                <Text style={[styles.arabicText, { color: C.text, fontFamily: 'Amiri_400Regular' }]}>
+                <Text style={[styles.arabicText, { color: C.text, fontFamily: 'Amiri_400Regular', fontSize: 19 * fontScale, lineHeight: 32 * fontScale }]}>
                   {item.text}
                 </Text>
 
@@ -266,13 +267,13 @@ export default function SurahTransliterationScreen() {
                   </View>
                 ) : tlit ? (
                   <>
-                    <Text style={[styles.translitText, { color: C.tint, fontFamily: SERIF_EN }]}>
+                    <Text style={[styles.translitText, { color: C.tint, fontFamily: SERIF_EN, fontSize: 14 * fontScale, lineHeight: 22 * fontScale }]}>
                       {tlit.transliteration}
                     </Text>
                     {tlit.translation.length > 0 && (
                       <Text style={[
                         styles.translationText,
-                        { color: C.textSecond, fontWeight: fw, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : SERIF_EN }
+                        { color: C.textSecond, fontWeight: fw, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : SERIF_EN, fontSize: 13 * fontScale, lineHeight: 21 * fontScale }
                       ]}>
                         {tlit.translation}
                       </Text>
