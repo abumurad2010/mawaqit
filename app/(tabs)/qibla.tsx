@@ -234,10 +234,6 @@ export default function QiblaScreen() {
       {/* Mecca info card — visible only when pointing near Mecca (±15°) */}
       {isNearlyAligned && (location || qiblaBearing !== null) && (
         <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)} style={[styles.mecCard, { borderTopColor: C.separator, borderBottomColor: C.separator }]}>
-          {/* Caption */}
-          <Text style={[styles.mecCardTitle, { color: C.textMuted }]}>
-            {isAr ? '🕋  الكعبة المشرفة' : '🕋  Al-Kaaba · Mecca'}
-          </Text>
           {/* Row 1: Lat | Lng */}
           {location && (
             <View style={styles.mecRow}>
@@ -304,9 +300,7 @@ const styles = StyleSheet.create({
   mecCard: {
     marginHorizontal: 24, marginBottom: 8,
     borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingTop: 6,
   },
-  mecCardTitle: { fontSize: 9, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center', opacity: 0.5, marginBottom: 4 },
   mecRow: { flexDirection: 'row' },
   mecCell: { flex: 1, alignItems: 'center', paddingVertical: 7 },
   mecValue: { fontSize: 11, fontWeight: '400', letterSpacing: 0.1 },
