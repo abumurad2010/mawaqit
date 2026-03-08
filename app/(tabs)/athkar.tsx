@@ -404,7 +404,7 @@ export default function AthkarScreen() {
           })}
         </View>
 
-        <View style={[styles.controls, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.controls, { flexDirection: 'row' }]}>
           <Pressable
             onPress={() => changeFontSize(-1)}
             disabled={fsIdx === 0}
