@@ -14,12 +14,10 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SERIF_EN } from '@/constants/typography';
-import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
 import ATHKAR, { Dhikr, getDhikrTranslation, getDhikrVirtue } from '@/lib/athkar';
 import ThemeToggle from '@/components/ThemeToggle';
-import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
 
 const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
@@ -100,6 +98,7 @@ export default function AthkarScreen() {
     return h >= 15 ? 'evening' : 'morning';
   });
   const [athkarLang, setAthkarLang] = useState<string>('ar');
+  const [athkarSecondLang, setAthkarSecondLang] = useState<string>(translitLang || 'en');
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [state, setState] = useState<AthkarState>(freshState());
   const [showNotifModal, setShowNotifModal] = useState(false);
@@ -145,8 +144,15 @@ export default function AthkarScreen() {
   const selectLang = useCallback(async (code: string) => {
     Haptics.selectionAsync();
     setAthkarLang(code);
+    if (code !== 'ar') setAthkarSecondLang(code);
     try { await AsyncStorage.setItem(LANG_KEY, code); } catch {}
   }, []);
+
+  const toggleAthkarLang = useCallback(() => {
+    Haptics.selectionAsync();
+    const next = athkarLang === 'ar' ? athkarSecondLang : 'ar';
+    selectLang(next);
+  }, [athkarLang, athkarSecondLang, selectLang]);
 
   const dhikrList = ATHKAR[session];
   const counts = session === 'morning' ? state.morningCounts : state.eveningCounts;
@@ -303,7 +309,17 @@ export default function AthkarScreen() {
 
         <AppLogo />
         <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: 'row' }]}>
-          <LangToggle />
+          {/* Athkar lang toggle: switches between Arabic and selected lang */}
+          <Pressable
+            onPress={toggleAthkarLang}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '700', color: C.tint }}>
+              {athkarLang === 'ar'
+                ? (ALL_LANGS.find(l => l.code === athkarSecondLang)?.code ?? 'EN').toUpperCase()
+                : 'ع'}
+            </Text>
+          </Pressable>
           <ThemeToggle />
         </View>
       </View>
