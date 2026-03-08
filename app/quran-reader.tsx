@@ -107,7 +107,7 @@ export default function QuranReaderScreen() {
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, setLastReadPage,
-          addBookmark, removeBookmark, isBookmarked, colors } = useApp();
+          addBookmark, removeBookmark, isBookmarked, colors, updateSettings } = useApp();
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -132,8 +132,16 @@ export default function QuranReaderScreen() {
   const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const fontScale = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.22 : fontSize === 'xlarge' ? 1.45 : 1.0;
+  const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
+  const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
+  const fontScale = [0.80, 1.0, 1.22, 1.45, 1.70][fsIdx] ?? 1.0;
   const arabicFontSize = 22 * fontScale;
+  const changeFontSize = (dir: 1 | -1) => {
+    const next = fsIdx + dir;
+    if (next < 0 || next >= FONT_STEPS.length) return;
+    Haptics.selectionAsync();
+    updateSettings({ fontSize: FONT_STEPS[next] });
+  };
 
   useEffect(() => {
     setLastReadPage(pageNum);
@@ -249,6 +257,20 @@ export default function QuranReaderScreen() {
         </View>
 
         <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => changeFontSize(-1)}
+            disabled={fsIdx === 0}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: C.tint, fontSize: 13, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => changeFontSize(1)}
+            disabled={fsIdx === FONT_STEPS.length - 1}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: C.tint, fontSize: 17, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
+          </Pressable>
           <Pressable
             onPress={() => router.push('/bookmarks')}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}

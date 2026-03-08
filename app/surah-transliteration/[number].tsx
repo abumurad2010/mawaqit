@@ -25,6 +25,13 @@ export default function SurahTransliterationScreen() {
   const surahNum = Number(number ?? '1');
   const insets = useSafeAreaInsets();
   const { isDark, lang, translitLang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings } = useApp();
+  const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
+  const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
+  const changeFontSize = (dir: 1 | -1) => {
+    const next = fsIdx + dir;
+    if (next < 0 || next >= FONT_STEPS.length) return;
+    updateSettings({ fontSize: FONT_STEPS[next] });
+  };
   const C = colors;
   const fw = C.fontWeightNormal;
   const isAr = lang === 'ar';
@@ -34,7 +41,7 @@ export default function SurahTransliterationScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const isRtlTranslation = isRtlLang(translitLang);
-  const fontScale = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.22 : fontSize === 'xlarge' ? 1.45 : 1.0;
+  const fontScale = [0.80, 1.0, 1.22, 1.45, 1.70][fsIdx] ?? 1.0;
 
   const meta = SURAH_META[surahNum - 1];
   const arabicData = getSurah(surahNum);
@@ -107,10 +114,26 @@ export default function SurahTransliterationScreen() {
           </Text>
         </View>
 
-        <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>
-            {currentPage}/{totalPages}
-          </Text>
+        <View style={styles.headerRight}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); changeFontSize(-1); }}
+            disabled={fsIdx === 0}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: C.tint, fontSize: 12, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); changeFontSize(1); }}
+            disabled={fsIdx === FONT_STEPS.length - 1}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: C.tint, fontSize: 16, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
+          </Pressable>
+          <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+            <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>
+              {currentPage}/{totalPages}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -372,6 +395,11 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center' },
   headerArabic: { fontSize: 20, textAlign: 'center' },
   headerSub: { fontSize: 11, textAlign: 'center', marginTop: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  iconBtn: {
+    width: 34, height: 34, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
   pageIndicator: {
     paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 8, borderWidth: 1,

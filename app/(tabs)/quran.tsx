@@ -2,7 +2,6 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import FontSizeSlider from '@/components/FontSizeSlider';
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform, Modal, ScrollView,
@@ -29,13 +28,13 @@ export default function QuranScreen() {
   const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
-  const fsIdx = fontSize === 'small' ? 0 : fontSize === 'large' ? 2 : fontSize === 'xlarge' ? 3 : 1;
+  const fsIdx = fontSize === 'small' ? 0 : fontSize === 'large' ? 2 : fontSize === 'xlarge' ? 3 : fontSize === 'xxlarge' ? 4 : 1;
   const qFS = {
-    arabic:  [14, 18, 22, 26][fsIdx],
-    english: [10, 12, 14, 17][fsIdx],
-    meta:    [9,  11, 13, 15][fsIdx],
-    num:     [10, 12, 14, 16][fsIdx],
-    badge:   [30, 36, 42, 48][fsIdx],
+    arabic:  [14, 18, 22, 26, 30][fsIdx],
+    english: [10, 12, 14, 17, 20][fsIdx],
+    meta:    [9,  11, 13, 15, 17][fsIdx],
+    num:     [10, 12, 14, 16, 18][fsIdx],
+    badge:   [30, 36, 42, 48, 54][fsIdx],
   };
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
@@ -170,20 +169,6 @@ export default function QuranScreen() {
           </Pressable>
         </View>
 
-        {/* Font size slider */}
-        <View style={styles.fontSliderRow}>
-          <Text style={[styles.fontSliderA, { color: C.textMuted, fontSize: 11 }]}>أ</Text>
-          <View style={{ flex: 1 }}>
-            <FontSizeSlider
-              value={fontSize}
-              onChange={v => { updateSettings({ fontSize: v }); }}
-              tint={C.tint}
-              track={C.separator}
-            />
-          </View>
-          <Text style={[styles.fontSliderA, { color: C.textMuted, fontSize: 18 }]}>أ</Text>
-        </View>
-
         {/* Translation language dropdown — only in transliteration mode */}
         {mode === 'transliteration' && (
           <Pressable
@@ -305,11 +290,6 @@ const styles = StyleSheet.create({
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  fontSliderRow: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 10, marginTop: 8, marginBottom: 2, paddingHorizontal: 4,
-  },
-  fontSliderA: { fontFamily: 'Amiri_400Regular', lineHeight: 22 },
   segmentRow: {
     flexDirection: 'row', borderRadius: 12, padding: 3,
     borderWidth: StyleSheet.hairlineWidth, gap: 3,
