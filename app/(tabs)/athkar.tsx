@@ -100,6 +100,7 @@ export default function AthkarScreen() {
     return h >= 15 ? 'evening' : 'morning';
   });
   const [athkarLang, setAthkarLang] = useState<string>('ar');
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [state, setState] = useState<AthkarState>(freshState());
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [morningNotif, setMorningNotif] = useState(false);
@@ -266,20 +267,101 @@ export default function AthkarScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
-        <View style={{ flex: 1 }}>
+        {/* Left: bell + language dropdown */}
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowNotifModal(true); }}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
           >
             <Ionicons name="notifications-outline" size={18} color={accentColor} />
           </Pressable>
+
+          {/* Language pull-down button */}
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowLangDropdown(v => !v); }}
+            style={({ pressed }) => [
+              styles.langDropBtn,
+              { backgroundColor: C.surface, borderColor: accentColor + '44', opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <Text style={[
+              styles.langDropBtnText,
+              {
+                color: accentColor,
+                fontFamily: selectedLangInfo?.rtl ? 'Amiri_400Regular' : SERIF_EN,
+              },
+            ]}>
+              {selectedLangInfo?.native ?? 'العربية'}
+            </Text>
+            <Ionicons
+              name={showLangDropdown ? 'chevron-up' : 'chevron-down'}
+              size={11}
+              color={accentColor}
+            />
+          </Pressable>
         </View>
+
         <AppLogo />
         <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: 'row' }]}>
           <LangToggle />
           <ThemeToggle />
         </View>
       </View>
+
+      {/* Language dropdown panel — floats below the bell row */}
+      {showLangDropdown && (
+        <>
+          {/* Invisible backdrop to close on outside tap */}
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            onPress={() => setShowLangDropdown(false)}
+          />
+          <View style={[
+            styles.langDropPanel,
+            {
+              top: topInset + 50,
+              left: 16,
+              backgroundColor: C.backgroundCard,
+              borderColor: C.separator,
+              shadowColor: isDark ? '#000' : '#333',
+            },
+          ]}>
+            {ALL_LANGS.map((l, i) => {
+              const active = l.code === athkarLang;
+              return (
+                <Pressable
+                  key={l.code}
+                  onPress={() => { selectLang(l.code); setShowLangDropdown(false); }}
+                  style={({ pressed }) => [
+                    styles.langDropItem,
+                    {
+                      backgroundColor: active ? accentColor + '18' : 'transparent',
+                      borderBottomWidth: i < ALL_LANGS.length - 1 ? StyleSheet.hairlineWidth : 0,
+                      borderBottomColor: C.separator,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={[
+                    styles.langDropItemNative,
+                    {
+                      color: active ? accentColor : C.text,
+                      fontFamily: l.rtl ? 'Amiri_400Regular' : SERIF_EN,
+                      fontWeight: active ? '700' : '400',
+                    },
+                  ]}>
+                    {l.native}
+                  </Text>
+                  <Text style={[styles.langDropItemLabel, { color: C.textMuted }]}>
+                    {l.label}
+                  </Text>
+                  {active && <Ionicons name="checkmark" size={14} color={accentColor} style={{ marginLeft: 'auto' }} />}
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      )}
 
       {/* Session toggle + Controls */}
       <View style={[styles.sessionBar, { paddingHorizontal: 16 }]}>
@@ -342,41 +424,6 @@ export default function AthkarScreen() {
           {totalDone}/{dhikrList.length}
         </Text>
       </View>
-
-      {/* Language chips — one tap to select */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.langChipsRow, { paddingHorizontal: 14 }]}
-        style={{ maxHeight: 44, marginBottom: 6 }}
-      >
-        {ALL_LANGS.map(l => {
-          const active = l.code === athkarLang;
-          return (
-            <Pressable
-              key={l.code}
-              onPress={() => selectLang(l.code)}
-              style={[
-                styles.langChip,
-                {
-                  backgroundColor: active ? accentColor : C.backgroundSecond,
-                  borderColor: active ? accentColor : C.separator,
-                },
-              ]}
-            >
-              <Text style={[
-                styles.langChipText,
-                {
-                  color: active ? '#fff' : C.textSecond,
-                  fontFamily: l.rtl ? 'Amiri_400Regular' : SERIF_EN,
-                },
-              ]}>
-                {l.native}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
 
       {/* Completion banner */}
       {allDone && (
@@ -715,12 +762,31 @@ const styles = StyleSheet.create({
   progressFill: { height: 4, borderRadius: 2 },
   progressText: { fontSize: 11, fontWeight: '600', minWidth: 36, textAlign: 'right' },
 
-  langChipsRow: { flexDirection: 'row', gap: 7, paddingVertical: 5 },
-  langChip: {
-    paddingHorizontal: 12, paddingVertical: 5,
-    borderRadius: 16, borderWidth: 1,
+  langDropBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 9, paddingVertical: 6,
+    borderRadius: 10, borderWidth: 1,
+    maxWidth: 110,
   },
-  langChipText: { fontSize: 12, fontWeight: '600' },
+  langDropBtnText: { fontSize: 12, fontWeight: '600', flexShrink: 1 },
+  langDropPanel: {
+    position: 'absolute',
+    zIndex: 999,
+    elevation: 10,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    minWidth: 160,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+  },
+  langDropItem: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 10, gap: 8,
+  },
+  langDropItemNative: { fontSize: 14 },
+  langDropItemLabel: { fontSize: 11, fontFamily: 'System' },
 
   completedBanner: {
     marginHorizontal: 14, marginBottom: 8, paddingVertical: 10,
