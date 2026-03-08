@@ -289,7 +289,7 @@ export default function AthkarScreen() {
           </Pressable>
         </View>
         <AppLogo />
-        <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: 'row' }]}>
           <LangToggle />
           <ThemeToggle />
         </View>
