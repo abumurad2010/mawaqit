@@ -253,17 +253,18 @@ export default function AthkarScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
-        <View style={{ flex: 1 }} />
-        <AppLogo />
-        <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-          <LangToggle />
-          <ThemeToggle />
+        <View style={{ flex: 1 }}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowNotifModal(true); }}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
           >
             <Ionicons name="notifications-outline" size={18} color={accentColor} />
           </Pressable>
+        </View>
+        <AppLogo />
+        <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+          <LangToggle />
+          <ThemeToggle />
         </View>
       </View>
 
