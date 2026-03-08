@@ -252,9 +252,10 @@ export default function AthkarScreen() {
       <LinearGradient colors={bgGrad} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+      <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
+        <View style={{ flex: 1 }} />
         <AppLogo />
-        <View style={[styles.headerActions, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end', flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
           <LangToggle />
           <ThemeToggle />
           <Pressable
@@ -653,7 +654,7 @@ export default function AthkarScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   headerActions: { gap: 6, alignItems: 'center' },
 
   iconBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
