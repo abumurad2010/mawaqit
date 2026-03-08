@@ -21,6 +21,20 @@ import ATHKAR, { Dhikr, getDhikrTranslation, getDhikrVirtue } from '@/lib/athkar
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 
+const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
+type FontStep = typeof FONT_STEPS[number];
+
+const ATHKAR_LANGS: Array<{ code: string; native: string; label: string; rtl?: boolean }> = [
+  { code: 'en', native: 'English',           label: 'English' },
+  { code: 'fr', native: 'Français',          label: 'French' },
+  { code: 'tr', native: 'Türkçe',            label: 'Turkish' },
+  { code: 'ur', native: 'اردو',              label: 'Urdu',   rtl: true },
+  { code: 'fa', native: 'فارسی',             label: 'Farsi',  rtl: true },
+  { code: 'id', native: 'Bahasa Indonesia',  label: 'Indonesian' },
+  { code: 'ms', native: 'Bahasa Melayu',     label: 'Malay' },
+  { code: 'bn', native: 'বাংলা',             label: 'Bengali' },
+];
+
 type Session = 'morning' | 'evening';
 type DisplayMode = 'arabic' | 'transliteration' | 'translation';
 
@@ -52,10 +66,19 @@ function freshState(): AthkarState {
 
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, colors: C } = useApp();
+  const { isDark, lang, colors: C, fontSize, updateSettings } = useApp();
   const tr = t(lang);
   const isRtl = isRtlLang(lang);
   const isAr = lang === 'ar';
+
+  const fsIdx = FONT_STEPS.indexOf(fontSize as FontStep);
+  const fontScale = [0.80, 1.0, 1.22, 1.45, 1.70][fsIdx] ?? 1.0;
+  const changeFontSize = (dir: 1 | -1) => {
+    const next = fsIdx + dir;
+    if (next < 0 || next >= FONT_STEPS.length) return;
+    Haptics.selectionAsync();
+    updateSettings({ fontSize: FONT_STEPS[next] });
+  };
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -65,6 +88,9 @@ export default function AthkarScreen() {
     return h >= 15 ? 'evening' : 'morning';
   });
   const [displayMode, setDisplayMode] = useState<DisplayMode>('arabic');
+  const defaultAthkarLang = ATHKAR_LANGS.some(l => l.code === lang) ? lang : 'en';
+  const [athkarLang, setAthkarLang] = useState(defaultAthkarLang);
+  const [showLangModal, setShowLangModal] = useState(false);
   const [state, setState] = useState<AthkarState>(freshState());
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [morningNotif, setMorningNotif] = useState(false);
@@ -199,7 +225,7 @@ export default function AthkarScreen() {
 
   const getLabel = (d: Dhikr) => {
     if (displayMode === 'transliteration') return d.transliteration;
-    if (displayMode === 'translation') return getDhikrTranslation(d, lang);
+    if (displayMode === 'translation') return getDhikrTranslation(d, athkarLang);
     return d.arabic;
   };
 
@@ -277,11 +303,33 @@ export default function AthkarScreen() {
         {/* Controls */}
         <View style={[styles.controls, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
           <Pressable
+            onPress={() => changeFontSize(-1)}
+            disabled={fsIdx === 0}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: accentColor, fontSize: 11, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => changeFontSize(1)}
+            disabled={fsIdx === FONT_STEPS.length - 1}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
+          >
+            <Text style={{ color: accentColor, fontSize: 15, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
+          </Pressable>
+          <Pressable
             onPress={cycleMode}
             style={({ pressed }) => [styles.modeBtn, { backgroundColor: C.surface, borderColor: accentColor + '44', opacity: pressed ? 0.7 : 1 }]}
           >
             <Text style={{ fontSize: 10, fontWeight: '700', color: accentColor }}>{modeLabel()}</Text>
           </Pressable>
+          {displayMode === 'translation' && (
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowLangModal(true); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="language-outline" size={16} color={accentColor} />
+            </Pressable>
+          )}
           <Pressable
             onPress={handleReset}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
@@ -324,7 +372,7 @@ export default function AthkarScreen() {
         {dhikrList.map((d, idx) => {
           const done = isDhikrDone(d);
           const cur = getDhikrCount(d);
-          const virtue = getDhikrVirtue(d, lang);
+          const virtue = getDhikrVirtue(d, athkarLang);
           const expanded = expandedVirtue === d.id;
           const isArabicMode = displayMode === 'arabic';
 
@@ -361,8 +409,8 @@ export default function AthkarScreen() {
                 {/* Main text */}
                 <Text style={[
                   styles.dhikrText,
-                  isArabicMode && styles.dhikrArabic,
-                  !isArabicMode && styles.dhikrLatin,
+                  isArabicMode && [styles.dhikrArabic, { fontSize: 20 * fontScale, lineHeight: 38 * fontScale }],
+                  !isArabicMode && [styles.dhikrLatin, { fontSize: 13 * fontScale, lineHeight: 22 * fontScale }],
                   { color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text },
                 ]}>
                   {getLabel(d)}
@@ -414,6 +462,52 @@ export default function AthkarScreen() {
           {tr.dua ?? '\u0635\u0644\u0649 \u0627\u0644\u0644\u0647 \u0639\u0644\u0649 \u0633\u064a\u062f\u0646\u0627 \u0645\u062d\u0645\u062f'}
         </Text>
       </ScrollView>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={showLangModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangModal(false)}
+      >
+        <Pressable style={styles.langBackdrop} onPress={() => setShowLangModal(false)}>
+          <Pressable
+            style={[styles.langSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
+            onPress={e => e.stopPropagation()}
+          >
+            <View style={[styles.langSheetHeader, { borderBottomColor: C.separator }]}>
+              <Text style={[styles.langSheetTitle, { color: C.text, fontFamily: SERIF_EN }]}>
+                {isAr ? 'لغة الترجمة' : 'Translation language'}
+              </Text>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {ATHKAR_LANGS.map(l => {
+                const active = l.code === athkarLang;
+                return (
+                  <Pressable
+                    key={l.code}
+                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l.code); setShowLangModal(false); }}
+                    style={({ pressed }) => [
+                      styles.langRow,
+                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.langNative, { color: C.text, fontFamily: l.rtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                        {l.native}
+                      </Text>
+                      <Text style={[styles.langLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+                        {l.label}
+                      </Text>
+                    </View>
+                    {active && <Ionicons name="checkmark" size={18} color={accentColor} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Notification Modal */}
       <Modal
@@ -581,6 +675,26 @@ const styles = StyleSheet.create({
   virtueBox: { flexDirection: 'row', gap: 6, padding: 10, borderRadius: 10, borderWidth: 1, alignItems: 'flex-start' },
   virtueText: { flex: 1, fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
   dua: { fontSize: 16, textAlign: 'center', marginTop: 12 },
+  langBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  langSheet: {
+    width: '88%', maxHeight: 400, borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
+  },
+  langSheetHeader: {
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  langSheetTitle: { fontSize: 16, fontWeight: '600' },
+  langRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  langNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
+  langLabel: { fontSize: 12 },
   modalRoot: { flex: 1 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1 },
   modalTitle: { fontSize: 18, fontWeight: '700' },
