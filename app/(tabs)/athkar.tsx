@@ -1,0 +1,598 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, Pressable, Platform,
+  Modal, Switch, Alert,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  FadeInDown, FadeIn, ZoomIn,
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SERIF_EN } from '@/constants/typography';
+import Colors from '@/constants/colors';
+import { useApp } from '@/contexts/AppContext';
+import { t, isRtlLang } from '@/constants/i18n';
+import ATHKAR, { Dhikr, getDhikrTranslation, getDhikrVirtue } from '@/lib/athkar';
+import ThemeToggle from '@/components/ThemeToggle';
+import LangToggle from '@/components/LangToggle';
+
+type Session = 'morning' | 'evening';
+type DisplayMode = 'arabic' | 'transliteration' | 'translation';
+
+const STORAGE_KEY = 'athkar_state';
+const NOTIF_MORNING_ID = 'athkar_morning';
+const NOTIF_EVENING_ID = 'athkar_evening';
+
+interface AthkarState {
+  date: string; // YYYY-MM-DD
+  morningCounts: Record<string, number>;
+  eveningCounts: Record<string, number>;
+  morningDone: boolean;
+  eveningDone: boolean;
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function freshState(): AthkarState {
+  return {
+    date: todayStr(),
+    morningCounts: {},
+    eveningCounts: {},
+    morningDone: false,
+    eveningDone: false,
+  };
+}
+
+export default function AthkarScreen() {
+  const insets = useSafeAreaInsets();
+  const { isDark, lang, colors: C } = useApp();
+  const tr = t(lang);
+  const isRtl = isRtlLang(lang);
+  const isAr = lang === 'ar';
+
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+
+  const [session, setSession] = useState<Session>(() => {
+    const h = new Date().getHours();
+    return h >= 15 ? 'evening' : 'morning';
+  });
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('arabic');
+  const [state, setState] = useState<AthkarState>(freshState());
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [morningNotif, setMorningNotif] = useState(false);
+  const [eveningNotif, setEveningNotif] = useState(false);
+  const [morningTime, setMorningTime] = useState('05:30');
+  const [eveningTime, setEveningTime] = useState('16:00');
+  const [expandedVirtue, setExpandedVirtue] = useState<string | null>(null);
+  const [completedAnim, setCompletedAnim] = useState<Session | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Load persisted state
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved: AthkarState = JSON.parse(raw);
+          if (saved.date === todayStr()) {
+            setState(saved);
+          }
+        }
+        const ns = await AsyncStorage.getItem('athkar_notif_settings');
+        if (ns) {
+          const n = JSON.parse(ns);
+          setMorningNotif(n.morningNotif ?? false);
+          setEveningNotif(n.eveningNotif ?? false);
+          setMorningTime(n.morningTime ?? '05:30');
+          setEveningTime(n.eveningTime ?? '16:00');
+        }
+      } catch {}
+    })();
+  }, []);
+
+  const save = useCallback(async (next: AthkarState) => {
+    setState(next);
+    try { await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+  }, []);
+
+  const dhikrList = ATHKAR[session];
+  const counts = session === 'morning' ? state.morningCounts : state.eveningCounts;
+
+  const getDhikrCount = (d: Dhikr) => counts[d.id] ?? 0;
+  const isDhikrDone = (d: Dhikr) => getDhikrCount(d) >= d.count;
+
+  const totalDone = dhikrList.filter(d => isDhikrDone(d)).length;
+  const progress = totalDone / dhikrList.length;
+  const allDone = progress >= 1;
+
+  // Check completion
+  useEffect(() => {
+    if (allDone) {
+      const key = session === 'morning' ? 'morningDone' : 'eveningDone';
+      if (!state[key]) {
+        const next = { ...state, [key]: true };
+        save(next);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setCompletedAnim(session);
+        setTimeout(() => setCompletedAnim(null), 3000);
+      }
+    }
+  }, [allDone, session]);
+
+  const handleTap = useCallback((d: Dhikr) => {
+    if (isDhikrDone(d)) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const key = session === 'morning' ? 'morningCounts' : 'eveningCounts';
+    const cur = counts[d.id] ?? 0;
+    const next = { ...state, [key]: { ...counts, [d.id]: cur + 1 } };
+    save(next);
+  }, [session, counts, state]);
+
+  const handleReset = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (session === 'morning') {
+      save({ ...state, morningCounts: {}, morningDone: false });
+    } else {
+      save({ ...state, eveningCounts: {}, eveningDone: false });
+    }
+  };
+
+  // Notifications
+  const scheduleNotifications = async (mOn: boolean, eOn: boolean, mTime: string, eTime: string) => {
+    if (Platform.OS === 'web') return;
+    await Notifications.cancelScheduledNotificationAsync(NOTIF_MORNING_ID).catch(() => {});
+    await Notifications.cancelScheduledNotificationAsync(NOTIF_EVENING_ID).catch(() => {});
+
+    if (mOn) {
+      const [h, m] = mTime.split(':').map(Number);
+      await Notifications.scheduleNotificationAsync({
+        identifier: NOTIF_MORNING_ID,
+        content: {
+          title: isAr ? 'أذكار الصباح' : 'Morning Athkar',
+          body: isAr ? 'وقت أذكار الصباح \u2600\uFE0F' : 'Time for your morning remembrances \u2600\uFE0F',
+          sound: true,
+        },
+        trigger: { hour: h, minute: m, repeats: true } as any,
+      }).catch(() => {});
+    }
+    if (eOn) {
+      const [h, m] = eTime.split(':').map(Number);
+      await Notifications.scheduleNotificationAsync({
+        identifier: NOTIF_EVENING_ID,
+        content: {
+          title: isAr ? 'أذكار المساء' : 'Evening Athkar',
+          body: isAr ? 'وقت أذكار المساء \uD83C\uDF19' : 'Time for your evening remembrances \uD83C\uDF19',
+          sound: true,
+        },
+        trigger: { hour: h, minute: m, repeats: true } as any,
+      }).catch(() => {});
+    }
+  };
+
+  const handleSaveNotif = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          isAr ? 'الإذن مطلوب' : 'Permission required',
+          isAr ? 'يُرجى السماح بالإشعارات في الإعدادات' : 'Please allow notifications in Settings',
+        );
+        return;
+      }
+    }
+    await scheduleNotifications(morningNotif, eveningNotif, morningTime, eveningTime);
+    try {
+      await AsyncStorage.setItem('athkar_notif_settings', JSON.stringify({
+        morningNotif, eveningNotif, morningTime, eveningTime,
+      }));
+    } catch {}
+    setShowNotifModal(false);
+  };
+
+  const getLabel = (d: Dhikr) => {
+    if (displayMode === 'transliteration') return d.transliteration;
+    if (displayMode === 'translation') return getDhikrTranslation(d, lang);
+    return d.arabic;
+  };
+
+  const cycleMode = () => {
+    const modes: DisplayMode[] = ['arabic', 'transliteration', 'translation'];
+    const idx = modes.indexOf(displayMode);
+    setDisplayMode(modes[(idx + 1) % modes.length]);
+    Haptics.selectionAsync();
+  };
+
+  const modeLabel = () => {
+    if (displayMode === 'transliteration') return isAr ? 'نطق' : 'Latin';
+    if (displayMode === 'translation') return isAr ? 'ترجمة' : tr.translate ?? 'Translation';
+    return isAr ? 'عربي' : 'Arabic';
+  };
+
+  const isMorning = session === 'morning';
+  const accentColor = isMorning ? (isDark ? '#f5a623' : '#e8891a') : (isDark ? '#7b9ee8' : '#4a6fa8');
+  const bgGrad: [string, string] = isMorning
+    ? (isDark ? ['#1a1200', '#0d0900'] : ['#fffbf0', '#fff8e7'])
+    : (isDark ? ['#0a0e1a', '#050810'] : ['#f0f4ff', '#e8eeff']);
+
+  return (
+    <View style={[styles.root, { backgroundColor: C.background }]}>
+      <LinearGradient colors={bgGrad} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.screenTitle, { color: accentColor, fontFamily: 'Amiri_700Bold' }]}>
+            {isMorning ? '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062d' : '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0645\u0633\u0627\u0621'}
+          </Text>
+          <Text style={[styles.screenSubtitle, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+            {isMorning ? (isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0641\u062c\u0631 \u062d\u062a\u0649 \u0627\u0644\u0634\u0631\u0648\u0642' : 'After Fajr until sunrise') : (isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0639\u0635\u0631 \u062d\u062a\u0649 \u0627\u0644\u0645\u063a\u0631\u0628' : 'After Asr until Maghrib')}
+          </Text>
+        </View>
+        <View style={[styles.headerActions, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+          <LangToggle />
+          <ThemeToggle />
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowNotifModal(true); }}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons name="notifications-outline" size={18} color={accentColor} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Session toggle + Progress */}
+      <View style={[styles.sessionBar, { paddingHorizontal: 16 }]}>
+        {/* Toggle */}
+        <View style={[styles.sessionToggle, { backgroundColor: C.backgroundSecond }]}>
+          {(['morning', 'evening'] as Session[]).map((s) => {
+            const active = session === s;
+            return (
+              <Pressable
+                key={s}
+                onPress={() => { Haptics.selectionAsync(); setSession(s); scrollRef.current?.scrollTo({ y: 0, animated: false }); }}
+                style={[styles.sessionTab, active && { backgroundColor: accentColor, borderRadius: 10 }]}
+              >
+                <Text style={{ fontSize: 16 }}>
+                  {s === 'morning' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+                </Text>
+                <Text style={[styles.sessionTabText, { color: active ? '#fff' : C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                  {s === 'morning' ? (isAr ? '\u0635\u0628\u0627\u062d' : 'Morning') : (isAr ? '\u0645\u0633\u0627\u0621' : 'Evening')}
+                </Text>
+                {(s === 'morning' ? state.morningDone : state.eveningDone) && (
+                  <Ionicons name="checkmark-circle" size={14} color={active ? '#fff' : accentColor} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Controls */}
+        <View style={[styles.controls, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+          <Pressable
+            onPress={cycleMode}
+            style={({ pressed }) => [styles.modeBtn, { backgroundColor: C.surface, borderColor: accentColor + '44', opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Text style={{ fontSize: 10, fontWeight: '700', color: accentColor }}>{modeLabel()}</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleReset}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons name="refresh-outline" size={16} color={C.textMuted} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Progress bar */}
+      <View style={[styles.progressWrap, { paddingHorizontal: 16, marginBottom: 8 }]}>
+        <View style={[styles.progressTrack, { backgroundColor: C.backgroundSecond }]}>
+          <Animated.View style={[
+            styles.progressFill,
+            { backgroundColor: accentColor, width: `${Math.round(progress * 100)}%` as any },
+          ]} />
+        </View>
+        <Text style={[styles.progressText, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+          {totalDone}/{dhikrList.length}
+        </Text>
+      </View>
+
+      {/* Completion banner */}
+      {allDone && (
+        <Animated.View entering={ZoomIn.duration(400)} style={[styles.completedBanner, { backgroundColor: accentColor + '22', borderColor: accentColor + '55' }]}>
+          <Text style={[styles.completedText, { color: accentColor, fontFamily: 'Amiri_700Bold' }]}>
+            {isMorning
+              ? (isAr ? '\u2728 \u0623\u062a\u0645\u0645\u062a \u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062d \u2728' : '\u2728 Morning Athkar Complete \u2728')
+              : (isAr ? '\u2728 \u0623\u062a\u0645\u0645\u062a \u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0645\u0633\u0627\u0621 \u2728' : '\u2728 Evening Athkar Complete \u2728')}
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Dhikr list */}
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, gap: 10 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {dhikrList.map((d, idx) => {
+          const done = isDhikrDone(d);
+          const cur = getDhikrCount(d);
+          const virtue = getDhikrVirtue(d, lang);
+          const expanded = expandedVirtue === d.id;
+          const isArabicMode = displayMode === 'arabic';
+
+          return (
+            <Animated.View key={d.id} entering={FadeInDown.delay(idx * 40).duration(350)}>
+              <Pressable
+                onPress={() => handleTap(d)}
+                style={({ pressed }) => [
+                  styles.card,
+                  {
+                    backgroundColor: done
+                      ? (isDark ? accentColor + '18' : accentColor + '12')
+                      : C.backgroundCard,
+                    borderColor: done ? accentColor + '55' : C.separator,
+                    opacity: pressed ? 0.85 : 1,
+                  },
+                ]}
+              >
+                {/* Top: number + source */}
+                <View style={[styles.cardHeader, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                  <View style={[styles.dhikrIndex, { backgroundColor: done ? accentColor : C.backgroundSecond }]}>
+                    <Text style={[styles.dhikrIndexText, { color: done ? '#fff' : C.textMuted }]}>{idx + 1}</Text>
+                  </View>
+                  <Text style={[styles.sourceText, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    {isAr ? d.source : d.sourceEn}
+                  </Text>
+                  {done && (
+                    <Animated.View entering={ZoomIn.duration(200)}>
+                      <Ionicons name="checkmark-circle" size={18} color={accentColor} />
+                    </Animated.View>
+                  )}
+                </View>
+
+                {/* Main text */}
+                <Text style={[
+                  styles.dhikrText,
+                  isArabicMode && styles.dhikrArabic,
+                  !isArabicMode && styles.dhikrLatin,
+                  { color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text },
+                ]}>
+                  {getLabel(d)}
+                </Text>
+
+                {/* Footer: count + virtue toggle */}
+                <View style={[styles.cardFooter, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                  {/* Counter */}
+                  <View style={[styles.counter, { backgroundColor: done ? accentColor : C.backgroundSecond, borderColor: done ? accentColor : C.separator }]}>
+                    <Text style={[styles.counterText, { color: done ? '#fff' : C.text }]}>
+                      {cur}/{d.count}
+                    </Text>
+                  </View>
+
+                  {/* Tap hint */}
+                  {!done && (
+                    <Text style={[styles.tapHint, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {isAr ? '\u0627\u0636\u063a\u0637 \u0644\u0644\u062a\u0633\u0628\u064a\u062d' : 'tap to count'}
+                    </Text>
+                  )}
+
+                  {/* Virtue toggle */}
+                  {virtue && (
+                    <Pressable
+                      onPress={() => { Haptics.selectionAsync(); setExpandedVirtue(expanded ? null : d.id); }}
+                      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                    >
+                      <Ionicons name={expanded ? 'star' : 'star-outline'} size={16} color={accentColor} />
+                    </Pressable>
+                  )}
+                </View>
+
+                {/* Virtue text */}
+                {virtue && expanded && (
+                  <Animated.View entering={FadeIn.duration(250)} style={[styles.virtueBox, { backgroundColor: accentColor + '15', borderColor: accentColor + '33' }]}>
+                    <Ionicons name="sparkles-outline" size={13} color={accentColor} />
+                    <Text style={[styles.virtueText, { color: accentColor, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {virtue}
+                    </Text>
+                  </Animated.View>
+                )}
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+
+        {/* Bottom dua */}
+        <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
+          {tr.dua ?? '\u0635\u0644\u0649 \u0627\u0644\u0644\u0647 \u0639\u0644\u0649 \u0633\u064a\u062f\u0646\u0627 \u0645\u062d\u0645\u062f'}
+        </Text>
+      </ScrollView>
+
+      {/* Notification Modal */}
+      <Modal
+        visible={showNotifModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowNotifModal(false)}
+      >
+        <View style={[styles.modalRoot, { backgroundColor: C.background }]}>
+          <LinearGradient colors={bgGrad} style={StyleSheet.absoluteFill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+
+          <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.modalTitle, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+              {isAr ? '\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0623\u0630\u0643\u0627\u0631' : 'Athkar Reminders'}
+            </Text>
+            <Pressable onPress={() => setShowNotifModal(false)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+              <Ionicons name="close" size={24} color={C.textMuted} />
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }}>
+            {/* Morning */}
+            <View style={[styles.notifCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+              <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={{ fontSize: 22 }}>\u2600\uFE0F</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.notifLabel, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+                    {isAr ? '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062d' : 'Morning Athkar'}
+                  </Text>
+                  <Text style={[styles.notifSub, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    {isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0641\u062c\u0631' : 'After Fajr prayer'}
+                  </Text>
+                </View>
+                <Switch
+                  value={morningNotif}
+                  onValueChange={setMorningNotif}
+                  thumbColor={morningNotif ? '#f5a623' : '#ccc'}
+                  trackColor={{ false: C.separator, true: '#f5a62366' }}
+                />
+              </View>
+              {morningNotif && (
+                <Animated.View entering={FadeInDown.duration(200)} style={[styles.timeRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                  <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    {isAr ? '\u0648\u0642\u062a \u0627\u0644\u062a\u0646\u0628\u064a\u0647' : 'Reminder time'}
+                  </Text>
+                  <View style={styles.timeButtons}>
+                    {['05:00', '05:30', '06:00', '06:30', '07:00'].map(t => (
+                      <Pressable
+                        key={t}
+                        onPress={() => { Haptics.selectionAsync(); setMorningTime(t); }}
+                        style={[styles.timeChip, {
+                          backgroundColor: morningTime === t ? '#f5a623' : C.backgroundSecond,
+                          borderColor: morningTime === t ? '#f5a623' : C.separator,
+                        }]}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: morningTime === t ? '#fff' : C.textSecond }}>{t}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </Animated.View>
+              )}
+            </View>
+
+            {/* Evening */}
+            <View style={[styles.notifCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+              <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={{ fontSize: 22 }}>\uD83C\uDF19</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.notifLabel, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+                    {isAr ? '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0645\u0633\u0627\u0621' : 'Evening Athkar'}
+                  </Text>
+                  <Text style={[styles.notifSub, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    {isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0639\u0635\u0631' : 'After Asr prayer'}
+                  </Text>
+                </View>
+                <Switch
+                  value={eveningNotif}
+                  onValueChange={setEveningNotif}
+                  thumbColor={eveningNotif ? '#7b9ee8' : '#ccc'}
+                  trackColor={{ false: C.separator, true: '#7b9ee866' }}
+                />
+              </View>
+              {eveningNotif && (
+                <Animated.View entering={FadeInDown.duration(200)} style={[styles.timeRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                  <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    {isAr ? '\u0648\u0642\u062a \u0627\u0644\u062a\u0646\u0628\u064a\u0647' : 'Reminder time'}
+                  </Text>
+                  <View style={styles.timeButtons}>
+                    {['15:30', '16:00', '16:30', '17:00', '17:30'].map(t => (
+                      <Pressable
+                        key={t}
+                        onPress={() => { Haptics.selectionAsync(); setEveningTime(t); }}
+                        style={[styles.timeChip, {
+                          backgroundColor: eveningTime === t ? '#7b9ee8' : C.backgroundSecond,
+                          borderColor: eveningTime === t ? '#7b9ee8' : C.separator,
+                        }]}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: eveningTime === t ? '#fff' : C.textSecond }}>{t}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </Animated.View>
+              )}
+            </View>
+
+            {/* Explanation */}
+            <Text style={[styles.notifExplain, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {isAr
+                ? 'سيتم إرسال تذكير يومي في الوقت المحدد. يمكنك تغيير التوقيت من إعدادات الهاتف.'
+                : 'A daily reminder will be sent at the selected time. You can change the time in your phone settings.'}
+            </Text>
+
+            <Pressable
+              onPress={handleSaveNotif}
+              style={({ pressed }) => [styles.saveBtn, { backgroundColor: accentColor, opacity: pressed ? 0.8 : 1 }]}
+            >
+              <Text style={[styles.saveBtnText, { color: '#fff' }]}>
+                {isAr ? '\u062d\u0641\u0638 \u0627\u0644\u062a\u0630\u0643\u064a\u0631\u0627\u062a' : 'Save Reminders'}
+              </Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  header: { justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+  headerActions: { gap: 6, alignItems: 'center' },
+  screenTitle: { fontSize: 22, fontWeight: '700' },
+  screenSubtitle: { fontSize: 11, marginTop: 1 },
+  iconBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  sessionBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  sessionToggle: { flexDirection: 'row', borderRadius: 12, padding: 3, gap: 2 },
+  sessionTab: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6 },
+  sessionTabText: { fontSize: 13, fontWeight: '600' },
+  controls: { gap: 6, alignItems: 'center' },
+  modeBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
+  progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  progressTrack: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: 4, borderRadius: 2 },
+  progressText: { fontSize: 11, fontWeight: '600', minWidth: 36, textAlign: 'right' },
+  completedBanner: {
+    marginHorizontal: 14, marginBottom: 8, paddingVertical: 10,
+    borderRadius: 12, borderWidth: 1, alignItems: 'center',
+  },
+  completedText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+  card: {
+    borderRadius: 16, borderWidth: 1,
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, gap: 10,
+  },
+  cardHeader: { alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  dhikrIndex: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  dhikrIndexText: { fontSize: 11, fontWeight: '700' },
+  sourceText: { flex: 1, fontSize: 10, textAlign: 'left' },
+  dhikrText: { lineHeight: 28 },
+  dhikrArabic: { fontSize: 20, fontFamily: 'Amiri_400Regular', textAlign: 'right', lineHeight: 38 },
+  dhikrLatin: { fontSize: 13, lineHeight: 22 },
+  cardFooter: { alignItems: 'center', gap: 10 },
+  counter: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
+  counterText: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  tapHint: { flex: 1, fontSize: 11 },
+  virtueBox: { flexDirection: 'row', gap: 6, padding: 10, borderRadius: 10, borderWidth: 1, alignItems: 'flex-start' },
+  virtueText: { flex: 1, fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
+  dua: { fontSize: 16, textAlign: 'center', marginTop: 12 },
+  modalRoot: { flex: 1 },
+  modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1 },
+  modalTitle: { fontSize: 18, fontWeight: '700' },
+  notifCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', padding: 14, gap: 12 },
+  notifRow: { alignItems: 'center', gap: 12 },
+  notifLabel: { fontSize: 15, fontWeight: '700' },
+  notifSub: { fontSize: 12 },
+  timeRow: { alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' },
+  timeLabel: { fontSize: 12, fontWeight: '500', marginBottom: 2 },
+  timeButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  timeChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1 },
+  notifExplain: { fontSize: 12, lineHeight: 18 },
+  saveBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
+  saveBtnText: { fontSize: 15, fontWeight: '700' },
+});

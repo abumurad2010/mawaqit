@@ -24,6 +24,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'location.circle', selected: 'location.circle.fill' }} />
         <Label>Qibla</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="athkar">
+        <Icon sf={{ default: 'moon', selected: 'moon.fill' }} />
+        <Label>الأذكار</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="quran">
         <Icon sf={{ default: 'book', selected: 'book.fill' }} />
         <Label>Quran</Label>
@@ -90,6 +94,13 @@ function ClassicTabLayout() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="compass-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="athkar"
+        options={{
+          title: 'الأذكار',
+          tabBarIcon: ({ color, size }) => <Ionicons name="moon-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
