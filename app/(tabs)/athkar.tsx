@@ -20,6 +20,7 @@ import { t, isRtlLang } from '@/constants/i18n';
 import ATHKAR, { Dhikr, getDhikrTranslation, getDhikrVirtue } from '@/lib/athkar';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
+import AppLogo from '@/components/AppLogo';
 
 const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
 type FontStep = typeof FONT_STEPS[number];
@@ -252,14 +253,7 @@ export default function AthkarScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.screenTitle, { color: accentColor, fontFamily: 'Amiri_700Bold' }]}>
-            {isMorning ? '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062d' : '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0645\u0633\u0627\u0621'}
-          </Text>
-          <Text style={[styles.screenSubtitle, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-            {isMorning ? (isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0641\u062c\u0631 \u062d\u062a\u0649 \u0627\u0644\u0634\u0631\u0648\u0642' : 'After Fajr until sunrise') : (isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0639\u0635\u0631 \u062d\u062a\u0649 \u0627\u0644\u0645\u063a\u0631\u0628' : 'After Asr until Maghrib')}
-          </Text>
-        </View>
+        <AppLogo />
         <View style={[styles.headerActions, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
           <LangToggle />
           <ThemeToggle />
@@ -661,8 +655,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
   headerActions: { gap: 6, alignItems: 'center' },
-  screenTitle: { fontSize: 22, fontWeight: '700' },
-  screenSubtitle: { fontSize: 11, marginTop: 1 },
+
   iconBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   sessionBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   sessionToggle: { flexDirection: 'row', borderRadius: 12, padding: 3, gap: 2 },
