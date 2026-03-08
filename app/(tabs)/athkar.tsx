@@ -96,6 +96,8 @@ export default function AthkarScreen() {
   const [eveningNotif, setEveningNotif] = useState(false);
   const [morningTime, setMorningTime] = useState('05:30');
   const [eveningTime, setEveningTime] = useState('16:00');
+  const [morningDays, setMorningDays] = useState<number[]>([0,1,2,3,4,5,6]);
+  const [eveningDays, setEveningDays] = useState<number[]>([0,1,2,3,4,5,6]);
   const [expandedVirtue, setExpandedVirtue] = useState<string | null>(null);
   const [completedAnim, setCompletedAnim] = useState<Session | null>(null);
   const scrollRef = useRef<ScrollView>(null);
@@ -118,6 +120,8 @@ export default function AthkarScreen() {
           setEveningNotif(n.eveningNotif ?? false);
           setMorningTime(n.morningTime ?? '05:30');
           setEveningTime(n.eveningTime ?? '16:00');
+          setMorningDays(n.morningDays ?? [0,1,2,3,4,5,6]);
+          setEveningDays(n.eveningDays ?? [0,1,2,3,4,5,6]);
         }
       } catch {}
     })();
@@ -171,34 +175,45 @@ export default function AthkarScreen() {
   };
 
   // Notifications
-  const scheduleNotifications = async (mOn: boolean, eOn: boolean, mTime: string, eTime: string) => {
+  const scheduleNotifications = async (
+    mOn: boolean, eOn: boolean,
+    mTime: string, eTime: string,
+    mDays: number[], eDays: number[],
+  ) => {
     if (Platform.OS === 'web') return;
-    await Notifications.cancelScheduledNotificationAsync(NOTIF_MORNING_ID).catch(() => {});
-    await Notifications.cancelScheduledNotificationAsync(NOTIF_EVENING_ID).catch(() => {});
-
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+    for (const n of scheduled) {
+      if (n.identifier.startsWith('athkar_')) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {});
+      }
+    }
     if (mOn) {
       const [h, m] = mTime.split(':').map(Number);
-      await Notifications.scheduleNotificationAsync({
-        identifier: NOTIF_MORNING_ID,
-        content: {
-          title: isAr ? 'أذكار الصباح' : 'Morning Athkar',
-          body: isAr ? 'وقت أذكار الصباح \u2600\uFE0F' : 'Time for your morning remembrances \u2600\uFE0F',
-          sound: true,
-        },
-        trigger: { hour: h, minute: m, repeats: true } as any,
-      }).catch(() => {});
+      for (const day of mDays) {
+        await Notifications.scheduleNotificationAsync({
+          identifier: `athkar_morning_${day}`,
+          content: {
+            title: isAr ? 'أذكار الصباح' : 'Morning Athkar',
+            body: isAr ? 'وقت أذكار الصباح ☀️' : 'Time for your morning remembrances ☀️',
+            sound: true,
+          },
+          trigger: { weekday: day + 1, hour: h, minute: m, repeats: true } as any,
+        }).catch(() => {});
+      }
     }
     if (eOn) {
       const [h, m] = eTime.split(':').map(Number);
-      await Notifications.scheduleNotificationAsync({
-        identifier: NOTIF_EVENING_ID,
-        content: {
-          title: isAr ? 'أذكار المساء' : 'Evening Athkar',
-          body: isAr ? 'وقت أذكار المساء \uD83C\uDF19' : 'Time for your evening remembrances \uD83C\uDF19',
-          sound: true,
-        },
-        trigger: { hour: h, minute: m, repeats: true } as any,
-      }).catch(() => {});
+      for (const day of eDays) {
+        await Notifications.scheduleNotificationAsync({
+          identifier: `athkar_evening_${day}`,
+          content: {
+            title: isAr ? 'أذكار المساء' : 'Evening Athkar',
+            body: isAr ? 'وقت أذكار المساء 🌙' : 'Time for your evening remembrances 🌙',
+            sound: true,
+          },
+          trigger: { weekday: day + 1, hour: h, minute: m, repeats: true } as any,
+        }).catch(() => {});
+      }
     }
   };
 
@@ -213,10 +228,10 @@ export default function AthkarScreen() {
         return;
       }
     }
-    await scheduleNotifications(morningNotif, eveningNotif, morningTime, eveningTime);
+    await scheduleNotifications(morningNotif, eveningNotif, morningTime, eveningTime, morningDays, eveningDays);
     try {
       await AsyncStorage.setItem('athkar_notif_settings', JSON.stringify({
-        morningNotif, eveningNotif, morningTime, eveningTime,
+        morningNotif, eveningNotif, morningTime, eveningTime, morningDays, eveningDays,
       }));
     } catch {}
     setShowNotifModal(false);
@@ -281,10 +296,10 @@ export default function AthkarScreen() {
                 style={[styles.sessionTab, active && { backgroundColor: accentColor, borderRadius: 10 }]}
               >
                 <Text style={{ fontSize: 16 }}>
-                  {s === 'morning' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+                  {s === 'morning' ? '☀️' : '🌙'}
                 </Text>
                 <Text style={[styles.sessionTabText, { color: active ? '#fff' : C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                  {s === 'morning' ? (isAr ? '\u0635\u0628\u0627\u062d' : 'Morning') : (isAr ? '\u0645\u0633\u0627\u0621' : 'Evening')}
+                  {s === 'morning' ? (isAr ? 'صباح' : 'Morning') : (isAr ? 'مساء' : 'Evening')}
                 </Text>
                 {(s === 'morning' ? state.morningDone : state.eveningDone) && (
                   <Ionicons name="checkmark-circle" size={14} color={active ? '#fff' : accentColor} />
@@ -359,10 +374,10 @@ export default function AthkarScreen() {
           }]}>
             {ATHKAR_LANGS.find(l => l.code === translitLang)?.native ?? translitLang}
           </Text>
-          <Text style={[styles.langBarLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+          <Text style={[styles.langBarLabel, { color: C.textMuted, fontFamily: SERIF_EN, flex: 1 }]}>
             {ATHKAR_LANGS.find(l => l.code === translitLang)?.label ?? ''}
           </Text>
-          <Ionicons name="chevron-down" size={13} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+          <Ionicons name="chevron-down" size={13} color={C.textMuted} />
         </Pressable>
       )}
 
@@ -371,8 +386,8 @@ export default function AthkarScreen() {
         <Animated.View entering={ZoomIn.duration(400)} style={[styles.completedBanner, { backgroundColor: accentColor + '22', borderColor: accentColor + '55' }]}>
           <Text style={[styles.completedText, { color: accentColor, fontFamily: 'Amiri_700Bold' }]}>
             {isMorning
-              ? (isAr ? '\u2728 \u0623\u062a\u0645\u0645\u062a \u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062d \u2728' : '\u2728 Morning Athkar Complete \u2728')
-              : (isAr ? '\u2728 \u0623\u062a\u0645\u0645\u062a \u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0645\u0633\u0627\u0621 \u2728' : '\u2728 Evening Athkar Complete \u2728')}
+              ? (isAr ? '✨ أتممت أذكار الصباح ✨' : '✨ Morning Athkar Complete ✨')
+              : (isAr ? '✨ أتممت أذكار المساء ✨' : '✨ Evening Athkar Complete ✨')}
           </Text>
         </Animated.View>
       )}
@@ -442,7 +457,7 @@ export default function AthkarScreen() {
                   {/* Tap hint */}
                   {!done && (
                     <Text style={[styles.tapHint, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                      {isAr ? '\u0627\u0636\u063a\u0637 \u0644\u0644\u062a\u0633\u0628\u064a\u062d' : 'tap to count'}
+                      {isAr ? 'اضغط للتسبيح' : 'tap to count'}
                     </Text>
                   )}
 
@@ -473,7 +488,7 @@ export default function AthkarScreen() {
 
         {/* Bottom dua */}
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
-          {tr.dua ?? '\u0635\u0644\u0649 \u0627\u0644\u0644\u0647 \u0639\u0644\u0649 \u0633\u064a\u062f\u0646\u0627 \u0645\u062d\u0645\u062f'}
+          {tr.dua ?? 'صلى الله على سيدنا محمد'}
         </Text>
       </ScrollView>
 
@@ -539,7 +554,7 @@ export default function AthkarScreen() {
 
           <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
             <Text style={[styles.modalTitle, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-              {isAr ? '\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0627\u0644\u0623\u0630\u0643\u0627\u0631' : 'Athkar Reminders'}
+              {isAr ? 'تنبيهات الأذكار' : 'Athkar Reminders'}
             </Text>
             <Pressable onPress={() => setShowNotifModal(false)} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
               <Ionicons name="close" size={24} color={C.textMuted} />
@@ -550,13 +565,13 @@ export default function AthkarScreen() {
             {/* Morning */}
             <View style={[styles.notifCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
               <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                <Text style={{ fontSize: 22 }}>\u2600\uFE0F</Text>
+                <Text style={{ fontSize: 22 }}>☀️</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.notifLabel, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-                    {isAr ? '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062d' : 'Morning Athkar'}
+                    {isAr ? 'أذكار الصباح' : 'Morning Athkar'}
                   </Text>
                   <Text style={[styles.notifSub, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                    {isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0641\u062c\u0631' : 'After Fajr prayer'}
+                    {isAr ? 'بعد صلاة الفجر' : 'After Fajr prayer'}
                   </Text>
                 </View>
                 <Switch
@@ -567,23 +582,55 @@ export default function AthkarScreen() {
                 />
               </View>
               {morningNotif && (
-                <Animated.View entering={FadeInDown.duration(200)} style={[styles.timeRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                  <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                    {isAr ? '\u0648\u0642\u062a \u0627\u0644\u062a\u0646\u0628\u064a\u0647' : 'Reminder time'}
-                  </Text>
-                  <View style={styles.timeButtons}>
-                    {['05:00', '05:30', '06:00', '06:30', '07:00'].map(t => (
-                      <Pressable
-                        key={t}
-                        onPress={() => { Haptics.selectionAsync(); setMorningTime(t); }}
-                        style={[styles.timeChip, {
-                          backgroundColor: morningTime === t ? '#f5a623' : C.backgroundSecond,
-                          borderColor: morningTime === t ? '#f5a623' : C.separator,
-                        }]}
-                      >
-                        <Text style={{ fontSize: 11, fontWeight: '600', color: morningTime === t ? '#fff' : C.textSecond }}>{t}</Text>
-                      </Pressable>
-                    ))}
+                <Animated.View entering={FadeInDown.duration(200)} style={{ gap: 12 }}>
+                  <View style={{ gap: 6 }}>
+                    <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {isAr ? 'الأيام' : 'Days'}
+                    </Text>
+                    <View style={[styles.timeButtons, { flexWrap: 'wrap' }]}>
+                      {(isAr
+                        ? ['أح','إث','ثل','أر','خم','جم','سب']
+                        : ['Su','Mo','Tu','We','Th','Fr','Sa']
+                      ).map((label, dayIdx) => {
+                        const sel = morningDays.includes(dayIdx);
+                        return (
+                          <Pressable
+                            key={dayIdx}
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              setMorningDays(prev =>
+                                sel ? prev.filter(d => d !== dayIdx) : [...prev, dayIdx].sort()
+                              );
+                            }}
+                            style={[styles.dayChip, {
+                              backgroundColor: sel ? '#f5a623' : C.backgroundSecond,
+                              borderColor: sel ? '#f5a623' : C.separator,
+                            }]}
+                          >
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: sel ? '#fff' : C.textSecond }}>{label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                  <View style={{ gap: 6 }}>
+                    <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {isAr ? 'الوقت' : 'Time'}
+                    </Text>
+                    <View style={styles.timeButtons}>
+                      {['05:00', '05:30', '06:00', '06:30', '07:00'].map(tt => (
+                        <Pressable
+                          key={tt}
+                          onPress={() => { Haptics.selectionAsync(); setMorningTime(tt); }}
+                          style={[styles.timeChip, {
+                            backgroundColor: morningTime === tt ? '#f5a623' : C.backgroundSecond,
+                            borderColor: morningTime === tt ? '#f5a623' : C.separator,
+                          }]}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: morningTime === tt ? '#fff' : C.textSecond }}>{tt}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
                 </Animated.View>
               )}
@@ -592,13 +639,13 @@ export default function AthkarScreen() {
             {/* Evening */}
             <View style={[styles.notifCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
               <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                <Text style={{ fontSize: 22 }}>\uD83C\uDF19</Text>
+                <Text style={{ fontSize: 22 }}>🌙</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.notifLabel, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-                    {isAr ? '\u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0645\u0633\u0627\u0621' : 'Evening Athkar'}
+                    {isAr ? 'أذكار المساء' : 'Evening Athkar'}
                   </Text>
                   <Text style={[styles.notifSub, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                    {isAr ? '\u0628\u0639\u062f \u0635\u0644\u0627\u0629 \u0627\u0644\u0639\u0635\u0631' : 'After Asr prayer'}
+                    {isAr ? 'بعد صلاة العصر' : 'After Asr prayer'}
                   </Text>
                 </View>
                 <Switch
@@ -609,23 +656,55 @@ export default function AthkarScreen() {
                 />
               </View>
               {eveningNotif && (
-                <Animated.View entering={FadeInDown.duration(200)} style={[styles.timeRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                  <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                    {isAr ? '\u0648\u0642\u062a \u0627\u0644\u062a\u0646\u0628\u064a\u0647' : 'Reminder time'}
-                  </Text>
-                  <View style={styles.timeButtons}>
-                    {['15:30', '16:00', '16:30', '17:00', '17:30'].map(t => (
-                      <Pressable
-                        key={t}
-                        onPress={() => { Haptics.selectionAsync(); setEveningTime(t); }}
-                        style={[styles.timeChip, {
-                          backgroundColor: eveningTime === t ? '#7b9ee8' : C.backgroundSecond,
-                          borderColor: eveningTime === t ? '#7b9ee8' : C.separator,
-                        }]}
-                      >
-                        <Text style={{ fontSize: 11, fontWeight: '600', color: eveningTime === t ? '#fff' : C.textSecond }}>{t}</Text>
-                      </Pressable>
-                    ))}
+                <Animated.View entering={FadeInDown.duration(200)} style={{ gap: 12 }}>
+                  <View style={{ gap: 6 }}>
+                    <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {isAr ? 'الأيام' : 'Days'}
+                    </Text>
+                    <View style={[styles.timeButtons, { flexWrap: 'wrap' }]}>
+                      {(isAr
+                        ? ['أح','إث','ثل','أر','خم','جم','سب']
+                        : ['Su','Mo','Tu','We','Th','Fr','Sa']
+                      ).map((label, dayIdx) => {
+                        const sel = eveningDays.includes(dayIdx);
+                        return (
+                          <Pressable
+                            key={dayIdx}
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              setEveningDays(prev =>
+                                sel ? prev.filter(d => d !== dayIdx) : [...prev, dayIdx].sort()
+                              );
+                            }}
+                            style={[styles.dayChip, {
+                              backgroundColor: sel ? '#7b9ee8' : C.backgroundSecond,
+                              borderColor: sel ? '#7b9ee8' : C.separator,
+                            }]}
+                          >
+                            <Text style={{ fontSize: 10, fontWeight: '700', color: sel ? '#fff' : C.textSecond }}>{label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                  <View style={{ gap: 6 }}>
+                    <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {isAr ? 'الوقت' : 'Time'}
+                    </Text>
+                    <View style={styles.timeButtons}>
+                      {['15:30', '16:00', '16:30', '17:00', '17:30'].map(tt => (
+                        <Pressable
+                          key={tt}
+                          onPress={() => { Haptics.selectionAsync(); setEveningTime(tt); }}
+                          style={[styles.timeChip, {
+                            backgroundColor: eveningTime === tt ? '#7b9ee8' : C.backgroundSecond,
+                            borderColor: eveningTime === tt ? '#7b9ee8' : C.separator,
+                          }]}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: eveningTime === tt ? '#fff' : C.textSecond }}>{tt}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
                 </Animated.View>
               )}
@@ -643,7 +722,7 @@ export default function AthkarScreen() {
               style={({ pressed }) => [styles.saveBtn, { backgroundColor: accentColor, opacity: pressed ? 0.8 : 1 }]}
             >
               <Text style={[styles.saveBtnText, { color: '#fff' }]}>
-                {isAr ? '\u062d\u0641\u0638 \u0627\u0644\u062a\u0630\u0643\u064a\u0631\u0627\u062a' : 'Save Reminders'}
+                {isAr ? 'حفظ التذكيرات' : 'Save Reminders'}
               </Text>
             </Pressable>
           </ScrollView>
@@ -731,6 +810,7 @@ const styles = StyleSheet.create({
   timeLabel: { fontSize: 12, fontWeight: '500', marginBottom: 2 },
   timeButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   timeChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1 },
+  dayChip: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   notifExplain: { fontSize: 12, lineHeight: 18 },
   saveBtn: { paddingVertical: 14, borderRadius: 14, alignItems: 'center' },
   saveBtnText: { fontSize: 15, fontWeight: '700' },

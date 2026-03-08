@@ -1,0 +1,200 @@
+Paste this into Replit AI:
+
+Open the file app/(tabs)/athkar.tsx. Make the following changes:
+1. Fix all emoji — replace these literal escape strings with real characters:
+	∙	Replace '\u2600\uFE0F' with the actual ☀️ emoji
+	∙	Replace '\uD83C\uDF19' with the actual 🌙 emoji
+	∙	Replace '\u2728' with the actual ✨ emoji
+	∙	Do a full search for any remaining \uXXXX sequences in string literals and replace them with the actual Unicode characters they represent
+2. Add two new state variables after the line const [eveningTime, setEveningTime] = useState('16:00');:
+
+const [morningDays, setMorningDays] = useState<number[]>([0,1,2,3,4,5,6]);
+const [eveningDays, setEveningDays] = useState<number[]>([0,1,2,3,4,5,6]);
+
+
+3. In the AsyncStorage load block, after setEveningTime(n.eveningTime ?? '16:00'); add:
+
+setMorningDays(n.morningDays ?? [0,1,2,3,4,5,6]);
+setEveningDays(n.eveningDays ?? [0,1,2,3,4,5,6]);
+
+
+4. In the AsyncStorage save block, change:
+
+morningNotif, eveningNotif, morningTime, eveningTime,
+
+
+to:
+
+morningNotif, eveningNotif, morningTime, eveningTime, morningDays, eveningDays,
+
+
+5. Replace the entire scheduleNotifications function with:
+
+const scheduleNotifications = async (
+  mOn: boolean, eOn: boolean,
+  mTime: string, eTime: string,
+  mDays: number[], eDays: number[],
+) => {
+  if (Platform.OS === 'web') return;
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  for (const n of scheduled) {
+    if (n.identifier.startsWith('athkar_')) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {});
+    }
+  }
+  if (mOn) {
+    const [h, m] = mTime.split(':').map(Number);
+    for (const day of mDays) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `athkar_morning_${day}`,
+        content: {
+          title: isAr ? 'أذكار الصباح' : 'Morning Athkar',
+          body: isAr ? 'وقت أذكار الصباح ☀️' : 'Time for your morning remembrances ☀️',
+          sound: true,
+        },
+        trigger: { weekday: day + 1, hour: h, minute: m, repeats: true } as any,
+      }).catch(() => {});
+    }
+  }
+  if (eOn) {
+    const [h, m] = eTime.split(':').map(Number);
+    for (const day of eDays) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `athkar_evening_${day}`,
+        content: {
+          title: isAr ? 'أذكار المساء' : 'Evening Athkar',
+          body: isAr ? 'وقت أذكار المساء 🌙' : 'Time for your evening remembrances 🌙',
+          sound: true,
+        },
+        trigger: { weekday: day + 1, hour: h, minute: m, repeats: true } as any,
+      }).catch(() => {});
+    }
+  }
+};
+
+
+6. Update the handleSaveNotif call to pass days:
+
+await scheduleNotifications(morningNotif, eveningNotif, morningTime, eveningTime, morningDays, eveningDays);
+
+
+7. Replace the morning notification card’s expanded section (the block inside {morningNotif && (...)}  that currently shows only time chips) with:
+
+{morningNotif && (
+  <Animated.View entering={FadeInDown.duration(200)} style={{ gap: 12 }}>
+    <View style={{ gap: 6 }}>
+      <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+        {isAr ? 'الأيام' : 'Days'}
+      </Text>
+      <View style={[styles.timeButtons, { flexWrap: 'wrap' }]}>
+        {(isAr
+          ? ['أح','إث','ثل','أر','خم','جم','سب']
+          : ['Su','Mo','Tu','We','Th','Fr','Sa']
+        ).map((label, dayIdx) => {
+          const sel = morningDays.includes(dayIdx);
+          return (
+            <Pressable
+              key={dayIdx}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setMorningDays(prev =>
+                  sel ? prev.filter(d => d !== dayIdx) : [...prev, dayIdx].sort()
+                );
+              }}
+              style={[styles.dayChip, {
+                backgroundColor: sel ? '#f5a623' : C.backgroundSecond,
+                borderColor: sel ? '#f5a623' : C.separator,
+              }]}
+            >
+              <Text style={{ fontSize: 10, fontWeight: '700', color: sel ? '#fff' : C.textSecond }}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+    <View style={{ gap: 6 }}>
+      <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+        {isAr ? 'الوقت' : 'Time'}
+      </Text>
+      <View style={styles.timeButtons}>
+        {['05:00', '05:30', '06:00', '06:30', '07:00'].map(tt => (
+          <Pressable
+            key={tt}
+            onPress={() => { Haptics.selectionAsync(); setMorningTime(tt); }}
+            style={[styles.timeChip, {
+              backgroundColor: morningTime === tt ? '#f5a623' : C.backgroundSecond,
+              borderColor: morningTime === tt ? '#f5a623' : C.separator,
+            }]}
+          >
+            <Text style={{ fontSize: 11, fontWeight: '600', color: morningTime === tt ? '#fff' : C.textSecond }}>{tt}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  </Animated.View>
+)}
+
+
+8. Replace the evening notification card’s expanded section (the block inside {eveningNotif && (...)} that currently shows only time chips) with:
+
+{eveningNotif && (
+  <Animated.View entering={FadeInDown.duration(200)} style={{ gap: 12 }}>
+    <View style={{ gap: 6 }}>
+      <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+        {isAr ? 'الأيام' : 'Days'}
+      </Text>
+      <View style={[styles.timeButtons, { flexWrap: 'wrap' }]}>
+        {(isAr
+          ? ['أح','إث','ثل','أر','خم','جم','سب']
+          : ['Su','Mo','Tu','We','Th','Fr','Sa']
+        ).map((label, dayIdx) => {
+          const sel = eveningDays.includes(dayIdx);
+          return (
+            <Pressable
+              key={dayIdx}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setEveningDays(prev =>
+                  sel ? prev.filter(d => d !== dayIdx) : [...prev, dayIdx].sort()
+                );
+              }}
+              style={[styles.dayChip, {
+                backgroundColor: sel ? '#7b9ee8' : C.backgroundSecond,
+                borderColor: sel ? '#7b9ee8' : C.separator,
+              }]}
+            >
+              <Text style={{ fontSize: 10, fontWeight: '700', color: sel ? '#fff' : C.textSecond }}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+    <View style={{ gap: 6 }}>
+      <Text style={[styles.timeLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+        {isAr ? 'الوقت' : 'Time'}
+      </Text>
+      <View style={styles.timeButtons}>
+        {['15:30', '16:00', '16:30', '17:00', '17:30'].map(tt => (
+          <Pressable
+            key={tt}
+            onPress={() => { Haptics.selectionAsync(); setEveningTime(tt); }}
+            style={[styles.timeChip, {
+              backgroundColor: eveningTime === tt ? '#7b9ee8' : C.backgroundSecond,
+              borderColor: eveningTime === tt ? '#7b9ee8' : C.separator,
+            }]}
+          >
+            <Text style={{ fontSize: 11, fontWeight: '600', color: eveningTime === tt ? '#fff' : C.textSecond }}>{tt}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  </Animated.View>
+)}
+
+
+9. Add dayChip to the StyleSheet at the end of the styles object, before the closing }):
+
+dayChip: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+
+
+Do not change anything else. Save the file.​​​​​​​​​​​​​​​​
