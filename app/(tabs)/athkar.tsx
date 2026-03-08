@@ -37,26 +37,25 @@ const TAP_HINT: Record<string, string> = {
   bn: 'গণনার জন্য ট্যাপ করুন',
 };
 
-const ATHKAR_LANGS: Array<{ code: string; native: string; label: string; rtl?: boolean }> = [
+const ALL_LANGS: Array<{ code: string; native: string; label: string; rtl?: boolean }> = [
+  { code: 'ar', native: 'العربية', label: 'Arabic', rtl: true },
   { code: 'en', native: 'English',           label: 'English' },
   { code: 'fr', native: 'Français',          label: 'French' },
   { code: 'tr', native: 'Türkçe',            label: 'Turkish' },
   { code: 'ur', native: 'اردو',              label: 'Urdu',   rtl: true },
   { code: 'fa', native: 'فارسی',             label: 'Farsi',  rtl: true },
-  { code: 'id', native: 'Bahasa Indonesia',  label: 'Indonesian' },
-  { code: 'ms', native: 'Bahasa Melayu',     label: 'Malay' },
+  { code: 'id', native: 'Indonesia',         label: 'Indonesian' },
+  { code: 'ms', native: 'Melayu',            label: 'Malay' },
   { code: 'bn', native: 'বাংলা',             label: 'Bengali' },
 ];
 
 type Session = 'morning' | 'evening';
-type DisplayMode = 'arabic' | 'transliteration' | 'translation';
 
 const STORAGE_KEY = 'athkar_state';
-const NOTIF_MORNING_ID = 'athkar_morning';
-const NOTIF_EVENING_ID = 'athkar_evening';
+const LANG_KEY = 'athkar_display_lang';
 
 interface AthkarState {
-  date: string; // YYYY-MM-DD
+  date: string;
   morningCounts: Record<string, number>;
   eveningCounts: Record<string, number>;
   morningDone: boolean;
@@ -100,8 +99,7 @@ export default function AthkarScreen() {
     const h = new Date().getHours();
     return h >= 15 ? 'evening' : 'morning';
   });
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('arabic');
-  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [athkarLang, setAthkarLang] = useState<string>('ar');
   const [state, setState] = useState<AthkarState>(freshState());
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [morningNotif, setMorningNotif] = useState(false);
@@ -114,17 +112,16 @@ export default function AthkarScreen() {
   const [completedAnim, setCompletedAnim] = useState<Session | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Load persisted state
   useEffect(() => {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
           const saved: AthkarState = JSON.parse(raw);
-          if (saved.date === todayStr()) {
-            setState(saved);
-          }
+          if (saved.date === todayStr()) setState(saved);
         }
+        const savedLang = await AsyncStorage.getItem(LANG_KEY);
+        if (savedLang) setAthkarLang(savedLang);
         const ns = await AsyncStorage.getItem('athkar_notif_settings');
         if (ns) {
           const n = JSON.parse(ns);
@@ -144,6 +141,12 @@ export default function AthkarScreen() {
     try { await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   }, []);
 
+  const selectLang = useCallback(async (code: string) => {
+    Haptics.selectionAsync();
+    setAthkarLang(code);
+    try { await AsyncStorage.setItem(LANG_KEY, code); } catch {}
+  }, []);
+
   const dhikrList = ATHKAR[session];
   const counts = session === 'morning' ? state.morningCounts : state.eveningCounts;
 
@@ -154,7 +157,6 @@ export default function AthkarScreen() {
   const progress = totalDone / dhikrList.length;
   const allDone = progress >= 1;
 
-  // Check completion
   useEffect(() => {
     if (allDone) {
       const key = session === 'morning' ? 'morningDone' : 'eveningDone';
@@ -186,7 +188,6 @@ export default function AthkarScreen() {
     }
   };
 
-  // Notifications
   const scheduleNotifications = async (
     mOn: boolean, eOn: boolean,
     mTime: string, eTime: string,
@@ -249,24 +250,9 @@ export default function AthkarScreen() {
     setShowNotifModal(false);
   };
 
-  const getLabel = (d: Dhikr) => {
-    if (displayMode === 'transliteration') return d.transliteration;
-    if (displayMode === 'translation') return getDhikrTranslation(d, translitLang);
-    return d.arabic;
-  };
-
-  const cycleMode = () => {
-    const modes: DisplayMode[] = ['arabic', 'transliteration', 'translation'];
-    const idx = modes.indexOf(displayMode);
-    setDisplayMode(modes[(idx + 1) % modes.length]);
-    Haptics.selectionAsync();
-  };
-
-  const modeLabel = () => {
-    if (displayMode === 'transliteration') return isAr ? 'نطق' : 'Latin';
-    if (displayMode === 'translation') return isAr ? 'ترجمة' : tr.translate ?? 'Translation';
-    return isAr ? 'عربي' : 'Arabic';
-  };
+  const isArabicOnly = athkarLang === 'ar';
+  const selectedLangInfo = ALL_LANGS.find(l => l.code === athkarLang);
+  const isSelectedRtl = !!selectedLangInfo?.rtl;
 
   const isMorning = session === 'morning';
   const accentColor = isMorning ? (isDark ? '#f5a623' : '#e8891a') : (isDark ? '#7b9ee8' : '#4a6fa8');
@@ -295,9 +281,8 @@ export default function AthkarScreen() {
         </View>
       </View>
 
-      {/* Session toggle + Progress */}
+      {/* Session toggle + Controls */}
       <View style={[styles.sessionBar, { paddingHorizontal: 16 }]}>
-        {/* Toggle */}
         <View style={[styles.sessionToggle, { backgroundColor: C.backgroundSecond }]}>
           {(['morning', 'evening'] as Session[]).map((s) => {
             const active = session === s;
@@ -321,7 +306,6 @@ export default function AthkarScreen() {
           })}
         </View>
 
-        {/* Controls */}
         <View style={[styles.controls, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
           <Pressable
             onPress={() => changeFontSize(-1)}
@@ -338,12 +322,6 @@ export default function AthkarScreen() {
             <Text style={{ color: accentColor, fontSize: 15, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
           </Pressable>
           <Pressable
-            onPress={cycleMode}
-            style={({ pressed }) => [styles.modeBtn, { backgroundColor: C.surface, borderColor: accentColor + '44', opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text style={{ fontSize: 10, fontWeight: '700', color: accentColor }}>{modeLabel()}</Text>
-          </Pressable>
-          <Pressable
             onPress={handleReset}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
           >
@@ -353,7 +331,7 @@ export default function AthkarScreen() {
       </View>
 
       {/* Progress bar */}
-      <View style={[styles.progressWrap, { paddingHorizontal: 16, marginBottom: 8 }]}>
+      <View style={[styles.progressWrap, { paddingHorizontal: 16, marginBottom: 6 }]}>
         <View style={[styles.progressTrack, { backgroundColor: C.backgroundSecond }]}>
           <Animated.View style={[
             styles.progressFill,
@@ -365,33 +343,40 @@ export default function AthkarScreen() {
         </Text>
       </View>
 
-      {/* Sticky language bar — always visible, same style as Quran transliteration */}
-      {displayMode !== 'arabic' && (
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
-          style={({ pressed }) => [
-            styles.langBar,
-            {
-              backgroundColor: C.backgroundCard,
-              borderBottomColor: C.separator,
-              borderTopColor: C.separator,
-              opacity: pressed ? 0.75 : 1,
-            },
-          ]}
-        >
-          <Ionicons name="language-outline" size={14} color={accentColor} />
-          <Text style={[styles.langBarNative, {
-            color: C.text,
-            fontFamily: ATHKAR_LANGS.find(l => l.code === translitLang)?.rtl ? 'Amiri_400Regular' : SERIF_EN,
-          }]}>
-            {ATHKAR_LANGS.find(l => l.code === translitLang)?.native ?? translitLang}
-          </Text>
-          <Text style={[styles.langBarLabel, { color: C.textMuted, fontFamily: SERIF_EN, flex: 1 }]}>
-            {ATHKAR_LANGS.find(l => l.code === translitLang)?.label ?? ''}
-          </Text>
-          <Ionicons name="chevron-down" size={13} color={C.textMuted} />
-        </Pressable>
-      )}
+      {/* Language chips — one tap to select */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[styles.langChipsRow, { paddingHorizontal: 14 }]}
+        style={{ maxHeight: 44, marginBottom: 6 }}
+      >
+        {ALL_LANGS.map(l => {
+          const active = l.code === athkarLang;
+          return (
+            <Pressable
+              key={l.code}
+              onPress={() => selectLang(l.code)}
+              style={[
+                styles.langChip,
+                {
+                  backgroundColor: active ? accentColor : C.backgroundSecond,
+                  borderColor: active ? accentColor : C.separator,
+                },
+              ]}
+            >
+              <Text style={[
+                styles.langChipText,
+                {
+                  color: active ? '#fff' : C.textSecond,
+                  fontFamily: l.rtl ? 'Amiri_400Regular' : SERIF_EN,
+                },
+              ]}>
+                {l.native}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {/* Completion banner */}
       {allDone && (
@@ -413,9 +398,10 @@ export default function AthkarScreen() {
         {dhikrList.map((d, idx) => {
           const done = isDhikrDone(d);
           const cur = getDhikrCount(d);
-          const virtue = getDhikrVirtue(d, translitLang);
+          const virtue = getDhikrVirtue(d, athkarLang === 'ar' ? 'ar' : athkarLang);
           const expanded = expandedVirtue === d.id;
-          const isArabicMode = displayMode === 'arabic';
+          const tapHintLang = athkarLang;
+          const cardIsRtl = isRtl;
 
           return (
             <Animated.View key={d.id} entering={FadeInDown.delay(idx * 40).duration(350)}>
@@ -433,11 +419,11 @@ export default function AthkarScreen() {
                 ]}
               >
                 {/* Top: number + source */}
-                <View style={[styles.cardHeader, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.cardHeader, { flexDirection: cardIsRtl ? 'row-reverse' : 'row' }]}>
                   <View style={[styles.dhikrIndex, { backgroundColor: done ? accentColor : C.backgroundSecond }]}>
                     <Text style={[styles.dhikrIndexText, { color: done ? '#fff' : C.textMuted }]}>{idx + 1}</Text>
                   </View>
-                  <Text style={[styles.sourceText, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                  <Text style={[styles.sourceText, { color: C.textMuted, fontFamily: cardIsRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
                     {isAr ? d.source : d.sourceEn}
                   </Text>
                   {done && (
@@ -447,33 +433,54 @@ export default function AthkarScreen() {
                   )}
                 </View>
 
-                {/* Main text */}
+                {/* Arabic text — always shown */}
                 <Text style={[
-                  styles.dhikrText,
-                  isArabicMode && [styles.dhikrArabic, { fontSize: 20 * fontScale, lineHeight: 38 * fontScale }],
-                  !isArabicMode && [styles.dhikrLatin, { fontSize: 13 * fontScale, lineHeight: 22 * fontScale }],
-                  { color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text },
+                  styles.dhikrArabic,
+                  { fontSize: 20 * fontScale, lineHeight: 38 * fontScale, color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text },
                 ]}>
-                  {getLabel(d)}
+                  {d.arabic}
                 </Text>
 
+                {/* Transliteration — shown when non-Arabic lang selected */}
+                {!isArabicOnly && (
+                  <Text style={[
+                    styles.dhikrTranslit,
+                    { fontSize: 12 * fontScale, lineHeight: 20 * fontScale, color: done ? accentColor + 'aa' : C.textSecond },
+                  ]}>
+                    {d.transliteration}
+                  </Text>
+                )}
+
+                {/* Meaning/Translation — shown when non-Arabic lang selected */}
+                {!isArabicOnly && (
+                  <Text style={[
+                    styles.dhikrMeaning,
+                    {
+                      fontSize: 13 * fontScale,
+                      lineHeight: 21 * fontScale,
+                      color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text,
+                      fontFamily: isSelectedRtl ? 'Amiri_400Regular' : SERIF_EN,
+                      textAlign: isSelectedRtl ? 'right' : 'left',
+                    },
+                  ]}>
+                    {getDhikrTranslation(d, athkarLang)}
+                  </Text>
+                )}
+
                 {/* Footer: count + virtue toggle */}
-                <View style={[styles.cardFooter, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                  {/* Counter */}
+                <View style={[styles.cardFooter, { flexDirection: cardIsRtl ? 'row-reverse' : 'row' }]}>
                   <View style={[styles.counter, { backgroundColor: done ? accentColor : C.backgroundSecond, borderColor: done ? accentColor : C.separator }]}>
                     <Text style={[styles.counterText, { color: done ? '#fff' : C.text }]}>
                       {cur}/{d.count}
                     </Text>
                   </View>
 
-                  {/* Tap hint */}
                   {!done && (
-                    <Text style={[styles.tapHint, { color: C.textMuted, fontFamily: (isRtl || ATHKAR_LANGS.find(l => l.code === translitLang)?.rtl) ? 'Amiri_400Regular' : SERIF_EN }]}>
-                      {TAP_HINT[displayMode === 'arabic' ? 'ar' : translitLang] ?? TAP_HINT['en']}
+                    <Text style={[styles.tapHint, { color: C.textMuted, fontFamily: isSelectedRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {TAP_HINT[tapHintLang] ?? TAP_HINT['en']}
                     </Text>
                   )}
 
-                  {/* Virtue toggle */}
                   {virtue && (
                     <Pressable
                       onPress={() => { Haptics.selectionAsync(); setExpandedVirtue(expanded ? null : d.id); }}
@@ -484,11 +491,10 @@ export default function AthkarScreen() {
                   )}
                 </View>
 
-                {/* Virtue text */}
                 {virtue && expanded && (
                   <Animated.View entering={FadeIn.duration(250)} style={[styles.virtueBox, { backgroundColor: accentColor + '15', borderColor: accentColor + '33' }]}>
                     <Ionicons name="sparkles-outline" size={13} color={accentColor} />
-                    <Text style={[styles.virtueText, { color: accentColor, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    <Text style={[styles.virtueText, { color: accentColor, fontFamily: (isAr || isSelectedRtl) ? 'Amiri_400Regular' : SERIF_EN }]}>
                       {virtue}
                     </Text>
                   </Animated.View>
@@ -498,61 +504,10 @@ export default function AthkarScreen() {
           );
         })}
 
-        {/* Bottom dua */}
         <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
           {tr.dua ?? 'صلى الله على سيدنا محمد'}
         </Text>
       </ScrollView>
-
-      {/* Language Picker Modal */}
-      <Modal
-        visible={showLangPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLangPicker(false)}
-      >
-        <Pressable style={styles.langBackdrop} onPress={() => setShowLangPicker(false)}>
-          <Pressable
-            style={[styles.langSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-            onPress={e => e.stopPropagation()}
-          >
-            <View style={[styles.langSheetHeader, { borderBottomColor: C.separator }]}>
-              <Text style={[styles.langSheetTitle, { color: C.text, fontFamily: SERIF_EN }]}>
-                {isAr ? 'لغة الترجمة' : 'Translation language'}
-              </Text>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {ATHKAR_LANGS.map(l => {
-                const active = l.code === translitLang;
-                return (
-                  <Pressable
-                    key={l.code}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      updateSettings({ translitLang: l.code as any });
-                      setShowLangPicker(false);
-                    }}
-                    style={({ pressed }) => [
-                      styles.langRow,
-                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.langNative, { color: C.text, fontFamily: l.rtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                        {l.native}
-                      </Text>
-                      <Text style={[styles.langLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
-                        {l.label}
-                      </Text>
-                    </View>
-                    {active && <Ionicons name="checkmark" size={18} color={accentColor} />}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       {/* Notification Modal */}
       <Modal
@@ -722,7 +677,6 @@ export default function AthkarScreen() {
               )}
             </View>
 
-            {/* Explanation */}
             <Text style={[styles.notifExplain, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
               {isAr
                 ? 'سيتم إرسال تذكير يومي في الوقت المحدد. يمكنك تغيير التوقيت من إعدادات الهاتف.'
@@ -755,62 +709,59 @@ const styles = StyleSheet.create({
   sessionTab: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 6 },
   sessionTabText: { fontSize: 13, fontWeight: '600' },
   controls: { gap: 6, alignItems: 'center' },
-  modeBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1 },
+
   progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   progressTrack: { flex: 1, height: 4, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: 4, borderRadius: 2 },
   progressText: { fontSize: 11, fontWeight: '600', minWidth: 36, textAlign: 'right' },
+
+  langChipsRow: { flexDirection: 'row', gap: 7, paddingVertical: 5 },
+  langChip: {
+    paddingHorizontal: 12, paddingVertical: 5,
+    borderRadius: 16, borderWidth: 1,
+  },
+  langChipText: { fontSize: 12, fontWeight: '600' },
+
   completedBanner: {
     marginHorizontal: 14, marginBottom: 8, paddingVertical: 10,
     borderRadius: 12, borderWidth: 1, alignItems: 'center',
   },
   completedText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.5 },
+
   card: {
     borderRadius: 16, borderWidth: 1,
-    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, gap: 10,
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, gap: 8,
   },
   cardHeader: { alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   dhikrIndex: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   dhikrIndexText: { fontSize: 11, fontWeight: '700' },
   sourceText: { flex: 1, fontSize: 10, textAlign: 'left' },
-  dhikrText: { lineHeight: 28 },
-  dhikrArabic: { fontSize: 20, fontFamily: 'Amiri_400Regular', textAlign: 'right', lineHeight: 38 },
-  dhikrLatin: { fontSize: 13, lineHeight: 22 },
-  cardFooter: { alignItems: 'center', gap: 10 },
+
+  dhikrArabic: {
+    fontFamily: 'Amiri_400Regular',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  dhikrTranslit: {
+    fontFamily: 'serif',
+    textAlign: 'left',
+    fontStyle: 'italic',
+    opacity: 0.75,
+  },
+  dhikrMeaning: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(128,128,128,0.15)',
+    paddingTop: 6,
+  },
+
+  cardFooter: { alignItems: 'center', gap: 10, marginTop: 2 },
   counter: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
   counterText: { fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'] },
   tapHint: { flex: 1, fontSize: 11 },
   virtueBox: { flexDirection: 'row', gap: 6, padding: 10, borderRadius: 10, borderWidth: 1, alignItems: 'flex-start' },
   virtueText: { flex: 1, fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
   dua: { fontSize: 16, textAlign: 'center', marginTop: 12 },
-  langBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 16, paddingVertical: 9,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  langBarNative: { fontSize: 13, fontWeight: '600' },
-  langBarLabel: { fontSize: 12, opacity: 0.6 },
-  langBackdrop: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  langSheet: {
-    width: '88%', maxHeight: 400, borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
-  },
-  langSheetHeader: {
-    paddingHorizontal: 20, paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  langSheetTitle: { fontSize: 16, fontWeight: '600' },
-  langRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 13,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  langNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
-  langLabel: { fontSize: 12 },
+
   modalRoot: { flex: 1 },
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1 },
   modalTitle: { fontSize: 18, fontWeight: '700' },
@@ -818,7 +769,6 @@ const styles = StyleSheet.create({
   notifRow: { alignItems: 'center', gap: 12 },
   notifLabel: { fontSize: 15, fontWeight: '700' },
   notifSub: { fontSize: 12 },
-  timeRow: { alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' },
   timeLabel: { fontSize: 12, fontWeight: '500', marginBottom: 2 },
   timeButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   timeChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1 },
