@@ -66,7 +66,7 @@ function freshState(): AthkarState {
 
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, colors: C, fontSize, updateSettings } = useApp();
+  const { isDark, lang, colors: C, fontSize, translitLang, updateSettings } = useApp();
   const tr = t(lang);
   const isRtl = isRtlLang(lang);
   const isAr = lang === 'ar';
@@ -88,9 +88,7 @@ export default function AthkarScreen() {
     return h >= 15 ? 'evening' : 'morning';
   });
   const [displayMode, setDisplayMode] = useState<DisplayMode>('arabic');
-  const defaultAthkarLang = ATHKAR_LANGS.some(l => l.code === lang) ? lang : 'en';
-  const [athkarLang, setAthkarLang] = useState(defaultAthkarLang);
-  const [showLangModal, setShowLangModal] = useState(false);
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [state, setState] = useState<AthkarState>(freshState());
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [morningNotif, setMorningNotif] = useState(false);
@@ -225,7 +223,7 @@ export default function AthkarScreen() {
 
   const getLabel = (d: Dhikr) => {
     if (displayMode === 'transliteration') return d.transliteration;
-    if (displayMode === 'translation') return getDhikrTranslation(d, athkarLang);
+    if (displayMode === 'translation') return getDhikrTranslation(d, translitLang);
     return d.arabic;
   };
 
@@ -322,14 +320,6 @@ export default function AthkarScreen() {
           >
             <Text style={{ fontSize: 10, fontWeight: '700', color: accentColor }}>{modeLabel()}</Text>
           </Pressable>
-          {displayMode === 'translation' && (
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowLangModal(true); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
-            >
-              <Ionicons name="language-outline" size={16} color={accentColor} />
-            </Pressable>
-          )}
           <Pressable
             onPress={handleReset}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
@@ -352,6 +342,34 @@ export default function AthkarScreen() {
         </Text>
       </View>
 
+      {/* Sticky language bar — always visible, same style as Quran transliteration */}
+      {displayMode !== 'arabic' && (
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
+          style={({ pressed }) => [
+            styles.langBar,
+            {
+              backgroundColor: C.backgroundCard,
+              borderBottomColor: C.separator,
+              borderTopColor: C.separator,
+              opacity: pressed ? 0.75 : 1,
+            },
+          ]}
+        >
+          <Ionicons name="language-outline" size={14} color={accentColor} />
+          <Text style={[styles.langBarNative, {
+            color: C.text,
+            fontFamily: ATHKAR_LANGS.find(l => l.code === translitLang)?.rtl ? 'Amiri_400Regular' : SERIF_EN,
+          }]}>
+            {ATHKAR_LANGS.find(l => l.code === translitLang)?.native ?? translitLang}
+          </Text>
+          <Text style={[styles.langBarLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+            {ATHKAR_LANGS.find(l => l.code === translitLang)?.label ?? ''}
+          </Text>
+          <Ionicons name="chevron-down" size={13} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+        </Pressable>
+      )}
+
       {/* Completion banner */}
       {allDone && (
         <Animated.View entering={ZoomIn.duration(400)} style={[styles.completedBanner, { backgroundColor: accentColor + '22', borderColor: accentColor + '55' }]}>
@@ -372,7 +390,7 @@ export default function AthkarScreen() {
         {dhikrList.map((d, idx) => {
           const done = isDhikrDone(d);
           const cur = getDhikrCount(d);
-          const virtue = getDhikrVirtue(d, athkarLang);
+          const virtue = getDhikrVirtue(d, translitLang);
           const expanded = expandedVirtue === d.id;
           const isArabicMode = displayMode === 'arabic';
 
@@ -465,12 +483,12 @@ export default function AthkarScreen() {
 
       {/* Language Picker Modal */}
       <Modal
-        visible={showLangModal}
+        visible={showLangPicker}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowLangModal(false)}
+        onRequestClose={() => setShowLangPicker(false)}
       >
-        <Pressable style={styles.langBackdrop} onPress={() => setShowLangModal(false)}>
+        <Pressable style={styles.langBackdrop} onPress={() => setShowLangPicker(false)}>
           <Pressable
             style={[styles.langSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
             onPress={e => e.stopPropagation()}
@@ -482,11 +500,15 @@ export default function AthkarScreen() {
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               {ATHKAR_LANGS.map(l => {
-                const active = l.code === athkarLang;
+                const active = l.code === translitLang;
                 return (
                   <Pressable
                     key={l.code}
-                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l.code); setShowLangModal(false); }}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      updateSettings({ translitLang: l.code as any });
+                      setShowLangPicker(false);
+                    }}
                     style={({ pressed }) => [
                       styles.langRow,
                       { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
@@ -675,6 +697,14 @@ const styles = StyleSheet.create({
   virtueBox: { flexDirection: 'row', gap: 6, padding: 10, borderRadius: 10, borderWidth: 1, alignItems: 'flex-start' },
   virtueText: { flex: 1, fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
   dua: { fontSize: 16, textAlign: 'center', marginTop: 12 },
+  langBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 16, paddingVertical: 9,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  langBarNative: { fontSize: 13, fontWeight: '600' },
+  langBarLabel: { fontSize: 12, opacity: 0.6 },
   langBackdrop: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center', alignItems: 'center',
