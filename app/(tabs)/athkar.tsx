@@ -25,6 +25,18 @@ import AppLogo from '@/components/AppLogo';
 const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
 type FontStep = typeof FONT_STEPS[number];
 
+const TAP_HINT: Record<string, string> = {
+  ar: 'اضغط للتسبيح',
+  en: 'tap to count',
+  fr: 'appuyer pour compter',
+  tr: 'saymak için dokun',
+  ur: 'گننے کے لیے ٹیپ کریں',
+  fa: 'برای شمارش ضربه بزنید',
+  id: 'ketuk untuk menghitung',
+  ms: 'ketuk untuk mengira',
+  bn: 'গণনার জন্য ট্যাপ করুন',
+};
+
 const ATHKAR_LANGS: Array<{ code: string; native: string; label: string; rtl?: boolean }> = [
   { code: 'en', native: 'English',           label: 'English' },
   { code: 'fr', native: 'Français',          label: 'French' },
@@ -456,8 +468,8 @@ export default function AthkarScreen() {
 
                   {/* Tap hint */}
                   {!done && (
-                    <Text style={[styles.tapHint, { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                      {isAr ? 'اضغط للتسبيح' : 'tap to count'}
+                    <Text style={[styles.tapHint, { color: C.textMuted, fontFamily: (isRtl || ATHKAR_LANGS.find(l => l.code === translitLang)?.rtl) ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {TAP_HINT[displayMode === 'arabic' ? 'ar' : translitLang] ?? TAP_HINT['en']}
                     </Text>
                   )}
 
