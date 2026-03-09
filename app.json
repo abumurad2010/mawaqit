@@ -1,70 +1,75 @@
 {
   "expo": {
-    "name": "Mawaqit",
+    "name": "Mawaqit | مواقيت",
     "slug": "mawaqit",
     "version": "1.0.0",
     "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
     "scheme": "mawaqit",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a5c38"
+      "backgroundColor": "#0a0a0a"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Location is used to calculate accurate prayer times and Qibla direction.",
-        "NSMotionUsageDescription": "Motion sensors are used to show the Qibla compass direction."
+        "NSLocationWhenInUseUsageDescription": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction for your city.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction for your city.",
+        "UIBackgroundModes": ["fetch", "remote-notification"]
       }
     },
     "android": {
       "package": "com.mawaqit.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
-      ],
-      "adaptiveIcon": {
-        "backgroundColor": "#1a5c38",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      }
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
-      "favicon": "./assets/images/favicon.png",
-      "name": "Mawaqit – Prayer Times & Quran",
-      "shortName": "Mawaqit",
-      "description": "Free Islamic prayer times, Qibla compass, and full Quran with transliteration. Works completely offline.",
-      "display": "standalone",
-      "orientation": "portrait",
-      "themeColor": "#1a7a4a",
-      "backgroundColor": "#1a5c38",
-      "lang": "en",
-      "scope": "/"
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-router",
       [
-        "expo-router",
+        "expo-notifications",
         {
-          "origin": "https://replit.com/"
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#1a8c5b",
+          "sounds": []
         }
       ],
-      "expo-font",
-      "expo-web-browser",
       [
-        "expo-sensors",
+        "expo-location",
         {
-          "motionPermission": "Allow $(PRODUCT_NAME) to access your device motion for the Qibla compass."
+          "locationAlwaysAndWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction.",
+          "locationWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction."
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
     }
   }
 }

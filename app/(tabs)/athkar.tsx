@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SERIF_EN } from '@/constants/typography';
 import { useApp } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
+import { getColors } from '@/constants/colors';
 import ATHKAR, { Dhikr, getDhikrTranslation, getDhikrVirtue } from '@/lib/athkar';
 import ThemeToggle from '@/components/ThemeToggle';
 import AppLogo from '@/components/AppLogo';
@@ -76,7 +77,7 @@ function freshState(): AthkarState {
 
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, colors: C, fontSize, translitLang, updateSettings } = useApp();
+  const { isDark, lang, colors, fontSize, translitLang, accessibilityTheme, updateSettings } = useApp();
   const tr = t(lang);
   const isRtl = isRtlLang(lang);
   const isAr = lang === 'ar';
@@ -258,14 +259,18 @@ export default function AthkarScreen() {
   };
 
   const isArabicOnly = athkarLang === 'ar';
+  const athkarLangIsAr = athkarLang === 'ar';
   const selectedLangInfo = ALL_LANGS.find(l => l.code === athkarLang);
   const isSelectedRtl = !!selectedLangInfo?.rtl;
 
   const isMorning = session === 'morning';
-  const accentColor = isMorning ? (isDark ? '#f5a623' : '#e8891a') : (isDark ? '#7b9ee8' : '#4a6fa8');
+  // Morning always renders in light mode regardless of global theme
+  const C = isMorning ? getColors(false, accessibilityTheme ?? 'default') : colors;
+  const effectiveDark = isMorning ? false : isDark;
+  const accentColor = isMorning ? '#e8891a' : (effectiveDark ? '#7b9ee8' : '#4a6fa8');
   const bgGrad: [string, string] = isMorning
-    ? (isDark ? ['#1a1200', '#0d0900'] : ['#fffbf0', '#fff8e7'])
-    : (isDark ? ['#0a0e1a', '#050810'] : ['#f0f4ff', '#e8eeff']);
+    ? ['#fffbf0', '#fff8e7']
+    : (effectiveDark ? ['#0a0e1a', '#050810'] : ['#f0f4ff', '#e8eeff']);
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -339,7 +344,7 @@ export default function AthkarScreen() {
               left: 16,
               backgroundColor: C.backgroundCard,
               borderColor: C.separator,
-              shadowColor: isDark ? '#000' : '#333',
+              shadowColor: effectiveDark ? '#000' : '#333',
             },
           ]}>
             {ALL_LANGS.map((l, i) => {
@@ -393,8 +398,8 @@ export default function AthkarScreen() {
                 <Text style={{ fontSize: 16 }}>
                   {s === 'morning' ? '☀️' : '🌙'}
                 </Text>
-                <Text style={[styles.sessionTabText, { color: active ? '#fff' : C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                  {s === 'morning' ? (isAr ? 'صباح' : 'Morning') : (isAr ? 'مساء' : 'Evening')}
+                <Text style={[styles.sessionTabText, { color: active ? '#fff' : C.textSecond, fontFamily: (isRtl || athkarLangIsAr) ? 'Amiri_400Regular' : SERIF_EN }]}>
+                  {s === 'morning' ? (athkarLangIsAr ? 'الصباح' : 'Morning') : (athkarLangIsAr ? 'المساء' : 'Evening')}
                 </Text>
                 {(s === 'morning' ? state.morningDone : state.eveningDone) && (
                   <Ionicons name="checkmark-circle" size={14} color={active ? '#fff' : accentColor} />
@@ -446,8 +451,8 @@ export default function AthkarScreen() {
         <Animated.View entering={ZoomIn.duration(400)} style={[styles.completedBanner, { backgroundColor: accentColor + '22', borderColor: accentColor + '55' }]}>
           <Text style={[styles.completedText, { color: accentColor, fontFamily: 'Amiri_700Bold' }]}>
             {isMorning
-              ? (isAr ? '✨ أتممت أذكار الصباح ✨' : '✨ Morning Athkar Complete ✨')
-              : (isAr ? '✨ أتممت أذكار المساء ✨' : '✨ Evening Athkar Complete ✨')}
+              ? (athkarLangIsAr ? '✨ أتممت أذكار الصباح ✨' : '✨ Morning Athkar Complete ✨')
+              : (athkarLangIsAr ? '✨ أتممت أذكار المساء ✨' : '✨ Evening Athkar Complete ✨')}
           </Text>
         </Animated.View>
       )}
@@ -461,10 +466,10 @@ export default function AthkarScreen() {
         {dhikrList.map((d, idx) => {
           const done = isDhikrDone(d);
           const cur = getDhikrCount(d);
-          const virtue = getDhikrVirtue(d, athkarLang === 'ar' ? 'ar' : athkarLang);
+          const virtue = getDhikrVirtue(d, athkarLangIsAr ? 'ar' : athkarLang);
           const expanded = expandedVirtue === d.id;
           const tapHintLang = athkarLang;
-          const cardIsRtl = isRtl;
+          const cardIsRtl = athkarLangIsAr ? true : isSelectedRtl;
 
           return (
             <Animated.View key={d.id} entering={FadeInDown.delay(idx * 40).duration(350)}>
@@ -474,7 +479,7 @@ export default function AthkarScreen() {
                   styles.card,
                   {
                     backgroundColor: done
-                      ? (isDark ? accentColor + '18' : accentColor + '12')
+                      ? (effectiveDark ? accentColor + '18' : accentColor + '12')
                       : C.backgroundCard,
                     borderColor: done ? accentColor + '55' : C.separator,
                     opacity: pressed ? 0.85 : 1,
@@ -487,7 +492,7 @@ export default function AthkarScreen() {
                     <Text style={[styles.dhikrIndexText, { color: done ? '#fff' : C.textMuted }]}>{idx + 1}</Text>
                   </View>
                   <Text style={[styles.sourceText, { color: C.textMuted, fontFamily: cardIsRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                    {isAr ? d.source : d.sourceEn}
+                    {athkarLangIsAr ? d.source : d.sourceEn}
                   </Text>
                   {done && (
                     <Animated.View entering={ZoomIn.duration(200)}>
@@ -496,10 +501,12 @@ export default function AthkarScreen() {
                   )}
                 </View>
 
-                {/* Arabic text — always shown */}
+                {/* Arabic text — always shown; secondary/smaller when a translation lang is active */}
                 <Text style={[
                   styles.dhikrArabic,
-                  { fontSize: 20 * fontScale, lineHeight: 38 * fontScale, color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text },
+                  isArabicOnly
+                    ? { fontSize: 20 * fontScale, lineHeight: 38 * fontScale, color: done ? (effectiveDark ? accentColor + 'cc' : accentColor) : C.text }
+                    : { fontSize: 15 * fontScale, lineHeight: 26 * fontScale, color: done ? accentColor + 'aa' : C.textSecond },
                 ]}>
                   {d.arabic}
                 </Text>
@@ -508,21 +515,22 @@ export default function AthkarScreen() {
                 {!isArabicOnly && (
                   <Text style={[
                     styles.dhikrTranslit,
-                    { fontSize: 12 * fontScale, lineHeight: 20 * fontScale, color: done ? accentColor + 'aa' : C.textSecond },
+                    { fontSize: 11 * fontScale, lineHeight: 18 * fontScale, color: done ? accentColor + 'aa' : C.textMuted },
                   ]}>
                     {d.transliteration}
                   </Text>
                 )}
 
-                {/* Meaning/Translation — shown when non-Arabic lang selected */}
+                {/* Meaning/Translation — primary, prominent when non-Arabic selected */}
                 {!isArabicOnly && (
                   <Text style={[
                     styles.dhikrMeaning,
                     {
-                      fontSize: 13 * fontScale,
-                      lineHeight: 21 * fontScale,
-                      color: done ? (isDark ? accentColor + 'cc' : accentColor) : C.text,
-                      fontFamily: isSelectedRtl ? 'Amiri_400Regular' : SERIF_EN,
+                      fontSize: 16 * fontScale,
+                      lineHeight: 26 * fontScale,
+                      fontWeight: '700',
+                      color: done ? (effectiveDark ? accentColor + 'cc' : accentColor) : C.text,
+                      fontFamily: isSelectedRtl ? 'Amiri_700Bold' : SERIF_EN,
                       textAlign: isSelectedRtl ? 'right' : 'left',
                     },
                   ]}>
@@ -557,7 +565,7 @@ export default function AthkarScreen() {
                 {virtue && expanded && (
                   <Animated.View entering={FadeIn.duration(250)} style={[styles.virtueBox, { backgroundColor: accentColor + '15', borderColor: accentColor + '33' }]}>
                     <Ionicons name="sparkles-outline" size={13} color={accentColor} />
-                    <Text style={[styles.virtueText, { color: accentColor, fontFamily: (isAr || isSelectedRtl) ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    <Text style={[styles.virtueText, { color: accentColor, fontFamily: (athkarLangIsAr || isSelectedRtl) ? 'Amiri_400Regular' : SERIF_EN }]}>
                       {virtue}
                     </Text>
                   </Animated.View>
