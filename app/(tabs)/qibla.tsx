@@ -6,7 +6,7 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming,
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
   FadeIn, interpolate, Extrapolation,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path, Text as SvgText, G } from 'react-native-svg';
@@ -19,6 +19,7 @@ import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
 
 const COMPASS_SIZE = 280;
+const SPRING = { mass: 0.08, damping: 12, stiffness: 180 };
 const NEEDLE_LENGTH = COMPASS_SIZE / 2 - 20;
 const CENTER = COMPASS_SIZE / 2;
 
@@ -81,7 +82,7 @@ export default function QiblaScreen() {
     (async () => {
       const avail = await Magnetometer.isAvailableAsync();
       if (!avail) { setMagnetometerAvailable(false); return; }
-      Magnetometer.setUpdateInterval(50); // 20 Hz
+      Magnetometer.setUpdateInterval(16); // 60 Hz
       sub = Magnetometer.addListener(({ x, y }) => {
         let angle = Math.atan2(-x, y) * (180 / Math.PI);
         angle = (angle + 360) % 360;
@@ -93,11 +94,11 @@ export default function QiblaScreen() {
           return;
         }
 
-        // Light low-pass filter (α=0.3 at 20 Hz is ~3-cycle lag — responsive but stable)
+        // α=0.7 at 60 Hz — responsive with minimal noise
         let diff = angle - prevHeading.current;
         if (diff > 180) diff -= 360;
         if (diff < -180) diff += 360;
-        const smoothed = (prevHeading.current + diff * 0.3 + 360) % 360;
+        const smoothed = (prevHeading.current + diff * 0.7 + 360) % 360;
         prevHeading.current = smoothed;
         setHeading(smoothed);
       });
@@ -113,7 +114,7 @@ export default function QiblaScreen() {
     if (cDelta > 180) cDelta -= 360;
     if (cDelta < -180) cDelta += 360;
     prevCompassRot.current += cDelta;
-    rotation.value = withTiming(prevCompassRot.current, { duration: 80 });
+    rotation.value = withSpring(prevCompassRot.current, SPRING);
 
     if (qiblaBearing !== null) {
       // Qibla needle: absolute angle = qiblaBearing - heading
@@ -122,7 +123,7 @@ export default function QiblaScreen() {
       if (qDelta > 180) qDelta -= 360;
       if (qDelta < -180) qDelta += 360;
       prevQiblaRot.current += qDelta;
-      qiblaRotation.value = withTiming(prevQiblaRot.current, { duration: 80 });
+      qiblaRotation.value = withSpring(prevQiblaRot.current, SPRING);
 
       // Check alignment with hysteresis: lock at ≤2°, unlock at >6°
       const diff = Math.abs(((qiblaBearing - heading + 180 + 360) % 360) - 180);
