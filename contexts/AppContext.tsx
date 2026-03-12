@@ -90,7 +90,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   lang: 'ar',
   secondLang: 'auto',
   translitLang: 'en',
-  themeMode: 'auto',
+  themeMode: 'dark',
   accessibilityTheme: 'default',
   calcMethod: 'MWL',
   asrMethod: 'standard',
