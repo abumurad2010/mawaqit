@@ -10,36 +10,96 @@ import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 
 function NativeTabLayout() {
+  const { isRtl, lang } = useApp();
+  const tr = t(lang);
+
+  const triggers = [
+    <NativeTabs.Trigger key="index" name="index">
+      <Icon sf={{ default: 'moon.stars', selected: 'moon.stars.fill' }} />
+      <Label>{tr.prayers}</Label>
+    </NativeTabs.Trigger>,
+    <NativeTabs.Trigger key="calendar" name="calendar">
+      <Icon sf={{ default: 'calendar', selected: 'calendar.badge.checkmark' }} />
+      <Label>{tr.today}</Label>
+    </NativeTabs.Trigger>,
+    <NativeTabs.Trigger key="qibla" name="qibla">
+      <Icon sf={{ default: 'location.circle', selected: 'location.circle.fill' }} />
+      <Label>{tr.qibla}</Label>
+    </NativeTabs.Trigger>,
+    <NativeTabs.Trigger key="athkar" name="athkar">
+      <Icon sf={{ default: 'moon', selected: 'moon.fill' }} />
+      <Label>الأذكار</Label>
+    </NativeTabs.Trigger>,
+    <NativeTabs.Trigger key="quran" name="quran">
+      <Icon sf={{ default: 'book', selected: 'book.fill' }} />
+      <Label>{tr.quran}</Label>
+    </NativeTabs.Trigger>,
+  ];
+
   return (
     <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: 'moon.stars', selected: 'moon.stars.fill' }} />
-        <Label>Prayers</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="calendar">
-        <Icon sf={{ default: 'calendar', selected: 'calendar.badge.checkmark' }} />
-        <Label>Calendar</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="qibla">
-        <Icon sf={{ default: 'location.circle', selected: 'location.circle.fill' }} />
-        <Label>Qibla</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="athkar">
-        <Icon sf={{ default: 'moon', selected: 'moon.fill' }} />
-        <Label>الأذكار</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="quran">
-        <Icon sf={{ default: 'book', selected: 'book.fill' }} />
-        <Label>Quran</Label>
-      </NativeTabs.Trigger>
+      {isRtl ? [...triggers].reverse() : triggers}
     </NativeTabs>
   );
 }
 
 function ClassicTabLayout() {
-  const { isDark, lang, colors } = useApp();
+  const { isDark, lang, colors, isRtl } = useApp();
   const C = colors;
   const tr = t(lang);
+
+  const screens = [
+    <Tabs.Screen
+      key="index"
+      name="index"
+      options={{
+        title: tr.prayers,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="moon-outline" size={size} color={color} />
+        ),
+      }}
+    />,
+    <Tabs.Screen
+      key="calendar"
+      name="calendar"
+      options={{
+        title: tr.today,
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="calendar-outline" size={size} color={color} />
+        ),
+      }}
+    />,
+    <Tabs.Screen
+      key="qibla"
+      name="qibla"
+      options={{
+        title: tr.qibla,
+        tabBarIcon: ({ color, size }) => (
+          <MaterialCommunityIcons name="compass-outline" size={size} color={color} />
+        ),
+      }}
+    />,
+    <Tabs.Screen
+      key="athkar"
+      name="athkar"
+      options={{
+        title: 'الأذكار',
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="moon-outline" size={size} color={color} />
+        ),
+      }}
+    />,
+    <Tabs.Screen
+      key="quran"
+      name="quran"
+      options={{
+        title: tr.quran,
+        tabBarIcon: ({ color, size }) => (
+          <MaterialCommunityIcons name="book-open-page-variant-outline" size={size} color={color} />
+        ),
+      }}
+    />,
+  ];
 
   return (
     <Tabs
@@ -69,49 +129,7 @@ function ClassicTabLayout() {
           ) : null,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: tr.prayers,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="moon-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: tr.today,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="qibla"
-        options={{
-          title: tr.qibla,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="compass-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="athkar"
-        options={{
-          title: 'الأذكار',
-          tabBarIcon: ({ color, size }) => <Ionicons name="moon-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="quran"
-        options={{
-          title: tr.quran,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="book-open-page-variant-outline" size={size} color={color} />
-          ),
-        }}
-      />
+      {isRtl ? [...screens].reverse() : screens}
     </Tabs>
   );
 }
