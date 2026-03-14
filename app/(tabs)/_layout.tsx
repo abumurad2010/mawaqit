@@ -103,6 +103,7 @@ function ClassicTabLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: C.tint,
         tabBarInactiveTintColor: C.tabIconDefault,
