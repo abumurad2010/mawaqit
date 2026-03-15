@@ -24,6 +24,7 @@ import {
   calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
+import { getDhuhaTime, getTahajjudTime } from '@/lib/notifications';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
 
 
@@ -42,6 +43,7 @@ export default function PrayerTimesScreen() {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
+    dhuhaOffsetMinutes, tahajjudPortion,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -113,9 +115,9 @@ export default function PrayerTimesScreen() {
 
   const nextPrayer = times ? getNextPrayer(times) : null;
 
-  // When all today's prayers have passed, calculate tomorrow's Fajr
+  // Tomorrow's Fajr — used both for the "next prayer" hero and Tahajjud time
   const tomorrowFajr = useMemo(() => {
-    if (nextPrayer || !location || !times) return null;
+    if (!location) return null;
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const t = calculatePrayerTimes({
@@ -123,7 +125,7 @@ export default function PrayerTimesScreen() {
       date: tomorrow, method: calcMethod, asrMethod, maghribOffset,
     });
     return t.fajr;
-  }, [nextPrayer, location, times, calcMethod, asrMethod, maghribOffset]);
+  }, [location, calcMethod, asrMethod, maghribOffset]);
 
   // displayNext: either today's next prayer, or tomorrow's Fajr
   const displayNext = nextPrayer
@@ -143,7 +145,6 @@ export default function PrayerTimesScreen() {
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-
   const prayerLabel = (key: keyof PrayerTimesType) => {
     const map: Record<keyof PrayerTimesType, string> = {
       fajr: tr.fajr,
@@ -155,6 +156,12 @@ export default function PrayerTimesScreen() {
     };
     return map[key];
   };
+
+  // Nafl prayer times derived from fard times
+  const dhuhaTime = times ? getDhuhaTime(times.sunrise, dhuhaOffsetMinutes ?? 20) : null;
+  const tahajjudTime = (times && tomorrowFajr)
+    ? getTahajjudTime(times.isha, tomorrowFajr, tahajjudPortion ?? 'last_third')
+    : null;
 
   const isNext = (key: keyof PrayerTimesType) => nextPrayer?.name === key;
   const isPassed = (key: keyof PrayerTimesType) => times ? times[key] < now : false;
@@ -362,7 +369,7 @@ export default function PrayerTimesScreen() {
           const dividerStyle = { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' };
           return (
             <React.Fragment key={key}>
-              <View style={!isLast ? dividerStyle : undefined}>
+              <View style={dividerStyle}>
                 <View style={[
                   styles.prayerRow,
                   active && { backgroundColor: C.tintLight },
@@ -393,8 +400,63 @@ export default function PrayerTimesScreen() {
                     {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
                   </Text>
                 </View>
-                {!isLast && <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />}
+                <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
               </View>
+
+              {/* Dhuha — inserted after Sunrise */}
+              {key === 'sunrise' && dhuhaTime && (
+                <View style={dividerStyle}>
+                  <View style={[styles.prayerRow, styles.naflRow]}>
+                    <View style={styles.prayerLeft}>
+                      <MaterialCommunityIcons
+                        name="weather-sunny-alert"
+                        size={18}
+                        color={dhuhaTime < now ? C.textMuted : C.gold}
+                      />
+                      <Text numberOfLines={1} style={[
+                        styles.prayerName,
+                        { color: dhuhaTime < now ? C.textMuted : C.gold, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: pFS, lineHeight: pLH }
+                      ]}>
+                        {isAr ? 'الضحى' : tr.dhuha}
+                      </Text>
+                      <View style={[styles.naflBadge, { backgroundColor: C.gold + '22' }]}>
+                        <Text style={[styles.naflBadgeText, { color: C.gold }]}>{isAr ? 'سنة' : 'Nafl'}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.prayerTime, { color: dhuhaTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
+                      {formatTimeAtOffset(dhuhaTime, locationUtcOffset)}
+                    </Text>
+                  </View>
+                  <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
+                </View>
+              )}
+
+              {/* Tahajjud — inserted after Isha */}
+              {key === 'isha' && tahajjudTime && (
+                <View style={isLast ? undefined : dividerStyle}>
+                  <View style={[styles.prayerRow, styles.naflRow]}>
+                    <View style={styles.prayerLeft}>
+                      <MaterialCommunityIcons
+                        name="weather-night"
+                        size={18}
+                        color={tahajjudTime < now ? C.textMuted : C.gold}
+                      />
+                      <Text numberOfLines={1} style={[
+                        styles.prayerName,
+                        { color: tahajjudTime < now ? C.textMuted : C.gold, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: pFS, lineHeight: pLH }
+                      ]}>
+                        {isAr ? 'التهجد' : tr.qiyam}
+                      </Text>
+                      <View style={[styles.naflBadge, { backgroundColor: C.gold + '22' }]}>
+                        <Text style={[styles.naflBadgeText, { color: C.gold }]}>{isAr ? 'سنة' : 'Nafl'}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.prayerTime, { color: tahajjudTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
+                      {formatTimeAtOffset(tahajjudTime, locationUtcOffset)}
+                    </Text>
+                  </View>
+                </View>
+              )}
             </React.Fragment>
           );
         })}
@@ -472,6 +534,9 @@ const styles = StyleSheet.create({
   prayerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   prayerName: { lineHeight: 20 },
   prayerTime: { lineHeight: 20, fontVariant: ['tabular-nums'] },
+  naflRow: { opacity: 0.9 },
+  naflBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4, marginLeft: 4 },
+  naflBadgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
   fontControlRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
     paddingHorizontal: 16, gap: 6, marginBottom: 2,

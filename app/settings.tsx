@@ -11,7 +11,7 @@ import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import type { AccessibilityTheme } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import type { PrayerNotifConfig } from '@/contexts/AppContext';
+import type { PrayerNotifConfig, TahajjudPortion } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
@@ -27,6 +27,7 @@ export default function SettingsScreen() {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
+    dhuhaOffsetMinutes, tahajjudPortion,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -48,6 +49,8 @@ export default function SettingsScreen() {
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
   const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<0 | 10 | 20 | 30>(firstAdhanOffset ?? 0);
+  const [draftDhuhaOffset, setDraftDhuhaOffset] = useState<15 | 20 | 30 | 45 | 60>(dhuhaOffsetMinutes ?? 20);
+  const [draftTahajjudPortion, setDraftTahajjudPortion] = useState<TahajjudPortion>(tahajjudPortion ?? 'last_third');
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -290,6 +293,8 @@ export default function SettingsScreen() {
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
       firstAdhanOffset: draftFirstAdhanOffset,
+      dhuhaOffsetMinutes: draftDhuhaOffset,
+      tahajjudPortion: draftTahajjudPortion,
     });
     router.back();
   };
@@ -815,6 +820,60 @@ export default function SettingsScreen() {
                 />
               ))}
             </View>
+          </View>
+        </View>
+
+        {/* Nafl Prayer Timings */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 18 }]}>
+          {isAr ? 'صلاة الضحى والتهجد' : 'Dhuha & Tahajjud Times'}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          {/* Dhuha */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {isAr ? 'وقت الضحى — بعد الشروق بـ' : 'Dhuha — minutes after sunrise'}
+            </Text>
+            <View style={styles.chips}>
+              {([15, 20, 30, 45, 60] as const).map(mins => (
+                <Chip
+                  key={mins}
+                  value={isAr ? `${mins} د` : `${mins} min`}
+                  selected={draftDhuhaOffset === mins}
+                  onPress={() => setDraftDhuhaOffset(mins)}
+                />
+              ))}
+            </View>
+            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {isAr
+                ? 'الموصى به: ٢٠ دقيقة بعد الشروق — ويمتد وقتها حتى ١٥ دقيقة قبل الظهر'
+                : 'Recommended: 20 min after sunrise — valid until ~15 min before Dhuhr'}
+            </Text>
+          </View>
+
+          {/* Tahajjud */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {isAr ? 'وقت التهجد — جزء الليل' : 'Tahajjud — portion of the night'}
+            </Text>
+            <View style={styles.chips}>
+              {([
+                { value: 'last_third' as TahajjudPortion, ar: 'الثلث الأخير', en: 'Last Third' },
+                { value: 'last_quarter' as TahajjudPortion, ar: 'الربع الأخير', en: 'Last Quarter' },
+                { value: 'last_sixth' as TahajjudPortion, ar: 'السدس الأخير', en: 'Last Sixth' },
+              ]).map(opt => (
+                <Chip
+                  key={opt.value}
+                  value={isAr ? opt.ar : opt.en}
+                  selected={draftTahajjudPortion === opt.value}
+                  onPress={() => setDraftTahajjudPortion(opt.value)}
+                />
+              ))}
+            </View>
+            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              {isAr
+                ? 'الموصى به: الثلث الأخير — أفضل وقت للتهجد وفق السنة النبوية'
+                : 'Recommended: Last Third — the best time for Tahajjud per the Sunnah'}
+            </Text>
           </View>
         </View>
 

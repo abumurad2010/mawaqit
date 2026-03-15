@@ -46,6 +46,8 @@ export interface LocationData {
   countryCode?: string;
 }
 
+export type TahajjudPortion = 'last_third' | 'last_quarter' | 'last_sixth';
+
 interface AppSettings {
   lang: Lang;
   secondLang: SecondLang;
@@ -61,7 +63,8 @@ interface AppSettings {
   hijriAdjustment: number;
   firstAdhanOffset: 0 | 10 | 20 | 30;
   prayerNotifications: Record<string, PrayerNotifType>;
-
+  dhuhaOffsetMinutes: 15 | 20 | 30 | 45 | 60;
+  tahajjudPortion: TahajjudPortion;
 }
 
 interface AppContextValue extends AppSettings {
@@ -101,7 +104,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   hijriAdjustment: 0,
   firstAdhanOffset: 0,
   prayerNotifications: {},
-
+  dhuhaOffsetMinutes: 20,
+  tahajjudPortion: 'last_third',
 };
 
 const VALID_CALC_METHODS = [
@@ -234,8 +238,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       firstAdhanOffset: settings.firstAdhanOffset ?? 0,
       countryCode: effectiveCountryCode,
       locationUtcOffset,
+      dhuhaOffsetMinutes: settings.dhuhaOffsetMinutes ?? 20,
+      tahajjudPortion: settings.tahajjudPortion ?? 'last_third',
     });
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaOffsetMinutes, settings.tahajjudPortion]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

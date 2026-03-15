@@ -2,9 +2,10 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { calculatePrayerTimes } from './prayer-times';
 import type { CalcMethod, AsrMethod } from './prayer-times';
-import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
+import type { LocationData, PrayerNotifConfig, TahajjudPortion } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
+
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
   return {
@@ -14,12 +15,19 @@ function getPrayerLabels(lang: Lang): Record<string, string> {
   };
 }
 
-function getDhuhaTime(sunrise: Date): Date {
-  return new Date(sunrise.getTime() + 20 * 60 * 1000);
+export function getDhuhaTime(sunrise: Date, offsetMinutes: number = 20): Date {
+  return new Date(sunrise.getTime() + offsetMinutes * 60 * 1000);
 }
 
-function getQiyamTime(isha: Date, fajrNextDay: Date): Date {
-  return new Date(isha.getTime() + (fajrNextDay.getTime() - isha.getTime()) * (2 / 3));
+const TAHAJJUD_FRACTIONS: Record<TahajjudPortion, number> = {
+  last_third: 2 / 3,
+  last_quarter: 3 / 4,
+  last_sixth: 5 / 6,
+};
+
+export function getTahajjudTime(isha: Date, fajrNextDay: Date, portion: TahajjudPortion = 'last_third'): Date {
+  const fraction = TAHAJJUD_FRACTIONS[portion];
+  return new Date(isha.getTime() + (fajrNextDay.getTime() - isha.getTime()) * fraction);
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
@@ -43,6 +51,8 @@ export async function schedulePrayerNotifications(params: {
   countryCode?: string | null;
   locationUtcOffset?: number | null;
   daysAhead?: number;
+  dhuhaOffsetMinutes?: number;
+  tahajjudPortion?: TahajjudPortion;
 }) {
   await cancelAllPrayerNotifications();
   if (Platform.OS === 'web') return;
@@ -79,12 +89,12 @@ export async function schedulePrayerNotifications(params: {
     const prayerTimeMap: Record<string, Date | null> = {
       fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs) : null,
       fajr: times.fajr,
-      dhuha: getDhuhaTime(times.sunrise),
+      dhuha: getDhuhaTime(times.sunrise, params.dhuhaOffsetMinutes ?? 20),
       dhuhr: times.dhuhr,
       asr: times.asr,
       maghrib: times.maghrib,
       isha: times.isha,
-      qiyam: getQiyamTime(times.isha, nextTimes.fajr),
+      qiyam: getTahajjudTime(times.isha, nextTimes.fajr, params.tahajjudPortion ?? 'last_third'),
     };
 
     for (const [prayerKey, cfg] of Object.entries(prayerNotifications)) {
