@@ -66,6 +66,8 @@ interface AppSettings {
   prayerNotifications: Record<string, PrayerNotifType>;
   dhuhaTime: string;     // "HH:MM" exact local time for Dhuha
   tahajjudTime: string;  // "HH:MM" exact local time for Tahajjud/Qiyam
+  showDhuha: boolean;    // whether to show Dhuha row on timings tab
+  showQiyam: boolean;    // whether to show Qiyam row on timings tab
 }
 
 interface AppContextValue extends AppSettings {
@@ -107,6 +109,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   prayerNotifications: {},
   dhuhaTime: '07:30',
   tahajjudTime: '03:00',
+  showDhuha: true,
+  showQiyam: true,
 };
 
 const VALID_CALC_METHODS = [

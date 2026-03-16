@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Switch,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,7 +28,7 @@ export default function SettingsScreen() {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
-    dhuhaTime, tahajjudTime,
+    dhuhaTime, tahajjudTime, showDhuha, showQiyam,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -52,6 +52,8 @@ export default function SettingsScreen() {
   const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<0 | 10 | 20 | 30>(firstAdhanOffset ?? 0);
   const [draftDhuhaTime, setDraftDhuhaTime] = useState(dhuhaTime ?? '07:30');
   const [draftTahajjudTime, setDraftTahajjudTime] = useState(tahajjudTime ?? '03:00');
+  const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
+  const [draftShowQiyam, setDraftShowQiyam] = useState(showQiyam !== false);
   const [showDhuhaRoller, setShowDhuhaRoller] = useState(false);
   const [showTahajjudRoller, setShowTahajjudRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
@@ -298,6 +300,8 @@ export default function SettingsScreen() {
       firstAdhanOffset: draftFirstAdhanOffset,
       dhuhaTime: draftDhuhaTime,
       tahajjudTime: draftTahajjudTime,
+      showDhuha: draftShowDhuha,
+      showQiyam: draftShowQiyam,
     });
     router.back();
   };
@@ -828,11 +832,35 @@ export default function SettingsScreen() {
 
         {/* Nafl Prayer Timings */}
         <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 18 }]}>
-          {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam Times'}
+          {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          {/* Dhuha */}
+
+          {/* ── Dhuha block ── */}
+          {/* Show/hide toggle */}
           <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'عرض الضحى' : 'Show Dhuha'}
+              </Text>
+              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
+                {isAr ? 'إظهار وقت الضحى في صفحة الأوقات' : 'Display in prayer times tab'}
+              </Text>
+            </View>
+            <Switch
+              value={draftShowDhuha}
+              onValueChange={v => { Haptics.selectionAsync(); setDraftShowDhuha(v); }}
+              trackColor={{ false: C.separator, true: C.tint + '88' }}
+              thumbColor={draftShowDhuha ? C.tint : C.textMuted}
+            />
+          </View>
+
+          {/* Dhuha time picker — disabled when hidden */}
+          <View style={[
+            styles.settingRow,
+            { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' },
+            !draftShowDhuha && { opacity: 0.38 },
+          ]} pointerEvents={draftShowDhuha ? 'auto' : 'none'}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'وقت الضحى' : 'Dhuha Time'}
@@ -850,8 +878,31 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
 
-          {/* Tahajjud */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+          {/* ── Qiyam block ── */}
+          {/* Show/hide toggle */}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'عرض قيام الليل' : 'Show Qiyam'}
+              </Text>
+              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
+                {isAr ? 'إظهار وقت قيام الليل في صفحة الأوقات' : 'Display in prayer times tab'}
+              </Text>
+            </View>
+            <Switch
+              value={draftShowQiyam}
+              onValueChange={v => { Haptics.selectionAsync(); setDraftShowQiyam(v); }}
+              trackColor={{ false: C.separator, true: C.tint + '88' }}
+              thumbColor={draftShowQiyam ? C.tint : C.textMuted}
+            />
+          </View>
+
+          {/* Qiyam time picker — disabled when hidden */}
+          <View style={[
+            styles.settingRow,
+            { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' },
+            !draftShowQiyam && { opacity: 0.38 },
+          ]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'وقت قيام الليل' : 'Qiyam Time'}
@@ -868,6 +919,7 @@ export default function SettingsScreen() {
               <Ionicons name="time-outline" size={14} color={C.tint} />
             </Pressable>
           </View>
+
         </View>
 
         {/* Dhuha Time Roller Modal */}
@@ -931,12 +983,20 @@ export default function SettingsScreen() {
             const hasBanner = cfg.banner;
             const hasAthan = cfg.athan !== 'none';
             const isLast = idx === NOTIF_PRAYERS.length - 1;
+            const isDisabled =
+              (prayer.key === 'dhuha' && !draftShowDhuha) ||
+              (prayer.key === 'qiyam' && !draftShowQiyam);
 
             return (
-              <View key={prayer.key} style={[
-                styles.notifItem,
-                { borderBottomColor: C.separator, borderBottomWidth: isLast && !hasAthan ? 0 : 1 }
-              ]}>
+              <View
+                key={prayer.key}
+                style={[
+                  styles.notifItem,
+                  { borderBottomColor: C.separator, borderBottomWidth: isLast && !hasAthan ? 0 : 1 },
+                  isDisabled && { opacity: 0.38 },
+                ]}
+                pointerEvents={isDisabled ? 'none' : 'auto'}
+              >
                 {/* Main row: prayer name + Banner toggle + Athan toggle */}
                 <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   <Text style={[

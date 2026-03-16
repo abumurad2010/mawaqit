@@ -51,6 +51,7 @@ export default function PrayerTimesScreen() {
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
+    showDhuha, showQiyam,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -410,8 +411,8 @@ export default function PrayerTimesScreen() {
                 <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
               </View>
 
-              {/* Dhuha — inserted after Sunrise */}
-              {key === 'sunrise' && dhuhaTime && (
+              {/* Dhuha — inserted after Sunrise (only when enabled in settings) */}
+              {key === 'sunrise' && showDhuha && dhuhaTime && (
                 <View style={dividerStyle}>
                   <View style={[styles.prayerRow, styles.naflRow]}>
                     <View style={styles.prayerLeft}>
@@ -438,8 +439,8 @@ export default function PrayerTimesScreen() {
                 </View>
               )}
 
-              {/* Tahajjud — inserted after Isha */}
-              {key === 'isha' && tahajjudTime && (
+              {/* Qiyam — inserted after Isha (only when enabled in settings) */}
+              {key === 'isha' && showQiyam && tahajjudTime && (
                 <View style={isLast ? undefined : dividerStyle}>
                   <View style={[styles.prayerRow, styles.naflRow]}>
                     <View style={styles.prayerLeft}>
