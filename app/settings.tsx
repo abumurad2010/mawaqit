@@ -503,103 +503,51 @@ export default function SettingsScreen() {
           <HelpBtn helpKey="accessibility" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Text style={[styles.explain, { color: C.textMuted, paddingTop: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-            {isAr
-              ? 'اختر نظام ألوان مناسب لاحتياجاتك البصرية'
-              : 'Choose a colour theme suited to your visual needs'}
-          </Text>
-          {([
-            {
-              key: 'default' as AccessibilityTheme,
-              label: isAr ? 'الافتراضي' : 'Default',
-              desc: isAr ? 'النظام الأخضر القياسي' : 'Classic green, crisp and familiar',
-              swatchLight: '#1a7a4a', swatchDark: '#34C759',
-            },
-            {
-              key: 'high-contrast' as AccessibilityTheme,
-              label: isAr ? 'تباين عالٍ' : 'High Contrast',
-              desc: isAr ? 'أسود وأبيض خالص — أقصى وضوح' : 'Pure black & white, maximum clarity',
-              swatchLight: '#000000', swatchDark: '#FFFFFF',
-            },
-            {
-              key: 'colorblind' as AccessibilityTheme,
-              label: isAr ? 'عمى الألوان' : 'Color Blind',
-              desc: isAr ? 'لون أزرق مناسب لعمى الألوان' : 'Blue accent, deuteranopia-friendly',
-              swatchLight: '#0055CC', swatchDark: '#409CFF',
-            },
-            {
-              key: 'warm' as AccessibilityTheme,
-              label: isAr ? 'دافئ' : 'Warm',
-              desc: isAr ? 'درجات العنبر — يُخفف الضوء الأزرق' : 'Amber tones, easy on the eyes',
-              swatchLight: '#8C6400', swatchDark: '#E8A000',
-            },
-            {
-              key: 'blossom' as AccessibilityTheme,
-              label: isAr ? 'الوردي' : 'Blossom',
-              desc: isAr ? 'درجات وردية ناعمة ودافئة' : 'Soft rose tones, warm and inviting',
-              swatchLight: '#B83255', swatchDark: '#FF7AA0',
-            },
-            {
-              key: 'ocean' as AccessibilityTheme,
-              label: isAr ? 'المحيط' : 'Ocean',
-              desc: isAr ? 'أزرق سماوي هادئ وصافٍ' : 'Sky blue, calm and serene',
-              swatchLight: '#0B6FAA', swatchDark: '#4FC3F7',
-            },
-            {
-              key: 'violet' as AccessibilityTheme,
-              label: isAr ? 'البنفسجي' : 'Violet',
-              desc: isAr ? 'لافندر حالم وناعم' : 'Lavender tones, gentle and dreamy',
-              swatchLight: '#6B3FA0', swatchDark: '#C084FC',
-            },
-          ] as const).map((theme, idx, arr) => {
-            const isSelected = draftAccessibilityTheme === theme.key;
-            const isLast = idx === arr.length - 1;
-            const swatch = isDark ? theme.swatchDark : theme.swatchLight;
-            const swatchCheckmark = ((): string => {
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', padding: 10, gap: 8 }}>
+            {([
+              { key: 'default' as AccessibilityTheme,       label: isAr ? 'الافتراضي'    : 'Default',       swatchLight: '#1a7a4a', swatchDark: '#34C759' },
+              { key: 'high-contrast' as AccessibilityTheme, label: isAr ? 'تباين عالٍ'   : 'High Contrast',  swatchLight: '#000000', swatchDark: '#FFFFFF' },
+              { key: 'colorblind' as AccessibilityTheme,    label: isAr ? 'عمى الألوان'  : 'Color Blind',    swatchLight: '#0055CC', swatchDark: '#409CFF' },
+              { key: 'warm' as AccessibilityTheme,          label: isAr ? 'دافئ'          : 'Warm',           swatchLight: '#8C6400', swatchDark: '#E8A000' },
+              { key: 'blossom' as AccessibilityTheme,       label: isAr ? 'الوردي'        : 'Blossom',        swatchLight: '#B83255', swatchDark: '#FF7AA0' },
+              { key: 'ocean' as AccessibilityTheme,         label: isAr ? 'المحيط'        : 'Ocean',          swatchLight: '#0B6FAA', swatchDark: '#4FC3F7' },
+              { key: 'violet' as AccessibilityTheme,        label: isAr ? 'البنفسجي'      : 'Violet',         swatchLight: '#6B3FA0', swatchDark: '#C084FC' },
+            ] as const).map((theme) => {
+              const isSelected = draftAccessibilityTheme === theme.key;
+              const swatch = isDark ? theme.swatchDark : theme.swatchLight;
               const hex = swatch.replace('#', '');
               const r = parseInt(hex.slice(0, 2), 16) / 255;
               const g = parseInt(hex.slice(2, 4), 16) / 255;
               const b = parseInt(hex.slice(4, 6), 16) / 255;
               const linearize = (c: number) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
               const L = 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
-              return L > 0.35 ? '#000000' : '#FFFFFF';
-            })();
-            return (
-              <Pressable
-                key={theme.key}
-                onPress={() => { Haptics.selectionAsync(); setDraftAccessibilityTheme(theme.key); }}
-                style={[
-                  styles.accessThemeRow,
-                  {
-                    borderBottomColor: C.separator,
-                    borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
-                    backgroundColor: isSelected ? C.tint + '12' : 'transparent',
-                    flexDirection: isRtl ? 'row-reverse' : 'row',
-                  },
-                ]}
-              >
-                {/* Colour swatch */}
-                <View style={[styles.accessSwatch, { backgroundColor: swatch }]}>
-                  {isSelected && <Ionicons name="checkmark" size={14} color={swatchCheckmark} />}
-                </View>
-                <View style={{ flex: 1 }}>
+              const checkColor = L > 0.35 ? '#000000' : '#FFFFFF';
+              return (
+                <Pressable
+                  key={theme.key}
+                  onPress={() => { Haptics.selectionAsync(); setDraftAccessibilityTheme(theme.key); }}
+                  style={[
+                    styles.accessTile,
+                    {
+                      backgroundColor: isSelected ? C.tint + '18' : C.backgroundSecond,
+                      borderColor: isSelected ? C.tint : C.separator,
+                      flexDirection: isRtl ? 'row-reverse' : 'row',
+                    },
+                  ]}
+                >
+                  <View style={[styles.accessSwatch, { backgroundColor: swatch }]}>
+                    {isSelected && <Ionicons name="checkmark" size={12} color={checkColor} />}
+                  </View>
                   <Text style={[
                     styles.accessThemeLabel,
-                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }
-                  ]}>
+                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }
+                  ]} numberOfLines={1}>
                     {theme.label}
                   </Text>
-                  <Text style={[
-                    styles.accessThemeDesc,
-                    { color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }
-                  ]}>
-                    {theme.desc}
-                  </Text>
-                </View>
-                {isSelected && <Ionicons name="checkmark-circle" size={20} color={C.tint} />}
-              </Pressable>
-            );
-          })}
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         {/* Hijri date adjustment */}
@@ -741,69 +689,56 @@ export default function SettingsScreen() {
             }
           />
 
-          {/* Maghrib offset — base + stepper */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          {/* Maghrib offset — compact single section */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'stretch', gap: 6 }]}>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
               </Text>
               <HelpBtn helpKey="maghrib" />
             </View>
-
-            {/* Recommended base */}
-            <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <Ionicons name="location-outline" size={13} color={C.tint} />
-              <Text style={[styles.autoOffsetText, { color: C.tint }]}>
-                {isAr
-                  ? `موصى به: ${maghribBase} ${maghribBase === 1 ? 'دقيقة' : 'دقائق'}${countryCode ? ` (${countryCode})` : ''}`
-                  : `Recommended: ${maghribBase} min${countryCode ? ` (${countryCode})` : ''}`}
-              </Text>
-            </View>
-
-            {/* Stepper row */}
-            <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                {isAr ? 'تعديل:' : 'Adjustment:'}
-              </Text>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              {/* Recommended badge */}
+              <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isRtl ? 'row-reverse' : 'row', flex: 1 }]}>
+                <Ionicons name="location-outline" size={12} color={C.tint} />
+                <Text style={[styles.autoOffsetText, { color: C.tint, fontSize: 12 }]}>
+                  {isAr
+                    ? `${maghribBase} ${maghribBase === 1 ? 'دقيقة' : 'دقائق'}${countryCode ? ` (${countryCode})` : ''}`
+                    : `${maghribBase} min${countryCode ? ` (${countryCode})` : ''}`}
+                </Text>
+              </View>
+              {/* Stepper */}
               <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
                 <Pressable
                   onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(v => Math.max(v - 1, -maghribBase)); }}
                   style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
                 >
-                  <Ionicons name="remove" size={18} color={C.tint} />
+                  <Ionicons name="remove" size={16} color={C.tint} />
                 </Pressable>
-                <Text style={[styles.stepperValue, { color: C.text }]}>
+                <Text style={[styles.stepperValue, { color: C.text, minWidth: 28 }]}>
                   {draftAdjustment > 0 ? `+${draftAdjustment}` : draftAdjustment}
                 </Text>
                 <Pressable
                   onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(v => Math.min(v + 1, 30)); }}
                   style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
                 >
-                  <Ionicons name="add" size={18} color={C.tint} />
+                  <Ionicons name="add" size={16} color={C.tint} />
                 </Pressable>
               </View>
-              <View style={[styles.totalBadge, { backgroundColor: C.tint }]}>
-                <Text style={[styles.totalBadgeText, { color: C.tintText }]}>
-                  {isAr
-                    ? `= ${maghribBase + draftAdjustment} د`
-                    : `= ${maghribBase + draftAdjustment} min`}
+              {/* Total */}
+              <View style={[styles.totalBadge, { backgroundColor: C.tint, paddingHorizontal: 8, paddingVertical: 4 }]}>
+                <Text style={[styles.totalBadgeText, { color: C.tintText, fontSize: 12 }]}>
+                  {isAr ? `= ${maghribBase + draftAdjustment} د` : `= ${maghribBase + draftAdjustment} min`}
                 </Text>
               </View>
+              {draftAdjustment !== 0 && (
+                <Pressable onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(0); }}>
+                  <Text style={{ color: C.tint, fontSize: 11, fontWeight: '600' }}>
+                    {isAr ? 'إعادة ضبط' : 'Reset'}
+                  </Text>
+                </Pressable>
+              )}
             </View>
-
-            {draftAdjustment !== 0 && (
-              <Pressable onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(0); }}>
-                <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600' }}>
-                  {isAr ? 'إعادة ضبط' : 'Reset to recommended'}
-                </Text>
-              </Pressable>
-            )}
-
-            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-              {isAr
-                ? 'يُضاف هذا الوقت بعد الغروب الفلكي وفق معايير دار الإفتاء في بلدك'
-                : "Minutes added after astronomical sunset per your country's Islamic authority standard"}
-            </Text>
           </View>
 
           {/* First Adhan */}
@@ -839,16 +774,18 @@ export default function SettingsScreen() {
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
 
-          {/* ── Dhuha block ── */}
-          {/* Show/hide toggle */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'عرض الضحى' : 'Show Dhuha'}
-              </Text>
-              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
-                {isAr ? 'إظهار وقت الضحى في صفحة الأوقات' : 'Display in prayer times tab'}
-              </Text>
+            {/* ── Dhuha row (toggle + time inline) ── */}
+          <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+              {isAr ? 'الضحى' : 'Dhuha'}
+            </Text>
+            <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowDhuha && { opacity: 0.38 }]} pointerEvents={draftShowDhuha ? 'auto' : 'none'}>
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setShowDhuhaRoller(true); }}
+                style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+              >
+                <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftDhuhaTime}</Text>
+              </Pressable>
             </View>
             <Switch
               value={draftShowDhuha}
@@ -858,39 +795,18 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Dhuha time picker — disabled when hidden */}
-          <View style={[
-            styles.settingRow,
-            { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' },
-            !draftShowDhuha && { opacity: 0.38 },
-          ]} pointerEvents={draftShowDhuha ? 'auto' : 'none'}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'وقت الضحى' : 'Dhuha Time'}
-              </Text>
-              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
-                {isAr ? 'الضحى بعد الشروق' : 'After sunrise'}
-              </Text>
-            </View>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowDhuhaRoller(true); }}
-              style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
-            >
-              <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftDhuhaTime}</Text>
-              <Ionicons name="time-outline" size={14} color={C.tint} />
-            </Pressable>
-          </View>
-
-          {/* ── Qiyam block ── */}
-          {/* Show/hide toggle */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'عرض قيام الليل' : 'Show Qiyam'}
-              </Text>
-              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
-                {isAr ? 'إظهار وقت قيام الليل في صفحة الأوقات' : 'Display in prayer times tab'}
-              </Text>
+          {/* ── Qiyam row (toggle + time inline) ── */}
+          <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+              {isAr ? 'قيام الليل' : 'Qiyam'}
+            </Text>
+            <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowQiyam && { opacity: 0.38 }]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setShowTahajjudRoller(true); }}
+                style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+              >
+                <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftTahajjudTime}</Text>
+              </Pressable>
             </View>
             <Switch
               value={draftShowQiyam}
@@ -900,45 +816,19 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Qiyam time picker — disabled when hidden */}
-          <View style={[
-            styles.settingRow,
-            { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' },
-            !draftShowQiyam && { opacity: 0.38 },
-          ]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'وقت قيام الليل' : 'Qiyam Time'}
-              </Text>
-              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
-                {isAr ? 'الثلث الأخير من الليل' : 'Last third of night'}
-              </Text>
-            </View>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowTahajjudRoller(true); }}
-              style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
-            >
-              <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftTahajjudTime}</Text>
-              <Ionicons name="time-outline" size={14} color={C.tint} />
-            </Pressable>
-          </View>
-
-          {/* ── Eid Prayer block ── */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'وقت صلاة العيد' : 'Eid Prayer Time'}
-              </Text>
-              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
-                {isAr ? 'يظهر في ١ شوال و١٠ ذو الحجة فقط' : 'Shown on 1 Shawwal & 10 Dhul Hijjah only'}
-              </Text>
-            </View>
+          {/* ── Eid Prayer row ── */}
+          <View style={[styles.compactRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+              {isAr ? 'صلاة العيد' : 'Eid Prayer'}
+            </Text>
+            <Text style={[{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, alignSelf: 'center', marginHorizontal: 4, flexShrink: 1 }]}>
+              {isAr ? '١ شوال / ١٠ ذو الحجة' : '1 Shawwal / 10 Dhul Hijjah'}
+            </Text>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); setShowEidRoller(true); }}
               style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
             >
               <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftEidPrayerTime}</Text>
-              <Ionicons name="time-outline" size={14} color={C.tint} />
             </Pressable>
           </View>
 
@@ -1256,7 +1146,7 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1, overflow: 'hidden',
   },
   stepperBtn: {
-    width: 38, height: 38, alignItems: 'center', justifyContent: 'center',
+    width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
   },
   stepperValue: {
     minWidth: 34, textAlign: 'center', fontSize: 14, fontWeight: '700',
@@ -1309,23 +1199,33 @@ const styles = StyleSheet.create({
     borderRadius: 12, alignItems: 'center',
   },
   helpDismissText: { fontSize: 14, fontWeight: '700' },
+  compactRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 14, paddingVertical: 9, gap: 8,
+  },
+  accessTile: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 10, paddingVertical: 8,
+    borderRadius: 12, borderWidth: 1,
+    width: '47%',
+  },
   accessThemeRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 14, paddingVertical: 12,
+    paddingHorizontal: 14, paddingVertical: 10,
   },
   accessSwatch: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 26, height: 26, borderRadius: 7,
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  accessThemeLabel: { fontSize: 13, marginBottom: 2 },
+  accessThemeLabel: { fontSize: 12, marginBottom: 0 },
   accessThemeDesc: { fontSize: 11, lineHeight: 15 },
   timeBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 12, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 10, borderWidth: 1,
   },
-  timeBtnText: { fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  timeBtnText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
   rollerOverlay: {
     flex: 1, justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.55)',
