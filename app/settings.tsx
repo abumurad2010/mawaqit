@@ -828,7 +828,7 @@ export default function SettingsScreen() {
 
         {/* Nafl Prayer Timings */}
         <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 18 }]}>
-          {isAr ? 'صلاة الضحى والتهجد' : 'Dhuha & Tahajjud Times'}
+          {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam Times'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {/* Dhuha */}
@@ -854,7 +854,7 @@ export default function SettingsScreen() {
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'وقت التهجد' : 'Tahajjud Time'}
+                {isAr ? 'وقت قيام الليل' : 'Qiyam Time'}
               </Text>
               <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
                 {isAr ? 'الثلث الأخير من الليل' : 'Last third of night'}
@@ -899,7 +899,7 @@ export default function SettingsScreen() {
           <View style={styles.rollerOverlay}>
             <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
-                {isAr ? 'حدد وقت التهجد' : 'Set Tahajjud Time'}
+                {isAr ? 'حدد وقت قيام الليل' : 'Set Qiyam Time'}
               </Text>
               <TimeRoller
                 value={draftTahajjudTime}

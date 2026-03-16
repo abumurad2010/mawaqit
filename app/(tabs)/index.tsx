@@ -452,7 +452,7 @@ export default function PrayerTimesScreen() {
                         styles.prayerName,
                         { color: tahajjudTime < now ? C.textMuted : C.gold, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: pFS, lineHeight: pLH }
                       ]}>
-                        {isAr ? 'التهجد' : tr.qiyam}
+                        {tr.qiyam}
                       </Text>
                       <View style={[styles.naflBadge, { backgroundColor: C.gold + '22' }]}>
                         <Text style={[styles.naflBadgeText, { color: C.gold }]}>{isAr ? 'سنة' : 'Nafl'}</Text>

@@ -67,17 +67,21 @@ export interface MoonPhaseInfo {
   emoji: string;
 }
 
-// Thresholds are kept tight so 🌑 only covers ~2 days total (1 day before/after astronomical new moon).
-// Equal-width 1/8 bands would give 3–4 days of 🌑; these narrowed bands avoid that.
+// Phase thresholds:
+//  • 🌑 Conjunction (المحاق) ≈ 2 days around the astronomical new moon
+//  • 🌒 New Crescent (هلال جديد) = first 1–3 days of visible illumination (Islamic observational new moon)
+//  • 🌒 Waxing Crescent (الهلال) = growing crescent after first visible night
+//  • remaining phases use equal-ish bands
 function phaseDetails(phase: number): Pick<MoonPhaseInfo, 'name' | 'nameAr' | 'emoji'> {
-  if (phase < 0.033 || phase >= 0.967)  return { name: 'New Moon',        nameAr: 'المحاق',              emoji: '🌑' };
-  if (phase < 0.225)                    return { name: 'Waxing Crescent',  nameAr: 'الهلال',             emoji: '🌒' };
-  if (phase < 0.275)                    return { name: 'First Quarter',    nameAr: 'التربيع الأول',       emoji: '🌓' };
-  if (phase < 0.475)                    return { name: 'Waxing Gibbous',   nameAr: 'الأحدب المتزايد',    emoji: '🌔' };
-  if (phase < 0.525)                    return { name: 'Full Moon',        nameAr: 'البدر',               emoji: '🌕' };
-  if (phase < 0.725)                    return { name: 'Waning Gibbous',   nameAr: 'الأحدب المتناقص',    emoji: '🌖' };
-  if (phase < 0.775)                    return { name: 'Last Quarter',     nameAr: 'التربيع الثاني',      emoji: '🌗' };
-                                        return  { name: 'Waning Crescent', nameAr: 'هلال آخر الشهر',     emoji: '🌘' };
+  if (phase < 0.033 || phase >= 0.967)  return { name: 'Conjunction',      nameAr: 'المحاق',              emoji: '🌑' };
+  if (phase < 0.10)                     return { name: 'New Crescent',      nameAr: 'هلال جديد',           emoji: '🌒' };
+  if (phase < 0.225)                    return { name: 'Waxing Crescent',   nameAr: 'الهلال',              emoji: '🌒' };
+  if (phase < 0.275)                    return { name: 'First Quarter',     nameAr: 'التربيع الأول',       emoji: '🌓' };
+  if (phase < 0.475)                    return { name: 'Waxing Gibbous',    nameAr: 'الأحدب المتزايد',    emoji: '🌔' };
+  if (phase < 0.525)                    return { name: 'Full Moon',         nameAr: 'البدر',               emoji: '🌕' };
+  if (phase < 0.725)                    return { name: 'Waning Gibbous',    nameAr: 'الأحدب المتناقص',    emoji: '🌖' };
+  if (phase < 0.775)                    return { name: 'Last Quarter',      nameAr: 'التربيع الثاني',      emoji: '🌗' };
+                                        return  { name: 'Waning Crescent',  nameAr: 'هلال آخر الشهر',     emoji: '🌘' };
 }
 
 /** Get moon phase information for any date. */

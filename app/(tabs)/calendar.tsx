@@ -110,7 +110,7 @@ export default function CalendarScreen() {
   // New moons for the lookup modal (independent from view month)
   const lookupNewMoons = useMemo(() => getNewMoonsForMonth(lookupYear, lookupMonth), [lookupYear, lookupMonth]);
 
-  // If the selected date is a new moon day, find the exact UTC moment (for showing time in popup)
+  // If the selected date is a conjunction day, find the exact UTC moment (for showing time in popup)
   const selectedDateNewMoon = useMemo(() => {
     const nms = getNewMoonsForMonth(selectedDate.y, selectedDate.m);
     const offset = locationUtcOffset ?? 0;
@@ -119,6 +119,16 @@ export default function CalendarScreen() {
       return local.getUTCDate() === selectedDate.d;
     }) ?? null;
   }, [selectedDate, locationUtcOffset]);
+
+  // For the first visible crescent (New Crescent phase), compute the observability window:
+  // visible from sunset (Maghrib) to approximate moonset (sunset + ageInDays × 50 min)
+  const crescentWindow = useMemo(() => {
+    const isNewCrescent = selectedMoon.phase >= 0.033 && selectedMoon.phase < 0.10;
+    if (!isNewCrescent || !prayerTimes) return null;
+    const sunsetMs = (prayerTimes.maghrib as Date).getTime();
+    const moonsetMs = sunsetMs + selectedMoon.ageInDays * 50 * 60 * 1000;
+    return { sunset: new Date(sunsetMs), moonset: new Date(moonsetMs) };
+  }, [selectedMoon, prayerTimes]);
 
   // Calendar grid computation
   const calendarDays = useMemo(() => {
@@ -377,9 +387,14 @@ export default function CalendarScreen() {
                 icon: 'calendar-outline',
               },
               ...(selectedDateNewMoon ? [{
-                label: isAr ? 'توقيت المحاق (محلي)' : 'New Moon Time (local)',
+                label: isAr ? 'وقت الاقتران (محلي)' : 'Conjunction Time (local)',
                 value: formatNewMoonLocal(selectedDateNewMoon, locationUtcOffset),
                 icon: 'time-outline',
+              }] : []),
+              ...(crescentWindow ? [{
+                label: isAr ? 'نافذة رؤية الهلال' : 'Crescent Visibility',
+                value: `${formatTimeAtOffset(crescentWindow.sunset, locationUtcOffset)} – ${formatTimeAtOffset(crescentWindow.moonset, locationUtcOffset)}`,
+                icon: 'eye-outline',
               }] : []),
               {
                 label: isAr ? 'المرحلة' : 'Phase Value',
@@ -403,18 +418,20 @@ export default function CalendarScreen() {
             <View style={[styles.significanceBox, { backgroundColor: C.tint + '14' }]}>
               <Text style={[styles.significanceText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
                 {selectedMoon.phase < 0.033 || selectedMoon.phase > 0.967
-                  ? (isAr ? '🌑 المحاق — القمر غير مرئي، بداية الشهر الهجري' : '🌑 New Moon — invisible, marks the start of the Hijri month')
+                  ? (isAr ? '🌑 المحاق — القمر في الاقتران، غير مرئي، يبدأ الشهر الهجري' : '🌑 Conjunction — moon invisible (Astronomical New Moon), Hijri month begins')
+                  : selectedMoon.phase < 0.10
+                  ? (isAr ? '🌒 هلال جديد — أول ظهور للقمر بعد المحاق، يُرى عند الغروب' : '🌒 New Crescent — first visible after conjunction, seen just after sunset')
                   : selectedMoon.phase < 0.275
-                  ? (isAr ? '🌒 الهلال — أول ظهور القمر بعد المحاق' : '🌒 Crescent — first visible after new moon')
+                  ? (isAr ? '🌒 الهلال — القمر في طور التزايد المبكر' : '🌒 Waxing Crescent — moon growing in early phase')
                   : selectedMoon.phase < 0.475
-                  ? (isAr ? '🌔 الأحدب المتزايد — القمر يكتمل تدريجيًا' : '🌔 Waxing gibbous — moon filling up')
+                  ? (isAr ? '🌔 الأحدب المتزايد — القمر يكتمل تدريجيًا' : '🌔 Waxing Gibbous — moon filling up toward full')
                   : selectedMoon.phase < 0.525
                   ? (isAr ? '🌕 البدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full Moon — the White Nights (13–14–15)')
                   : selectedMoon.phase < 0.725
-                  ? (isAr ? '🌖 الأحدب المتناقص — القمر يتناقص تدريجيًا' : '🌖 Waning gibbous — moon decreasing')
+                  ? (isAr ? '🌖 الأحدب المتناقص — القمر يتناقص تدريجيًا' : '🌖 Waning Gibbous — moon decreasing after full')
                   : selectedMoon.phase < 0.775
-                  ? (isAr ? '🌗 التربيع الثاني — نصف القمر مضيء' : '🌗 Last Quarter — half moon visible')
-                  : (isAr ? '🌘 هلال آخر الشهر — اقتراب المحاق' : '🌘 Waning crescent — approaching new moon')}
+                  ? (isAr ? '🌗 التربيع الثاني — نصف القمر مضيء في المرحلة الأخيرة' : '🌗 Last Quarter — half moon in final phase')
+                  : (isAr ? '🌘 هلال آخر الشهر — اقتراب المحاق' : '🌘 Waning Crescent — approaching conjunction')}
               </Text>
             </View>
 
