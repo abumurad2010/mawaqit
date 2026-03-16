@@ -283,7 +283,7 @@ export default function CalendarScreen() {
           >
             <Text style={{ fontSize: 14 }}>🌑</Text>
             <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'بحث عن المحاق' : 'New Moon Lookup'}
+              {isAr ? 'البحث عن توقيت القمر الجديد' : 'New Moon Lookup'}
             </Text>
             <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
           </Pressable>
@@ -388,18 +388,18 @@ export default function CalendarScreen() {
             <View style={[styles.significanceBox, { backgroundColor: C.tint + '14' }]}>
               <Text style={[styles.significanceText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
                 {selectedMoon.phase < 0.033 || selectedMoon.phase > 0.967
-                  ? (isAr ? '🌑 محاق — القمر غير مرئي، بداية الشهر الهجري' : '🌑 New Moon — invisible, marks the start of the Hijri month')
-                  : selectedMoon.phase < 0.275 && selectedMoon.phase > 0.033
-                  ? (isAr ? '🌒 هلال — أول ظهور القمر بعد المحاق' : '🌒 Crescent — first visible after new moon')
-                  : selectedMoon.phase < 0.475 && selectedMoon.phase > 0.225
-                  ? (isAr ? '🌔 أحدب متزايد — القمر يكتمل' : '🌔 Waxing gibbous — moon filling up')
-                  : selectedMoon.phase >= 0.475 && selectedMoon.phase < 0.525
-                  ? (isAr ? '🌕 بدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full Moon — the White Nights (13–14–15)')
+                  ? (isAr ? '🌑 المحاق — القمر غير مرئي، بداية الشهر الهجري' : '🌑 New Moon — invisible, marks the start of the Hijri month')
+                  : selectedMoon.phase < 0.275
+                  ? (isAr ? '🌒 الهلال — أول ظهور القمر بعد المحاق' : '🌒 Crescent — first visible after new moon')
+                  : selectedMoon.phase < 0.475
+                  ? (isAr ? '🌔 الأحدب المتزايد — القمر يكتمل تدريجيًا' : '🌔 Waxing gibbous — moon filling up')
+                  : selectedMoon.phase < 0.525
+                  ? (isAr ? '🌕 البدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full Moon — the White Nights (13–14–15)')
                   : selectedMoon.phase < 0.725
-                  ? (isAr ? '🌖 أحدب متناقص — القمر يتناقص' : '🌖 Waning gibbous — moon decreasing')
-                  : selectedMoon.phase < 0.967
-                  ? (isAr ? '🌘 هلال متناقص — آخر الشهر' : '🌘 Waning crescent — late month')
-                  : (isAr ? 'القمر في منتصف شهره القمري' : 'Moon in mid-lunar month')}
+                  ? (isAr ? '🌖 الأحدب المتناقص — القمر يتناقص تدريجيًا' : '🌖 Waning gibbous — moon decreasing')
+                  : selectedMoon.phase < 0.775
+                  ? (isAr ? '🌗 التربيع الثاني — نصف القمر مضيء' : '🌗 Last Quarter — half moon visible')
+                  : (isAr ? '🌘 هلال آخر الشهر — اقتراب المحاق' : '🌘 Waning crescent — approaching new moon')}
               </Text>
             </View>
 
@@ -446,16 +446,19 @@ export default function CalendarScreen() {
                 </Text>
               ) : (
                 lookupNewMoons.map((nm, i) => (
-                  <View key={i} style={[styles.nmRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', marginTop: 12, paddingTop: 12 }]}>
-                    <Text style={{ fontSize: 32, marginBottom: 4 }}>🌑</Text>
-                    <Text style={[styles.newMoonDate, { color: C.text, fontWeight: fw, textAlign: 'center' }]}>
+                  <View key={i} style={[styles.nmRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', marginTop: 14, paddingTop: 14 }]}>
+                    <Text style={{ fontSize: 36, marginBottom: 8 }}>🌑</Text>
+                    <Text style={[styles.nmDateTime, { color: C.text }]}>
                       {formatNewMoonDate(nm, locationUtcOffset)}
                     </Text>
-                    <Text style={[styles.moonSub, { color: C.textMuted, textAlign: 'center', marginTop: 4 }]}>
-                      {isAr
-                        ? `الساعة ${formatNewMoonLocal(nm, locationUtcOffset)} بالتوقيت المحلي`
-                        : `at ${formatNewMoonLocal(nm, locationUtcOffset)} local time`}
-                    </Text>
+                    <View style={[styles.nmTimeChip, { backgroundColor: C.tint + '22' }]}>
+                      <Ionicons name="time-outline" size={13} color={C.tint} />
+                      <Text style={[styles.nmTimeText, { color: C.tint }]}>
+                        {isAr
+                          ? `${formatNewMoonLocal(nm, locationUtcOffset)} (توقيت محلي)`
+                          : `${formatNewMoonLocal(nm, locationUtcOffset)} local time`}
+                      </Text>
+                    </View>
                   </View>
                 ))
               )}
@@ -606,4 +609,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nmRow: { alignItems: 'center', width: '100%' },
+  nmDateTime: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  nmTimeChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 2,
+  },
+  nmTimeText: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });
