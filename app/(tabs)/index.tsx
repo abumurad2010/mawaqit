@@ -190,6 +190,14 @@ export default function PrayerTimesScreen() {
   const hijri = gregorianToHijri(hijriBase.getFullYear(), hijriBase.getMonth() + 1, hijriBase.getDate());
   const hijriStr = formatHijriDate(hijri, lang);
 
+  // Eid detection (with hijriAdjustment already applied via hijriBase)
+  const isEidAlFitr = hijri.month === 10 && hijri.day === 1;
+  const isEidAlAdha = hijri.month === 12 && hijri.day === 10;
+  const isEid = isEidAlFitr || isEidAlAdha;
+  // Eid prayer time: ~30 min after sunrise (standard Islamic approximation)
+  const eidTime = (times && isEid) ? new Date(times.sunrise.getTime() + 30 * 60 * 1000) : null;
+  const eidLabel = isEidAlFitr ? tr.eidFitrPrayer : tr.eidAdhaPrayer;
+
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
@@ -411,6 +419,34 @@ export default function PrayerTimesScreen() {
                 <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
               </View>
 
+              {/* Eid prayer — inserted right after Sunrise on Eid days only */}
+              {key === 'sunrise' && isEid && eidTime && (
+                <View style={dividerStyle}>
+                  <View style={[styles.prayerRow, styles.naflRow]}>
+                    <View style={styles.prayerLeft}>
+                      <MaterialCommunityIcons
+                        name="star-crescent"
+                        size={18}
+                        color={eidTime < now ? C.textMuted : C.tint}
+                      />
+                      <Text numberOfLines={1} style={[
+                        styles.prayerName,
+                        { color: eidTime < now ? C.textMuted : C.tint, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: pFS, lineHeight: pLH }
+                      ]}>
+                        {eidLabel}
+                      </Text>
+                      <View style={[styles.naflBadge, { backgroundColor: C.tint + '22' }]}>
+                        <Text style={[styles.naflBadgeText, { color: C.tint }]}>{isAr ? 'عيد' : 'Eid'}</Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.prayerTime, { color: eidTime < now ? C.textMuted : C.tint, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
+                      {formatTimeAtOffset(eidTime, locationUtcOffset)}
+                    </Text>
+                  </View>
+                  <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
+                </View>
+              )}
+
               {/* Dhuha — inserted after Sunrise (only when enabled in settings) */}
               {key === 'sunrise' && showDhuha && dhuhaTime && (
                 <View style={dividerStyle}>
@@ -428,7 +464,7 @@ export default function PrayerTimesScreen() {
                         {isAr ? 'الضحى' : tr.dhuha}
                       </Text>
                       <View style={[styles.naflBadge, { backgroundColor: C.gold + '22' }]}>
-                        <Text style={[styles.naflBadgeText, { color: C.gold }]}>{isAr ? 'سنة' : 'Nafl'}</Text>
+                        <Text style={[styles.naflBadgeText, { color: C.gold }]}>{tr.nafl}</Text>
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: dhuhaTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
@@ -456,7 +492,7 @@ export default function PrayerTimesScreen() {
                         {tr.qiyam}
                       </Text>
                       <View style={[styles.naflBadge, { backgroundColor: C.gold + '22' }]}>
-                        <Text style={[styles.naflBadgeText, { color: C.gold }]}>{isAr ? 'سنة' : 'Nafl'}</Text>
+                        <Text style={[styles.naflBadgeText, { color: C.gold }]}>{tr.nafl}</Text>
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: tahajjudTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
