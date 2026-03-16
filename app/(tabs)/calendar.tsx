@@ -110,6 +110,16 @@ export default function CalendarScreen() {
   // New moons for the lookup modal (independent from view month)
   const lookupNewMoons = useMemo(() => getNewMoonsForMonth(lookupYear, lookupMonth), [lookupYear, lookupMonth]);
 
+  // If the selected date is a new moon day, find the exact UTC moment (for showing time in popup)
+  const selectedDateNewMoon = useMemo(() => {
+    const nms = getNewMoonsForMonth(selectedDate.y, selectedDate.m);
+    const offset = locationUtcOffset ?? 0;
+    return nms.find(nm => {
+      const local = new Date(nm.getTime() + offset * 3600 * 1000);
+      return local.getUTCDate() === selectedDate.d;
+    }) ?? null;
+  }, [selectedDate, locationUtcOffset]);
+
   // Calendar grid computation
   const calendarDays = useMemo(() => {
     const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
@@ -342,8 +352,8 @@ export default function CalendarScreen() {
 
       {/* Moon Detail Modal */}
       <Modal visible={showMoonDetail} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowMoonDetail(false)}>
+          <Pressable style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
             <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
               {isAr ? 'تفاصيل طور القمر' : 'Moon Phase Details'}
@@ -366,6 +376,11 @@ export default function CalendarScreen() {
                 value: isAr ? `اليوم ${selectedHijri.day}` : `Day ${selectedHijri.day}`,
                 icon: 'calendar-outline',
               },
+              ...(selectedDateNewMoon ? [{
+                label: isAr ? 'توقيت المحاق (محلي)' : 'New Moon Time (local)',
+                value: formatNewMoonLocal(selectedDateNewMoon, locationUtcOffset),
+                icon: 'time-outline',
+              }] : []),
               {
                 label: isAr ? 'المرحلة' : 'Phase Value',
                 value: `${(selectedMoon.phase * 100).toFixed(1)}%`,
@@ -376,8 +391,8 @@ export default function CalendarScreen() {
                 value: `${selectedDate.d}/${selectedDate.m}/${selectedDate.y}`,
                 icon: 'today-outline',
               },
-            ].map((item, i) => (
-              <View key={i} style={[styles.modalStatRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderBottomWidth: i < 3 ? StyleSheet.hairlineWidth : 0, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+            ].map((item, i, arr) => (
+              <View key={i} style={[styles.modalStatRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderBottomWidth: i < arr.length - 1 ? StyleSheet.hairlineWidth : 0, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
                 <Ionicons name={item.icon as any} size={18} color={C.tint} />
                 <Text style={[styles.modalStatLabel, { color: C.textMuted }]}>{item.label}</Text>
                 <Text style={[styles.modalStatValue, { color: C.text }]}>{item.value}</Text>
@@ -406,26 +421,26 @@ export default function CalendarScreen() {
             <Pressable onPress={() => setShowMoonDetail(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
               <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
             </Pressable>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* New Moon Lookup Modal */}
       <Modal visible={showNewMoonLookup} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]}>
+        <Pressable style={styles.modalOverlay} onPress={() => setShowNewMoonLookup(false)}>
+          <Pressable style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
             <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
-              {isAr ? '🌑 الهلال الجديد' : '🌑 New Moon Lookup'}
+              {isAr ? '🌑 البحث عن توقيت القمر الجديد' : '🌑 New Moon Lookup'}
             </Text>
 
-            {/* Independent month / year navigation */}
-            <View style={[styles.nmMonthNav, { flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+            {/* Independent month / year navigation — left always = previous, right always = next */}
+            <View style={[styles.nmMonthNav, { flexDirection: 'row' }]}>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); if (lookupMonth === 1) { setLookupYear(y => y - 1); setLookupMonth(12); } else setLookupMonth(m => m - 1); }}
                 style={styles.nmNavBtn}
               >
-                <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={22} color={C.tint} />
+                <Ionicons name="chevron-back" size={22} color={C.tint} />
               </Pressable>
               <Text style={[styles.nmMonthLabel, { color: C.text }]}>
                 {(isAr ? GREGORIAN_MONTHS_AR : GREGORIAN_MONTHS_EN)[lookupMonth - 1]} {lookupYear}
@@ -434,7 +449,7 @@ export default function CalendarScreen() {
                 onPress={() => { Haptics.selectionAsync(); if (lookupMonth === 12) { setLookupYear(y => y + 1); setLookupMonth(1); } else setLookupMonth(m => m + 1); }}
                 style={styles.nmNavBtn}
               >
-                <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={22} color={C.tint} />
+                <Ionicons name="chevron-forward" size={22} color={C.tint} />
               </Pressable>
             </View>
 
@@ -467,8 +482,8 @@ export default function CalendarScreen() {
             <Pressable onPress={() => setShowNewMoonLookup(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
               <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
             </Pressable>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       {/* Dua — fixed footer */}
