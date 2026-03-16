@@ -247,6 +247,7 @@ export default function CalendarScreen() {
                 onPress={() => {
                   Haptics.selectionAsync();
                   setSelectedDate({ y: viewYear, m: viewMonth, d: cell.day! });
+                  setShowMoonDetail(true);
                 }}
                 style={[
                   styles.cell,
@@ -274,27 +275,30 @@ export default function CalendarScreen() {
           })}
         </View>
 
+        {/* New Moon Lookup — compact row above prayer times */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowNewMoonLookup(true); }}
+            style={({ pressed }) => [styles.newMoonBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Text style={{ fontSize: 14 }}>🌑</Text>
+            <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+              {isAr ? 'بحث عن المحاق' : 'New Moon Lookup'}
+            </Text>
+            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
+          </Pressable>
+        </View>
+
         {/* Prayer times for selected date */}
         {location ? (
           <View style={[styles.prayerSection, { paddingHorizontal: 16 }]}>
-            <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <Text style={[styles.sectionTitle, {
-                color: C.textSecond,
-                fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
-                marginBottom: 0,
-              }]}>
-                {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
-              </Text>
-              <Pressable
-                onPress={() => { Haptics.selectionAsync(); setShowMoonDetail(true); }}
-                style={({ pressed }) => [styles.moonChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)', opacity: pressed ? 0.7 : 1 }]}
-              >
-                <Text style={{ fontSize: 16 }}>{selectedMoon.emoji}</Text>
-                <Text style={[styles.moonChipLabel, { color: C.textSecond }]}>
-                  {isAr ? selectedMoon.nameAr : selectedMoon.name}
-                </Text>
-              </Pressable>
-            </View>
+            <Text style={[styles.sectionTitle, {
+              color: C.textSecond,
+              fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+              textAlign: isAr ? 'right' : 'left',
+            }]}>
+              {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
+            </Text>
             <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}>
               {PRAYER_ORDER.map((key) => (
                 <React.Fragment key={key}>
@@ -333,19 +337,6 @@ export default function CalendarScreen() {
           </View>
         )}
 
-        {/* New Moon Lookup button */}
-        <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setShowNewMoonLookup(true); }}
-            style={({ pressed }) => [styles.newMoonBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text style={{ fontSize: 20 }}>🌑</Text>
-            <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'بحث عن الهلال الجديد' : 'New Moon Lookup'}
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
-          </Pressable>
-        </View>
 
       </ScrollView>
 
@@ -396,13 +387,17 @@ export default function CalendarScreen() {
             {/* Lunar significance */}
             <View style={[styles.significanceBox, { backgroundColor: C.tint + '14' }]}>
               <Text style={[styles.significanceText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-                {selectedMoon.illumination === 0 || selectedMoon.phase < 0.03 || selectedMoon.phase > 0.97
-                  ? (isAr ? '🌑 ليلة الهلال — بداية الشهر الهجري' : '🌑 New moon — beginning of the Hijri month')
-                  : selectedMoon.illumination > 95
-                  ? (isAr ? '🌕 البدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full moon — the White Nights (13–14–15)')
-                  : selectedMoon.phase < 0.3 && selectedMoon.phase > 0.05
-                  ? (isAr ? '🌒 هلال متصاعد — أول الشهر' : '🌒 Waxing crescent — early month')
-                  : selectedMoon.phase > 0.7
+                {selectedMoon.phase < 0.033 || selectedMoon.phase > 0.967
+                  ? (isAr ? '🌑 محاق — القمر غير مرئي، بداية الشهر الهجري' : '🌑 New Moon — invisible, marks the start of the Hijri month')
+                  : selectedMoon.phase < 0.275 && selectedMoon.phase > 0.033
+                  ? (isAr ? '🌒 هلال — أول ظهور القمر بعد المحاق' : '🌒 Crescent — first visible after new moon')
+                  : selectedMoon.phase < 0.475 && selectedMoon.phase > 0.225
+                  ? (isAr ? '🌔 أحدب متزايد — القمر يكتمل' : '🌔 Waxing gibbous — moon filling up')
+                  : selectedMoon.phase >= 0.475 && selectedMoon.phase < 0.525
+                  ? (isAr ? '🌕 بدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full Moon — the White Nights (13–14–15)')
+                  : selectedMoon.phase < 0.725
+                  ? (isAr ? '🌖 أحدب متناقص — القمر يتناقص' : '🌖 Waning gibbous — moon decreasing')
+                  : selectedMoon.phase < 0.967
                   ? (isAr ? '🌘 هلال متناقص — آخر الشهر' : '🌘 Waning crescent — late month')
                   : (isAr ? 'القمر في منتصف شهره القمري' : 'Moon in mid-lunar month')}
               </Text>
@@ -588,12 +583,12 @@ const styles = StyleSheet.create({
   },
   moonChipLabel: { fontSize: 12, fontWeight: '600' },
 
-  // New Moon Lookup button
+  // New Moon Lookup button (compact)
   newMoonBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
   },
-  newMoonBtnText: { flex: 1, fontSize: 15 },
+  newMoonBtnText: { flex: 1, fontSize: 12 },
 
   // New Moon Lookup modal elements
   nmMonthNav: {
