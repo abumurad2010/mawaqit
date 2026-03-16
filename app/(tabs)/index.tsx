@@ -190,7 +190,21 @@ export default function PrayerTimesScreen() {
   const hijri = gregorianToHijri(hijriBase.getFullYear(), hijriBase.getMonth() + 1, hijriBase.getDate());
   const hijriStr = formatHijriDate(hijri, lang);
 
-  // Eid detection (with hijriAdjustment already applied via hijriBase)
+  // ── Eid detection on the main screen ────────────────────────────────────────
+  //
+  // `hijriAdjustment` is applied to `hijriBase` above (line ~189) before the
+  // Gregorian→Hijri conversion, so `hijri` already reflects the user's adjusted
+  // calendar. No further adjustment is needed here.
+  //
+  // MAIN SCREEN vs SETTINGS: this screen shows the Eid prayer TIME ROW only on
+  // the actual Eid day (1 Shawwal / 10 Dhul Hijjah). The Settings screen uses a
+  // wider window (29 Ramadan–1 Shawwal and 8–10 Dhul Hijjah) so the user can
+  // configure the time in advance. These are intentionally different windows.
+  //
+  // DHUL HIJJAH: only day 10 triggers the prayer row here (Eid al-Adha is always
+  // on the 10th). Days 8–9 do not show the prayer time — they only open the
+  // settings configuration window.
+  //
   const isEidAlFitr = hijri.month === 10 && hijri.day === 1;
   const isEidAlAdha = hijri.month === 12 && hijri.day === 10;
   const isEid = isEidAlFitr || isEidAlAdha;

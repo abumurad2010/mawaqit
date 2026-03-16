@@ -67,17 +67,63 @@ export default function SettingsScreen() {
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [helpContent, setHelpContent] = useState<string | null>(null);
 
-  // ── Eid proximity (show Eid row only 2 days before / on Eid) ────────────────
+  // ── Eid proximity — visibility window for the Eid Prayer row ────────────────
+  //
+  // WHY we add days to the Gregorian date before converting:
+  //   `gregorianToHijri` is a pure astronomical calculation. The user's Hijri
+  //   adjustment (±1–2 days) reflects the official moon-sighting declaration in
+  //   their country. Adding `draftHijri` days to today's Gregorian date and then
+  //   re-converting gives us the Hijri date that the user's local calendar shows —
+  //   which is what we want for display and visibility decisions.
+  //
+  // WHY we use `draftHijri` (not the saved `hijriAdjustment`):
+  //   Settings are edited before being saved. Using the live draft means the Eid
+  //   row reacts immediately when the user changes their Hijri adjustment stepper,
+  //   giving real-time feedback. Once saved, `hijriAdjustment === draftHijri` so
+  //   there is no difference between the two on a fresh screen open.
+  //
+  // VISIBILITY WINDOW — dates that trigger the row:
+  //
+  //   Eid al-Fitr  (end of Ramadan)
+  //     • 29 Ramadan (month 9, day 29) — row opens 2 days early for 30-day months
+  //     • 30 Ramadan (month 9, day 30) — covers 30-day Ramadan; no-op in 29-day months
+  //     • 1 Shawwal  (month 10, day 1) — Eid day itself
+  //
+  //   Eid al-Adha  (Dhul Hijjah)
+  //     • 8 Dhul Hijjah (month 12, day 8)  — 2 days before, allows advance configuration
+  //     • 9 Dhul Hijjah (month 12, day 9)  — Day of Arafah, Eid tomorrow
+  //     • 10 Dhul Hijjah (month 12, day 10) — Eid day itself
+  //
+  // MONTH ROLLOVER: condition 1 (month 9, day >= 29) and condition 2 (month 10, day 1)
+  //   overlap-free because `gregorianToHijri` always produces a valid month/day pair —
+  //   when Ramadan ends on day 29 it jumps straight to month 10 day 1, which is caught
+  //   by condition 2. No gap exists whether Ramadan is 29 or 30 days.
+  //
+  // ADJUSTMENT EDGE CASE (point 2):
+  //   Raw Hijri = 28 Ramadan, draftHijri = +1
+  //   → Gregorian date += 1 → converted Hijri = 29 Ramadan → row visible ✅
+  //
   const todayHijri = (() => {
     const base = new Date();
-    base.setDate(base.getDate() + (hijriAdjustment ?? 0));
+    // Add the DRAFT adjustment (not the saved one) so the row reacts live in Settings
+    base.setDate(base.getDate() + draftHijri);
     return gregorianToHijri(base.getFullYear(), base.getMonth() + 1, base.getDate());
   })();
+
   const isNearEid = (
-    (todayHijri.month === 9  && todayHijri.day >= 29) ||   // 29–30 Ramadan → Eid al-Fitr approaching
-    (todayHijri.month === 10 && todayHijri.day === 1)  ||  // 1 Shawwal = Eid al-Fitr
-    (todayHijri.month === 12 && todayHijri.day >= 8  && todayHijri.day <= 10)  // 8–10 Dhul Hijjah → Eid al-Adha
+    (todayHijri.month === 9  && todayHijri.day >= 29) ||           // 29–30 Ramadan
+    (todayHijri.month === 10 && todayHijri.day === 1)  ||           // 1 Shawwal = Eid al-Fitr
+    (todayHijri.month === 12 && todayHijri.day >= 8 && todayHijri.day <= 10) // 8–10 Dhul Hijjah
   );
+
+  // ── Debug log — remove after testing ──────────────────────────────────────
+  console.log('[Eid Debug]', {
+    rawGregorian:   new Date().toISOString().slice(0, 10),
+    draftHijriAdj:  draftHijri,
+    adjustedHijri:  `${todayHijri.year}/${String(todayHijri.month).padStart(2,'0')}/${String(todayHijri.day).padStart(2,'0')}`,
+    isNearEid,
+  });
+  // ──────────────────────────────────────────────────────────────────────────
 
   // ── Help texts (all 15 languages) ───────────────────────────────
   type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid';
