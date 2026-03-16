@@ -62,7 +62,7 @@ interface AppSettings {
   fontSize: 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
   maghribAdjustment: number;
   hijriAdjustment: number;
-  firstAdhanOffset: 0 | 10 | 20 | 30;
+  firstAdhanOffset: number;
   prayerNotifications: Record<string, PrayerNotifType>;
   dhuhaTime: string;     // "HH:MM" exact local time for Dhuha
   tahajjudTime: string;  // "HH:MM" exact local time for Tahajjud/Qiyam

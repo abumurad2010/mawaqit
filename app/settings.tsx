@@ -49,7 +49,8 @@ export default function SettingsScreen() {
   );
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
-  const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<0 | 10 | 20 | 30>(firstAdhanOffset ?? 0);
+  const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<number>(firstAdhanOffset ?? 0);
+  const [showFirstAdhanPicker, setShowFirstAdhanPicker] = useState(false);
   const [draftDhuhaTime, setDraftDhuhaTime] = useState(dhuhaTime ?? '07:30');
   const [draftTahajjudTime, setDraftTahajjudTime] = useState(tahajjudTime ?? '03:00');
   const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
@@ -742,28 +743,23 @@ export default function SettingsScreen() {
           </View>
 
           {/* First Adhan */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-                {tr.firstAdhanSetting}
-              </Text>
+          <View style={[styles.compactRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+              {tr.firstAdhanSetting}
+            </Text>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
               <HelpBtn helpKey="firstAdhan" />
-            </View>
-            <View style={styles.chips}>
-              {([0, 10, 20, 30]).map((mins: 0 | 10 | 20 | 30) => (
-                <Chip
-                  key={mins}
-                  value={
-                    mins === 0
-                      ? (isAr ? 'إيقاف' : 'Off')
-                      : isAr
-                        ? `${mins} د قبل`
-                        : `${mins} min`
-                  }
-                  selected={draftFirstAdhanOffset === mins}
-                  onPress={() => setDraftFirstAdhanOffset(mins)}
-                />
-              ))}
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setShowFirstAdhanPicker(true); }}
+                style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+              >
+                <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                  {draftFirstAdhanOffset === 0
+                    ? (isAr ? 'إيقاف' : 'Off')
+                    : isAr ? `${draftFirstAdhanOffset} د قبل` : `${draftFirstAdhanOffset} min before`}
+                </Text>
+                <Ionicons name="chevron-down" size={13} color={C.tint} />
+              </Pressable>
             </View>
           </View>
         </View>
@@ -904,6 +900,43 @@ export default function SettingsScreen() {
               </Pressable>
             </View>
           </View>
+        </Modal>
+
+        {/* First Adhan Picker Modal */}
+        <Modal visible={showFirstAdhanPicker} transparent animationType="fade">
+          <Pressable style={styles.dropdownOverlay} onPress={() => setShowFirstAdhanPicker(false)}>
+            <View style={[styles.dropdownSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+              <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+                {isAr ? 'الأذان الأول — التنبيه المبكر' : 'Early Adhan Reminder'}
+              </Text>
+              {([0, 5, 10, 15, 20, 25, 30] as const).map((mins, idx, arr) => {
+                const isSelected = draftFirstAdhanOffset === mins;
+                const isLast = idx === arr.length - 1;
+                return (
+                  <Pressable
+                    key={mins}
+                    onPress={() => { Haptics.selectionAsync(); setDraftFirstAdhanOffset(mins); setShowFirstAdhanPicker(false); }}
+                    style={[
+                      styles.dropdownOption,
+                      {
+                        borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+                        borderBottomColor: C.separator,
+                        backgroundColor: isSelected ? C.tint + '14' : 'transparent',
+                        flexDirection: isRtl ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                      {mins === 0
+                        ? (isAr ? 'إيقاف — لا أذان أول' : 'Off — no early reminder')
+                        : isAr ? `${mins} دقائق قبل الأذان` : `${mins} minutes before the Adhan`}
+                    </Text>
+                    {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
         </Modal>
 
         {/* Notifications */}
@@ -1226,6 +1259,32 @@ const styles = StyleSheet.create({
     borderRadius: 10, borderWidth: 1,
   },
   timeBtnText: { fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  dropdownBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 11, paddingVertical: 6,
+    borderRadius: 10, borderWidth: 1,
+  },
+  dropdownBtnText: { fontSize: 13, fontWeight: '600' },
+  dropdownOverlay: {
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 28,
+  },
+  dropdownSheet: {
+    width: '100%', borderRadius: 16, borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25, shadowRadius: 16, elevation: 10,
+  },
+  dropdownTitle: {
+    fontSize: 13, fontWeight: '700', textAlign: 'center',
+    paddingVertical: 12, paddingHorizontal: 16,
+    letterSpacing: 0.3,
+  },
+  dropdownOption: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 18, paddingVertical: 13,
+  },
+  dropdownOptionText: { fontSize: 14, flex: 1 },
   rollerOverlay: {
     flex: 1, justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.55)',

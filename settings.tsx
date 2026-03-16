@@ -50,7 +50,7 @@ export default function SettingsScreen() {
   );
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
-  const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<0 | 10 | 20 | 30>(firstAdhanOffset ?? 0);
+  const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<number>(firstAdhanOffset ?? 0);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -603,7 +603,7 @@ export default function SettingsScreen() {
               {tr.firstAdhanSetting}
             </Text>
             <View style={styles.chips}>
-              {([0, 10, 20, 30]).map((mins: 0 | 10 | 20 | 30) => (
+              {([0, 5, 10, 15, 20, 25, 30]).map((mins: number) => (
                 <Chip
                   key={mins}
                   value={

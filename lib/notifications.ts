@@ -42,7 +42,7 @@ export async function schedulePrayerNotifications(params: {
   maghribOffset: number;
   prayerNotifications: Record<string, PrayerNotifConfig>;
   lang: Lang;
-  firstAdhanOffset?: 0 | 10 | 20 | 30;
+  firstAdhanOffset?: number;
   countryCode?: string | null;
   locationUtcOffset?: number | null;
   daysAhead?: number;
