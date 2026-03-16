@@ -1,9 +1,9 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
-import React, { useEffect, useRef } from 'react';
-import { AppState, AppStateStatus, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/amiri';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -25,26 +25,11 @@ if (Platform.OS !== 'web') {
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const router = useRouter();
-  const appState = useRef<AppStateStatus>(AppState.currentState);
-
   useEffect(() => {
     if (Platform.OS === 'web' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   }, []);
-
-  // Always return to the timings (index) tab when the app comes to the foreground
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
-      if (appState.current.match(/inactive|background/) && next === 'active') {
-        router.replace('/(tabs)/');
-      }
-      appState.current = next;
-    });
-    return () => sub.remove();
-  }, [router]);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
