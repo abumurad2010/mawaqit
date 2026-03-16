@@ -5,7 +5,7 @@ import PageBackground from '@/components/PageBackground';
 import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Platform,
+  View, Text, StyleSheet, Pressable, ScrollView, Platform, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,10 @@ import {
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  getMoonPhase, getNewMoonsForMonth, moonEmojiForDay,
+  formatNewMoonDate, formatNewMoonLocal, type MoonPhaseInfo,
+} from '@/lib/moon-phases';
 
 
 const PRAYER_ICONS: Record<string, string> = {
@@ -68,6 +72,7 @@ export default function CalendarScreen() {
     d: today.getDate(),
   });
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesType | null>(null);
+  const [showMoonDetail, setShowMoonDetail] = useState(false);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -87,19 +92,28 @@ export default function CalendarScreen() {
     setPrayerTimes(times);
   }, [selectedDate, location, calcMethod, asrMethod, maghribOffset]);
 
+  // Moon phase for the selected date
+  const selectedMoon = useMemo<MoonPhaseInfo>(() => {
+    const date = new Date(Date.UTC(selectedDate.y, selectedDate.m - 1, selectedDate.d, 12, 0, 0));
+    return getMoonPhase(date);
+  }, [selectedDate]);
+
+  // New moons for the current view month
+  const newMoons = useMemo(() => getNewMoonsForMonth(viewYear, viewMonth), [viewYear, viewMonth]);
+
   // Calendar grid computation
   const calendarDays = useMemo(() => {
     const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
     const daysInMonth = getDaysInGregorianMonth(viewYear, viewMonth);
-    const cells: Array<{ day: number | null; hijri: { d: number; m: number } | null }> = [];
+    const cells: Array<{ day: number | null; hijri: { d: number; m: number } | null; moonEmoji: string }> = [];
 
     for (let i = 0; i < firstDay; i++) {
-      cells.push({ day: null, hijri: null });
+      cells.push({ day: null, hijri: null, moonEmoji: '' });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const shifted = new Date(viewYear, viewMonth - 1, d + (hijriAdjustment ?? 0));
       const h = gregorianToHijri(shifted.getFullYear(), shifted.getMonth() + 1, shifted.getDate());
-      cells.push({ day: d, hijri: { d: h.day, m: h.month } });
+      cells.push({ day: d, hijri: { d: h.day, m: h.month }, moonEmoji: moonEmojiForDay(viewYear, viewMonth, d) });
     }
     return cells;
   }, [viewYear, viewMonth, hijriAdjustment]);
@@ -245,6 +259,7 @@ export default function CalendarScreen() {
                     {isAr ? toArabicIndic(cell.hijri.d) : cell.hijri.d}
                   </Text>
                 )}
+                <Text style={styles.cellMoon}>{cell.moonEmoji}</Text>
               </Pressable>
             );
           })}
@@ -298,7 +313,135 @@ export default function CalendarScreen() {
           </View>
         )}
 
+        {/* Moon Phase for selected date */}
+        <View style={[styles.moonSection, { paddingHorizontal: 16 }]}>
+          <Text style={[styles.sectionTitle, {
+            color: C.textSecond,
+            fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+            textAlign: isAr ? 'right' : 'left',
+          }]}>
+            {isAr ? 'طور القمر' : 'Moon Phase'}
+          </Text>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowMoonDetail(true); }}
+            style={[styles.moonCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}
+          >
+            <View style={styles.moonCardMain}>
+              <Text style={styles.moonEmojiBig}>{selectedMoon.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.moonName, { color: C.text, fontWeight: fw }]}>
+                  {isAr ? selectedMoon.nameAr : selectedMoon.name}
+                </Text>
+                <Text style={[styles.moonSub, { color: C.textMuted }]}>
+                  {isAr
+                    ? `يوم ${Math.floor(selectedMoon.ageInDays)} من الشهر القمري · ${selectedMoon.illumination}% إضاءة`
+                    : `Day ${Math.floor(selectedMoon.ageInDays)} of cycle · ${selectedMoon.illumination}% lit`}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+            </View>
+          </Pressable>
+        </View>
+
+        {/* New Moon for view month */}
+        <View style={[styles.moonSection, { paddingHorizontal: 16 }]}>
+          <Text style={[styles.sectionTitle, {
+            color: C.textSecond,
+            fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
+            textAlign: isAr ? 'right' : 'left',
+          }]}>
+            {isAr ? '🌑 الهلال الجديد' : '🌑 New Moon'}
+          </Text>
+          <View style={[styles.moonCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}>
+            {newMoons.length === 0 ? (
+              <Text style={[styles.moonSub, { color: C.textMuted, textAlign: 'center', padding: 12 }]}>
+                {isAr ? 'لا يوجد هلال جديد هذا الشهر' : 'No new moon in this month'}
+              </Text>
+            ) : (
+              newMoons.map((nm, i) => (
+                <View key={i} style={[styles.newMoonRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)', marginTop: 8, paddingTop: 8 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.newMoonDate, { color: C.text, fontWeight: fw }]}>
+                      {formatNewMoonDate(nm, locationUtcOffset)}
+                    </Text>
+                    <Text style={[styles.moonSub, { color: C.textMuted }]}>
+                      {isAr ? `الساعة ${formatNewMoonLocal(nm, locationUtcOffset)} بالتوقيت المحلي` : `at ${formatNewMoonLocal(nm, locationUtcOffset)} local time`}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 24 }}>🌑</Text>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+
       </ScrollView>
+
+      {/* Moon Detail Modal */}
+      <Modal visible={showMoonDetail} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+              {isAr ? 'تفاصيل طور القمر' : 'Moon Phase Details'}
+            </Text>
+            <Text style={styles.modalEmoji}>{selectedMoon.emoji}</Text>
+            <Text style={[styles.modalPhaseName, { color: C.text }]}>
+              {isAr ? selectedMoon.nameAr : selectedMoon.name}
+            </Text>
+            <View style={[styles.modalDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)' }]} />
+
+            {/* Stats */}
+            {[
+              {
+                label: isAr ? 'الإضاءة' : 'Illumination',
+                value: `${selectedMoon.illumination}%`,
+                icon: 'sunny-outline',
+              },
+              {
+                label: isAr ? 'عمر القمر' : 'Lunar Age',
+                value: isAr ? `${Math.floor(selectedMoon.ageInDays)} يوم` : `${Math.floor(selectedMoon.ageInDays)} days`,
+                icon: 'calendar-outline',
+              },
+              {
+                label: isAr ? 'المرحلة' : 'Phase Value',
+                value: `${(selectedMoon.phase * 100).toFixed(1)}%`,
+                icon: 'analytics-outline',
+              },
+              {
+                label: isAr ? 'التاريخ المختار' : 'Selected Date',
+                value: `${selectedDate.d}/${selectedDate.m}/${selectedDate.y}`,
+                icon: 'today-outline',
+              },
+            ].map((item, i) => (
+              <View key={i} style={[styles.modalStatRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderBottomWidth: i < 3 ? StyleSheet.hairlineWidth : 0, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+                <Ionicons name={item.icon as any} size={18} color={C.tint} />
+                <Text style={[styles.modalStatLabel, { color: C.textMuted }]}>{item.label}</Text>
+                <Text style={[styles.modalStatValue, { color: C.text }]}>{item.value}</Text>
+              </View>
+            ))}
+
+            {/* Lunar significance */}
+            <View style={[styles.significanceBox, { backgroundColor: C.tint + '14' }]}>
+              <Text style={[styles.significanceText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+                {selectedMoon.illumination === 0 || selectedMoon.phase < 0.03 || selectedMoon.phase > 0.97
+                  ? (isAr ? '🌑 ليلة الهلال — بداية الشهر الهجري' : '🌑 New moon — beginning of the Hijri month')
+                  : selectedMoon.illumination > 95
+                  ? (isAr ? '🌕 البدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full moon — the White Nights (13–14–15)')
+                  : selectedMoon.phase < 0.3 && selectedMoon.phase > 0.05
+                  ? (isAr ? '🌒 هلال متصاعد — أول الشهر' : '🌒 Waxing crescent — early month')
+                  : selectedMoon.phase > 0.7
+                  ? (isAr ? '🌘 هلال متناقص — آخر الشهر' : '🌘 Waning crescent — late month')
+                  : (isAr ? 'القمر في منتصف شهره القمري' : 'Moon in mid-lunar month')}
+              </Text>
+            </View>
+
+            <Pressable onPress={() => setShowMoonDetail(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
+              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Dua — fixed footer */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
@@ -365,4 +508,45 @@ const styles = StyleSheet.create({
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
   dua: { fontSize: 13, textAlign: 'center' },
   freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
+  cellMoon: { fontSize: 7, marginTop: 1, lineHeight: 9 },
+
+  // Moon phase section
+  moonSection: { gap: 6, marginBottom: 16 },
+  moonCard: { borderRadius: 16, overflow: 'hidden', paddingHorizontal: 16, paddingVertical: 12 },
+  moonCardMain: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  moonEmojiBig: { fontSize: 32 },
+  moonName: { fontSize: 15 },
+  moonSub: { fontSize: 12, marginTop: 2 },
+  newMoonRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  newMoonDate: { fontSize: 15 },
+
+  // Moon detail modal
+  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
+  modalSheet: {
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingTop: 12, paddingHorizontal: 24, paddingBottom: 40,
+    gap: 0,
+  },
+  modalHandle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(120,120,128,0.3)',
+    alignSelf: 'center', marginBottom: 16,
+  },
+  modalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
+  modalEmoji: { fontSize: 56, textAlign: 'center', marginBottom: 8 },
+  modalPhaseName: { fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 16 },
+  modalDivider: { height: StyleSheet.hairlineWidth, marginBottom: 8 },
+  modalStatRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12,
+  },
+  modalStatLabel: { flex: 1, fontSize: 14 },
+  modalStatValue: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  significanceBox: { borderRadius: 12, padding: 14, marginTop: 12, marginBottom: 4 },
+  significanceText: { fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  modalClose: {
+    borderRadius: 16, paddingVertical: 14,
+    alignItems: 'center', marginTop: 12,
+  },
+  modalCloseText: { fontSize: 16, fontWeight: '700' },
 });

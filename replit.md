@@ -17,6 +17,9 @@ A full-featured, free Islamic app with GPS-based prayer times, Qibla compass, fu
 - After-midnight fix: prayer times correctly show tomorrow's Fajr for UTC+ timezones
 - Adhan notifications with full or abbreviated call
 - Plays full or abbreviated Adhan audio on notification arrival (foreground + background)
+- Dhuha prayer shown (gold, "Nafl" badge) after Sunrise with exact time configurable via time-roller
+- Tahajjud/Qiyam shown (gold, "Nafl" badge) after Isha with exact time configurable via time-roller
+- Dhuha and Tahajjud notifications fire at the user-selected exact time each day
 
 ### Qibla Compass
 - Live compass using device magnetometer + GPS
@@ -47,6 +50,9 @@ A full-featured, free Islamic app with GPS-based prayer times, Qibla compass, fu
 - Dual Gregorian/Hijri calendar view
 - Tap any day to see prayer times for that date
 - Accurate Hijri conversion via `lib/hijri.ts`
+- Moon phase emoji displayed on every calendar day cell
+- Tap the Moon Phase card to see a detailed modal: phase name (EN/AR), illumination %, lunar age, and Islamic significance
+- New Moon date and local time shown for the current view month — location-aware UTC offset
 
 ### Bookmarks
 - Two bookmark types: Mushaf (page-based) and Transliteration (surah-based)

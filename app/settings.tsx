@@ -11,7 +11,8 @@ import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import type { AccessibilityTheme } from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import type { PrayerNotifConfig, TahajjudPortion } from '@/contexts/AppContext';
+import type { PrayerNotifConfig } from '@/contexts/AppContext';
+import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
@@ -27,7 +28,7 @@ export default function SettingsScreen() {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
-    dhuhaOffsetMinutes, tahajjudPortion,
+    dhuhaTime, tahajjudTime,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -49,8 +50,10 @@ export default function SettingsScreen() {
   const [draftSecondLang, setDraftSecondLang] = useState<SecondLang>(secondLang ?? 'auto');
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
   const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<0 | 10 | 20 | 30>(firstAdhanOffset ?? 0);
-  const [draftDhuhaOffset, setDraftDhuhaOffset] = useState<15 | 20 | 30 | 45 | 60>(dhuhaOffsetMinutes ?? 20);
-  const [draftTahajjudPortion, setDraftTahajjudPortion] = useState<TahajjudPortion>(tahajjudPortion ?? 'last_third');
+  const [draftDhuhaTime, setDraftDhuhaTime] = useState(dhuhaTime ?? '07:30');
+  const [draftTahajjudTime, setDraftTahajjudTime] = useState(tahajjudTime ?? '03:00');
+  const [showDhuhaRoller, setShowDhuhaRoller] = useState(false);
+  const [showTahajjudRoller, setShowTahajjudRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -293,8 +296,8 @@ export default function SettingsScreen() {
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
       firstAdhanOffset: draftFirstAdhanOffset,
-      dhuhaOffsetMinutes: draftDhuhaOffset,
-      tahajjudPortion: draftTahajjudPortion,
+      dhuhaTime: draftDhuhaTime,
+      tahajjudTime: draftTahajjudTime,
     });
     router.back();
   };
@@ -829,53 +832,91 @@ export default function SettingsScreen() {
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {/* Dhuha */}
-          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-              {isAr ? 'وقت الضحى — بعد الشروق بـ' : 'Dhuha — minutes after sunrise'}
-            </Text>
-            <View style={styles.chips}>
-              {([15, 20, 30, 45, 60] as const).map(mins => (
-                <Chip
-                  key={mins}
-                  value={isAr ? `${mins} د` : `${mins} min`}
-                  selected={draftDhuhaOffset === mins}
-                  onPress={() => setDraftDhuhaOffset(mins)}
-                />
-              ))}
+          <View style={[styles.settingRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'وقت الضحى' : 'Dhuha Time'}
+              </Text>
+              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
+                {isAr ? 'الضحى بعد الشروق' : 'After sunrise'}
+              </Text>
             </View>
-            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-              {isAr
-                ? 'الموصى به: ٢٠ دقيقة بعد الشروق — ويمتد وقتها حتى ١٥ دقيقة قبل الظهر'
-                : 'Recommended: 20 min after sunrise — valid until ~15 min before Dhuhr'}
-            </Text>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowDhuhaRoller(true); }}
+              style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+            >
+              <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftDhuhaTime}</Text>
+              <Ionicons name="time-outline" size={14} color={C.tint} />
+            </Pressable>
           </View>
 
           {/* Tahajjud */}
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-              {isAr ? 'وقت التهجد — جزء الليل' : 'Tahajjud — portion of the night'}
-            </Text>
-            <View style={styles.chips}>
-              {([
-                { value: 'last_third' as TahajjudPortion, ar: 'الثلث الأخير', en: 'Last Third' },
-                { value: 'last_quarter' as TahajjudPortion, ar: 'الربع الأخير', en: 'Last Quarter' },
-                { value: 'last_sixth' as TahajjudPortion, ar: 'السدس الأخير', en: 'Last Sixth' },
-              ]).map(opt => (
-                <Chip
-                  key={opt.value}
-                  value={isAr ? opt.ar : opt.en}
-                  selected={draftTahajjudPortion === opt.value}
-                  onPress={() => setDraftTahajjudPortion(opt.value)}
-                />
-              ))}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'وقت التهجد' : 'Tahajjud Time'}
+              </Text>
+              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
+                {isAr ? 'الثلث الأخير من الليل' : 'Last third of night'}
+              </Text>
             </View>
-            <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
-              {isAr
-                ? 'الموصى به: الثلث الأخير — أفضل وقت للتهجد وفق السنة النبوية'
-                : 'Recommended: Last Third — the best time for Tahajjud per the Sunnah'}
-            </Text>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowTahajjudRoller(true); }}
+              style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+            >
+              <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftTahajjudTime}</Text>
+              <Ionicons name="time-outline" size={14} color={C.tint} />
+            </Pressable>
           </View>
         </View>
+
+        {/* Dhuha Time Roller Modal */}
+        <Modal visible={showDhuhaRoller} transparent animationType="slide">
+          <View style={styles.rollerOverlay}>
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+                {isAr ? 'حدد وقت الضحى' : 'Set Dhuha Time'}
+              </Text>
+              <TimeRoller
+                value={draftDhuhaTime}
+                onChange={setDraftDhuhaTime}
+                tintColor={C.tint}
+                textColor={C.text}
+                bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
+              />
+              <Text style={[styles.rollerHint, { color: C.textMuted }]}>
+                {isAr ? 'يُصلَّى الضحى بعد ارتفاع الشمس وقبل الظهر' : 'Prayed after sunrise and before Dhuhr'}
+              </Text>
+              <Pressable onPress={() => setShowDhuhaRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Tahajjud Time Roller Modal */}
+        <Modal visible={showTahajjudRoller} transparent animationType="slide">
+          <View style={styles.rollerOverlay}>
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+                {isAr ? 'حدد وقت التهجد' : 'Set Tahajjud Time'}
+              </Text>
+              <TimeRoller
+                value={draftTahajjudTime}
+                onChange={setDraftTahajjudTime}
+                tintColor={C.tint}
+                textColor={C.text}
+                bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
+              />
+              <Text style={[styles.rollerHint, { color: C.textMuted }]}>
+                {isAr ? 'الثلث الأخير من الليل: من نحو ٢ – ٤ صباحاً' : 'Last third of night: approx 2–4 AM'}
+              </Text>
+              <Pressable onPress={() => setShowTahajjudRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
         {/* Notifications */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
@@ -1173,4 +1214,26 @@ const styles = StyleSheet.create({
   },
   accessThemeLabel: { fontSize: 13, marginBottom: 2 },
   accessThemeDesc: { fontSize: 11, lineHeight: 15 },
+  timeBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 12, borderWidth: 1,
+  },
+  timeBtnText: { fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  rollerOverlay: {
+    flex: 1, justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  rollerSheet: {
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingTop: 20, paddingHorizontal: 24, paddingBottom: 40,
+    gap: 18,
+  },
+  rollerTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  rollerHint: { fontSize: 12, textAlign: 'center', opacity: 0.7 },
+  rollerDone: {
+    borderRadius: 16, paddingVertical: 14,
+    alignItems: 'center',
+  },
+  rollerDoneText: { fontSize: 16, fontWeight: '700' },
 });

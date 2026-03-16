@@ -24,8 +24,15 @@ import {
   calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
-import { getDhuhaTime, getTahajjudTime } from '@/lib/notifications';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
+
+/** Parse "HH:MM" → Date on today at that exact local time */
+function parseHHMM(hhmm: string): Date {
+  const [hh, mm] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(isNaN(hh) ? 7 : hh, isNaN(mm) ? 30 : mm, 0, 0);
+  return d;
+}
 
 
 const PRAYER_ICONS: Record<string, string> = {
@@ -43,7 +50,7 @@ export default function PrayerTimesScreen() {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
-    dhuhaOffsetMinutes, tahajjudPortion,
+    dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -157,10 +164,10 @@ export default function PrayerTimesScreen() {
     return map[key];
   };
 
-  // Nafl prayer times derived from fard times
-  const dhuhaTime = times ? getDhuhaTime(times.sunrise, dhuhaOffsetMinutes ?? 20) : null;
-  const tahajjudTime = (times && tomorrowFajr)
-    ? getTahajjudTime(times.isha, tomorrowFajr, tahajjudPortion ?? 'last_third')
+  // Nafl prayer times — user-set exact daily alarms
+  const dhuhaTime = times ? parseHHMM(dhuhaTimeSetting ?? '07:30') : null;
+  const tahajjudTime = (times)
+    ? parseHHMM(tahajjudTimeSetting ?? '03:00')
     : null;
 
   const isNext = (key: keyof PrayerTimesType) => nextPrayer?.name === key;
