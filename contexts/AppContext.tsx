@@ -68,6 +68,7 @@ interface AppSettings {
   tahajjudTime: string;  // "HH:MM" exact local time for Tahajjud/Qiyam
   showDhuha: boolean;    // whether to show Dhuha row on timings tab
   showQiyam: boolean;    // whether to show Qiyam row on timings tab
+  eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
 }
 
 interface AppContextValue extends AppSettings {
@@ -111,6 +112,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   tahajjudTime: '03:00',
   showDhuha: true,
   showQiyam: true,
+  eidPrayerTime: '07:30',
 };
 
 const VALID_CALC_METHODS = [

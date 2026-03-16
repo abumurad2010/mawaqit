@@ -28,7 +28,7 @@ export default function SettingsScreen() {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
-    dhuhaTime, tahajjudTime, showDhuha, showQiyam,
+    dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -54,8 +54,10 @@ export default function SettingsScreen() {
   const [draftTahajjudTime, setDraftTahajjudTime] = useState(tahajjudTime ?? '03:00');
   const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
   const [draftShowQiyam, setDraftShowQiyam] = useState(showQiyam !== false);
+  const [draftEidPrayerTime, setDraftEidPrayerTime] = useState(eidPrayerTime ?? '07:30');
   const [showDhuhaRoller, setShowDhuhaRoller] = useState(false);
   const [showTahajjudRoller, setShowTahajjudRoller] = useState(false);
+  const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -302,6 +304,7 @@ export default function SettingsScreen() {
       tahajjudTime: draftTahajjudTime,
       showDhuha: draftShowDhuha,
       showQiyam: draftShowQiyam,
+      eidPrayerTime: draftEidPrayerTime,
     });
     router.back();
   };
@@ -900,7 +903,7 @@ export default function SettingsScreen() {
           {/* Qiyam time picker — disabled when hidden */}
           <View style={[
             styles.settingRow,
-            { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' },
+            { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' },
             !draftShowQiyam && { opacity: 0.38 },
           ]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
             <View style={{ flex: 1 }}>
@@ -916,6 +919,25 @@ export default function SettingsScreen() {
               style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
             >
               <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftTahajjudTime}</Text>
+              <Ionicons name="time-outline" size={14} color={C.tint} />
+            </Pressable>
+          </View>
+
+          {/* ── Eid Prayer block ── */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'وقت صلاة العيد' : 'Eid Prayer Time'}
+              </Text>
+              <Text style={[styles.explain, { color: C.textMuted, paddingHorizontal: 0, paddingBottom: 0, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }]}>
+                {isAr ? 'يظهر في ١ شوال و١٠ ذو الحجة فقط' : 'Shown on 1 Shawwal & 10 Dhul Hijjah only'}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowEidRoller(true); }}
+              style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+            >
+              <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftEidPrayerTime}</Text>
               <Ionicons name="time-outline" size={14} color={C.tint} />
             </Pressable>
           </View>
@@ -964,6 +986,30 @@ export default function SettingsScreen() {
                 {isAr ? 'الثلث الأخير من الليل: من نحو ٢ – ٤ صباحاً' : 'Last third of night: approx 2–4 AM'}
               </Text>
               <Pressable onPress={() => setShowTahajjudRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Eid Prayer Time Roller Modal */}
+        <Modal visible={showEidRoller} transparent animationType="slide">
+          <View style={styles.rollerOverlay}>
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+                {isAr ? 'حدد وقت صلاة العيد' : 'Set Eid Prayer Time'}
+              </Text>
+              <TimeRoller
+                value={draftEidPrayerTime}
+                onChange={setDraftEidPrayerTime}
+                tintColor={C.tint}
+                textColor={C.text}
+                bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
+              />
+              <Text style={[styles.rollerHint, { color: C.textMuted }]}>
+                {isAr ? 'أدخل الوقت الرسمي لصلاة العيد في مدينتك' : 'Enter the official Eid prayer time for your city or mosque'}
+              </Text>
+              <Pressable onPress={() => setShowEidRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
             </View>

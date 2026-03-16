@@ -51,7 +51,7 @@ export default function PrayerTimesScreen() {
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
-    showDhuha, showQiyam,
+    showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -194,8 +194,8 @@ export default function PrayerTimesScreen() {
   const isEidAlFitr = hijri.month === 10 && hijri.day === 1;
   const isEidAlAdha = hijri.month === 12 && hijri.day === 10;
   const isEid = isEidAlFitr || isEidAlAdha;
-  // Eid prayer time: ~30 min after sunrise (standard Islamic approximation)
-  const eidTime = (times && isEid) ? new Date(times.sunrise.getTime() + 30 * 60 * 1000) : null;
+  // Eid prayer time: user-configured official time for their city/mosque
+  const eidTime = (times && isEid) ? parseHHMM(eidPrayerTimeSetting ?? '07:30') : null;
   const eidLabel = isEidAlFitr ? tr.eidFitrPrayer : tr.eidAdhaPrayer;
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
