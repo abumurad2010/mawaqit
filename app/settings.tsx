@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Switch,
 } from 'react-native';
-import { SERIF_EN } from '@/constants/typography';
+import { gregorianToHijri } from '@/lib/hijri';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,9 @@ import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import type { SecondLang } from '@/contexts/AppContext';
+
+const SANS = 'Inter_400Regular';
+const SANS_MD = 'Inter_500Medium';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -63,6 +66,18 @@ export default function SettingsScreen() {
   const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [helpContent, setHelpContent] = useState<string | null>(null);
+
+  // ── Eid proximity (show Eid row only 2 days before / on Eid) ────────────────
+  const todayHijri = (() => {
+    const base = new Date();
+    base.setDate(base.getDate() + (hijriAdjustment ?? 0));
+    return gregorianToHijri(base.getFullYear(), base.getMonth() + 1, base.getDate());
+  })();
+  const isNearEid = (
+    (todayHijri.month === 9  && todayHijri.day >= 29) ||   // 29–30 Ramadan → Eid al-Fitr approaching
+    (todayHijri.month === 10 && todayHijri.day === 1)  ||  // 1 Shawwal = Eid al-Fitr
+    (todayHijri.month === 12 && todayHijri.day >= 8  && todayHijri.day <= 10)  // 8–10 Dhul Hijjah → Eid al-Adha
+  );
 
   // ── Help texts (all 15 languages) ───────────────────────────────
   type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications';
@@ -355,7 +370,7 @@ export default function SettingsScreen() {
       styles.settingRow,
       { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' }
     ]}>
-      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flexShrink: 1 }]}>
+      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flexShrink: 1 }]}>
         {label}
       </Text>
       <View style={[styles.rightSide, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
@@ -390,7 +405,7 @@ export default function SettingsScreen() {
         >
           <Ionicons name="close" size={20} color={C.textSecond} />
         </Pressable>
-        <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+        <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
           {tr.settings}
         </Text>
         <View style={styles.headerActions}>
@@ -417,7 +432,7 @@ export default function SettingsScreen() {
 
         {/* Language */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {tr.language}
           </Text>
           <HelpBtn helpKey="language" />
@@ -431,7 +446,7 @@ export default function SettingsScreen() {
             ]}
           >
             <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'العربية' : tr.arabic} ↔ {draftSecondLang === 'auto'
                   ? `${tr.auto} · ${LANG_META[resolvedSecondLang].native}`
                   : LANG_META[draftSecondLang].native}
@@ -450,7 +465,7 @@ export default function SettingsScreen() {
         >
           <View style={{ flex: 1, backgroundColor: C.background }}>
             <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
                 {tr.language}
               </Text>
               <Pressable
@@ -498,7 +513,7 @@ export default function SettingsScreen() {
 
         {/* Accessibility */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'إمكانية الوصول' : 'Accessibility'}
           </Text>
           <HelpBtn helpKey="accessibility" />
@@ -513,6 +528,7 @@ export default function SettingsScreen() {
               { key: 'blossom' as AccessibilityTheme,       label: isAr ? 'الوردي'        : 'Blossom',        swatchLight: '#B83255', swatchDark: '#FF7AA0' },
               { key: 'ocean' as AccessibilityTheme,         label: isAr ? 'المحيط'        : 'Ocean',          swatchLight: '#0B6FAA', swatchDark: '#4FC3F7' },
               { key: 'violet' as AccessibilityTheme,        label: isAr ? 'البنفسجي'      : 'Violet',         swatchLight: '#6B3FA0', swatchDark: '#C084FC' },
+              { key: 'gold' as AccessibilityTheme,          label: isAr ? 'الذهبي'        : 'Gold',           swatchLight: '#8B6800', swatchDark: '#FFD60A' },
             ] as const).map((theme) => {
               const isSelected = draftAccessibilityTheme === theme.key;
               const swatch = isDark ? theme.swatchDark : theme.swatchLight;
@@ -537,11 +553,11 @@ export default function SettingsScreen() {
                   ]}
                 >
                   <View style={[styles.accessSwatch, { backgroundColor: swatch }]}>
-                    {isSelected && <Ionicons name="checkmark" size={12} color={checkColor} />}
+                    {isSelected && <Ionicons name="checkmark" size={10} color={checkColor} />}
                   </View>
                   <Text style={[
                     styles.accessThemeLabel,
-                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }
+                    { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }
                   ]} numberOfLines={1}>
                     {theme.label}
                   </Text>
@@ -553,14 +569,14 @@ export default function SettingsScreen() {
 
         {/* Hijri date adjustment */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
           </Text>
           <HelpBtn helpKey="hijri" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
               {tr.hijriAdjustment}
             </Text>
             <View style={[styles.stepperRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
@@ -581,7 +597,7 @@ export default function SettingsScreen() {
                   <Ionicons name="add" size={18} color={C.tint} />
                 </Pressable>
               </View>
-              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+              <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
                 {isAr ? 'يوم' : draftHijri === 0 ? 'no offset' : Math.abs(draftHijri) === 1 ? 'day' : 'days'}
               </Text>
               {draftHijri !== 0 && (
@@ -597,7 +613,7 @@ export default function SettingsScreen() {
 
         {/* Prayer Calculation */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
           </Text>
         </View>
@@ -608,10 +624,10 @@ export default function SettingsScreen() {
             style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
           >
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                 {tr.calculationMethod}
               </Text>
-              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
+              <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
                 {tr.methods[draftCalcMethod] ?? draftCalcMethod}
               </Text>
             </View>
@@ -625,7 +641,7 @@ export default function SettingsScreen() {
           <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
               <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
                   {tr.calculationMethod}
                 </Text>
                 <Pressable onPress={() => setShowMethodModal(false)}>
@@ -656,7 +672,7 @@ export default function SettingsScreen() {
                         <Text style={{
                           fontSize: 13, fontWeight: isSelected ? '700' : '500',
                           color: isSelected ? C.tint : C.text,
-                          fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN,
+                          fontFamily: isRtl ? 'Amiri_400Regular' : SANS,
                           textAlign: isRtl ? 'right' : 'left',
                         }}>
                           {label}
@@ -664,7 +680,7 @@ export default function SettingsScreen() {
                         {isRecommended && (
                           <View style={[styles.recommendedBadge, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                             <Ionicons name="location-outline" size={11} color={C.tint} />
-                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }}>
+                            <Text style={{ fontSize: 11, color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }}>
                               {tr.recommendedForLocation}
                             </Text>
                           </View>
@@ -693,7 +709,7 @@ export default function SettingsScreen() {
           {/* Maghrib offset — compact single section */}
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'stretch', gap: 6 }]}>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
               </Text>
               <HelpBtn helpKey="maghrib" />
@@ -744,7 +760,7 @@ export default function SettingsScreen() {
 
           {/* First Adhan */}
           <View style={[styles.compactRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
               {tr.firstAdhanSetting}
             </Text>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
@@ -753,7 +769,7 @@ export default function SettingsScreen() {
                 onPress={() => { Haptics.selectionAsync(); setShowFirstAdhanPicker(true); }}
                 style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
               >
-                <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
                   {draftFirstAdhanOffset === 0
                     ? (isAr ? 'إيقاف' : 'Off')
                     : isAr ? `${draftFirstAdhanOffset} د قبل` : `${draftFirstAdhanOffset} min before`}
@@ -765,14 +781,14 @@ export default function SettingsScreen() {
         </View>
 
         {/* Nafl Prayer Timings */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 18 }]}>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 18 }]}>
           {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
 
             {/* ── Dhuha row (toggle + time inline) ── */}
           <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
               {isAr ? 'الضحى' : 'Dhuha'}
             </Text>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowDhuha && { opacity: 0.38 }]} pointerEvents={draftShowDhuha ? 'auto' : 'none'}>
@@ -793,7 +809,7 @@ export default function SettingsScreen() {
 
           {/* ── Qiyam row (toggle + time inline) ── */}
           <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
               {isAr ? 'قيام الليل' : 'Qiyam'}
             </Text>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowQiyam && { opacity: 0.38 }]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
@@ -812,101 +828,85 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* ── Eid Prayer row ── */}
-          <View style={[styles.compactRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-              {isAr ? 'صلاة العيد' : 'Eid Prayer'}
-            </Text>
-            <Text style={[{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, alignSelf: 'center', marginHorizontal: 4, flexShrink: 1 }]}>
-              {isAr ? '١ شوال / ١٠ ذو الحجة' : '1 Shawwal / 10 Dhul Hijjah'}
-            </Text>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowEidRoller(true); }}
-              style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
-            >
-              <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftEidPrayerTime}</Text>
-            </Pressable>
-          </View>
+          {/* ── Eid Prayer row — only visible near Eid ── */}
+          {isNearEid && (
+            <View style={[styles.compactRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+                {isAr ? 'صلاة العيد' : 'Eid Prayer'}
+              </Text>
+              <Text style={[{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, alignSelf: 'center', marginHorizontal: 4, flexShrink: 1 }]}>
+                {isAr ? '١ شوال / ١٠ ذو الحجة' : '1 Shawwal / 10 Dhul Hijjah'}
+              </Text>
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setShowEidRoller(true); }}
+                style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+              >
+                <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftEidPrayerTime}</Text>
+              </Pressable>
+            </View>
+          )}
 
         </View>
 
         {/* Dhuha Time Roller Modal */}
         <Modal visible={showDhuhaRoller} transparent animationType="slide">
-          <View style={styles.rollerOverlay}>
-            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
-              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+          <Pressable style={styles.rollerOverlay} onPress={() => setShowDhuhaRoller(false)}>
+            <Pressable onPress={() => {}} style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت الضحى' : 'Set Dhuha Time'}
               </Text>
-              <TimeRoller
-                value={draftDhuhaTime}
-                onChange={setDraftDhuhaTime}
-                tintColor={C.tint}
-                textColor={C.text}
-                bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
-              />
+              <TimeRoller value={draftDhuhaTime} onChange={setDraftDhuhaTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
                 {isAr ? 'يُصلَّى الضحى بعد ارتفاع الشمس وقبل الظهر' : 'Prayed after sunrise and before Dhuhr'}
               </Text>
               <Pressable onPress={() => setShowDhuhaRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
-            </View>
-          </View>
+            </Pressable>
+          </Pressable>
         </Modal>
 
         {/* Tahajjud Time Roller Modal */}
         <Modal visible={showTahajjudRoller} transparent animationType="slide">
-          <View style={styles.rollerOverlay}>
-            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
-              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+          <Pressable style={styles.rollerOverlay} onPress={() => setShowTahajjudRoller(false)}>
+            <Pressable onPress={() => {}} style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت قيام الليل' : 'Set Qiyam Time'}
               </Text>
-              <TimeRoller
-                value={draftTahajjudTime}
-                onChange={setDraftTahajjudTime}
-                tintColor={C.tint}
-                textColor={C.text}
-                bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
-              />
+              <TimeRoller value={draftTahajjudTime} onChange={setDraftTahajjudTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
                 {isAr ? 'الثلث الأخير من الليل: من نحو ٢ – ٤ صباحاً' : 'Last third of night: approx 2–4 AM'}
               </Text>
               <Pressable onPress={() => setShowTahajjudRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
-            </View>
-          </View>
+            </Pressable>
+          </Pressable>
         </Modal>
 
         {/* Eid Prayer Time Roller Modal */}
         <Modal visible={showEidRoller} transparent animationType="slide">
-          <View style={styles.rollerOverlay}>
-            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
-              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+          <Pressable style={styles.rollerOverlay} onPress={() => setShowEidRoller(false)}>
+            <Pressable onPress={() => {}} style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت صلاة العيد' : 'Set Eid Prayer Time'}
               </Text>
-              <TimeRoller
-                value={draftEidPrayerTime}
-                onChange={setDraftEidPrayerTime}
-                tintColor={C.tint}
-                textColor={C.text}
-                bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'}
-              />
+              <TimeRoller value={draftEidPrayerTime} onChange={setDraftEidPrayerTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
                 {isAr ? 'أدخل الوقت الرسمي لصلاة العيد في مدينتك' : 'Enter the official Eid prayer time for your city or mosque'}
               </Text>
               <Pressable onPress={() => setShowEidRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
-            </View>
-          </View>
+            </Pressable>
+          </Pressable>
         </Modal>
 
         {/* First Adhan Picker Modal */}
         <Modal visible={showFirstAdhanPicker} transparent animationType="fade">
           <Pressable style={styles.dropdownOverlay} onPress={() => setShowFirstAdhanPicker(false)}>
             <View style={[styles.dropdownSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-              <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN }]}>
+              <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
                 {isAr ? 'الأذان الأول — التنبيه المبكر' : 'Early Adhan Reminder'}
               </Text>
               {([0, 5, 10, 15, 20, 25, 30] as const).map((mins, idx, arr) => {
@@ -926,10 +926,10 @@ export default function SettingsScreen() {
                       },
                     ]}
                   >
-                    <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                    <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
                       {mins === 0
-                        ? (isAr ? 'إيقاف — لا أذان أول' : 'Off — no early reminder')
-                        : isAr ? `${mins} دقائق قبل الأذان` : `${mins} minutes before the Adhan`}
+                        ? (isAr ? 'إيقاف' : 'Off')
+                        : isAr ? `${mins} ${mins === 5 ? 'دقائق' : 'دقيقة'}` : `${mins} min`}
                     </Text>
                     {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
                   </Pressable>
@@ -941,7 +941,7 @@ export default function SettingsScreen() {
 
         {/* Notifications */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'الإشعارات' : 'Notifications'}
           </Text>
           <HelpBtn helpKey="notifications" />
@@ -970,7 +970,7 @@ export default function SettingsScreen() {
                 <View style={[styles.notifRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   <Text style={[
                     styles.notifLabel,
-                    { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }
+                    { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
                     {isAr ? prayer.ar : prayer.en}
                   </Text>
@@ -1078,7 +1078,7 @@ export default function SettingsScreen() {
         <Pressable style={styles.helpBackdrop} onPress={() => setHelpContent(null)}>
           <Pressable style={[styles.helpCard, { backgroundColor: isDark ? '#0e2b1a' : '#ffffff', borderColor: C.tint }]} onPress={() => {}}>
             <View style={[styles.helpBar, { backgroundColor: C.tint }]} />
-            <Text style={[styles.helpText, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>
+            <Text style={[styles.helpText, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
               {helpContent ?? ''}
             </Text>
             <Pressable
@@ -1237,9 +1237,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 9, gap: 8,
   },
   accessTile: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 10, paddingVertical: 8,
-    borderRadius: 12, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 7, paddingVertical: 5,
+    borderRadius: 10, borderWidth: 1,
     width: '47%',
   },
   accessThemeRow: {
@@ -1247,11 +1247,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
   },
   accessSwatch: {
-    width: 26, height: 26, borderRadius: 7,
+    width: 20, height: 20, borderRadius: 5,
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  accessThemeLabel: { fontSize: 12, marginBottom: 0 },
+  accessThemeLabel: { fontSize: 11, marginBottom: 0 },
   accessThemeDesc: { fontSize: 11, lineHeight: 15 },
   timeBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

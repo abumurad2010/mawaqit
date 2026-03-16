@@ -5,7 +5,8 @@ export type AccessibilityTheme =
   | 'warm'
   | 'blossom'
   | 'ocean'
-  | 'violet';
+  | 'violet'
+  | 'gold';
 
 export interface ColorPalette {
   background:       string;
@@ -379,6 +380,56 @@ const palettes: Record<AccessibilityTheme, { light: ColorPalette; dark: ColorPal
       heroCardBg:       'rgba(60,20,100,0.84)',
       heroCardText:     '#F0E8FF',
       heroCardSubtext:  'rgba(240,232,255,0.68)',
+      fontWeightNormal: '400',
+    },
+  },
+
+  // ── Gold (Islamic gilded accent) ─────────────────────────────────────────────
+  gold: {
+    light: {
+      background:       '#F9F6EE',
+      backgroundSecond: '#F0E9D2',
+      backgroundCard:   '#FFFFFF',
+      text:             '#2C1A00',
+      textSecond:       '#4A2E00',
+      textMuted:        '#7A5200',
+      tint:             '#8B6800',
+      tintLight:        'rgba(139,104,0,0.09)',
+      tintDark:         '#6B5000',
+      tintText:         '#FFFFFF',
+      tabIconDefault:   '#AEAEB2',
+      tabIconSelected:  '#8B6800',
+      separator:        'rgba(139,104,0,0.18)',
+      gold:             '#8B6800',
+      goldLight:        '#FFF3C0',
+      danger:           '#CC2200',
+      surface:          'rgba(139,104,0,0.07)',
+      heroCardBg:       'rgba(139,104,0,0.78)',
+      heroCardText:     '#FFFFFF',
+      heroCardSubtext:  'rgba(255,255,255,0.74)',
+      fontWeightNormal: '400',
+    },
+    dark: {
+      background:       '#1A1200',
+      backgroundSecond: '#2A1E00',
+      backgroundCard:   '#2E2000',
+      text:             '#FFF3D0',
+      textSecond:       '#FFE09A',
+      textMuted:        '#D4A842',
+      tint:             '#FFD60A',
+      tintLight:        'rgba(255,214,10,0.14)',
+      tintDark:         '#FFE340',
+      tintText:         '#1A1200',
+      tabIconDefault:   'rgba(255,214,10,0.35)',
+      tabIconSelected:  '#FFD60A',
+      separator:        'rgba(255,214,10,0.18)',
+      gold:             '#FFD60A',
+      goldLight:        'rgba(255,214,10,0.15)',
+      danger:           '#FF5533',
+      surface:          'rgba(255,214,10,0.09)',
+      heroCardBg:       'rgba(80,55,0,0.88)',
+      heroCardText:     '#FFF3D0',
+      heroCardSubtext:  'rgba(255,243,208,0.68)',
       fontWeightNormal: '400',
     },
   },

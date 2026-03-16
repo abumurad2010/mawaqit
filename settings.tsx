@@ -354,6 +354,12 @@ export default function SettingsScreen() {
               desc: isAr ? 'لافندر حالم وناعم' : 'Lavender tones, gentle and dreamy',
               swatchLight: '#6B3FA0', swatchDark: '#C084FC',
             },
+            {
+              key: 'gold' as AccessibilityTheme,
+              label: isAr ? 'الذهبي' : 'Gold',
+              desc: isAr ? 'ذهبي كلاسيكي رصين' : 'Rich gold, timeless and refined',
+              swatchLight: '#8B6800', swatchDark: '#FFD60A',
+            },
           ] as const).map((theme, idx, arr) => {
             const isSelected = draftAccessibilityTheme === theme.key;
             const isLast = idx === arr.length - 1;
