@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "q8vYd2N65HRh35nKhYp4X"
+uri = "file://CHANGELOG.md"
+type = "text"
+title = "Mawaqit Changelog — March 13–16, 2026"
