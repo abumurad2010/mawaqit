@@ -80,7 +80,7 @@ export default function SettingsScreen() {
   );
 
   // ── Help texts (all 15 languages) ───────────────────────────────
-  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications';
+  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid';
   const HELP: Record<string, Record<HelpKey, string>> = {
     ar: {
       language: 'اللغة الأولى ثابتة على العربية.\n\nاللغة الثانية تظهر تحت كل اسم صلاة ومصطلح. "تلقائي" يختار اللغة حسب البلد الذي اكتُشف من موقعك.',
@@ -92,6 +92,8 @@ export default function SettingsScreen() {
       maghrib: 'الاحتياط الشرعي: يُضاف بعد الغروب الفلكي لضمان اكتمال الغروب المرئي فعلاً.\n\nالتطبيق يُوصي بالقيمة المعتمدة رسمياً في بلدك. يمكنك تعديلها يدوياً بالزيادة أو النقصان.',
       firstAdhan: 'أذان تنبيهي قبل الفجر — للتنبيه على وقت السحور في رمضان ووقت الاستعداد للصلاة.\n\nالمملكة العربية السعودية تعتمد أذاناً واحداً فقط عند الفجر. أما مصر والشام وكثير من الدول فتُشغّل أذاناً أول قبل 20–30 دقيقة.\n\nإذا كنت في بلدٍ لا يُشغّل أذاناً أول، اتركه على "إيقاف".',
       notifications: 'لكل صلاة خيارَان مستقلّان:\n\n🔔 الراية: إشعار نصي صامت يظهر على الشاشة.\n🔊 الأذان: صوت الأذان الكامل أو المختصر.\n\nيمكنك تفعيل الاثنين معاً أو أحدهما أو لا شيء.',
+      dhuha: 'صلاة الضحى تُصلَّى بعد ارتفاع الشمس وقبل الزوال — ركعتان إلى ثماني ركعات.\n\nقيام الليل يُصلَّى في الثلث الأخير من الليل قبيل الفجر.\n\nفعّل كل منهما واضبط وقت التذكير ليُنبّهك التطبيق.',
+      eid: 'تُصلَّى صباح يوم عيد الفطر (١ شوال) وعيد الأضحى (١٠ ذو الحجة).\n\nأدخل هنا الوقت الرسمي المعلَن في مسجدك أو مدينتك.\n\nيظهر هذا الخيار قبل العيد بيومين وفي يوم العيد فقط.',
     },
     en: {
       language: 'Arabic is the fixed primary language.\n\nThe second language appears beneath each prayer name and label. "Auto" detects your country from your GPS location and picks the most appropriate language.',
@@ -103,6 +105,8 @@ export default function SettingsScreen() {
       maghrib: 'Precautionary margin added after astronomical sunset to ensure the sun has visually set before the Athan is called.\n\nThe app recommends the official standard for your country. You can fine-tune it with the ±stepper.',
       firstAdhan: 'An early Athan before Fajr — typically used to signal Suhoor time during Ramadan and time to prepare for prayer.\n\nSaudi Arabia uses a single Athan at Fajr only. Egypt, the Levant, and many other countries call a first Athan 20–30 min earlier.\n\nIf you are in a country that doesn\'t have a first Athan, leave this Off.',
       notifications: 'Each prayer has two independent toggles:\n\n🔔 Banner: a silent visual notification on your screen.\n🔊 Athan: the full or abbreviated audio Athan.\n\nYou can enable both, either one, or neither.',
+      dhuha: 'Dhuha is a voluntary prayer after sunrise and before Dhuhr — 2 to 8 rak\'ahs.\n\nQiyam (Tahajjud) is the night vigil prayer, best in the last third of the night before Fajr.\n\nToggle each on and set a reminder time.',
+      eid: 'Eid prayer is performed on the morning of Eid al-Fitr (1 Shawwal) and Eid al-Adha (10 Dhul Hijjah).\n\nEnter the official prayer time announced by your mosque or city.\n\nThis option appears only in the two days before Eid and on the day itself.',
     },
     fr: {
       language: 'L\'arabe est la langue principale fixe.\n\nLa deuxième langue apparaît sous chaque nom de prière. "Auto" détecte votre pays via GPS.',
@@ -114,6 +118,8 @@ export default function SettingsScreen() {
       maghrib: 'Marge de précaution ajoutée après le coucher astronomique. L\'app recommande le standard officiel de votre pays.',
       firstAdhan: 'Athan précoce avant Fajr pour le Suhoor pendant le Ramadan.\n\nArabie Saoudite: un seul Athan. Égypte/Levant: premier Athan 20–30 min avant.\n\nSi vous êtes dans un pays sans premier Athan, laissez sur Désactivé.',
       notifications: 'Chaque prière a deux options:\n\n🔔 Bannière: notification visuelle silencieuse.\n🔊 Athan: audio complet ou abrégé.',
+      dhuha: 'Dhuha est une prière volontaire après le lever du soleil et avant Dhuhr — 2 à 8 rak\'a.\n\nQiyam (Tahajjud) est la prière nocturne, idéalement dans le dernier tiers de la nuit avant Fajr.\n\nActivez chacune et définissez l\'heure de rappel.',
+      eid: 'La prière de l\'Aïd a lieu le matin de l\'Aïd al-Fitr (1 Chawwal) et de l\'Aïd al-Adha (10 Dhul Hijja).\n\nEntrez l\'heure officielle de votre mosquée ou ville.\n\nCette option n\'apparaît que deux jours avant l\'Aïd et le jour même.',
     },
     es: {
       language: 'El árabe es el idioma principal fijo.\n\nEl segundo idioma aparece bajo cada nombre de oración. "Auto" detecta tu país por GPS.',
@@ -125,6 +131,8 @@ export default function SettingsScreen() {
       maghrib: 'Margen de precaución tras el ocaso astronómico. La app recomienda el estándar oficial de tu país.',
       firstAdhan: 'Athan temprano antes del Fajr para el Suhoor durante el Ramadán.\n\nArabia Saudita: un solo Athan. Egipto/Levante: primer Athan 20–30 min antes.\n\nSi estás en un país que no tiene primer Athan, déjalo en Desactivado.',
       notifications: 'Cada oración tiene dos opciones:\n\n🔔 Banner: notificación visual silenciosa.\n🔊 Athan: audio completo o abreviado.',
+      dhuha: 'Dhuha es una oración voluntaria después del amanecer y antes del Dhuhr — 2 a 8 rak\'as.\n\nQiyam (Tahajjud) es la oración nocturna, mejor en el último tercio de la noche antes del Fajr.\n\nActiva cada una y establece el horario de recordatorio.',
+      eid: 'La oración del Eid se realiza la mañana del Eid al-Fitr (1 Shawwal) y el Eid al-Adha (10 Dhul Hijjah).\n\nIngresa el horario oficial de tu mezquita o ciudad.\n\nEsta opción solo aparece dos días antes del Eid y el día mismo.',
     },
     ru: {
       language: 'Арабский язык — основной фиксированный.\n\nВторой язык отображается под каждым названием намаза. "Авто" определяет страну по GPS.',
@@ -136,6 +144,8 @@ export default function SettingsScreen() {
       maghrib: 'Предохранительный запас после астрономического захода. Приложение рекомендует официальный стандарт вашей страны.',
       firstAdhan: 'Ранний азан перед Фаджром для Сухура в Рамадан.\n\nСаудовская Аравия: один азан. Египет/Левант: первый азан за 20–30 мин до Фаджра.\n\nЕсли в вашей стране нет первого азана, оставьте его выключенным.',
       notifications: 'Для каждого намаза два варианта:\n\n🔔 Баннер: тихое визуальное уведомление.\n🔊 Азан: полный или сокращённый звук.',
+      dhuha: 'Духа — добровольная молитва после восхода солнца до Зухра — от 2 до 8 ракаатов.\n\nКийям (Тахаджжуд) — ночная молитва, лучше всего в последнюю треть ночи перед Фаджром.\n\nВключите каждую и задайте время напоминания.',
+      eid: 'Намаз Ид совершается утром Ид аль-Фитр (1 Шаввала) и Ид аль-Адха (10 Зуль-Хиджа).\n\nВведите официальное время молитвы для вашей мечети или города.\n\nЭта опция отображается за два дня до праздника и в сам день.',
     },
     zh: {
       language: '阿拉伯语是固定的主要语言。\n\n第二语言显示在每个礼拜名称下方。"自动"通过GPS检测您的国家。',
@@ -147,6 +157,8 @@ export default function SettingsScreen() {
       maghrib: '天文日落后的预防性余量。应用程序推荐您所在国家的官方标准。',
       firstAdhan: '斋月期间封斋前的早期宣礼。\n\n沙特阿拉伯只有一次宣礼。埃及和黎凡特提前20–30分钟。\n\n如果您所在的国家没有第一遍宣礼，请将其关闭。',
       notifications: '每次礼拜有两个选项：\n\n🔔 横幅：静音视觉通知。\n🔊 宣礼：完整或简短音频。',
+      dhuha: '杜哈祈祷是日出后至晌礼前的自愿礼拜，2至8拉卡特。\n\n夜间礼拜（塔哈朱德）最好在夜晚的最后三分之一，即晨礼前。\n\n开启每项并设置提醒时间。',
+      eid: '开斋节礼拜在开斋节（1 Shawwal）和宰牲节（10 Dhul Hijjah）的早晨举行。\n\n输入您所在清真寺或城市的官方礼拜时间。\n\n此选项仅在节前两天和节日当天显示。',
     },
     tr: {
       language: 'Arapça sabit birincil dildir.\n\nİkinci dil her namaz adının altında görünür. "Otomatik" GPS ile ülkenizi algılar.',
@@ -158,6 +170,8 @@ export default function SettingsScreen() {
       maghrib: 'Astronomik günbatımından sonra eklenen ihtiyat süresi. Uygulama ülkenizin resmi standardını önerir.',
       firstAdhan: 'Fecirden önce erken ezan — Ramazan\'da Sahur için.\n\nSuudi Arabistan tek ezan okur. Mısır/Levant 20–30 dk önce okur.\n\nÜlkenizde ilk ezan yoksa, bunu Kapalı bırakın.',
       notifications: 'Her namaz için iki seçenek:\n\n🔔 Banner: sessiz görsel bildirim.\n🔊 Ezan: tam veya kısa ses.',
+      dhuha: 'Duhâ namazı, gün doğumundan sonra ve öğleden önce kılınan nafile bir namazdır — 2 ila 8 rekât.\n\nKıyâmülleyl (Teheccüd), gecenin son üçte birinde kılınan gece namazıdır.\n\nHer birini etkinleştirin ve hatırlatma saatini ayarlayın.',
+      eid: 'Bayram namazı, Ramazan Bayramı\'nın (1 Şevval) ve Kurban Bayramı\'nın (10 Zilhicce) sabahında kılınır.\n\nMescidinizdeki veya şehirinizdeki resmi namaz saatini girin.\n\nBu seçenek yalnızca bayramdan iki gün önce ve bayram günü görünür.',
     },
     ur: {
       language: 'عربی ہمیشہ پہلی زبان رہتی ہے۔\n\nدوسری زبان ہر نماز کے نام کے نیچے نظر آتی ہے۔ "خودکار" GPS سے آپ کا ملک معلوم کرتا ہے۔',
@@ -169,6 +183,8 @@ export default function SettingsScreen() {
       maghrib: 'فلکی غروب کے بعد احتیاطی وقفہ۔ ایپ آپ کے ملک کا سرکاری معیار تجویز کرتی ہے۔',
       firstAdhan: 'فجر سے پہلے ابتدائی اذان — رمضان میں سحری کے لیے۔\n\nسعودی عرب میں صرف ایک اذان ہوتی ہے۔ مصر اور شام میں 20–30 منٹ پہلے۔\n\nاگر آپ کے ملک میں پہلی اذان نہیں ہوتی، تو اسے بند رکھیں۔',
       notifications: 'ہر نماز کے لیے دو آپشن:\n\n🔔 بینر: خاموش بصری اطلاع۔\n🔊 اذان: مکمل یا مختصر آڈیو۔',
+      dhuha: 'نماز چاشت سورج طلوع ہونے کے بعد اور ظہر سے پہلے ادا کی جاتی ہے — ۲ سے ۸ رکعات۔\n\nقیام اللیل (تہجد) رات کے آخری تہائی حصے میں ادا کی جاتی ہے۔\n\nہر ایک کو فعال کریں اور یاددہانی کا وقت مقرر کریں۔',
+      eid: 'نماز عید الفطر (۱ شوال) اور عید الاضحیٰ (۱۰ ذو الحجہ) کی صبح ادا کی جاتی ہے۔\n\nاپنی مسجد یا شہر کے اعلان کردہ وقت درج کریں۔\n\nیہ آپشن صرف عید سے دو دن پہلے اور عید کے دن ظاہر ہوتا ہے۔',
     },
     id: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama shalat. "Otomatis" mendeteksi negara Anda via GPS.',
@@ -180,6 +196,8 @@ export default function SettingsScreen() {
       maghrib: 'Batas kehati-hatian setelah matahari terbenam secara astronomis. Aplikasi merekomendasikan standar resmi negara Anda.',
       firstAdhan: 'Azan awal sebelum Subuh untuk Sahur selama Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 menit lebih awal.\n\nJika negara Anda tidak memiliki azan pertama, biarkan Nonaktif.',
       notifications: 'Setiap shalat memiliki dua opsi:\n\n🔔 Banner: notifikasi visual senyap.\n🔊 Azan: audio penuh atau singkat.',
+      dhuha: 'Dhuha adalah shalat sunnah setelah matahari terbit dan sebelum Zuhur — 2 hingga 8 rakaat.\n\nQiyam (Tahajud) adalah shalat malam, terbaik di sepertiga terakhir malam sebelum Subuh.\n\nAktifkan masing-masing dan atur waktu pengingat.',
+      eid: 'Shalat Eid dilaksanakan pada pagi hari Eid al-Fitr (1 Syawal) dan Eid al-Adha (10 Dzulhijjah).\n\nMasukkan waktu shalat resmi yang diumumkan masjid atau kota Anda.\n\nOpsi ini hanya muncul dua hari sebelum dan pada hari Eid.',
     },
     bn: {
       language: 'আরবি সর্বদা প্রধান ভাষা।\n\nদ্বিতীয় ভাষা প্রতিটি নামাজের নামের নিচে দেখায়। "স্বয়ংক্রিয়" GPS দিয়ে আপনার দেশ শনাক্ত করে।',
@@ -191,6 +209,8 @@ export default function SettingsScreen() {
       maghrib: 'জ্যোতির্বিদ্যাগত সূর্যাস্তের পর সতর্কতামূলক ব্যবধান। অ্যাপ আপনার দেশের সরকারি মান সুপারিশ করে।',
       firstAdhan: 'রমজানে সেহরির জন্য ফজরের আগে প্রাথমিক আজান।\n\nসৌদি আরব: শুধুমাত্র একটি আজান। মিশর/লেভান্ট: ফজরের ২০–৩০ মিনিট আগে।\n\nআপনার দেশে প্রথম আজান না থাকলে, এটি বন্ধ রাখুন।',
       notifications: 'প্রতিটি নামাজের জন্য দুটি বিকল্প:\n\n🔔 ব্যানার: নীরব ভিজ্যুয়াল বিজ্ঞপ্তি।\n🔊 আজান: সম্পূর্ণ বা সংক্ষিপ্ত অডিও।',
+      dhuha: 'দুহা হল সূর্যোদয়ের পর ও জোহরের আগে স্বেচ্ছামূলক নামাজ — ২ থেকে ৮ রাকাত।\n\nকিয়ামুল লাইল (তাহাজ্জুদ) ফজরের আগে রাতের শেষ তৃতীয়াংশে পড়া হয়।\n\nপ্রতিটি সক্রিয় করুন এবং স্মরণের সময় সেট করুন।',
+      eid: 'ঈদের নামাজ ঈদুল ফিতর (১ শাওয়াল) এবং ঈদুল আযহা (১০ জিলহজ্জ) এর সকালে পড়া হয়।\n\nআপনার মসজিদ বা শহরের ঘোষিত সময় লিখুন।\n\nএই বিকল্পটি শুধুমাত্র ঈদের দুই দিন আগে এবং ঈদের দিন দেখা যায়।',
     },
     fa: {
       language: 'عربی زبان اصلی ثابت است.\n\nزبان دوم زیر هر نام نماز نمایش داده می‌شود. "خودکار" کشور شما را از GPS تشخیص می‌دهد.',
@@ -202,6 +222,8 @@ export default function SettingsScreen() {
       maghrib: 'حاشیه احتیاطی پس از غروب نجومی. برنامه استاندارد رسمی کشور شما را توصیه می‌کند.',
       firstAdhan: 'اذان اولیه قبل از فجر برای سحری در رمضان.\n\nعربستان سعودی: یک اذان. مصر/لوان: 20–30 دقیقه زودتر.\n\nاگر در کشوری هستید که اذان اول ندارد، آن را خاموش بگذارید.',
       notifications: 'برای هر نماز دو گزینه:\n\n🔔 بنر: اعلان بصری بی‌صدا.\n🔊 اذان: صدای کامل یا خلاصه.',
+      dhuha: 'نماز ضحی پس از طلوع آفتاب و پیش از ظهر خوانده می‌شود — ۲ تا ۸ رکعت.\n\nقیام اللیل (تهجد) در آخرین سوم شب قبل از فجر بهترین وقت دارد.\n\nهر کدام را فعال کنید و زمان یادآوری را تنظیم نمایید.',
+      eid: 'نماز عید در صبح روز عیدالفطر (۱ شوال) و عیدالأضحی (۱۰ ذی‌الحجه) ادا می‌شود.\n\nوقت رسمی اعلام‌شده توسط مسجد یا شهر خود را وارد کنید.\n\nاین گزینه فقط دو روز قبل از عید و روز عید نمایش داده می‌شود.',
     },
     ms: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama sembahyang. "Auto" mengesan negara anda melalui GPS.',
@@ -213,6 +235,8 @@ export default function SettingsScreen() {
       maghrib: 'Margin berjaga-jaga selepas matahari terbenam secara astronomik. Aplikasi mengesyorkan standard rasmi negara anda.',
       firstAdhan: 'Azan awal sebelum Subuh untuk Sahur semasa Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 minit lebih awal.\n\nJika negara anda tidak mempunyai azan pertama, biarkan ia Mati.',
       notifications: 'Setiap sembahyang ada dua pilihan:\n\n🔔 Banner: pemberitahuan visual senyap.\n🔊 Azan: audio penuh atau ringkas.',
+      dhuha: 'Dhuha ialah sembahyang sunat selepas matahari terbit dan sebelum Zohor — 2 hingga 8 rakaat.\n\nQiyam (Tahajud) adalah sembahyang malam, terbaik pada sepertiga akhir malam sebelum Subuh.\n\nAktifkan setiap satu dan tetapkan masa peringatan.',
+      eid: 'Solat Hari Raya dilaksanakan pada pagi Hari Raya Aidilfitri (1 Syawal) dan Aidiladha (10 Zulhijjah).\n\nMasukkan waktu solat rasmi yang diumumkan oleh masjid atau bandar anda.\n\nPilihan ini hanya muncul dua hari sebelum dan pada Hari Raya.',
     },
     pt: {
       language: 'O árabe é o idioma principal fixo.\n\nO segundo idioma aparece abaixo de cada nome de oração. "Auto" detecta seu país por GPS.',
@@ -224,6 +248,8 @@ export default function SettingsScreen() {
       maghrib: 'Margem de precaução após o pôr do sol astronômico. O app recomenda o padrão oficial do seu país.',
       firstAdhan: 'Athan antecipado antes do Fajr para o Suhoor durante o Ramadã.\n\nArábia Saudita: um único Athan. Egito/Levante: primeiro Athan 20–30 min antes.\n\nSe você estiver em um país que não tem o primeiro Athan, deixe-o Desativado.',
       notifications: 'Cada oração tem duas opções:\n\n🔔 Banner: notificação visual silenciosa.\n🔊 Athan: áudio completo ou abreviado.',
+      dhuha: 'Dhuha é uma oração voluntária após o nascer do sol e antes do Dhuhr — 2 a 8 rak\'as.\n\nQiyam (Tahajud) é a oração noturna, melhor no último terço da noite antes do Fajr.\n\nAtive cada uma e defina o horário de lembrete.',
+      eid: 'A oração do Eid é realizada na manhã do Eid al-Fitr (1 Shawwal) e do Eid al-Adha (10 Dhul Hijjah).\n\nInsira o horário oficial anunciado pela sua mesquita ou cidade.\n\nEsta opção aparece apenas dois dias antes do Eid e no próprio dia.',
     },
     sw: {
       language: 'Kiarabu ni lugha kuu ya kudumu.\n\nLugha ya pili inaonekana chini ya kila jina la sala. "Otomatiki" hugundua nchi yako kupitia GPS.',
@@ -235,6 +261,8 @@ export default function SettingsScreen() {
       maghrib: 'Kiwango cha tahadhari baada ya machweo ya kiangalizi. Programu inakupendekeza kiwango rasmi cha nchi yako.',
       firstAdhan: 'Adhana ya mapema kabla ya Alfajiri kwa Daku wakati wa Ramadhani.\n\nSaudia Arabia: adhana moja tu. Misri/Levant: adhana ya kwanza dakika 20–30 mapema.\n\nIkiwa nchi yako haina adhana ya kwanza, iacha kwenye Imezimwa.',
       notifications: 'Kila sala ina chaguo mbili:\n\n🔔 Tangazo: arifa ya macho ya kimya.\n🔊 Adhana: sauti kamili au fupi.',
+      dhuha: 'Dhuha ni sala ya hiari baada ya machweo ya jua na kabla ya Dhuhr — rak\'a 2 hadi 8.\n\nQiyam (Tahajud) ni sala ya usiku, bora zaidi katika theluthi ya mwisho ya usiku kabla ya Fajr.\n\nWasha kila moja na uweke wakati wa ukumbusho.',
+      eid: 'Sala ya Eid husaliwa asubuhi ya Eid al-Fitr (1 Shawwal) na Eid al-Adha (10 Dhul Hijjah).\n\nIngiza wakati rasmi uliotangazwa na msikiti au mji wako.\n\nChaguo hili linaonekana tu siku mbili kabla na siku ya Eid.',
     },
     ha: {
       language: 'Larabci shine harshen farko na dindindin.\n\nHarshe na biyu yana bayyana ƙarƙashin sunan kowace sallah. "Atomatik" yana gano ƙasarku ta GPS.',
@@ -246,6 +274,8 @@ export default function SettingsScreen() {
       maghrib: 'Kiwon kariya bayan faɗuwar rana na tauraron dan adam. Aikace-aikacen yana ba da shawarar ma\'aunin hukuma na ƙasarku.',
       firstAdhan: 'Farkon azan kafin Asuba don Suhur a lokacin Azumi.\n\nSaudi Arabia: azan guda ɗaya. Masar/Levant: farkon azan mintuna 20–30 kafin lokaci.\n\nIdan ƙasarku ba ta da farkon azan, bar ta a kashe.',
       notifications: 'Kowane sallah yana da zaɓuɓɓuka biyu:\n\n🔔 Sanarwa: sanarwa mai shiru ta gani.\n🔊 Azan: cikakken sauti ko taƙaitaccen.',
+      dhuha: 'Dhuha addu\'a ce ta son rai bayan fitowar rana da kafin Dhuhr — rak\'a 2 zuwa 8.\n\nQiyam addu\'a ce ta dare, mafi kyau a cikin kashi uku na ƙarshe na dare kafin Fajr.\n\nKunnawa kowane ɗaya ku saita lokacin tunatarwa.',
+      eid: 'An yi sallar Eid safe na Eid al-Fitr (1 Shawwal) da Eid al-Adha (10 Dhul Hijjah).\n\nShiga lokacin addu\'a na hukuma da masallaci ko birnin ka ya sanar.\n\nZabin nan yana bayyana ne kwanaki biyu kafin Eid da ranar Eid.',
     },
   };
 
@@ -781,9 +811,12 @@ export default function SettingsScreen() {
         </View>
 
         {/* Nafl Prayer Timings */}
-        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 18 }]}>
-          {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam'}
-        </Text>
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+            {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam'}
+          </Text>
+          <HelpBtn helpKey="dhuha" />
+        </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
 
             {/* ── Dhuha row (toggle + time inline) ── */}
@@ -834,9 +867,7 @@ export default function SettingsScreen() {
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
                 {isAr ? 'صلاة العيد' : 'Eid Prayer'}
               </Text>
-              <Text style={[{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, alignSelf: 'center', marginHorizontal: 4, flexShrink: 1 }]}>
-                {isAr ? '١ شوال / ١٠ ذو الحجة' : '1 Shawwal / 10 Dhul Hijjah'}
-              </Text>
+              <HelpBtn helpKey="eid" />
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setShowEidRoller(true); }}
                 style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
