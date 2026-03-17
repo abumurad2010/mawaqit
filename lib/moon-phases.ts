@@ -124,6 +124,31 @@ export function moonEmojiForDay(year: number, month: number, day: number): strin
   return phaseDetails(getMoonPhase(date).phase).emoji;
 }
 
+/**
+ * Given the astronomical conjunction moment (UTC) and the user's UTC offset,
+ * returns the local calendar date on which the first crescent (hilal) is
+ * expected to be visible.
+ *
+ * Islamic rule of thumb: the crescent becomes visible on the first sunset
+ * that falls ≥ 12–15 hours after conjunction. In practice this is always
+ * the evening of the local calendar day AFTER the conjunction date. We use
+ * that conservative / universally-accepted estimate.
+ *
+ * The returned Date is midnight UTC of that local date (safe to pass to
+ * calculatePrayerTimes as the date argument).
+ */
+export function getExpectedCrescentDate(conjunctionUtc: Date, utcOffsetHours: number): Date {
+  // Shift to local time to find the local calendar date of conjunction
+  const localMs = conjunctionUtc.getTime() + utcOffsetHours * 3600 * 1000;
+  const localConj = new Date(localMs);
+  // Crescent is expected the next local calendar day
+  return new Date(Date.UTC(
+    localConj.getUTCFullYear(),
+    localConj.getUTCMonth(),
+    localConj.getUTCDate() + 1,
+  ));
+}
+
 /** Format a UTC Date to the user's local time as "h:mm AM/PM" */
 export function formatNewMoonLocal(utcDate: Date, utcOffsetHours: number | null): string {
   const offset = utcOffsetHours ?? -utcDate.getTimezoneOffset() / 60;

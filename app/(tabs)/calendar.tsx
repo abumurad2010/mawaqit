@@ -25,7 +25,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   getMoonPhase, getNewMoonsForMonth, moonEmojiForDay,
-  formatNewMoonDate, formatNewMoonLocal, type MoonPhaseInfo,
+  formatNewMoonDate, formatNewMoonLocal, getExpectedCrescentDate,
+  type MoonPhaseInfo,
 } from '@/lib/moon-phases';
 
 
@@ -74,6 +75,7 @@ export default function CalendarScreen() {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesType | null>(null);
   const [showMoonDetail, setShowMoonDetail] = useState(false);
   const [showNewMoonLookup, setShowNewMoonLookup] = useState(false);
+  const [showCrescentHelp, setShowCrescentHelp] = useState(false);
   const [lookupYear, setLookupYear] = useState(today.getFullYear());
   const [lookupMonth, setLookupMonth] = useState(today.getMonth() + 1);
 
@@ -109,6 +111,55 @@ export default function CalendarScreen() {
 
   // New moons for the lookup modal (independent from view month)
   const lookupNewMoons = useMemo(() => getNewMoonsForMonth(lookupYear, lookupMonth), [lookupYear, lookupMonth]);
+
+  // For each conjunction in the lookup month, compute:
+  //  • the expected crescent sighting date (next local evening after conjunction)
+  //  • the observability window (sunset → estimated moonset) for that evening
+  const lookupCrescentInfos = useMemo(() => {
+    const offset = locationUtcOffset ?? 0;
+    return lookupNewMoons.map(nm => {
+      const crescentDate = getExpectedCrescentDate(nm, offset);
+      // Compute sunset for the crescent evening (need location for prayer times)
+      let sunset: Date | null = null;
+      let moonset: Date | null = null;
+      if (location) {
+        const times = calculatePrayerTimes({
+          lat: location.lat,
+          lng: location.lng,
+          date: crescentDate,
+          method: calcMethod,
+          asrMethod,
+          maghribOffset,
+        });
+        const sunsetMs = (times.maghrib as Date).getTime();
+        // At crescent sighting, moon is ~1–2 days old; each day adds ~50 min of visibility
+        const moonsetMs = sunsetMs + 1.5 * 50 * 60 * 1000; // ≈ 75 min window
+        sunset = new Date(sunsetMs);
+        moonset = new Date(moonsetMs);
+      }
+      return { conjunction: nm, crescentDate, sunset, moonset };
+    });
+  }, [lookupNewMoons, location, locationUtcOffset, calcMethod, asrMethod, maghribOffset]);
+
+  // ── Crescent help text (all 15 languages) ──────────────────────────────────
+  const CRESCENT_HELP: Record<string, string> = {
+    ar: 'هذه الأداة مخصصة لرصد هلال أول الشهر الهجري (رؤية الهلال)، وليست للأغراض الفلكية.\n\nيختلف وقت "القمر الجديد" الفلكي (المحاق) عن وقت رؤية الهلال؛ إذ يظل القمر غير مرئي أثناء الاقتران، ثم يظهر الهلال عادةً في مساء اليوم التالي.\n\nتُبيّن "نافذة الرصد" المدة الزمنية التي يمكن فيها رؤية الهلال بعد الغروب.',
+    en: 'This tool is for Islamic crescent moon sighting (ruʾyat al-hilāl), not for astronomical purposes.\n\nThe "astronomical new moon" (conjunction) occurs when the moon is invisible. The crescent typically becomes visible the following evening.\n\nThe observability window shows the time after sunset during which the crescent may be seen.',
+    fr: 'Cet outil est destiné à l\'observation islamique du croissant (ruʾyat al-hilāl), et non à des fins astronomiques.\n\nLa "nouvelle lune astronomique" (conjonction) se produit quand la lune est invisible. Le croissant devient généralement visible le soir suivant.\n\nLa fenêtre d\'observation indique la durée après le coucher du soleil pendant laquelle le croissant peut être aperçu.',
+    es: 'Esta herramienta es para el avistamiento islámico de la luna creciente (ruʾyat al-hilāl), no para fines astronómicos.\n\nLa "luna nueva astronómica" (conjunción) ocurre cuando la luna es invisible. El creciente suele hacerse visible la tarde siguiente.\n\nLa ventana de observación indica el tiempo después del atardecer durante el cual se puede ver el creciente.',
+    ru: 'Этот инструмент предназначен для исламского наблюдения серпа луны (руʾйат аль-хиляль), а не для астрономических целей.\n\n«Астрономическое новолуние» (соединение) происходит, когда луна невидима. Серп обычно становится виден следующим вечером.\n\nОкно наблюдаемости показывает время после захода солнца, в течение которого можно увидеть серп.',
+    zh: '此工具用于伊斯兰新月目视（ruʾyat al-hilāl），而非天文用途。\n\n"天文新月"（合朔）发生时月亮不可见，新月通常在次日傍晚出现。\n\n可见窗口显示日落后可观察到新月的时间段。',
+    tr: 'Bu araç, astronomi amaçlı değil, İslami hilal gözlemi (ruʾyet el-hilâl) için tasarlanmıştır.\n\n"Astronomik yeni ay" (kavuşum), ay görünmezken gerçekleşir. Hilal genellikle ertesi akşam görünür hale gelir.\n\nGözlemlenebilirlik penceresi, hilâlin günbatımından sonra görülebileceği süreyi gösterir.',
+    ur: 'یہ ٹول اسلامی چاند کی رویت (رؤیت الہلال) کے لیے ہے، فلکیاتی مقاصد کے لیے نہیں۔\n\n"فلکیاتی نیا چاند" (اجتماع) اس وقت ہوتا ہے جب چاند نظر نہیں آتا۔ ہلال عموماً اگلی شام نظر آتا ہے۔\n\nمشاہدے کی کھڑکی غروبِ آفتاب کے بعد اس وقت کو ظاہر کرتی ہے جب ہلال نظر آ سکتا ہے۔',
+    id: 'Alat ini digunakan untuk pengamatan hilal Islam (ruʾyat al-hilāl), bukan untuk tujuan astronomi.\n\n"Bulan baru astronomis" (konjungsi) terjadi saat bulan tidak terlihat. Hilal biasanya terlihat pada malam berikutnya.\n\nJendela keterlihatan menunjukkan waktu setelah matahari terbenam saat hilal dapat diamati.',
+    bn: 'এই টুলটি ইসলামিক নতুন চাঁদ দেখার জন্য (রু\'ইয়াত আল-হিলাল), জ্যোতির্বিজ্ঞানগত উদ্দেশ্যে নয়।\n\n"জ্যোতির্বিজ্ঞানগত নতুন চাঁদ" (সংযোগ) তখন ঘটে যখন চাঁদ অদৃশ্য থাকে। হিলাল সাধারণত পরের সন্ধ্যায় দৃশ্যমান হয়।\n\nদৃশ্যমানতার জানালা সূর্যাস্তের পরে সেই সময় দেখায় যখন হিলাল দেখা যায়।',
+    fa: 'این ابزار برای رویت هلال ماه اسلامی (رؤیت الهلال) طراحی شده، نه برای اهداف نجومی.\n\n«هلال نجومی» (اجتماع) زمانی رخ می‌دهد که ماه نامرئی است. هلال معمولاً شب بعد قابل رویت می‌شود.\n\nپنجره مشاهده‌پذیری زمانی پس از غروب آفتاب را نشان می‌دهد که در آن هلال قابل رویت است.',
+    ms: 'Alat ini adalah untuk pemerhatian anak bulan Islam (ruʾyat al-hilāl), bukan untuk tujuan astronomi.\n\n"Bulan baru astronomi" (konjungsi) berlaku apabila bulan tidak kelihatan. Anak bulan biasanya kelihatan pada petang berikutnya.\n\nTingkap kebolehperhatiaan menunjukkan masa selepas matahari terbenam di mana anak bulan boleh dilihat.',
+    pt: 'Esta ferramenta é para a observação islâmica da lua crescente (ruʾyat al-hilāl), não para fins astronômicos.\n\nA "lua nova astronômica" (conjunção) ocorre quando a lua está invisível. O crescente geralmente se torna visível na noite seguinte.\n\nA janela de observabilidade mostra o tempo após o pôr do sol durante o qual o crescente pode ser visto.',
+    sw: 'Zana hii ni kwa ajili ya kutazama hilali ya Kiislamu (ruʾyat al-hilāl), si kwa madhumuni ya astronomia.\n\n"Mwezi mpya wa kimaumbile" (muunganiko) hutokea mwezi unapokuwa haionekani. Hilali kwa kawaida huonekana jioni inayofuata.\n\nDirisha la kuonekana linaonyesha muda baada ya jua kutua ambapo hilali inaweza kuonekana.',
+    ha: 'Wannan kayan aiki ne don ganin watan Islama (ruʾyat al-hilāl), ba don dalilan ilimin taurari ba.\n\n"Sabon wata na taurari" (haɗuwa) yana faruwa lokacin da wata bai bayyane ba. Hilal yawanci yana bayyana yammacin ranar da ta biyo baya.\n\nTaga kallo tana nuna lokacin bayan faɗuwar rana da za a iya ganin hilal.',
+  };
+  const crescentHelpText = CRESCENT_HELP[lang] ?? CRESCENT_HELP['en'];
 
   // If the selected date is a conjunction day, find the exact UTC moment (for showing time in popup)
   const selectedDateNewMoon = useMemo(() => {
@@ -295,17 +346,25 @@ export default function CalendarScreen() {
           })}
         </View>
 
-        {/* New Moon Lookup — compact row above prayer times */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+        {/* Crescent Sighting Lookup — compact row above prayer times */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 10, flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowNewMoonLookup(true); }}
-            style={({ pressed }) => [styles.newMoonBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={{ fontSize: 14 }}>🌑</Text>
+            <Text style={{ fontSize: 14 }}>🌒</Text>
             <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'البحث عن توقيت القمر الجديد' : 'New Moon Lookup'}
+              {isAr ? 'رصد الهلال' : 'Crescent Sighting Lookup'}
             </Text>
             <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
+          </Pressable>
+          {/* Help button */}
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowCrescentHelp(true); }}
+            style={[styles.crescentHelpBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.crescentHelpBtnText, { color: C.tint }]}>?</Text>
           </Pressable>
         </View>
 
@@ -442,16 +501,16 @@ export default function CalendarScreen() {
         </Pressable>
       </Modal>
 
-      {/* New Moon Lookup Modal */}
+      {/* Crescent Sighting Lookup Modal */}
       <Modal visible={showNewMoonLookup} transparent animationType="slide">
         <Pressable style={styles.modalOverlay} onPress={() => setShowNewMoonLookup(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
             <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
-              {isAr ? '🌑 البحث عن توقيت القمر الجديد' : '🌑 New Moon Lookup'}
+              {isAr ? '🌒 رصد الهلال' : '🌒 Crescent Sighting Lookup'}
             </Text>
 
-            {/* Independent month / year navigation — left always = previous, right always = next */}
+            {/* Month / year navigation */}
             <View style={[styles.nmMonthNav, { flexDirection: 'row' }]}>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); if (lookupMonth === 1) { setLookupYear(y => y - 1); setLookupMonth(12); } else setLookupMonth(m => m - 1); }}
@@ -470,34 +529,76 @@ export default function CalendarScreen() {
               </Pressable>
             </View>
 
-            {/* New moon results */}
+            {/* Crescent results */}
             <View style={[styles.nmResultBox, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
-              {lookupNewMoons.length === 0 ? (
+              {lookupCrescentInfos.length === 0 ? (
                 <Text style={[styles.moonSub, { color: C.textMuted, textAlign: 'center', padding: 16 }]}>
-                  {isAr ? 'لا يوجد هلال جديد هذا الشهر' : 'No new moon this month'}
+                  {isAr ? 'لا يوجد هلال هذا الشهر' : 'No crescent sighting expected this month'}
                 </Text>
               ) : (
-                lookupNewMoons.map((nm, i) => (
-                  <View key={i} style={[styles.nmRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', marginTop: 14, paddingTop: 14 }]}>
-                    <Text style={{ fontSize: 36, marginBottom: 8 }}>🌑</Text>
-                    <Text style={[styles.nmDateTime, { color: C.text }]}>
-                      {formatNewMoonDate(nm, locationUtcOffset)}
-                    </Text>
-                    <View style={[styles.nmTimeChip, { backgroundColor: C.tint + '22' }]}>
-                      <Ionicons name="time-outline" size={13} color={C.tint} />
-                      <Text style={[styles.nmTimeText, { color: C.tint }]}>
-                        {isAr
-                          ? `${formatNewMoonLocal(nm, locationUtcOffset)} (توقيت محلي)`
-                          : `${formatNewMoonLocal(nm, locationUtcOffset)} local time`}
+                lookupCrescentInfos.map((info, i) => {
+                  const months = isAr ? GREGORIAN_MONTHS_AR : GREGORIAN_MONTHS_EN;
+                  const cDate = new Date(info.crescentDate.getTime() + (locationUtcOffset ?? 0) * 3600 * 1000);
+                  const crescentLabel = `${months[cDate.getUTCMonth()]} ${cDate.getUTCDate()}, ${cDate.getUTCFullYear()}`;
+                  return (
+                    <View key={i} style={[styles.nmRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', marginTop: 14, paddingTop: 14 }]}>
+
+                      {/* Primary: expected crescent date */}
+                      <Text style={{ fontSize: 36, marginBottom: 6 }}>🌒</Text>
+                      <Text style={[styles.nmCrescentLabel, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+                        {isAr ? 'موعد رؤية الهلال المتوقع' : 'Expected Crescent Sighting'}
                       </Text>
+                      <Text style={[styles.nmDateTime, { color: C.text, marginBottom: 8 }]}>
+                        {crescentLabel}
+                      </Text>
+
+                      {/* Observability window (sunset → moonset) */}
+                      {info.sunset && info.moonset ? (
+                        <View style={[styles.nmTimeChip, { backgroundColor: C.tint + '22', marginBottom: 12 }]}>
+                          <Ionicons name="eye-outline" size={13} color={C.tint} />
+                          <Text style={[styles.nmTimeText, { color: C.tint }]}>
+                            {isAr
+                              ? `نافذة الرصد: ${formatTimeAtOffset(info.sunset, locationUtcOffset)} – ${formatTimeAtOffset(info.moonset, locationUtcOffset)}`
+                              : `Look: ${formatTimeAtOffset(info.sunset, locationUtcOffset)} – ${formatTimeAtOffset(info.moonset, locationUtcOffset)}`}
+                          </Text>
+                        </View>
+                      ) : null}
+
+                      {/* Secondary: astronomical conjunction (reference) */}
+                      <View style={[styles.nmConjRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                        <Text style={{ fontSize: 13 }}>🌑</Text>
+                        <Text style={[styles.nmConjLabel, { color: C.textMuted }]}>
+                          {isAr
+                            ? `الاقتران الفلكي: ${formatNewMoonDate(info.conjunction, locationUtcOffset)} — ${formatNewMoonLocal(info.conjunction, locationUtcOffset)}`
+                            : `Conjunction (ref): ${formatNewMoonDate(info.conjunction, locationUtcOffset)}, ${formatNewMoonLocal(info.conjunction, locationUtcOffset)}`}
+                        </Text>
+                      </View>
                     </View>
-                  </View>
-                ))
+                  );
+                })
               )}
             </View>
 
             <Pressable onPress={() => setShowNewMoonLookup(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
               <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Crescent Help Popup */}
+      <Modal visible={showCrescentHelp} transparent animationType="fade">
+        <Pressable style={[styles.modalOverlay, { justifyContent: 'center' }]} onPress={() => setShowCrescentHelp(false)}>
+          <Pressable style={[styles.crescentHelpSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: 16, marginBottom: 12 }]}>
+              {isAr ? '🌒 رصد الهلال' : '🌒 Crescent Sighting'}
+            </Text>
+            <Text style={[styles.crescentHelpBody, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, textAlign: isAr ? 'right' : 'left' }]}>
+              {crescentHelpText}
+            </Text>
+            <Pressable onPress={() => setShowCrescentHelp(false)} style={[styles.modalClose, { backgroundColor: C.tint, marginTop: 16 }]}>
+              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'حسنًا' : 'OK'}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -647,4 +748,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginTop: 2,
   },
   nmTimeText: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
+
+  // Crescent sighting lookup extras
+  nmCrescentLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  nmConjRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, marginTop: 4, width: '100%',
+  },
+  nmConjLabel: { fontSize: 12, flex: 1, fontVariant: ['tabular-nums'] },
+
+  // Crescent help button (? circle next to lookup row)
+  crescentHelpBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  crescentHelpBtnText: { fontSize: 15, fontWeight: '700' },
+
+  // Crescent help popup sheet
+  crescentHelpSheet: {
+    margin: 24, borderRadius: 20,
+    paddingTop: 12, paddingHorizontal: 20, paddingBottom: 28,
+  },
+  crescentHelpBody: {
+    fontSize: 14, lineHeight: 22,
+  },
 });
