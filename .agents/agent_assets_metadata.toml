@@ -6,3 +6,9 @@ id = "q8vYd2N65HRh35nKhYp4X"
 uri = "file://CHANGELOG.md"
 type = "text"
 title = "Mawaqit Changelog — March 13–16, 2026"
+
+[[outputs]]
+id = "-ek1OOZ5iiB7TP0TV-CpL"
+uri = "file://RELEASE_NOTES.md"
+type = "text"
+title = "Google Play Release Notes — v1.1.0"
