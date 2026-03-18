@@ -1,169 +1,255 @@
-# Mawaqit — Google Play Store Release Notes
-## Version 1.1.0 · 17 March 2026 · ١٧ مارس ٢٠٢٦
+# مواقيت · Mawaqit
+## Version 1.1.0 — 17 March 2026 · ١٧ مارس ٢٠٢٦
+
+---
+---
+
+# 🇬🇧 ENGLISH
 
 ---
 
-## English
-
-### Short Version
-*Google Play "What's New" field — 500 character limit*
+## ✦ SHORT VERSION
+*Paste into Google Play → "What's new" (500-character limit)*
 
 ```
-🌒 New: Crescent Sighting Lookup — find the expected hilal date and observability window for any month.
-🌙 Moon phases now shown on every calendar day.
-🕌 Eid Prayer auto-appears 2 days before Eid with a configurable time.
-🤲 Dhuha & Qiyam/Tahajjud prayer times now customizable with reminders.
-✨ New Gold accessibility theme. Settings redesigned for clarity.
-```
+🌒 Crescent Sighting Lookup — find the expected hilal date & observability
+   window for any month, built for Islamic moon sighting, not astronomy.
 
----
+🌙 Moon phases now live on every calendar day — tap any date for full details.
 
-### Full Version
+🕌 Eid Prayer row appears automatically 2 days before Eid, time fully
+   configurable to your mosque's official announcement.
 
-**Mawaqit 1.1.0 — 17 March 2026**
+🤲 Dhuha & Qiyam/Tahajjud — toggle on/off, set your own reminder time.
 
-#### 🌒 Crescent Sighting Lookup (New)
-
-A new crescent sighting tool appears below the calendar, built specifically for Islamic lunar month determination (ruʾyat al-hilāl) — not for astronomical purposes.
-
-- Shows the **expected date of first crescent visibility** — the evening after the astronomical conjunction, when the hilal can first be seen
-- Displays the **observability window**: the exact sunset-to-moonset interval during which to look, computed from your location
-- Navigate month by month to plan ahead for Ramadan, Eid al-Fitr, and Dhul Hijjah
-- The astronomical conjunction time is shown underneath as a reference only
-- A **help button (?)** next to the search row explains — in all 15 app languages — why crescent sighting differs from an astronomical new moon calculator
-
-#### 🌙 Moon Phases on the Calendar
-
-- Every day in the calendar grid now shows a live **moon phase emoji** (🌑🌒🌓🌔🌕🌖🌗🌘)
-- Tap any day for a detailed popup: phase name in your language, illumination percentage, Hijri day number, and — on crescent days — the **observability window** (sunset to moonset)
-- Days of astronomical new moon show the **exact local time** of the conjunction
-- All phase names use correct Islamic observational terminology (Hilal, Badr, Muhaaq, etc.)
-
-#### 🕌 Eid Prayer — Smart Visibility & Configurable Time
-
-- The **Eid Prayer row** appears automatically on the main prayer screen and in Settings only when relevant:
-  - **Eid al-Fitr**: visible from 29 Ramadan through 1 Shawwal
-  - **Eid al-Adha**: visible from 8 Dhul Hijjah through 10 Dhul Hijjah (3-day window so you can set the time in advance)
-- Your **Hijri adjustment** (±1–2 days) is fully respected — the row appears on the correct day for your country's moon sighting
-- Set your **mosque's official Eid prayer time** with a scroll-wheel time picker — no more fixed default
-- Help button explains the visibility window and how to use it
-
-#### 🤲 Dhuha & Qiyam / Tahajjud — Customizable Nafl Prayers
-
-- Toggle **Dhuha** and **Qiyam (Tahajjud / Night Prayer)** on or off from Settings
-- Set an exact reminder time for each using a smooth scroll-wheel picker
-- Both appear on the main prayer screen between the five daily prayers when enabled
-- Notifications fire at your configured times
-
-#### ⏰ First Adhan Reminder — Finer Intervals
-
-- Reminder intervals refined from 10-minute steps to **5-minute steps**: Off · 5 · 10 · 15 · 20 · 25 · 30 minutes before the adhan
-- Picker redesigned as a compact modal, saving space in Settings
-
-#### 🎨 Gold Accessibility Theme (8th Theme)
-
-- A new **Gold** color theme joins the existing 7 accessibility themes
-- Warm gold palette available in both light mode and dark mode
-- Meets accessible contrast ratios throughout the app
-
-#### 🏠 Always Opens on Prayer Times Tab
-
-- The app now always returns to the **Prayer Times** tab on launch and when resumed from the background — no more landing on a different screen
-
-#### 🛠 Settings — Compact & Cleaner
-
-- Settings rows for Dhuha, Qiyam, and Maghrib collapsed into single compact lines
-- Accessibility theme tiles redesigned as a **2-column grid** — easier to browse
-- All scroll-wheel modals (time pickers, selectors) now close when tapping outside the sheet
-- Consistent sans-serif typography throughout Settings
-
----
-
-## العربية
-
-### النسخة القصيرة
-*حقل "الجديد" في متجر Google Play — الحد الأقصى 500 حرف*
-
-```
-🌒 جديد: رصد الهلال — اعرف التاريخ المتوقع لرؤية الهلال ونافذة الرصد لأي شهر.
-🌙 أطوار القمر تظهر الآن على كل يوم في التقويم.
-🕌 صلاة العيد تظهر تلقائياً قبل العيد بيومين وتوقيتها قابل للضبط.
-🤲 أوقات صلاتَي الضحى والقيام / التهجد قابلة للتخصيص مع تنبيهات.
-✨ نمط ألوان ذهبي جديد. إعادة تصميم شاشة الإعدادات.
+✨ New Gold theme · finer adhan reminders · cleaner Settings.
 ```
 
 ---
 
-### النسخة الكاملة
+## ✦ FULL VERSION
 
-**مواقيت 1.1.0 — ١٧ مارس ٢٠٢٦**
+### Mawaqit 1.1.0 — 17 March 2026
 
-#### 🌒 رصد الهلال (ميزة جديدة)
+> *Free. Ad-free. Always.*
+> Mawaqit 1.1.0 is the most significant update since launch — introducing a
+> purpose-built Islamic crescent sighting tool, live moon phases on the calendar,
+> smarter Eid prayer handling, and deeply personal nafl prayer customisation.
 
-أُضيفت أداة رصد الهلال أسفل التقويم، مصممة خصيصاً لأغراض رؤية هلال أول الشهر الهجري (رؤية الهلال) — لا للأغراض الفلكية.
+---
 
-- تعرض **التاريخ المتوقع لرؤية الهلال** — مساء اليوم التالي للاقتران، حين يُرى الهلال لأول مرة
-- تُظهر **نافذة الرصد**: الفترة الزمنية الدقيقة بين الغروب وغياب القمر، محسوبةً من موقعك
-- تصفح شهراً بشهر للتخطيط المسبق لرمضان وعيد الفطر وذي الحجة
-- يظهر توقيت الاقتران الفلكي أسفله كمرجع فقط
-- **زر مساعدة (؟)** بجانب الأداة يشرح — بجميع اللغات الخمس عشرة للتطبيق — الفرق بين رؤية الهلال والقمر الجديد الفلكي
+### 🌒 Crescent Sighting Lookup — Built for the Hilal, Not the Telescope
 
-#### 🌙 أطوار القمر في التقويم
+The astronomical "new moon" is invisible. What Muslims observe is the **hilal** — the first sliver of crescent that appears in the west after sunset. These are two very different moments, and Mawaqit now treats them that way.
 
-- كل يوم في شبكة التقويم يعرض الآن **رمز طور القمر** المقابل (🌑🌒🌓🌔🌕🌖🌗🌘)
-- اضغط على أي يوم لعرض تفاصيله: اسم الطور بلغتك، نسبة الإضاءة، يوم الشهر الهجري، ونافذة رصد الهلال في الأيام المناسبة
-- يوم الاقتران الفلكي يُظهر **التوقيت المحلي الدقيق** للاقتران
-- جميع أسماء الأطوار تتبع المصطلحات الإسلامية الصحيحة (هلال، بدر، محاق...)
+A new **Crescent Sighting Lookup** tool sits below the calendar:
 
-#### 🕌 صلاة العيد — ظهور ذكي وتوقيت قابل للضبط
+- Calculates the **expected date of first crescent visibility** — the evening after conjunction, when the hilal can actually be seen
+- Shows your personalised **observability window**: the precise interval from sunset to moonset during which to look, computed from your own location
+- Navigate freely month by month — plan your Ramadan start, Eid al-Fitr, and Dhul Hijjah months in advance
+- The astronomical conjunction time is shown beneath each result as a scholarly reference
+- A **help button (?)** beside the search row explains — in all 15 app languages — exactly why crescent sighting and astronomical new moon are different things, and how to read the results
 
-- يظهر **صف صلاة العيد** تلقائياً في الشاشة الرئيسية والإعدادات في الأوقات المناسبة فقط:
+---
+
+### 🌙 Moon Phases, Alive on Every Day
+
+The calendar has been transformed. Every single day now carries a **live moon phase emoji** that updates as the lunar cycle progresses — glance at the grid and read the entire month's sky at once.
+
+Tap any date to open a richly detailed moon card:
+
+- Phase name in your language, with the correct Islamic observational term
+- Illumination percentage and Hijri day number
+- On crescent evenings: the **full observability window** — sunset time to estimated moonset
+- On conjunction days: the **exact local time** the astronomical new moon occurs
+- A contextual description explaining the lunar significance of that phase
+
+---
+
+### 🕌 Eid Prayer — Smarter, More Personal
+
+Eid prayer time varies by city and mosque. Mawaqit now puts that in your hands.
+
+- The **Eid Prayer row** appears automatically — only when it matters:
+  - **Eid al-Fitr**: from 29 Ramadan through 1 Shawwal
+  - **Eid al-Adha**: from 8–10 Dhul Hijjah, giving you three days to configure before the morning arrives
+- Your **Hijri adjustment** setting is honoured throughout — if your country observes a day earlier or later, the row appears on exactly the right day for you
+- Set the time directly from your **mosque's official announcement** using the smooth scroll-wheel time picker
+- A help button clarifies the visibility window and the reasoning behind it
+
+---
+
+### 🤲 Dhuha & Qiyam — Your Nafl Prayers, Your Schedule
+
+Optional prayers deserve first-class treatment.
+
+- **Toggle Dhuha and Qiyam (Tahajjud / Night Prayer)** on or off independently from Settings — show only what you observe
+- Set a precise **personal reminder time** for each using the same scroll-wheel picker used for obligatory prayers
+- Both appear on the main prayer screen — between the five daily prayers — when enabled, so your full day of worship is visible at a glance
+- Notifications arrive at exactly the times you set
+
+---
+
+### ⏰ First Adhan Reminder — 5-Minute Precision
+
+Never miss the adhan by a few minutes again.
+
+- Reminder intervals refined from clunky 10-minute jumps to smooth **5-minute steps**: Off · 5 · 10 · 15 · 20 · 25 · 30 minutes before the call to prayer
+- The picker has been redesigned as a clean, compact modal
+
+---
+
+### 🎨 Gold — The Eighth Accessibility Theme
+
+A warm new **Gold** colour theme joins the existing palette. Rich amber tones in light mode, luminous gold in dark mode — with accessible contrast maintained throughout every screen of the app.
+
+---
+
+### 🏠 One Tap Always Brings You Home
+
+The app now always returns to the **Prayer Times tab** the moment you open it or come back from the background. Your prayer times are always the first thing you see.
+
+---
+
+### 🛠 Settings — Refined, Not Cluttered
+
+Every row in Settings was revisited:
+
+- Dhuha, Qiyam, and Maghrib rows condensed to clean single-line layouts
+- Accessibility theme tiles reorganised as a **two-column grid** — scan all eight themes at once
+- Every scroll-wheel modal now closes with a tap anywhere outside — no close button hunting
+- Consistent, modern typography across every Settings label and picker
+
+---
+---
+
+# 🇸🇦 العربية
+
+---
+
+## ✦ النسخة القصيرة
+*للصق في Google Play ← "الجديد" (الحد الأقصى ٥٠٠ حرف)*
+
+```
+🌒 رصد الهلال — اعرف التاريخ المتوقع لرؤية الهلال ونافذة الرصد لأي شهر،
+   مصممة لرؤية الهلال الشرعية لا للأغراض الفلكية.
+
+🌙 أطوار القمر حية على كل يوم في التقويم — اضغط أي تاريخ للتفاصيل الكاملة.
+
+🕌 صلاة العيد تظهر تلقائياً قبل العيد بيومين،
+   وتوقيتها قابل للضبط وفق إعلان مسجدك.
+
+🤲 الضحى والقيام / التهجد — فعّل أو أوقف، واضبط وقت التذكير بنفسك.
+
+✨ نمط ذهبي جديد · تنبيهات أذان بدقة أعلى · إعدادات أكثر وضوحاً.
+```
+
+---
+
+## ✦ النسخة الكاملة
+
+### مواقيت ١٫١٫٠ — ١٧ مارس ٢٠٢٦
+
+> *مجاني. بلا إعلانات. دائماً.*
+> مواقيت ١٫١٫٠ هو أهم تحديث منذ الإطلاق — يُقدّم أداة رصد هلال إسلامية
+> متخصصة، وأطوار القمر الحية على التقويم، ومعالجة أذكى لصلاة العيد،
+> وتخصيصاً عميقاً لصلوات النوافل.
+
+---
+
+### 🌒 رصد الهلال — للهلال لا للتلسكوب
+
+القمر الجديد الفلكي لا يُرى بالعين. ما يرصده المسلمون هو **الهلال** — ذلك القوس الرفيع الذي يطل في الأفق الغربي بعد الغروب. هذان حدثان مختلفان تماماً، ومواقيت يُعاملهما كذلك الآن.
+
+تجد أسفل التقويم أداة **رصد الهلال** الجديدة:
+
+- تحسب **التاريخ المتوقع لرؤية الهلال** — مساء اليوم التالي للاقتران، حين يُرى الهلال لأول مرة بالعين المجردة
+- تعرض **نافذة الرصد الشخصية**: الفترة الدقيقة من غروب الشمس إلى غياب القمر لمدينتك تحديداً
+- تصفح شهراً بشهر لتخطّط مسبقاً لبداية رمضان وعيد الفطر وشهر ذي الحجة
+- يظهر توقيت الاقتران الفلكي تحت كل نتيجة كمرجع علمي
+- **زر مساعدة (؟)** بجانب أداة الرصد يشرح — بجميع اللغات الخمس عشرة — الفرق بين رؤية الهلال والقمر الجديد الفلكي، وكيفية قراءة النتائج
+
+---
+
+### 🌙 أطوار القمر، حية على كل يوم
+
+تحوّل التقويم. كل يوم يحمل الآن **رمز طور القمر الحي** الذي يتغير مع دورة القمر — القِ نظرة على الشبكة وستقرأ سماء الشهر كله دفعةً واحدة.
+
+اضغط أي تاريخ لتفتح بطاقة قمر غنية بالتفاصيل:
+
+- اسم الطور بلغتك مع المصطلح الإسلامي الدقيق
+- نسبة إضاءة القمر ورقم اليوم الهجري
+- في ليالي الهلال: **نافذة الرصد الكاملة** — من الغروب إلى تقدير موعد غياب القمر
+- في أيام المحاق: **التوقيت المحلي الدقيق** للاقتران الفلكي
+- وصف سياقي يشرح الدلالة الفلكية والشرعية لذلك الطور
+
+---
+
+### 🕌 صلاة العيد — أذكى وأكثر شخصية
+
+توقيت صلاة العيد يختلف من مدينة إلى أخرى ومن مسجد لمسجد. مواقيت يضع ذلك في يدك.
+
+- **صف صلاة العيد** يظهر تلقائياً — عند الحاجة فقط:
   - **عيد الفطر**: من ٢٩ رمضان حتى ١ شوال
-  - **عيد الأضحى**: من ٨ ذي الحجة حتى ١٠ ذي الحجة (نافذة ٣ أيام للتحضير المسبق)
-- **تعديل التقويم الهجري** (±١–٢ أيام) يُحترم بالكامل — يظهر الصف في اليوم الصحيح حسب قرار رؤية الهلال في بلدك
-- اضبط **توقيت صلاة العيد الرسمي في مسجدك** بمحدد التوقيت — لا توقيت افتراضي ثابت
-- زر مساعدة يشرح فترة الظهور وكيفية الاستخدام
+  - **عيد الأضحى**: من ٨ إلى ١٠ ذي الحجة، ثلاثة أيام لتضبط التوقيت قبل صباح العيد
+- **تعديل التقويم الهجري** معتمَد بالكامل — إن كان بلدك يُهلّل قبل غيره أو بعده يوماً، فسيظهر الصف في اليوم الصحيح لك تحديداً
+- اضبط التوقيت مباشرةً من **إعلان مسجدك الرسمي** بمحدد الوقت
+- زر مساعدة يوضح نافذة الظهور والمنطق خلفها
 
-#### 🤲 الضحى والقيام / التهجد — أوقات نافلة قابلة للتخصيص
+---
 
-- فعّل أو أوقف عرض **صلاة الضحى** و**صلاة القيام (التهجد)** من الإعدادات
-- اضبط وقت التذكير الدقيق لكل منهما بمحدد الوقت
-- يظهران في الشاشة الرئيسية بين الصلوات الخمس عند تفعيلهما
-- تُرسل التنبيهات في الأوقات التي تحددها
+### 🤲 الضحى والقيام — صلواتك النافلة، جدولك أنت
 
-#### ⏰ أذان التنبيه المبكر — فترات أدق
+للنوافل مكانة تستحقها.
 
-- الفترات الزمنية للتذكير المبكر تحسّنت من خطوات ١٠ دقائق إلى **خطوات ٥ دقائق**: إيقاف · ٥ · ١٠ · ١٥ · ٢٠ · ٢٥ · ٣٠ دقيقة قبل الأذان
-- أُعيد تصميم المحدد كنافذة مدمجة توفر مساحة في الإعدادات
+- **فعّل الضحى والقيام (التهجد)** أو أوقفهما بشكل مستقل من الإعدادات — أظهر ما تُؤدّيه فقط
+- اضبط **وقت التذكير الشخصي** لكل منهما بمحدد الوقت ذاته المستخدم في الصلوات الخمس
+- يظهران في الشاشة الرئيسية — بين الصلوات الخمس — حين تُفعّلهما، ليكون يومك العبادي مرئياً بأكمله
+- تصلك التنبيهات في الأوقات التي حددتها بالضبط
 
-#### 🎨 نمط الألوان الذهبي (النمط الثامن)
+---
 
-- **نمط ذهبي** جديد ينضم إلى أنماط إمكانية الوصول السبعة السابقة
-- لوحة ألوان دافئة في الوضعين الفاتح والداكن
-- نسب تباين مناسبة لإمكانية الوصول في جميع أنحاء التطبيق
+### ⏰ أذان التنبيه المبكر — دقة خمس دقائق
 
-#### 🏠 يفتح دائماً على تبويب أوقات الصلاة
+لا تفوّتك الصلاة بفارق دقائق بعد اليوم.
 
-- يعود التطبيق الآن دائماً إلى **تبويب أوقات الصلاة** عند الفتح أو العودة من الخلفية
+- الفترات الزمنية للتذكير المبكر تطوّرت من خطوات عشر دقائق إلى **خطوات خمس دقائق** سلسة: إيقاف · ٥ · ١٠ · ١٥ · ٢٠ · ٢٥ · ٣٠ دقيقة قبل الأذان
+- أُعيد تصميم المحدد كنافذة أنيقة ومدمجة
 
-#### 🛠 الإعدادات — أكثر إتقاناً ووضوحاً
+---
 
-- صفوف الضحى والقيام والمغرب دُمجت في أسطر واحدة مدمجة
-- بلاطات نمط إمكانية الوصول أُعيد تصميمها كـ**شبكة عمودين** — أسهل للتصفح
-- جميع نوافذ محددات التوقيت تُغلق عند الضغط خارجها
-- خط متسق في جميع أنحاء الإعدادات
+### 🎨 الذهبي — النمط الثامن لإمكانية الوصول
 
+نمط **ذهبي** دافئ جديد ينضم إلى لوحة الألوان. كهرماني رصين في الوضع الفاتح، وذهبي مضيء في الوضع الداكن — مع نسب تباين مناسبة في كل شاشة من شاشات التطبيق.
+
+---
+
+### 🏠 نقرة واحدة تُعيدك دائماً للبيت
+
+يعود التطبيق الآن دائماً إلى **تبويب أوقات الصلاة** فور فتحه أو العودة إليه من الخلفية. أوقات الصلاة هي أول ما تراه في كل مرة.
+
+---
+
+### 🛠 الإعدادات — مُصقَّلة لا مزدحمة
+
+كل صف في الإعدادات خضع للمراجعة:
+
+- صفوف الضحى والقيام والمغرب في أسطر واحدة نظيفة
+- بلاطات نمط إمكانية الوصول في **شبكة عمودين** — ترى الأنماط الثمانية دفعة واحدة
+- كل نافذة محدد تُغلق بلمسة خارجها — لا مطاردة لزر الإغلاق
+- خط حديث ومتسق في كل تسمية ومحدد داخل الإعدادات
+
+---
 ---
 
 ## Store Listing Info
 
-| Field | Value |
+| | |
 |---|---|
-| Version name | 1.1.0 |
-| Release date | 17 March 2026 |
-| Content rating | Suitable for all ages |
-| Category | Lifestyle / Religion & Spirituality |
-| Ads | None |
-| In-app purchases | None |
-| Permissions | Location (prayer times & Qibla) · Notifications (adhan reminders) |
-| Languages | Arabic · English · French · Spanish · Russian · Chinese · Turkish · Urdu · Indonesian · Bengali · Persian · Malay · Portuguese · Swahili · Hausa |
+| **Version** | 1.1.0 |
+| **Release date** | 17 March 2026 · ١٧ مارس ٢٠٢٦ |
+| **Category** | Lifestyle / Religion & Spirituality |
+| **Ads** | None |
+| **In-app purchases** | None |
+| **Permissions** | Location (prayer times & Qibla) · Notifications (adhan reminders) |
+| **Languages** | Arabic · English · French · Spanish · Russian · Chinese · Turkish · Urdu · Indonesian · Bengali · Persian · Malay · Portuguese · Swahili · Hausa |
