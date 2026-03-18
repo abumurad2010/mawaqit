@@ -445,6 +445,14 @@ export default function CalendarScreen() {
                 value: isAr ? `اليوم ${selectedHijri.day}` : `Day ${selectedHijri.day}`,
                 icon: 'calendar-outline',
               },
+              ...(location ? [{
+                label: isAr ? 'المنطقة' : 'Territory',
+                value: location.city && location.country
+                  ? `${location.city}, ${location.country}`
+                  : location.city ?? location.country
+                    ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`,
+                icon: 'location-outline',
+              }] : []),
               ...(selectedDateNewMoon ? [{
                 label: isAr ? 'وقت الاقتران (محلي)' : 'Conjunction Time (local)',
                 value: formatNewMoonLocal(selectedDateNewMoon, locationUtcOffset),
