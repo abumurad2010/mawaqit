@@ -26,10 +26,15 @@ import {
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
 
-/** Parse "HH:MM" → Date on today at that exact local time */
-function parseHHMM(hhmm: string): Date {
+/**
+ * Parse "HH:MM" → Date on today (or tomorrow) at that local time.
+ * Pass `tomorrow = true` when the prayer is actually the next Gregorian day
+ * (e.g. Eid prayer shown on Ramadan 30 evening after Maghrib).
+ */
+function parseHHMM(hhmm: string, tomorrow = false): Date {
   const [hh, mm] = hhmm.split(':').map(Number);
   const d = new Date();
+  if (tomorrow) d.setDate(d.getDate() + 1);
   d.setHours(isNaN(hh) ? 7 : hh, isNaN(mm) ? 30 : mm, 0, 0);
   return d;
 }
@@ -192,24 +197,50 @@ export default function PrayerTimesScreen() {
 
   // ── Eid detection on the main screen ────────────────────────────────────────
   //
-  // `hijriAdjustment` is applied to `hijriBase` above (line ~189) before the
-  // Gregorian→Hijri conversion, so `hijri` already reflects the user's adjusted
-  // calendar. No further adjustment is needed here.
+  // ISLAMIC DAY BOUNDARY — the new Hijri day begins at Maghrib, not midnight.
+  // At 9 pm on Ramadan 30, the Gregorian date is still "Ramadan 30" but
+  // Islamically it is already 1 Shawwal (Eid al-Fitr). To honour this:
   //
-  // MAIN SCREEN vs SETTINGS: this screen shows the Eid prayer TIME ROW only on
-  // the actual Eid day (1 Shawwal / 10 Dhul Hijjah). The Settings screen uses a
-  // wider window (29 Ramadan–1 Shawwal and 8–10 Dhul Hijjah) so the user can
-  // configure the time in advance. These are intentionally different windows.
+  //   1. We detect "today's" Eid using the current Gregorian→Hijri conversion.
+  //   2. After Maghrib, we also compute tomorrow's Hijri date and check that.
+  //      If tomorrow is Eid, `isEid` becomes true tonight — so the row appears
+  //      from the moment the Islamic day turns, not from Gregorian midnight.
   //
-  // DHUL HIJJAH: only day 10 triggers the prayer row here (Eid al-Adha is always
-  // on the 10th). Days 8–9 do not show the prayer time — they only open the
-  // settings configuration window.
+  // TOMORROW'S PRAYER TIME — when showing a next-day Eid prayer tonight, we
+  // pass `tomorrow = true` to parseHHMM so the Date lands on tomorrow morning.
+  // This means the row shows as upcoming (not already-passed).
   //
-  const isEidAlFitr = hijri.month === 10 && hijri.day === 1;
-  const isEidAlAdha = hijri.month === 12 && hijri.day === 10;
-  const isEid = isEidAlFitr || isEidAlAdha;
-  // Eid prayer time: user-configured official time for their city/mosque
-  const eidTime = (times && isEid) ? parseHHMM(eidPrayerTimeSetting ?? '07:30') : null;
+  // `hijriAdjustment` is applied to both today's and tomorrow's base dates.
+  //
+
+  // Is current wall-clock time past today's Maghrib?
+  const isAfterMaghrib = times ? now > (times.maghrib as Date) : false;
+
+  // Tomorrow's adjusted Hijri date (used for after-Maghrib look-ahead)
+  const tomorrowHijriBase = new Date(locationNow);
+  tomorrowHijriBase.setDate(tomorrowHijriBase.getDate() + 1 + (hijriAdjustment ?? 0));
+  const tomorrowHijri = gregorianToHijri(
+    tomorrowHijriBase.getFullYear(),
+    tomorrowHijriBase.getMonth() + 1,
+    tomorrowHijriBase.getDate(),
+  );
+
+  // Eid flags — today OR (after Maghrib AND tomorrow is Eid)
+  const isEidAlFitrToday    = hijri.month === 10 && hijri.day === 1;
+  const isEidAlAdhaToday    = hijri.month === 12 && hijri.day === 10;
+  const isEidAlFitrTomorrow = isAfterMaghrib && tomorrowHijri.month === 10 && tomorrowHijri.day === 1;
+  const isEidAlAdhaTomorrow = isAfterMaghrib && tomorrowHijri.month === 12 && tomorrowHijri.day === 10;
+
+  const isEidAlFitr = isEidAlFitrToday || isEidAlFitrTomorrow;
+  const isEidAlAdha = isEidAlAdhaToday || isEidAlAdhaTomorrow;
+  const isEid      = isEidAlFitr || isEidAlAdha;
+
+  // When we're showing tomorrow's Eid tonight, build the prayer time on
+  // tomorrow's Gregorian date so it appears as upcoming, not past.
+  const isEidNextDay = isEid && !isEidAlFitrToday && !isEidAlAdhaToday;
+  const eidTime = (times && isEid)
+    ? parseHHMM(eidPrayerTimeSetting ?? '07:30', isEidNextDay)
+    : null;
   const eidLabel = isEidAlFitr ? tr.eidFitrPrayer : tr.eidAdhaPrayer;
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
