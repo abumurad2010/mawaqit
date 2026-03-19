@@ -318,7 +318,6 @@ export default function CalendarScreen() {
                 onPress={() => {
                   Haptics.selectionAsync();
                   setSelectedDate({ y: viewYear, m: viewMonth, d: cell.day! });
-                  setShowMoonDetail(true);
                 }}
                 style={[
                   styles.cell,
@@ -346,18 +345,32 @@ export default function CalendarScreen() {
           })}
         </View>
 
-        {/* Crescent Sighting Lookup — compact row above prayer times */}
+        {/* Moon tools row — Moon Phase + Crescent Sighting + Help */}
         <View style={{ paddingHorizontal: 16, marginBottom: 10, flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+          {/* Moon Phase button — opens detail for the selected date */}
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowMoonDetail(true); }}
+            style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Text style={{ fontSize: 14 }}>{selectedMoon.emoji}</Text>
+            <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+              {isAr ? 'طور القمر' : 'Moon Phase'}
+            </Text>
+            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
+          </Pressable>
+
+          {/* Crescent Sighting Lookup button */}
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowNewMoonLookup(true); }}
             style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
           >
             <Text style={{ fontSize: 14 }}>🌒</Text>
             <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'رصد الهلال' : 'Crescent Sighting Lookup'}
+              {isAr ? 'رصد الهلال' : 'Crescent Sighting'}
             </Text>
             <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
           </Pressable>
+
           {/* Help button */}
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowCrescentHelp(true); }}
