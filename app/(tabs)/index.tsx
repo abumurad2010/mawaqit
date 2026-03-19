@@ -340,39 +340,23 @@ export default function PrayerTimesScreen() {
           </View>
         </View>
 
-        {/* Row 2: dates with left/right day navigation */}
+        {/* Row 2: date display (swipe left/right on screen to change day) */}
         <View style={styles.datesBlock}>
-          <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setDateOffset(prev => prev - 1); }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={16} color={C.tint} />
-            </Pressable>
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text
-                style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6, textAlign: 'center' }]}
-                numberOfLines={1}
-              >{gregorianStr}</Text>
-              <Text
-                style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5, textAlign: 'center' }]}
-                numberOfLines={1}
-              >{hijriStr}</Text>
-            </View>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setDateOffset(prev => prev + 1); }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={16} color={C.tint} />
-            </Pressable>
-          </View>
+          <Text
+            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6 }]}
+            numberOfLines={1}
+          >{gregorianStr}</Text>
+          <Text
+            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5 }]}
+            numberOfLines={1}
+          >{hijriStr}</Text>
           {dateOffset !== 0 && (
             <Pressable
               onPress={() => { Haptics.selectionAsync(); setDateOffset(0); }}
               style={[styles.todayPill, { backgroundColor: C.tint + '22', borderColor: C.tint + '55' }]}
             >
               <Text style={[styles.todayPillText, { color: C.tint, fontSize: hFS }]}>
-                {isAr ? '← اليوم' : 'Today →'}
+                {isAr ? 'اليوم' : 'Today'}
               </Text>
             </Pressable>
           )}
