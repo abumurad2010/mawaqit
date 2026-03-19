@@ -2,11 +2,11 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import LocationModal from '@/components/LocationModal';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { SERIF_EN } from '@/constants/typography';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  Platform, Image
+  Platform, Image, PanResponder,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -68,6 +68,34 @@ export default function PrayerTimesScreen() {
   const [now, setNow] = useState(new Date());
   const [showManual, setShowManual] = useState(false);
 
+  // ── Date navigation (swipe left/right to browse days) ────────────────────
+  const [dateOffset, setDateOffset] = useState(0); // 0 = today, +1 = tomorrow, -1 = yesterday
+
+  // The date whose prayer times are displayed
+  const viewingDate = useMemo(() => {
+    if (dateOffset === 0) return now;
+    const d = new Date();
+    d.setDate(d.getDate() + dateOffset);
+    d.setHours(12, 0, 0, 0);
+    return d;
+  }, [dateOffset, now]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -40) {
+          Haptics.selectionAsync();
+          setDateOffset(prev => prev + 1);
+        } else if (g.dx > 40) {
+          Haptics.selectionAsync();
+          setDateOffset(prev => prev - 1);
+        }
+      },
+    })
+  ).current;
+
   const pulse = useSharedValue(1);
   useEffect(() => {
     pulse.value = withRepeat(
@@ -118,13 +146,13 @@ export default function PrayerTimesScreen() {
     const computed = calculatePrayerTimes({
       lat: location.lat,
       lng: location.lng,
-      date: now,
+      date: viewingDate,
       method: calcMethod,
       asrMethod,
       maghribOffset,
     });
     setTimes(computed);
-  }, [location, now, calcMethod, asrMethod, maghribOffset]);
+  }, [location, viewingDate, calcMethod, asrMethod, maghribOffset]);
 
   const nextPrayer = times ? getNextPrayer(times) : null;
 
@@ -176,21 +204,33 @@ export default function PrayerTimesScreen() {
     ? parseHHMM(tahajjudTimeSetting ?? '03:00')
     : null;
 
-  const isNext = (key: keyof PrayerTimesType) => nextPrayer?.name === key;
-  const isPassed = (key: keyof PrayerTimesType) => times ? times[key] < now : false;
+  // next / passed only meaningful when viewing today
+  const isNext = (key: keyof PrayerTimesType) => dateOffset === 0 && nextPrayer?.name === key;
+  const isPassed = (key: keyof PrayerTimesType) => {
+    if (dateOffset < 0) return true;   // past day — all prayers passed
+    if (dateOffset > 0) return false;  // future day — none passed yet
+    return times ? times[key] < now : false;
+  };
 
-  // Shift `now` to the location's timezone when a manual UTC offset is set
+  // Shift `now` to the location's timezone — used for real-time Eid detection
   const locationNow = useMemo(() => {
     if (locationUtcOffset === null) return now;
     const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
     return new Date(utcMs + locationUtcOffset * 3600000);
   }, [now, locationUtcOffset]);
 
-  const gregorianStr = locationNow.toLocaleDateString(
+  // Viewing date shifted to the location's timezone — used for date display strings
+  const viewingLocationDate = useMemo(() => {
+    if (locationUtcOffset === null) return viewingDate;
+    const utcMs = viewingDate.getTime() + viewingDate.getTimezoneOffset() * 60000;
+    return new Date(utcMs + locationUtcOffset * 3600000);
+  }, [viewingDate, locationUtcOffset]);
+
+  const gregorianStr = viewingLocationDate.toLocaleDateString(
     isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
   );
-  const hijriBase = new Date(locationNow);
+  const hijriBase = new Date(viewingLocationDate);
   hijriBase.setDate(hijriBase.getDate() + (hijriAdjustment ?? 0));
   const hijri = gregorianToHijri(hijriBase.getFullYear(), hijriBase.getMonth() + 1, hijriBase.getDate());
   const hijriStr = formatHijriDate(hijri, lang);
@@ -267,7 +307,7 @@ export default function PrayerTimesScreen() {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: C.background }]}>
+    <View style={[styles.root, { backgroundColor: C.background }]} {...panResponder.panHandlers}>
       <Image
         source={require('@/assets/images/bg-prayer.png')}
         style={[styles.bgPrayer, { opacity: isDark ? 0.22 : 0.18 }]}
@@ -300,16 +340,42 @@ export default function PrayerTimesScreen() {
           </View>
         </View>
 
-        {/* Row 2: dates stacked and centered */}
+        {/* Row 2: dates with left/right day navigation */}
         <View style={styles.datesBlock}>
-          <Text
-            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6 }]}
-            numberOfLines={1}
-          >{gregorianStr}</Text>
-          <Text
-            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5 }]}
-            numberOfLines={1}
-          >{hijriStr}</Text>
+          <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setDateOffset(prev => prev - 1); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={16} color={C.tint} />
+            </Pressable>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text
+                style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6, textAlign: 'center' }]}
+                numberOfLines={1}
+              >{gregorianStr}</Text>
+              <Text
+                style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5, textAlign: 'center' }]}
+                numberOfLines={1}
+              >{hijriStr}</Text>
+            </View>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setDateOffset(prev => prev + 1); }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={16} color={C.tint} />
+            </Pressable>
+          </View>
+          {dateOffset !== 0 && (
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setDateOffset(0); }}
+              style={[styles.todayPill, { backgroundColor: C.tint + '22', borderColor: C.tint + '55' }]}
+            >
+              <Text style={[styles.todayPillText, { color: C.tint, fontSize: hFS }]}>
+                {isAr ? '← اليوم' : 'Today →'}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Row 3: location */}
@@ -346,7 +412,8 @@ export default function PrayerTimesScreen() {
         </Pressable>
       </View>
 
-      {/* ── Next prayer hero strip ── */}
+      {/* ── Next prayer hero strip — only shown when viewing today ── */}
+      {dateOffset === 0 && (
       <View style={{ paddingHorizontal: 16, marginTop: 4, marginBottom: 6 }}>
         {displayNext && times ? (
           <Animated.View
@@ -379,6 +446,7 @@ export default function PrayerTimesScreen() {
           </View>
         )}
       </View>
+      )}
 
       {/* ── Prayer list + dua (scrollable so dua always reachable) ── */}
       <ScrollView
@@ -583,9 +651,11 @@ const styles = StyleSheet.create({
   /* Header */
   headerWrap: { gap: 4, paddingBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  datesBlock: { alignItems: 'center', gap: 0 },
+  datesBlock: { alignItems: 'center', gap: 4 },
   dateText: { fontSize: 12, fontWeight: '600', letterSpacing: -0.1, lineHeight: 18 },
   hijriText: { fontSize: 11, fontWeight: '400', lineHeight: 17 },
+  todayPill: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 3, alignSelf: 'center' },
+  todayPillText: { fontSize: 11, fontWeight: '600' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   metaText: { fontSize: 11 },
   metaDot: { fontSize: 11, marginHorizontal: 1 },
