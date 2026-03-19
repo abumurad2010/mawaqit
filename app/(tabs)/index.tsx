@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat,
-  withSequence, withTiming, FadeIn,
+  withSequence, withTiming, FadeIn, runOnJS,
 } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -80,6 +80,39 @@ export default function PrayerTimesScreen() {
     return d;
   }, [dateOffset, now]);
 
+  // Slide animation shared value — drives translateX on the prayer content
+  const slideX = useSharedValue(0);
+  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slideX.value }] }));
+
+  // Track previous offset so useEffect knows which direction to animate the entry
+  const prevOffsetRef = useRef(0);
+  useEffect(() => {
+    const delta = dateOffset - prevOffsetRef.current;
+    prevOffsetRef.current = dateOffset;
+    if (delta === 0) return;
+    // New content enters from the opposite side of the exit
+    slideX.value = delta > 0 ? 360 : -360;
+    slideX.value = withTiming(0, { duration: 220 });
+  }, [dateOffset]);
+
+  // Navigate by delta days: slide current content out, then update state after exit completes
+  const navigateDay = useCallback((delta: number) => {
+    Haptics.selectionAsync();
+    slideX.value = withTiming(delta > 0 ? -360 : 360, { duration: 110 }, (done) => {
+      if (done) runOnJS(setDateOffset)((prev: number) => prev + delta);
+    });
+  }, []);
+
+  // Jump back to today with the correct slide direction
+  const goToToday = useCallback((currentOffset: number) => {
+    if (currentOffset === 0) return;
+    Haptics.selectionAsync();
+    // From future → slide right to get back; from past → slide left
+    slideX.value = withTiming(currentOffset > 0 ? 360 : -360, { duration: 110 }, (done) => {
+      if (done) runOnJS(setDateOffset)(0);
+    });
+  }, []);
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
@@ -87,10 +120,14 @@ export default function PrayerTimesScreen() {
       onPanResponderRelease: (_, g) => {
         if (g.dx < -40) {
           Haptics.selectionAsync();
-          setDateOffset(prev => prev + 1);
+          slideX.value = withTiming(-360, { duration: 110 }, (done) => {
+            if (done) runOnJS(setDateOffset)((prev: number) => prev + 1);
+          });
         } else if (g.dx > 40) {
           Haptics.selectionAsync();
-          setDateOffset(prev => prev - 1);
+          slideX.value = withTiming(360, { duration: 110 }, (done) => {
+            if (done) runOnJS(setDateOffset)((prev: number) => prev - 1);
+          });
         }
       },
     })
@@ -350,16 +387,6 @@ export default function PrayerTimesScreen() {
             style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5 }]}
             numberOfLines={1}
           >{hijriStr}</Text>
-          {dateOffset !== 0 && (
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setDateOffset(0); }}
-              style={[styles.todayPill, { backgroundColor: C.tint + '22', borderColor: C.tint + '55' }]}
-            >
-              <Text style={[styles.todayPillText, { color: C.tint, fontSize: hFS }]}>
-                {isAr ? 'اليوم' : 'Today'}
-              </Text>
-            </Pressable>
-          )}
         </View>
 
         {/* Row 3: location */}
@@ -374,6 +401,9 @@ export default function PrayerTimesScreen() {
           </Text>
         </View>
       </View>
+
+      {/* ── Animated slide container — everything below the header slides on day change ── */}
+      <Animated.View style={[{ flex: 1, overflow: 'hidden' }, slideStyle]}>
 
       {/* ── Font size controls ── */}
       <View style={styles.fontControlRow}>
@@ -430,6 +460,24 @@ export default function PrayerTimesScreen() {
           </View>
         )}
       </View>
+      )}
+
+      {/* ── Back to Today — appears above prayer list when browsing other days ── */}
+      {dateOffset !== 0 && (
+        <View style={{ paddingHorizontal: 16, marginBottom: 4, alignItems: isAr ? 'flex-start' : 'flex-end' }}>
+          <Pressable
+            onPress={() => goToToday(dateOffset)}
+            style={({ pressed }) => [
+              styles.backTodayBtn,
+              { backgroundColor: C.tint + '20', borderColor: C.tint + '55', opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <Ionicons name="return-up-back-outline" size={13} color={C.tint} />
+            <Text style={[styles.backTodayText, { color: C.tint, fontSize: hFS }]}>
+              {isAr ? 'العودة لليوم' : 'Back to Today'}
+            </Text>
+          </Pressable>
+        </View>
       )}
 
       {/* ── Prayer list + dua (scrollable so dua always reachable) ── */}
@@ -617,6 +665,8 @@ export default function PrayerTimesScreen() {
       </View>
       </ScrollView>
 
+      </Animated.View>{/* end slide container */}
+
       <LocationModal visible={showManual} onClose={() => setShowManual(false)} />
     </View>
   );
@@ -640,6 +690,8 @@ const styles = StyleSheet.create({
   hijriText: { fontSize: 11, fontWeight: '400', lineHeight: 17 },
   todayPill: { borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 3, alignSelf: 'center' },
   todayPillText: { fontSize: 11, fontWeight: '600' },
+  backTodayBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 14, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 },
+  backTodayText: { fontSize: 11, fontWeight: '600' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   metaText: { fontSize: 11 },
   metaDot: { fontSize: 11, marginHorizontal: 1 },
