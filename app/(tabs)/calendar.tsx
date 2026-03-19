@@ -74,6 +74,7 @@ export default function CalendarScreen() {
   });
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesType | null>(null);
   const [showMoonDetail, setShowMoonDetail] = useState(false);
+  const [showMoonPhaseHelp, setShowMoonPhaseHelp] = useState(false);
   const [showNewMoonLookup, setShowNewMoonLookup] = useState(false);
   const [showCrescentHelp, setShowCrescentHelp] = useState(false);
   const [lookupYear, setLookupYear] = useState(today.getFullYear());
@@ -160,6 +161,25 @@ export default function CalendarScreen() {
     ha: 'Wannan kayan aiki ne don ganin watan Islama (ruʾyat al-hilāl), ba don dalilan ilimin taurari ba.\n\n"Sabon wata na taurari" (haɗuwa) yana faruwa lokacin da wata bai bayyane ba. Hilal yawanci yana bayyana yammacin ranar da ta biyo baya.\n\nTaga kallo tana nuna lokacin bayan faɗuwar rana da za a iya ganin hilal.',
   };
   const crescentHelpText = CRESCENT_HELP[lang] ?? CRESCENT_HELP['en'];
+
+  const MOON_PHASE_HELP: Record<string, string> = {
+    ar: 'يُظهر طور القمر مقدار إضاءة القمر وشكله في التاريخ المحدد.\n\nتستغرق الدورة القمرية نحو 29.5 يومًا، وهي أساس التقويم الهجري الإسلامي. يبدأ كل شهر هجري بالمحاق (🌑) ويكون القمر بدرًا (🌕) حول اليوم الخامس عشر.\n\nتُشير نسبة الإضاءة إلى المقدار المضاء من وجه القمر.',
+    en: 'Shows the moon\'s illumination and phase for any selected date.\n\nThe 29.5-day lunar cycle is the basis of the Islamic Hijri calendar — each month begins at the New Moon (🌑) and the Full Moon (🌕) falls around the 15th of the Hijri month.\n\nThe illumination percentage shows how much of the moon\'s face is lit.',
+    fr: 'Affiche l\'illumination et la phase de la lune pour toute date sélectionnée.\n\nLe cycle lunaire de 29,5 jours est la base du calendrier hijri islamique — chaque mois commence à la Nouvelle Lune (🌑) et la Pleine Lune (🌕) tombe vers le 15 du mois hijri.\n\nLe pourcentage d\'illumination indique quelle fraction du visage de la lune est éclairée.',
+    es: 'Muestra la iluminación y fase de la luna para cualquier fecha seleccionada.\n\nEl ciclo lunar de 29,5 días es la base del calendario Hijri islámico — cada mes comienza en la Luna Nueva (🌑) y la Luna Llena (🌕) cae alrededor del día 15 del mes Hijri.\n\nEl porcentaje de iluminación indica qué fracción de la cara de la luna está iluminada.',
+    ru: 'Показывает освещённость и фазу луны для выбранной даты.\n\n29,5-дневный лунный цикл лежит в основе исламского лунного календаря — каждый месяц начинается с новолуния (🌑), а полнолуние (🌕) приходится примерно на 15-й день месяца по хиджре.\n\nПроцент освещённости показывает, какая часть лунного диска освещена.',
+    zh: '显示所选日期的月相和月面照明比例。\n\n29.5天的月球周期是伊斯兰历（回历）的基础——每月从新月（🌑）开始，满月（🌕）约在回历每月第15天。\n\n照明百分比显示月面被照亮的比例。',
+    tr: 'Seçilen tarih için ayın aydınlanmasını ve evresini gösterir.\n\n29,5 günlük ay döngüsü, İslam Hicri takviminin temelidir — her ay Yeni Ay\'da (🌑) başlar ve Dolunay (🌕) Hicri ayın yaklaşık 15. gününe denk gelir.\n\nAydınlanma yüzdesi, ay yüzeyinin ne kadarının aydınlatıldığını gösterir.',
+    ur: 'کسی بھی منتخب تاریخ کے لیے چاند کی روشنی اور مرحلہ دکھاتا ہے۔\n\n29.5 دن کا چاند کا چکر اسلامی ہجری کیلنڈر کی بنیاد ہے — ہر مہینہ نئے چاند (🌑) سے شروع ہوتا ہے اور پورا چاند (🌕) ہجری مہینے کی تقریباً 15 تاریخ کو ہوتا ہے۔\n\nروشنی کا فیصد ظاہر کرتا ہے کہ چاند کا کتنا حصہ روشن ہے۔',
+    id: 'Menampilkan iluminasi dan fase bulan untuk tanggal yang dipilih.\n\nSiklus bulan 29,5 hari merupakan dasar kalender Hijriyah Islam — setiap bulan dimulai saat Bulan Baru (🌑) dan Bulan Purnama (🌕) jatuh sekitar tanggal 15 bulan Hijriyah.\n\nPersentase iluminasi menunjukkan seberapa besar bagian wajah bulan yang bersinar.',
+    bn: 'যেকোনো নির্বাচিত তারিখের জন্য চাঁদের আলো এবং পর্যায় দেখায়।\n\n২৯.৫ দিনের চন্দ্র চক্র ইসলামিক হিজরি ক্যালেন্ডারের ভিত্তি — প্রতি মাস নতুন চাঁদে (🌑) শুরু হয় এবং পূর্ণিমা (🌕) হিজরি মাসের প্রায় ১৫ তারিখে পড়ে।\n\nআলোক শতাংশ দেখায় চাঁদের মুখের কত অংশ আলোকিত।',
+    fa: 'روشنایی و فاز ماه را برای هر تاریخ انتخاب‌شده نشان می‌دهد.\n\nچرخه ۲۹.۵ روزه ماه، پایه تقویم هجری اسلامی است — هر ماه با ماه نو (🌑) آغاز می‌شود و ماه کامل (🌕) حدود روز پانزدهم ماه هجری قمع می‌افتد.\n\nدرصد روشنایی نشان می‌دهد چه مقدار از صورت ماه روشن است.',
+    ms: 'Menunjukkan pencahayaan dan fasa bulan untuk sebarang tarikh yang dipilih.\n\nKitar bulan 29.5 hari adalah asas kalendar Hijri Islam — setiap bulan bermula pada Bulan Baru (🌑) dan Bulan Purnama (🌕) jatuh sekitar hari ke-15 bulan Hijri.\n\nPeratus pencahayaan menunjukkan berapa banyak wajah bulan yang diterangi.',
+    pt: 'Mostra a iluminação e a fase da lua para qualquer data selecionada.\n\nO ciclo lunar de 29,5 dias é a base do calendário islâmico Hijri — cada mês começa na Lua Nova (🌑) e a Lua Cheia (🌕) cai por volta do dia 15 do mês Hijri.\n\nA porcentagem de iluminação mostra quanto do rosto da lua está iluminado.',
+    sw: 'Inaonyesha mwanga na awamu ya mwezi kwa tarehe yoyote iliyochaguliwa.\n\nMzunguko wa siku 29.5 wa mwezi ndio msingi wa kalenda ya Kiislamu ya Hijri — kila mwezi huanza wakati wa Mwezi Mpya (🌑) na Mwezi Kamili (🌕) huangukia karibu na siku ya 15 ya mwezi wa Hijri.\n\nAsilimia ya mwanga inaonyesha kiasi gani cha uso wa mwezi kinachong\'aa.',
+    ha: 'Yana nuna haske da matakin wata ga kowace kwanan da aka zaɓa.\n\nDawowar yini 29.5 na wata ita ce tushen kalandar Hijri ta Musulunci — kowane wata yana farawa da Sabon Wata (🌑) kuma Cikakken Wata (🌕) yana faɗuwa kusan ranar 15 ta wata na Hijri.\n\nKashi na haske yana nuna yawan fuskar wata da ke haskakawa.',
+  };
+  const moonPhaseHelpText = MOON_PHASE_HELP[lang] ?? MOON_PHASE_HELP['en'];
 
   // If the selected date is a conjunction day, find the exact UTC moment (for showing time in popup)
   const selectedDateNewMoon = useMemo(() => {
@@ -345,40 +365,49 @@ export default function CalendarScreen() {
           })}
         </View>
 
-        {/* Moon tools row — Moon Phase + Crescent Sighting + Help */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 10, flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
-          {/* Moon Phase button — opens detail for the selected date */}
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setShowMoonDetail(true); }}
-            style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text style={{ fontSize: 14 }}>{selectedMoon.emoji}</Text>
-            <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'طور القمر' : 'Moon Phase'}
-            </Text>
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
-          </Pressable>
+        {/* Moon tools — two rows, each with its own ? button */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 10, gap: 6 }}>
+          {/* Row 1: Moon Phase */}
+          <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowMoonDetail(true); }}
+              style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={{ fontSize: 14 }}>{selectedMoon.emoji}</Text>
+              <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+                {isAr ? 'طور القمر' : 'Moon Phase'}
+              </Text>
+              <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowMoonPhaseHelp(true); }}
+              style={[styles.crescentHelpBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.crescentHelpBtnText, { color: C.tint }]}>?</Text>
+            </Pressable>
+          </View>
 
-          {/* Crescent Sighting Lookup button */}
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setShowNewMoonLookup(true); }}
-            style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text style={{ fontSize: 14 }}>🌒</Text>
-            <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'رصد الهلال' : 'Crescent Sighting'}
-            </Text>
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
-          </Pressable>
-
-          {/* Help button */}
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setShowCrescentHelp(true); }}
-            style={[styles.crescentHelpBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.crescentHelpBtnText, { color: C.tint }]}>?</Text>
-          </Pressable>
+          {/* Row 2: Crescent Sighting */}
+          <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowNewMoonLookup(true); }}
+              style={({ pressed }) => [styles.newMoonBtn, { flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={{ fontSize: 14 }}>🌒</Text>
+              <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
+                {isAr ? 'رصد الهلال' : 'Crescent Sighting'}
+              </Text>
+              <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowCrescentHelp(true); }}
+              style={[styles.crescentHelpBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.crescentHelpBtnText, { color: C.tint }]}>?</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Prayer times for selected date */}
@@ -602,6 +631,24 @@ export default function CalendarScreen() {
 
             <Pressable onPress={() => setShowNewMoonLookup(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
               <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Moon Phase Help Popup */}
+      <Modal visible={showMoonPhaseHelp} transparent animationType="fade">
+        <Pressable style={[styles.modalOverlay, { justifyContent: 'center' }]} onPress={() => setShowMoonPhaseHelp(false)}>
+          <Pressable style={[styles.crescentHelpSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: 16, marginBottom: 12 }]}>
+              {isAr ? '🌙 طور القمر' : '🌙 Moon Phase'}
+            </Text>
+            <Text style={[styles.crescentHelpBody, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, textAlign: isAr ? 'right' : 'left' }]}>
+              {moonPhaseHelpText}
+            </Text>
+            <Pressable onPress={() => setShowMoonPhaseHelp(false)} style={[styles.modalClose, { backgroundColor: C.tint, marginTop: 16 }]}>
+              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'حسنًا' : 'OK'}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
