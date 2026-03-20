@@ -18,7 +18,7 @@ import Animated, {
   withSequence, withTiming, FadeIn,
 } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
-import { useApp } from '@/contexts/AppContext';
+import { useApp, getDefaultIqamaOffsets } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import {
   calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
@@ -57,6 +57,7 @@ export default function PrayerTimesScreen() {
     updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
     showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
+    iqamaOffsets, countryCode,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -64,7 +65,6 @@ export default function PrayerTimesScreen() {
 
   const [times, setTimes] = useState<PrayerTimesType | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(false);
-  const [countdown, setCountdown] = useState('');
   const [now, setNow] = useState(new Date());
   const [showManual, setShowManual] = useState(false);
 
@@ -206,17 +206,35 @@ export default function PrayerTimesScreen() {
   const displayNext = nextPrayer
     ?? (tomorrowFajr ? { name: 'fajr' as const, time: tomorrowFajr, isTomorrow: true } : null);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setNow(new Date());
-      if (times) {
-        const next = getNextPrayer(times);
-        const target = next?.time ?? tomorrowFajr;
-        if (target) setCountdown(getCountdown(target));
+  // Fardh prayers for which iqama applies (in chronological order)
+  const FARDH = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+
+  // Iqama window: the most recently started fardh prayer whose iqama hasn't yet passed
+  const iqamaStatus = useMemo(() => {
+    if (!times || dateOffset !== 0) return null;
+    const effective = { ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) };
+    for (let i = FARDH.length - 1; i >= 0; i--) {
+      const key = FARDH[i];
+      const prayerTime = times[key] as Date;
+      if (prayerTime <= now) {
+        const offsetMin = effective[key] ?? 10;
+        const iqamaTime = new Date(prayerTime.getTime() + offsetMin * 60000);
+        if (now < iqamaTime) return { name: key, iqamaTime };
+        return null; // most-recent prayer's iqama is done
       }
-    }, 1000);
+    }
+    return null;
+  }, [times, now, countryCode, iqamaOffsets, dateOffset]);
+
+  // Countdown target — iqama time when in window, otherwise next prayer / tomorrow Fajr
+  const countdownTarget = iqamaStatus?.iqamaTime ?? displayNext?.time ?? tomorrowFajr ?? null;
+  const countdown = countdownTarget ? getCountdown(countdownTarget) : '';
+
+  // Tick every second to refresh `now` (countdown + iqamaStatus recompute automatically)
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
-  }, [times, tomorrowFajr]);
+  }, []);
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
@@ -433,18 +451,20 @@ export default function PrayerTimesScreen() {
           >
             <Animated.View style={pulseStyle}>
               <MaterialCommunityIcons
-                name={PRAYER_ICONS[displayNext.name] as any}
+                name={PRAYER_ICONS[iqamaStatus ? iqamaStatus.name : displayNext.name] as any}
                 size={16} color={C.heroCardSubtext}
               />
             </Animated.View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.heroLabel, { color: C.heroCardSubtext, fontSize: [8,9,10,11][fsIdx] ?? 9, lineHeight: ([8,9,10,11][fsIdx] ?? 9) + 4 }]}>
-                {'isTomorrow' in displayNext && displayNext.isTomorrow
-                  ? tr.tomorrowFajr
-                  : tr.nextPrayer}
+                {iqamaStatus
+                  ? tr.iqamaIn
+                  : 'isTomorrow' in displayNext && displayNext.isTomorrow
+                    ? tr.tomorrowFajr
+                    : tr.nextPrayer}
               </Text>
               <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: pFS, lineHeight: pLH }]}>
-                {prayerLabel(displayNext.name)}
+                {prayerLabel(iqamaStatus ? iqamaStatus.name : displayNext.name)}
               </Text>
             </View>
             <Text style={[styles.heroCountdown, { color: C.heroCardText, fontWeight: fw, fontSize: [16,20,24,28][fsIdx] ?? 20 }]}>{countdown}</Text>

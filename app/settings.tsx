@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import type { AccessibilityTheme } from '@/constants/colors';
-import { useApp } from '@/contexts/AppContext';
+import { useApp, getDefaultIqamaOffsets } from '@/contexts/AppContext';
 import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
@@ -32,6 +32,7 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
+    iqamaOffsets,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -54,6 +55,10 @@ export default function SettingsScreen() {
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
   const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<number>(firstAdhanOffset ?? 0);
   const [showFirstAdhanPicker, setShowFirstAdhanPicker] = useState(false);
+  const [draftIqamaOffsets, setDraftIqamaOffsets] = useState<Record<string, number>>(
+    () => ({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) })
+  );
+  const [showIqamaPicker, setShowIqamaPicker] = useState<string | null>(null);
   const [draftDhuhaTime, setDraftDhuhaTime] = useState(dhuhaTime ?? '07:30');
   const [draftTahajjudTime, setDraftTahajjudTime] = useState(tahajjudTime ?? '03:00');
   const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
@@ -376,6 +381,7 @@ export default function SettingsScreen() {
     draftSecondLang !== (secondLang ?? 'auto') ||
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
     draftFirstAdhanOffset !== (firstAdhanOffset ?? 0) ||
+    JSON.stringify(draftIqamaOffsets) !== JSON.stringify({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) }) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
@@ -392,6 +398,7 @@ export default function SettingsScreen() {
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
       firstAdhanOffset: draftFirstAdhanOffset,
+      iqamaOffsets: draftIqamaOffsets,
       dhuhaTime: draftDhuhaTime,
       tahajjudTime: draftTahajjudTime,
       showDhuha: draftShowDhuha,
@@ -856,6 +863,38 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Iqama Settings */}
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 18, marginBottom: 6 }]}>
+          {tr.iqamaSettings}
+        </Text>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          {(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const).map((prayer, idx, arr) => (
+            <View
+              key={prayer}
+              style={[styles.compactRow, {
+                borderBottomWidth: idx < arr.length - 1 ? 1 : 0,
+                borderBottomColor: C.separator,
+                flexDirection: isRtl ? 'row-reverse' : 'row',
+              }]}
+            >
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+                {isAr
+                  ? { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' }[prayer]
+                  : { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' }[prayer]}
+              </Text>
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setShowIqamaPicker(prayer); }}
+                style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+              >
+                <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
+                  {isAr ? `${draftIqamaOffsets[prayer] ?? 10} د` : `${draftIqamaOffsets[prayer] ?? 10} min`}
+                </Text>
+                <Ionicons name="chevron-down" size={13} color={C.tint} />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+
         {/* Nafl Prayer Timings */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
@@ -1007,6 +1046,47 @@ export default function SettingsScreen() {
                       {mins === 0
                         ? (isAr ? 'إيقاف' : 'Off')
                         : isAr ? `${mins} ${mins === 5 ? 'دقائق' : 'دقيقة'}` : `${mins} min`}
+                    </Text>
+                    {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Modal>
+
+        {/* Iqama offset picker */}
+        <Modal visible={showIqamaPicker !== null} transparent animationType="fade">
+          <Pressable style={styles.dropdownOverlay} onPress={() => setShowIqamaPicker(null)}>
+            <View style={[styles.dropdownSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+              <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
+                {tr.iqamaSettings}
+              </Text>
+              {([5, 10, 15, 20, 25] as const).map((mins, idx, arr) => {
+                const isSelected = (draftIqamaOffsets[showIqamaPicker ?? ''] ?? 10) === mins;
+                const isLast = idx === arr.length - 1;
+                return (
+                  <Pressable
+                    key={mins}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      if (showIqamaPicker) {
+                        setDraftIqamaOffsets(prev => ({ ...prev, [showIqamaPicker]: mins }));
+                      }
+                      setShowIqamaPicker(null);
+                    }}
+                    style={[
+                      styles.dropdownOption,
+                      {
+                        borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+                        borderBottomColor: C.separator,
+                        backgroundColor: isSelected ? C.tint + '14' : 'transparent',
+                        flexDirection: isRtl ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
+                      {isAr ? `${mins} دقيقة` : `${mins} min`}
                     </Text>
                     {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
                   </Pressable>
