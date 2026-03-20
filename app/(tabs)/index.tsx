@@ -15,7 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat,
-  withSequence, withTiming, FadeIn, runOnJS,
+  withSequence, withTiming, FadeIn,
 } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -71,12 +71,11 @@ export default function PrayerTimesScreen() {
   // ── Date navigation (swipe left/right to browse days) ────────────────────
   const [dateOffset, setDateOffset] = useState(0); // 0 = today, +1 = tomorrow, -1 = yesterday
 
-  // The date whose prayer times are displayed
+  // The date whose prayer times are displayed — always derived from `now` so
+  // midnight rollovers don't produce a stale or invalid date.
   const viewingDate = useMemo(() => {
     if (dateOffset === 0) return now;
-    const d = new Date();
-    d.setDate(d.getDate() + dateOffset);
-    d.setHours(12, 0, 0, 0);
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dateOffset, 12, 0, 0, 0);
     return d;
   }, [dateOffset, now]);
 
@@ -95,22 +94,20 @@ export default function PrayerTimesScreen() {
     slideX.value = withTiming(0, { duration: 220 });
   }, [dateOffset]);
 
-  // Navigate by delta days: slide current content out, then update state after exit completes
+  // Navigate by delta days: slide content out, then update state after exit finishes.
+  // Using setTimeout (115ms > 110ms animation) avoids worklet/runOnJS reliability issues.
   const navigateDay = useCallback((delta: number) => {
     Haptics.selectionAsync();
-    slideX.value = withTiming(delta > 0 ? -360 : 360, { duration: 110 }, (done) => {
-      if (done) runOnJS(setDateOffset)((prev: number) => prev + delta);
-    });
+    slideX.value = withTiming(delta > 0 ? -360 : 360, { duration: 110 });
+    setTimeout(() => setDateOffset((prev) => prev + delta), 115);
   }, []);
 
-  // Jump back to today with the correct slide direction
+  // Jump back to today — slide direction depends on which side of today we're on
   const goToToday = useCallback((currentOffset: number) => {
     if (currentOffset === 0) return;
     Haptics.selectionAsync();
-    // From future → slide right to get back; from past → slide left
-    slideX.value = withTiming(currentOffset > 0 ? 360 : -360, { duration: 110 }, (done) => {
-      if (done) runOnJS(setDateOffset)(0);
-    });
+    slideX.value = withTiming(currentOffset > 0 ? 360 : -360, { duration: 110 });
+    setTimeout(() => setDateOffset(0), 115);
   }, []);
 
   const panResponder = useRef(
@@ -119,15 +116,15 @@ export default function PrayerTimesScreen() {
         Math.abs(g.dx) > 20 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
       onPanResponderRelease: (_, g) => {
         if (g.dx < -40) {
+          // Swipe left → next day (future)
           Haptics.selectionAsync();
-          slideX.value = withTiming(-360, { duration: 110 }, (done) => {
-            if (done) runOnJS(setDateOffset)((prev: number) => prev + 1);
-          });
+          slideX.value = withTiming(-360, { duration: 110 });
+          setTimeout(() => setDateOffset((prev) => prev + 1), 115);
         } else if (g.dx > 40) {
+          // Swipe right → previous day (past)
           Haptics.selectionAsync();
-          slideX.value = withTiming(360, { duration: 110 }, (done) => {
-            if (done) runOnJS(setDateOffset)((prev: number) => prev - 1);
-          });
+          slideX.value = withTiming(360, { duration: 110 });
+          setTimeout(() => setDateOffset((prev) => prev - 1), 115);
         }
       },
     })
