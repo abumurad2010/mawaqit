@@ -461,7 +461,7 @@ export default function PrayerTimesScreen() {
 
       {/* ── Back to Today — appears above prayer list when browsing other days ── */}
       {dateOffset !== 0 && (
-        <View style={{ paddingHorizontal: 16, marginBottom: 4, alignItems: isAr ? 'flex-start' : 'flex-end' }}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 4, alignItems: 'flex-start' }}>
           <Pressable
             onPress={() => goToToday(dateOffset)}
             style={({ pressed }) => [
