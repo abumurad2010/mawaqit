@@ -68,7 +68,7 @@ export async function schedulePrayerNotifications(params: {
       date,
       method: params.calcMethod,
       asrMethod: params.asrMethod,
-      maghribOffsetMinutes: params.maghribOffset,
+      maghribOffset: params.maghribOffset,
     });
 
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;

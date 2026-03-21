@@ -120,10 +120,25 @@ function asrTime(jd: number, lat: number, dhuhr: number, method: AsrMethod): num
 
 /** Convert decimal UTC hour to a Date, anchored to UTC midnight of the LOCAL calendar date. */
 function decimalToDate(h: number, date: Date): Date {
-  // Use the local calendar date (not UTC date) as the anchor so that after local
-  // midnight in UTC+ zones the times still belong to the correct local day.
+  // Anchor to UTC midnight of the LOCAL calendar date so prayer times belong
+  // to the correct local day even in UTC+ zones where UTC midnight precedes local midnight.
   const utcMidnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-  return new Date(utcMidnight + h * 3600 * 1000);
+  const result = new Date(utcMidnight + h * 3600 * 1000);
+
+  // Guard for extreme UTC± offsets (e.g. UTC+12→+14 with western longitudes like
+  // Kiribati/Samoa, or UTC−12) where large fajrUTC values cause the result to spill
+  // into the wrong local calendar day (exactly 24 h off → the reported 32-hour bug).
+  // If the local date of the result doesn't match the input date, shift by ±24 h.
+  if (
+    result.getFullYear() !== date.getFullYear() ||
+    result.getMonth()    !== date.getMonth()    ||
+    result.getDate()     !== date.getDate()
+  ) {
+    const delta = result > date ? -86_400_000 : 86_400_000;
+    return new Date(result.getTime() + delta);
+  }
+
+  return result;
 }
 
 export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
