@@ -190,6 +190,7 @@ function configureExpoAndLanding(app: express.Application) {
       // Serve the compiled web app if it exists, otherwise fall back to landing page
       const distIndex = path.resolve(process.cwd(), "dist", "index.html");
       if (fs.existsSync(distIndex)) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         return res.sendFile(distIndex);
       }
       return serveLandingPage({
@@ -220,12 +221,19 @@ function configureExpoAndLanding(app: express.Application) {
         '.html': 'text/html; charset=utf-8',
         '.json': 'application/json; charset=utf-8',
       };
+      // HTML must not be cached long-term — it references hashed JS/CSS filenames
+      // that change on every build. JS/CSS assets have content-hash names so they
+      // can safely be cached forever (immutable).
+      const isHtml = ext === '.html';
+      const cacheControl = isHtml
+        ? 'no-cache, no-store, must-revalidate'
+        : 'public, max-age=31536000, immutable';
       res.writeHead(200, {
         'Content-Encoding': 'gzip',
         'Content-Type': mimeTypes[ext] || 'application/octet-stream',
         'Content-Length': stat.size,
         'Vary': 'Accept-Encoding',
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': cacheControl,
       });
       fs.createReadStream(gzFile).pipe(res);
     } catch {
