@@ -226,7 +226,9 @@ export default function PrayerTimesScreen() {
 
   // nextPrayer uses todayTimes so it is never null due to a stale `times` state,
   // and never wrong because the user is browsing a different day.
-  const nextPrayer = todayTimes ? getNextPrayer(todayTimes) : null;
+  // CRITICAL: pass `now` state so this uses the SAME timestamp as `iqamaStatus` —
+  // both must agree within one render cycle to avoid the iqama-transition race.
+  const nextPrayer = todayTimes ? getNextPrayer(todayTimes, now) : null;
 
   // ── tomorrowFajr: split into two steps to avoid stale-nowMs bug ──────────────
   //
@@ -284,6 +286,38 @@ export default function PrayerTimesScreen() {
     }
     return null;
   }, [todayTimes, now, countryCode, iqamaOffsets, dateOffset]);
+
+  // ── Iqama-transition diagnostic ──────────────────────────────────────────────
+  // Fires exactly once when iqamaStatus transitions from non-null → null.
+  // Logs what nextPrayer resolved to (and why) so any remaining bug is immediately
+  // visible in the Expo terminal without having to watch second-by-second logs.
+  const prevIqamaRef = useRef<typeof iqamaStatus>(iqamaStatus);
+  useEffect(() => {
+    const prev = prevIqamaRef.current;
+    prevIqamaRef.current = iqamaStatus;
+    if (prev !== null && iqamaStatus === null) {
+      // Iqama window just closed — log the full transition state.
+      const h = now.getHours();
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const nowMod = now.getHours() * 60 + now.getMinutes();
+      console.log(
+        '[Mawaqit] iqama ended →',
+        `now=${h}:${m} (${nowMod} min-of-day)`,
+        `| prev prayer=${prev.name}`,
+        `| nextPrayer=${nextPrayer ? `${nextPrayer.name} at ${nextPrayer.time.getHours()}:${String(nextPrayer.time.getMinutes()).padStart(2, '0')}` : 'null'}`,
+        `| displayNext=${displayNext ? displayNext.name : 'null'}`,
+        `| tomorrowFajr=${tomorrowFajr ? `${tomorrowFajr.getHours()}:${String(tomorrowFajr.getMinutes()).padStart(2, '0')}` : 'null'}`,
+        `| countdownTarget=${countdownTarget ? countdownTarget.toISOString() : 'null'}`,
+      );
+      if (!nextPrayer) {
+        console.warn(
+          '[Mawaqit] ⚠ nextPrayer is null after iqama ended! Falling back to tomorrowFajr.',
+          `todayTimes=${todayTimes ? 'present' : 'null'}`,
+          `now (state)=${now.toISOString()}`,
+        );
+      }
+    }
+  }, [iqamaStatus]);
 
   // Countdown target — iqama time when in window, otherwise next prayer / tomorrow Fajr
   const countdownTarget = iqamaStatus?.iqamaTime ?? displayNext?.time ?? tomorrowFajr ?? null;

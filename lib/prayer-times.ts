@@ -214,37 +214,59 @@ export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, us
   return `${h12}:${m} ${period}`;
 }
 
-export function getNextPrayer(times: PrayerTimes): { name: keyof PrayerTimes; time: Date } | null {
-  // Use only local-time methods throughout — no UTC methods (getUTCHours etc).
-  const now = new Date();
-
+/**
+ * Returns the next prayer after `now`.
+ *
+ * IMPORTANT: `now` MUST be passed from the caller (the component's `now` state).
+ * Do NOT let this function create its own `new Date()` — it must use the SAME
+ * timestamp that `iqamaStatus` uses so both computations are consistent within
+ * a single render cycle.  Using a fresh `new Date()` here caused the iqama→next-prayer
+ * transition bug: `iqamaStatus` (using state `now`) said iqama was over, but
+ * `getNextPrayer` (using a private new Date()) could disagree by up to 1 second,
+ * producing a render where neither branch was correct.
+ *
+ * Comparison uses only local-time getters (getHours, getMinutes, getDate …) —
+ * NO UTC methods anywhere in this function.
+ */
+export function getNextPrayer(
+  times: PrayerTimes,
+  now: Date,
+): { name: keyof PrayerTimes; time: Date } | null {
   const order: (keyof PrayerTimes)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-  // ── Diagnostic: build prayer minute-of-day map first (runs every call / second) ──
-  // nowMod should be 924 at exactly 3:24 PM (15 × 60 + 24).
-  // Prayer times use getHours() which always returns 24h (0-23) — never 12h.
+  // ── Diagnostic log — fires every second via the 1-second setInterval in the component ──
+  // nowMod should be 924 at exactly 3:24 PM (15 × 60 + 24 = 924).
+  // getHours() always returns 0-23 (24h) — never a 12h value.
   const nowMod = now.getHours() * 60 + now.getMinutes();
   const prayerMods: Record<string, number> = {};
   for (const name of order) {
     prayerMods[name] = times[name].getHours() * 60 + times[name].getMinutes();
   }
   console.log(
-    '[Mawaqit] getNextPrayer — now:', nowMod,
-    `(${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} local 24h)`,
-    '| prayer min-of-day:', JSON.stringify(prayerMods),
+    '[Mawaqit] getNextPrayer —',
+    `now: ${nowMod} (${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} local 24h)`,
+    '| prayers (min-of-day):', JSON.stringify(prayerMods),
   );
 
-  // ── Comparison: rebuild each prayer as a local Date using local-time getters only ──
-  // new Date(y, m, d, h, min, s) uses LOCAL components — no UTC calls, no 12h parsing.
-  // The result is the same instant as `t` but constructed purely from local getters,
-  // satisfying the "use only local time methods" requirement.
+  // ── Find the first prayer whose local time is still in the future ──
+  // Rebuild each prayer as a local-time Date so the comparison is purely local:
+  //   new Date(y, m, d, h, min, s)  ← all from local getters, no UTC methods.
+  // This is equivalent to comparing the original Date objects (same instant) but
+  // makes the "local only" guarantee explicit and auditable.
   for (const name of order) {
     const t = times[name];
     const localPrayer = new Date(
       t.getFullYear(), t.getMonth(), t.getDate(),
       t.getHours(), t.getMinutes(), t.getSeconds(), 0,
     );
-    if (localPrayer > now) return { name, time: t };
+    const isFuture = localPrayer > now;
+    if (__DEV__) {
+      console.log(
+        `  [Mawaqit]   ${name}: ${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`,
+        `(min ${prayerMods[name]}) →`, isFuture ? 'NEXT ✓' : 'past ✗',
+      );
+    }
+    if (isFuture) return { name, time: t };
   }
 
   return null;
