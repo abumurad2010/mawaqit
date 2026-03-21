@@ -17,25 +17,6 @@ import { schedulePrayerNotifications, cancelAllPrayerNotifications } from '@/lib
 import { getColors } from '@/constants/colors';
 import type { AccessibilityTheme, ColorPalette } from '@/constants/colors';
 
-/** Returns sensible iqama offset defaults (minutes after azan) for a given country code. */
-export function getDefaultIqamaOffsets(cc: string | null): Record<string, number> {
-  const base = { fajr: 10, dhuhr: 10, asr: 10, maghrib: 5, isha: 10 };
-  if (!cc) return base;
-  const c = cc.toUpperCase();
-  if (['SA', 'AE', 'QA', 'KW', 'BH', 'OM'].includes(c))
-    return { fajr: 20, dhuhr: 15, asr: 15, maghrib: 5, isha: 15 };
-  if (['EG', 'JO', 'SY', 'LB', 'PS', 'IQ', 'LY', 'SD', 'YE'].includes(c))
-    return { fajr: 20, dhuhr: 10, asr: 10, maghrib: 5, isha: 10 };
-  if (['PK', 'BD', 'IN', 'AF'].includes(c))
-    return { fajr: 20, dhuhr: 15, asr: 15, maghrib: 5, isha: 15 };
-  if (['MA', 'DZ', 'TN'].includes(c))
-    return { fajr: 15, dhuhr: 10, asr: 10, maghrib: 5, isha: 10 };
-  if (c === 'TR') return { fajr: 15, dhuhr: 10, asr: 10, maghrib: 5, isha: 10 };
-  if (['MY', 'ID', 'SG', 'BN'].includes(c))
-    return { fajr: 15, dhuhr: 10, asr: 10, maghrib: 5, isha: 10 };
-  return base;
-}
-
 /** @deprecated use PrayerNotifConfig instead */
 type _OldPrayerNotifType = 'none' | 'banner' | 'athan_full' | 'athan_abbreviated';
 
@@ -88,7 +69,6 @@ interface AppSettings {
   showDhuha: boolean;    // whether to show Dhuha row on timings tab
   showQiyam: boolean;    // whether to show Qiyam row on timings tab
   eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
-  iqamaOffsets: Record<string, number>; // per-prayer iqama delay in minutes (user overrides)
 }
 
 interface AppContextValue extends AppSettings {
@@ -133,7 +113,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   showDhuha: true,
   showQiyam: true,
   eidPrayerTime: '07:30',
-  iqamaOffsets: {},
 };
 
 const VALID_CALC_METHODS = [

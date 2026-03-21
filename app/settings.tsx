@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import type { AccessibilityTheme } from '@/constants/colors';
-import { useApp, getDefaultIqamaOffsets } from '@/contexts/AppContext';
+import { useApp } from '@/contexts/AppContext';
 import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
@@ -32,7 +32,6 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
-    iqamaOffsets,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -55,10 +54,6 @@ export default function SettingsScreen() {
   const [draftAccessibilityTheme, setDraftAccessibilityTheme] = useState(accessibilityTheme ?? 'default');
   const [draftFirstAdhanOffset, setDraftFirstAdhanOffset] = useState<number>(firstAdhanOffset ?? 0);
   const [showFirstAdhanPicker, setShowFirstAdhanPicker] = useState(false);
-  const [draftIqamaOffsets, setDraftIqamaOffsets] = useState<Record<string, number>>(
-    () => ({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) })
-  );
-  const [showIqamaPicker, setShowIqamaPicker] = useState<string | null>(null);
   const [draftDhuhaTime, setDraftDhuhaTime] = useState(dhuhaTime ?? '07:30');
   const [draftTahajjudTime, setDraftTahajjudTime] = useState(tahajjudTime ?? '03:00');
   const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
@@ -131,7 +126,7 @@ export default function SettingsScreen() {
   // ──────────────────────────────────────────────────────────────────────────
 
   // ── Help texts (all 15 languages) ───────────────────────────────
-  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid' | 'iqama';
+  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid';
   const HELP: Record<string, Record<HelpKey, string>> = {
     ar: {
       language: 'اللغة الأولى ثابتة على العربية.\n\nاللغة الثانية تظهر تحت كل اسم صلاة ومصطلح. "تلقائي" يختار اللغة حسب البلد الذي اكتُشف من موقعك.',
@@ -145,7 +140,6 @@ export default function SettingsScreen() {
       notifications: 'لكل صلاة خيارَان مستقلّان:\n\n🔔 الراية: إشعار نصي صامت يظهر على الشاشة.\n🔊 الأذان: صوت الأذان الكامل أو المختصر.\n\nيمكنك تفعيل الاثنين معاً أو أحدهما أو لا شيء.',
       dhuha: 'صلاة الضحى تُصلَّى بعد ارتفاع الشمس وقبل الزوال — ركعتان إلى ثماني ركعات.\n\nقيام الليل يُصلَّى في الثلث الأخير من الليل قبيل الفجر.\n\nفعّل كل منهما واضبط وقت التذكير ليُنبّهك التطبيق.',
       eid: 'تُصلَّى صباح يوم عيد الفطر (١ شوال) وعيد الأضحى (١٠ ذو الحجة).\n\nأدخل هنا الوقت الرسمي المعلَن في مسجدك أو مدينتك.\n\nيظهر هذا الخيار قبل العيد بيومين وفي يوم العيد فقط.',
-      iqama: 'الإقامة هي النداء الثاني الذي يُعلَن مباشرةً قبل إقامة الصلاة في المسجد.\n\nاضبط هنا الفاصل الزمني (بالدقائق) بين وقت الأذان الرسمي وإقامة الصلاة لكل فريضة.\n\nبعد وقت الأذان بهذه المدة، يُعرض في الشاشة الرئيسية عداد "الإقامة خلال..." بدلاً من عداد الصلاة القادمة.',
     },
     en: {
       language: 'Arabic is the fixed primary language.\n\nThe second language appears beneath each prayer name and label. "Auto" detects your country from your GPS location and picks the most appropriate language.',
@@ -159,7 +153,6 @@ export default function SettingsScreen() {
       notifications: 'Each prayer has two independent toggles:\n\n🔔 Banner: a silent visual notification on your screen.\n🔊 Athan: the full or abbreviated audio Athan.\n\nYou can enable both, either one, or neither.',
       dhuha: 'Dhuha is a voluntary prayer after sunrise and before Dhuhr — 2 to 8 rak\'ahs.\n\nQiyam (Tahajjud) is the night vigil prayer, best in the last third of the night before Fajr.\n\nToggle each on and set a reminder time.',
       eid: 'Eid prayer is performed on the morning of Eid al-Fitr (1 Shawwal) and Eid al-Adha (10 Dhul Hijjah).\n\nEnter the official prayer time announced by your mosque or city.\n\nThis option appears only in the two days before Eid and on the day itself.',
-      iqama: 'Iqama is the second call that is announced just before the congregational prayer begins in the mosque.\n\nSet the delay (in minutes) between the official Athan time and the Iqama for each obligatory prayer.\n\nOnce that delay has elapsed after the Athan, the home screen switches from the "Next Prayer" countdown to an "Iqama in…" countdown.',
     },
     fr: {
       language: 'L\'arabe est la langue principale fixe.\n\nLa deuxième langue apparaît sous chaque nom de prière. "Auto" détecte votre pays via GPS.',
@@ -173,7 +166,6 @@ export default function SettingsScreen() {
       notifications: 'Chaque prière a deux options:\n\n🔔 Bannière: notification visuelle silencieuse.\n🔊 Athan: audio complet ou abrégé.',
       dhuha: 'Dhuha est une prière volontaire après le lever du soleil et avant Dhuhr — 2 à 8 rak\'a.\n\nQiyam (Tahajjud) est la prière nocturne, idéalement dans le dernier tiers de la nuit avant Fajr.\n\nActivez chacune et définissez l\'heure de rappel.',
       eid: 'La prière de l\'Aïd a lieu le matin de l\'Aïd al-Fitr (1 Chawwal) et de l\'Aïd al-Adha (10 Dhul Hijja).\n\nEntrez l\'heure officielle de votre mosquée ou ville.\n\nCette option n\'apparaît que deux jours avant l\'Aïd et le jour même.',
-      iqama: 'L\'Iqama est le second appel annoncé juste avant le début de la prière collective à la mosquée.\n\nDéfinissez ici le délai (en minutes) entre l\'Athan officiel et l\'Iqama pour chaque prière obligatoire.\n\nUne fois ce délai écoulé, l\'écran principal affiche un compte à rebours "Iqama dans…" au lieu de "Prochaine prière".',
     },
     es: {
       language: 'El árabe es el idioma principal fijo.\n\nEl segundo idioma aparece bajo cada nombre de oración. "Auto" detecta tu país por GPS.',
@@ -187,7 +179,6 @@ export default function SettingsScreen() {
       notifications: 'Cada oración tiene dos opciones:\n\n🔔 Banner: notificación visual silenciosa.\n🔊 Athan: audio completo o abreviado.',
       dhuha: 'Dhuha es una oración voluntaria después del amanecer y antes del Dhuhr — 2 a 8 rak\'as.\n\nQiyam (Tahajjud) es la oración nocturna, mejor en el último tercio de la noche antes del Fajr.\n\nActiva cada una y establece el horario de recordatorio.',
       eid: 'La oración del Eid se realiza la mañana del Eid al-Fitr (1 Shawwal) y el Eid al-Adha (10 Dhul Hijjah).\n\nIngresa el horario oficial de tu mezquita o ciudad.\n\nEsta opción solo aparece dos días antes del Eid y el día mismo.',
-      iqama: 'La Iqama es el segundo llamado que se anuncia justo antes de que comience la oración congregacional en la mezquita.\n\nEstablece aquí el retraso (en minutos) entre el horario oficial del Athan y la Iqama para cada oración obligatoria.\n\nUna vez transcurrido ese tiempo, la pantalla principal muestra una cuenta regresiva "Iqama en…" en lugar de "Próxima oración".',
     },
     ru: {
       language: 'Арабский язык — основной фиксированный.\n\nВторой язык отображается под каждым названием намаза. "Авто" определяет страну по GPS.',
@@ -201,7 +192,6 @@ export default function SettingsScreen() {
       notifications: 'Для каждого намаза два варианта:\n\n🔔 Баннер: тихое визуальное уведомление.\n🔊 Азан: полный или сокращённый звук.',
       dhuha: 'Духа — добровольная молитва после восхода солнца до Зухра — от 2 до 8 ракаатов.\n\nКийям (Тахаджжуд) — ночная молитва, лучше всего в последнюю треть ночи перед Фаджром.\n\nВключите каждую и задайте время напоминания.',
       eid: 'Намаз Ид совершается утром Ид аль-Фитр (1 Шаввала) и Ид аль-Адха (10 Зуль-Хиджа).\n\nВведите официальное время молитвы для вашей мечети или города.\n\nЭта опция отображается за два дня до праздника и в сам день.',
-      iqama: 'Икама — второй призыв, объявляемый непосредственно перед началом коллективной молитвы в мечети.\n\nУстановите задержку (в минутах) между официальным азаном и икамой для каждого обязательного намаза.\n\nКак только этот промежуток истечёт, на главном экране появится обратный отсчёт «Икама через…» вместо «Следующий намаз».',
     },
     zh: {
       language: '阿拉伯语是固定的主要语言。\n\n第二语言显示在每个礼拜名称下方。"自动"通过GPS检测您的国家。',
@@ -215,7 +205,6 @@ export default function SettingsScreen() {
       notifications: '每次礼拜有两个选项：\n\n🔔 横幅：静音视觉通知。\n🔊 宣礼：完整或简短音频。',
       dhuha: '杜哈祈祷是日出后至晌礼前的自愿礼拜，2至8拉卡特。\n\n夜间礼拜（塔哈朱德）最好在夜晚的最后三分之一，即晨礼前。\n\n开启每项并设置提醒时间。',
       eid: '开斋节礼拜在开斋节（1 Shawwal）和宰牲节（10 Dhul Hijjah）的早晨举行。\n\n输入您所在清真寺或城市的官方礼拜时间。\n\n此选项仅在节前两天和节日当天显示。',
-      iqama: '伊卡玛是在清真寺会众礼拜开始前宣布的第二次呼唤。\n\n在此设置每个主命礼拜的宣礼（阿赞）时间与伊卡玛之间的延迟（分钟）。\n\n延迟时间过后，主屏幕将显示"伊卡玛倒计时"，而非"下次礼拜"。',
     },
     tr: {
       language: 'Arapça sabit birincil dildir.\n\nİkinci dil her namaz adının altında görünür. "Otomatik" GPS ile ülkenizi algılar.',
@@ -229,7 +218,6 @@ export default function SettingsScreen() {
       notifications: 'Her namaz için iki seçenek:\n\n🔔 Banner: sessiz görsel bildirim.\n🔊 Ezan: tam veya kısa ses.',
       dhuha: 'Duhâ namazı, gün doğumundan sonra ve öğleden önce kılınan nafile bir namazdır — 2 ila 8 rekât.\n\nKıyâmülleyl (Teheccüd), gecenin son üçte birinde kılınan gece namazıdır.\n\nHer birini etkinleştirin ve hatırlatma saatini ayarlayın.',
       eid: 'Bayram namazı, Ramazan Bayramı\'nın (1 Şevval) ve Kurban Bayramı\'nın (10 Zilhicce) sabahında kılınır.\n\nMescidinizdeki veya şehirinizdeki resmi namaz saatini girin.\n\nBu seçenek yalnızca bayramdan iki gün önce ve bayram günü görünür.',
-      iqama: 'İkame, camide cemaatle namaza başlanmadan hemen önce okunan ikinci çağrıdır.\n\nBurada her farz namaz için ezanın okunmasından ikameye kadar olan süreyi (dakika olarak) ayarlayın.\n\nBu süre geçince ana ekranda "Sonraki namaz" yerine "İkameye … kaldı" geri sayımı görünür.',
     },
     ur: {
       language: 'عربی ہمیشہ پہلی زبان رہتی ہے۔\n\nدوسری زبان ہر نماز کے نام کے نیچے نظر آتی ہے۔ "خودکار" GPS سے آپ کا ملک معلوم کرتا ہے۔',
@@ -243,7 +231,6 @@ export default function SettingsScreen() {
       notifications: 'ہر نماز کے لیے دو آپشن:\n\n🔔 بینر: خاموش بصری اطلاع۔\n🔊 اذان: مکمل یا مختصر آڈیو۔',
       dhuha: 'نماز چاشت سورج طلوع ہونے کے بعد اور ظہر سے پہلے ادا کی جاتی ہے — ۲ سے ۸ رکعات۔\n\nقیام اللیل (تہجد) رات کے آخری تہائی حصے میں ادا کی جاتی ہے۔\n\nہر ایک کو فعال کریں اور یاددہانی کا وقت مقرر کریں۔',
       eid: 'نماز عید الفطر (۱ شوال) اور عید الاضحیٰ (۱۰ ذو الحجہ) کی صبح ادا کی جاتی ہے۔\n\nاپنی مسجد یا شہر کے اعلان کردہ وقت درج کریں۔\n\nیہ آپشن صرف عید سے دو دن پہلے اور عید کے دن ظاہر ہوتا ہے۔',
-      iqama: 'اقامت وہ دوسری پکار ہے جو مسجد میں باجماعت نماز شروع ہونے سے فوری پہلے دی جاتی ہے۔\n\nیہاں ہر فرض نماز کے لیے اذان اور اقامت کے درمیان وقفہ (منٹوں میں) مقرر کریں۔\n\nیہ وقفہ گزرنے کے بعد، مرکزی اسکرین پر "اگلی نماز" کی بجائے "اقامت میں…" کا الٹا گنتی نمایاں ہوگی۔',
     },
     id: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama shalat. "Otomatis" mendeteksi negara Anda via GPS.',
@@ -257,7 +244,6 @@ export default function SettingsScreen() {
       notifications: 'Setiap shalat memiliki dua opsi:\n\n🔔 Banner: notifikasi visual senyap.\n🔊 Azan: audio penuh atau singkat.',
       dhuha: 'Dhuha adalah shalat sunnah setelah matahari terbit dan sebelum Zuhur — 2 hingga 8 rakaat.\n\nQiyam (Tahajud) adalah shalat malam, terbaik di sepertiga terakhir malam sebelum Subuh.\n\nAktifkan masing-masing dan atur waktu pengingat.',
       eid: 'Shalat Eid dilaksanakan pada pagi hari Eid al-Fitr (1 Syawal) dan Eid al-Adha (10 Dzulhijjah).\n\nMasukkan waktu shalat resmi yang diumumkan masjid atau kota Anda.\n\nOpsi ini hanya muncul dua hari sebelum dan pada hari Eid.',
-      iqama: 'Iqamah adalah seruan kedua yang dikumandangkan tepat sebelum shalat berjamaah dimulai di masjid.\n\nTetapkan jeda (dalam menit) antara waktu Azan resmi dan Iqamah untuk setiap shalat wajib.\n\nSetelah jeda itu berlalu, layar utama beralih dari hitung mundur "Shalat Berikutnya" ke hitung mundur "Iqamah dalam…".',
     },
     bn: {
       language: 'আরবি সর্বদা প্রধান ভাষা।\n\nদ্বিতীয় ভাষা প্রতিটি নামাজের নামের নিচে দেখায়। "স্বয়ংক্রিয়" GPS দিয়ে আপনার দেশ শনাক্ত করে।',
@@ -271,7 +257,6 @@ export default function SettingsScreen() {
       notifications: 'প্রতিটি নামাজের জন্য দুটি বিকল্প:\n\n🔔 ব্যানার: নীরব ভিজ্যুয়াল বিজ্ঞপ্তি।\n🔊 আজান: সম্পূর্ণ বা সংক্ষিপ্ত অডিও।',
       dhuha: 'দুহা হল সূর্যোদয়ের পর ও জোহরের আগে স্বেচ্ছামূলক নামাজ — ২ থেকে ৮ রাকাত।\n\nকিয়ামুল লাইল (তাহাজ্জুদ) ফজরের আগে রাতের শেষ তৃতীয়াংশে পড়া হয়।\n\nপ্রতিটি সক্রিয় করুন এবং স্মরণের সময় সেট করুন।',
       eid: 'ঈদের নামাজ ঈদুল ফিতর (১ শাওয়াল) এবং ঈদুল আযহা (১০ জিলহজ্জ) এর সকালে পড়া হয়।\n\nআপনার মসজিদ বা শহরের ঘোষিত সময় লিখুন।\n\nএই বিকল্পটি শুধুমাত্র ঈদের দুই দিন আগে এবং ঈদের দিন দেখা যায়।',
-      iqama: 'ইকামত হল দ্বিতীয় আহ্বান যা মসজিদে জামায়াত শুরু হওয়ার ঠিক আগে দেওয়া হয়।\n\nপ্রতিটি ফরজ নামাজের জন্য আযান ও ইকামতের মধ্যে বিরতি (মিনিটে) এখানে সেট করুন।\n\nসেই বিরতি পেরিয়ে গেলে প্রধান স্ক্রিনে "পরবর্তী নামাজ"-এর পরিবর্তে "ইকামত আসছে…" কাউন্টডাউন দেখাবে।',
     },
     fa: {
       language: 'عربی زبان اصلی ثابت است.\n\nزبان دوم زیر هر نام نماز نمایش داده می‌شود. "خودکار" کشور شما را از GPS تشخیص می‌دهد.',
@@ -285,7 +270,6 @@ export default function SettingsScreen() {
       notifications: 'برای هر نماز دو گزینه:\n\n🔔 بنر: اعلان بصری بی‌صدا.\n🔊 اذان: صدای کامل یا خلاصه.',
       dhuha: 'نماز ضحی پس از طلوع آفتاب و پیش از ظهر خوانده می‌شود — ۲ تا ۸ رکعت.\n\nقیام اللیل (تهجد) در آخرین سوم شب قبل از فجر بهترین وقت دارد.\n\nهر کدام را فعال کنید و زمان یادآوری را تنظیم نمایید.',
       eid: 'نماز عید در صبح روز عیدالفطر (۱ شوال) و عیدالأضحی (۱۰ ذی‌الحجه) ادا می‌شود.\n\nوقت رسمی اعلام‌شده توسط مسجد یا شهر خود را وارد کنید.\n\nاین گزینه فقط دو روز قبل از عید و روز عید نمایش داده می‌شود.',
-      iqama: 'اقامه دومین ندایی است که دقیقاً پیش از شروع نماز جماعت در مسجد خوانده می‌شود.\n\nدر اینجا فاصله زمانی (بر حسب دقیقه) بین اذان رسمی و اقامه را برای هر نماز واجب تنظیم کنید.\n\nپس از گذشت این فاصله، صفحه اصلی به‌جای "نماز بعدی" شمارش معکوس "اقامه در …" را نمایش می‌دهد.',
     },
     ms: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama sembahyang. "Auto" mengesan negara anda melalui GPS.',
@@ -299,7 +283,6 @@ export default function SettingsScreen() {
       notifications: 'Setiap sembahyang ada dua pilihan:\n\n🔔 Banner: pemberitahuan visual senyap.\n🔊 Azan: audio penuh atau ringkas.',
       dhuha: 'Dhuha ialah sembahyang sunat selepas matahari terbit dan sebelum Zohor — 2 hingga 8 rakaat.\n\nQiyam (Tahajud) adalah sembahyang malam, terbaik pada sepertiga akhir malam sebelum Subuh.\n\nAktifkan setiap satu dan tetapkan masa peringatan.',
       eid: 'Solat Hari Raya dilaksanakan pada pagi Hari Raya Aidilfitri (1 Syawal) dan Aidiladha (10 Zulhijjah).\n\nMasukkan waktu solat rasmi yang diumumkan oleh masjid atau bandar anda.\n\nPilihan ini hanya muncul dua hari sebelum dan pada Hari Raya.',
-      iqama: 'Iqamah ialah seruan kedua yang dilaungkan sejurus sebelum solat berjemaah dimulakan di masjid.\n\nTetapkan di sini jeda masa (dalam minit) antara waktu Azan rasmi dan Iqamah bagi setiap solat fardu.\n\nSelepas jeda itu berlalu, skrin utama beralih daripada kiraan undur "Solat Seterusnya" kepada "Iqamah dalam…".',
     },
     pt: {
       language: 'O árabe é o idioma principal fixo.\n\nO segundo idioma aparece abaixo de cada nome de oração. "Auto" detecta seu país por GPS.',
@@ -313,7 +296,6 @@ export default function SettingsScreen() {
       notifications: 'Cada oração tem duas opções:\n\n🔔 Banner: notificação visual silenciosa.\n🔊 Athan: áudio completo ou abreviado.',
       dhuha: 'Dhuha é uma oração voluntária após o nascer do sol e antes do Dhuhr — 2 a 8 rak\'as.\n\nQiyam (Tahajud) é a oração noturna, melhor no último terço da noite antes do Fajr.\n\nAtive cada uma e defina o horário de lembrete.',
       eid: 'A oração do Eid é realizada na manhã do Eid al-Fitr (1 Shawwal) e do Eid al-Adha (10 Dhul Hijjah).\n\nInsira o horário oficial anunciado pela sua mesquita ou cidade.\n\nEsta opção aparece apenas dois dias antes do Eid e no próprio dia.',
-      iqama: 'A Iqama é o segundo chamado anunciado imediatamente antes do início da oração em congregação na mesquita.\n\nDefina aqui o intervalo (em minutos) entre o horário oficial do Athan e a Iqama para cada oração obrigatória.\n\nApós esse intervalo, a tela inicial muda da contagem regressiva de "Próxima oração" para "Iqama em…".',
     },
     sw: {
       language: 'Kiarabu ni lugha kuu ya kudumu.\n\nLugha ya pili inaonekana chini ya kila jina la sala. "Otomatiki" hugundua nchi yako kupitia GPS.',
@@ -327,7 +309,6 @@ export default function SettingsScreen() {
       notifications: 'Kila sala ina chaguo mbili:\n\n🔔 Tangazo: arifa ya macho ya kimya.\n🔊 Adhana: sauti kamili au fupi.',
       dhuha: 'Dhuha ni sala ya hiari baada ya machweo ya jua na kabla ya Dhuhr — rak\'a 2 hadi 8.\n\nQiyam (Tahajud) ni sala ya usiku, bora zaidi katika theluthi ya mwisho ya usiku kabla ya Fajr.\n\nWasha kila moja na uweke wakati wa ukumbusho.',
       eid: 'Sala ya Eid husaliwa asubuhi ya Eid al-Fitr (1 Shawwal) na Eid al-Adha (10 Dhul Hijjah).\n\nIngiza wakati rasmi uliotangazwa na msikiti au mji wako.\n\nChaguo hili linaonekana tu siku mbili kabla na siku ya Eid.',
-      iqama: 'Iqama ni wito wa pili unaoitangazwa mara moja kabla ya sala ya jamaa kuanza msikitini.\n\nWeka hapa muda wa kupumzika (kwa dakika) kati ya wakati rasmi wa Adhana na Iqama kwa kila sala ya faradhi.\n\nBaada ya muda huo kupita, skrini kuu itabadilika kutoka kuhesabu nyuma "Sala Ijayo" hadi "Iqama katika…".',
     },
     ha: {
       language: 'Larabci shine harshen farko na dindindin.\n\nHarshe na biyu yana bayyana ƙarƙashin sunan kowace sallah. "Atomatik" yana gano ƙasarku ta GPS.',
@@ -341,7 +322,6 @@ export default function SettingsScreen() {
       notifications: 'Kowane sallah yana da zaɓuɓɓuka biyu:\n\n🔔 Sanarwa: sanarwa mai shiru ta gani.\n🔊 Azan: cikakken sauti ko taƙaitaccen.',
       dhuha: 'Dhuha addu\'a ce ta son rai bayan fitowar rana da kafin Dhuhr — rak\'a 2 zuwa 8.\n\nQiyam addu\'a ce ta dare, mafi kyau a cikin kashi uku na ƙarshe na dare kafin Fajr.\n\nKunnawa kowane ɗaya ku saita lokacin tunatarwa.',
       eid: 'An yi sallar Eid safe na Eid al-Fitr (1 Shawwal) da Eid al-Adha (10 Dhul Hijjah).\n\nShiga lokacin addu\'a na hukuma da masallaci ko birnin ka ya sanar.\n\nZabin nan yana bayyana ne kwanaki biyu kafin Eid da ranar Eid.',
-      iqama: 'Iqama wata kira ce ta biyu da ake yi nan take kafin sallah ta jama\'a ta fara a masallaci.\n\nKa saita a nan jinkirin (a cikin mintuna) tsakanin lokacin Azan na hukuma da Iqama don kowace sallah ta wajibi.\n\nBayan wannan jinkirin ya wuce, allo na farko yana sauya daga ƙididdiga ta "Sallah Mai Zuwa" zuwa "Iqama a cikin…".',
     },
   };
 
@@ -396,7 +376,6 @@ export default function SettingsScreen() {
     draftSecondLang !== (secondLang ?? 'auto') ||
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
     draftFirstAdhanOffset !== (firstAdhanOffset ?? 0) ||
-    JSON.stringify(draftIqamaOffsets) !== JSON.stringify({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) }) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
   const handleSave = () => {
@@ -413,7 +392,6 @@ export default function SettingsScreen() {
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
       firstAdhanOffset: draftFirstAdhanOffset,
-      iqamaOffsets: draftIqamaOffsets,
       dhuhaTime: draftDhuhaTime,
       tahajjudTime: draftTahajjudTime,
       showDhuha: draftShowDhuha,
@@ -878,41 +856,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Iqama Settings */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {tr.iqamaSettings}
-          </Text>
-          <HelpBtn helpKey="iqama" />
-        </View>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          {(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const).map((prayer, idx, arr) => (
-            <View
-              key={prayer}
-              style={[styles.compactRow, {
-                borderBottomWidth: idx < arr.length - 1 ? 1 : 0,
-                borderBottomColor: C.separator,
-                flexDirection: isRtl ? 'row-reverse' : 'row',
-              }]}
-            >
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-                {isAr
-                  ? { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' }[prayer]
-                  : { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' }[prayer]}
-              </Text>
-              <Pressable
-                onPress={() => { Haptics.selectionAsync(); setShowIqamaPicker(prayer); }}
-                style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
-              >
-                <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
-                  {isAr ? `${draftIqamaOffsets[prayer] ?? 10} د` : `${draftIqamaOffsets[prayer] ?? 10} min`}
-                </Text>
-                <Ionicons name="chevron-down" size={13} color={C.tint} />
-              </Pressable>
-            </View>
-          ))}
-        </View>
-
         {/* Nafl Prayer Timings */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
@@ -1064,47 +1007,6 @@ export default function SettingsScreen() {
                       {mins === 0
                         ? (isAr ? 'إيقاف' : 'Off')
                         : isAr ? `${mins} ${mins === 5 ? 'دقائق' : 'دقيقة'}` : `${mins} min`}
-                    </Text>
-                    {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </Pressable>
-        </Modal>
-
-        {/* Iqama offset picker */}
-        <Modal visible={showIqamaPicker !== null} transparent animationType="fade">
-          <Pressable style={styles.dropdownOverlay} onPress={() => setShowIqamaPicker(null)}>
-            <View style={[styles.dropdownSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-              <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
-                {tr.iqamaSettings}
-              </Text>
-              {([5, 10, 15, 20, 25] as const).map((mins, idx, arr) => {
-                const isSelected = (draftIqamaOffsets[showIqamaPicker ?? ''] ?? 10) === mins;
-                const isLast = idx === arr.length - 1;
-                return (
-                  <Pressable
-                    key={mins}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      if (showIqamaPicker) {
-                        setDraftIqamaOffsets(prev => ({ ...prev, [showIqamaPicker]: mins }));
-                      }
-                      setShowIqamaPicker(null);
-                    }}
-                    style={[
-                      styles.dropdownOption,
-                      {
-                        borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
-                        borderBottomColor: C.separator,
-                        backgroundColor: isSelected ? C.tint + '14' : 'transparent',
-                        flexDirection: isRtl ? 'row-reverse' : 'row',
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
-                      {isAr ? `${mins} دقيقة` : `${mins} min`}
                     </Text>
                     {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
                   </Pressable>

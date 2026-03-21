@@ -32,7 +32,6 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 export async function cancelAllPrayerNotifications() {
-  if (Platform.OS === 'web') return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
