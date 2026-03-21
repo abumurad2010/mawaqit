@@ -193,18 +193,24 @@ export default function PrayerTimesScreen() {
     setTimes(computed);
   }, [location, viewingDate, calcMethod, asrMethod, maghribOffset]);
 
-  const nextPrayer = times ? getNextPrayer(times) : null;
+  // nextPrayer is only meaningful when viewing today — when dateOffset != 0
+  // the user is browsing a past/future day and `times` contains that day's prayers,
+  // not today's, so we must not use it for the live countdown.
+  const nextPrayer = dateOffset === 0 && times ? getNextPrayer(times) : null;
 
-  // Next upcoming Fajr — always looks forward until it finds one that is genuinely
-  // in the future.  A simple "date + 1" breaks when the device timezone is far
-  // behind the prayer-location timezone (e.g. NYC device / Mecca prayers) so the
-  // computed "tomorrow's Fajr" is already in the past in UTC.
+  // Next upcoming Fajr — always looks forward (from today, regardless of dateOffset)
+  // until it finds one genuinely in the future.  Uses explicit noon-anchored local
+  // dates so setDate arithmetic is unambiguous across timezone boundaries.
   const tomorrowFajr = useMemo(() => {
     if (!location) return null;
     const nowMs = Date.now();
-    for (let offset = 1; offset <= 3; offset++) {
-      const d = new Date(nowMs);
-      d.setDate(d.getDate() + offset);
+    const base = new Date(nowMs);
+    for (let offset = 1; offset <= 7; offset++) {
+      // Construct noon on (today_local + offset) — noon avoids DST / date-line edge cases
+      const d = new Date(
+        base.getFullYear(), base.getMonth(), base.getDate() + offset,
+        12, 0, 0, 0,
+      );
       const t = calculatePrayerTimes({
         lat: location.lat, lng: location.lng,
         date: d, method: calcMethod, asrMethod, maghribOffset,
