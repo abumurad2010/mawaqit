@@ -71,13 +71,18 @@ export default function PrayerTimesScreen() {
   // ── Date navigation (swipe left/right to browse days) ────────────────────
   const [dateOffset, setDateOffset] = useState(0); // 0 = today, +1 = tomorrow, -1 = yesterday
 
-  // The date whose prayer times are displayed — always derived from `now` so
-  // midnight rollovers don't produce a stale or invalid date.
+  // Stable string key for today's local date — computed early so viewingDate can use it.
+  // Lives before viewingDate so both tomorrowFajr and viewingDate can share this key.
+  const _todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+
+  // The date whose prayer times are displayed.  Uses the stable daily key so the
+  // object reference only changes when the actual calendar date changes (at midnight),
+  // not every second — prevents the times useEffect from re-running every second.
   const viewingDate = useMemo(() => {
-    if (dateOffset === 0) return now;
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dateOffset, 12, 0, 0, 0);
-    return d;
-  }, [dateOffset, now]);
+    const base = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dateOffset, 12, 0, 0, 0);
+    return base;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateOffset, _todayKey]);
 
   // Slide animation shared value — drives translateX on the prayer content
   const slideX = useSharedValue(0);
@@ -190,7 +195,8 @@ export default function PrayerTimesScreen() {
 
   const nextPrayer = times ? getNextPrayer(times) : null;
 
-  // Tomorrow's Fajr — used both for the "next prayer" hero and Tahajjud time
+  // Tomorrow's Fajr — used both for the "next prayer" hero and Tahajjud time.
+  // Depends on _todayKey so it recomputes automatically at midnight.
   const tomorrowFajr = useMemo(() => {
     if (!location) return null;
     const tomorrow = new Date();
@@ -200,7 +206,8 @@ export default function PrayerTimesScreen() {
       date: tomorrow, method: calcMethod, asrMethod, maghribOffset,
     });
     return t.fajr;
-  }, [location, calcMethod, asrMethod, maghribOffset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location, calcMethod, asrMethod, maghribOffset, _todayKey]);
 
   // displayNext: either today's next prayer, or tomorrow's Fajr
   const displayNext = nextPrayer
