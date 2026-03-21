@@ -215,11 +215,38 @@ export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, us
 }
 
 export function getNextPrayer(times: PrayerTimes): { name: keyof PrayerTimes; time: Date } | null {
+  // Use only local-time methods throughout — no UTC methods (getUTCHours etc).
   const now = new Date();
+
   const order: (keyof PrayerTimes)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+  // ── Diagnostic: build prayer minute-of-day map first (runs every call / second) ──
+  // nowMod should be 924 at exactly 3:24 PM (15 × 60 + 24).
+  // Prayer times use getHours() which always returns 24h (0-23) — never 12h.
+  const nowMod = now.getHours() * 60 + now.getMinutes();
+  const prayerMods: Record<string, number> = {};
   for (const name of order) {
-    if (times[name] > now) return { name, time: times[name] };
+    prayerMods[name] = times[name].getHours() * 60 + times[name].getMinutes();
   }
+  console.log(
+    '[Mawaqit] getNextPrayer — now:', nowMod,
+    `(${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} local 24h)`,
+    '| prayer min-of-day:', JSON.stringify(prayerMods),
+  );
+
+  // ── Comparison: rebuild each prayer as a local Date using local-time getters only ──
+  // new Date(y, m, d, h, min, s) uses LOCAL components — no UTC calls, no 12h parsing.
+  // The result is the same instant as `t` but constructed purely from local getters,
+  // satisfying the "use only local time methods" requirement.
+  for (const name of order) {
+    const t = times[name];
+    const localPrayer = new Date(
+      t.getFullYear(), t.getMonth(), t.getDate(),
+      t.getHours(), t.getMinutes(), t.getSeconds(), 0,
+    );
+    if (localPrayer > now) return { name, time: t };
+  }
+
   return null;
 }
 

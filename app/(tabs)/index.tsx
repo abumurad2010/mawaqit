@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { SERIF_EN } from '@/constants/typography';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  Platform, Image, PanResponder,
+  Platform, Image, PanResponder, AppState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -199,10 +199,10 @@ export default function PrayerTimesScreen() {
   // `times` (the useState above) is only used for the prayer-list display.
   const todayTimes = useMemo(() => {
     if (!location) return null;
-    // Build noon on the current local date so getDate() / getMonth() are unambiguous
+    // Build noon on the current local date — local methods only, no UTC calls.
     const n = new Date();
     const todayNoon = new Date(n.getFullYear(), n.getMonth(), n.getDate(), 12, 0, 0, 0);
-    return calculatePrayerTimes({
+    const result = calculatePrayerTimes({
       lat: location.lat,
       lng: location.lng,
       date: todayNoon,
@@ -210,6 +210,16 @@ export default function PrayerTimesScreen() {
       asrMethod,
       maghribOffset,
     });
+    // Diagnostic: confirm todayTimes uses the correct local date and gives sane times.
+    console.log(
+      '[Mawaqit] todayTimes computed —',
+      `date=${todayNoon.getFullYear()}-${todayNoon.getMonth() + 1}-${todayNoon.getDate()}`,
+      `fajr=${result.fajr.getHours()}:${String(result.fajr.getMinutes()).padStart(2, '0')}`,
+      `asr=${result.asr.getHours()}:${String(result.asr.getMinutes()).padStart(2, '0')}`,
+      `isha=${result.isha.getHours()}:${String(result.isha.getMinutes()).padStart(2, '0')}`,
+      `(local 24h)`,
+    );
+    return result;
   // _todayKey changes at local midnight, ensuring the memo refreshes for the new day
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, _todayKey, calcMethod, asrMethod, maghribOffset]);
@@ -218,28 +228,38 @@ export default function PrayerTimesScreen() {
   // and never wrong because the user is browsing a different day.
   const nextPrayer = todayTimes ? getNextPrayer(todayTimes) : null;
 
-  // Next upcoming Fajr — always looks forward (from today, regardless of dateOffset)
-  // until it finds one genuinely in the future.  Uses explicit noon-anchored local
-  // dates so setDate arithmetic is unambiguous across timezone boundaries.
-  const tomorrowFajr = useMemo(() => {
-    if (!location) return null;
-    const nowMs = Date.now();
-    const base = new Date(nowMs);
-    for (let offset = 1; offset <= 7; offset++) {
-      // Construct noon on (today_local + offset) — noon avoids DST / date-line edge cases
+  // ── tomorrowFajr: split into two steps to avoid stale-nowMs bug ──────────────
+  //
+  // PROBLEM with a single useMemo: `nowMs = Date.now()` is captured at memo
+  // execution time (local midnight).  In timezone offsets where local midnight
+  // is *after* the next day's Fajr in UTC, offset=1 fails and offset=2 is
+  // returned → ~37-hour countdown instead of ~14-hour.
+  //
+  // FIX: precompute the next 7 Fajr Date objects (memoized, cheap, runs once/day),
+  // then find the first one that is > `now` at *render time* using the live `now`
+  // state (updated every second).  This way the ">now" test is always fresh.
+
+  // Step 1: precompute next 7 Fajr candidates (local-date + offset, noon-anchored).
+  const fajrCandidates = useMemo(() => {
+    if (!location) return [];
+    const base = new Date(); // local time at memo execution (midnight or settings change)
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(
-        base.getFullYear(), base.getMonth(), base.getDate() + offset,
+        base.getFullYear(), base.getMonth(), base.getDate() + i + 1,
         12, 0, 0, 0,
       );
       const t = calculatePrayerTimes({
         lat: location.lat, lng: location.lng,
         date: d, method: calcMethod, asrMethod, maghribOffset,
       });
-      if (t.fajr.getTime() > nowMs) return t.fajr;
-    }
-    return null;
+      return t.fajr;
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, calcMethod, asrMethod, maghribOffset, _todayKey]);
+
+  // Step 2: pick the first candidate that is still in the future — re-evaluated
+  // every second via `now` state, so it transitions cleanly across midnight.
+  const tomorrowFajr = fajrCandidates.find(f => f > now) ?? null;
 
   // displayNext: either today's next prayer, or tomorrow's Fajr
   const displayNext = nextPrayer
@@ -273,6 +293,17 @@ export default function PrayerTimesScreen() {
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Immediately refresh `now` when the app comes back to the foreground.
+  // Without this, `now` can be stale after the OS pauses the JS thread,
+  // causing `_todayKey` and `todayTimes` / `fajrCandidates` to be wrong
+  // until the next 1-second interval tick.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setNow(new Date());
+    });
+    return () => sub.remove();
   }, []);
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];

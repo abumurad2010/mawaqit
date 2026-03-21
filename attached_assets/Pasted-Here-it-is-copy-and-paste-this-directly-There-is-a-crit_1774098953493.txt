@@ -1,0 +1,19 @@
+Here it is — copy and paste this directly:
+
+There is a critical bug in the next-prayer countdown logic. At 3:24 PM local time, the app is skipping Asr (4:11 PM), Maghrib (6:52 PM), and Isha (8:04 PM) — all of which are in the future — and incorrectly jumping to tomorrow’s Fajr, showing 37+ hours remaining.
+
+The bug is almost certainly a 12-hour vs 24-hour clock parsing error. The app is comparing the current time against prayer times numerically, but either the current time or the prayer times are being read in 12-hour format without AM/PM conversion. So 3:24 PM becomes 3:24 instead of 15:24, which is less than every prayer time stored, causing the app to think all prayers have passed.
+
+Please do the following:
+
+1. Find the function that determines the next prayer and calculates the countdown. Add a console.log that prints, at the moment of calculation: the current time as a numeric minute-of-day (should be 924 at 3:24 PM), and the minute-of-day value for each prayer time being compared.
+
+2. Verify that all prayer times are being parsed as 24-hour values. If a prayer time string comes in as “4:11 PM”, it must be converted to 16 hours 11 minutes (971 minutes), NOT 4 hours 11 minutes (251 minutes). Fix any place where 12-hour strings are parsed without AM/PM conversion.
+
+3. Build all prayer time comparisons using full JavaScript Date objects anchored to today’s local date — not raw hour/minute integers — to avoid date boundary issues around midnight as well.
+
+4. Test specifically with device time set to 3:00 PM and confirm the app shows Asr as the next prayer with approximately 1 hour 11 minutes remaining. Then test at 11:00 PM and confirm it shows tomorrow’s Fajr with the correct hours remaining (not 37+).
+
+Do not use any UTC methods (toISOString, getUTCHours, etc.) in the next-prayer calculation. Use only local time methods (getHours, getMinutes, getDate, etc.) throughout.
+
+That gives Replit a diagnosis, a specific fix, a verification step, and a guard against the secondary midnight bug all in one prompt.​​​​​​​​​​​​​​​​
