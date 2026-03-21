@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { useApp } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
 import ThemeToggle from '@/components/ThemeToggle';
+import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
 import ATHKAR_CATEGORIES, { AthkarCategory, Dhikr } from '@/constants/athkar-data';
 
@@ -101,7 +102,6 @@ export default function AthkarScreen() {
         onBack={closeCategory}
         onReset={resetCounts}
         displayMode={displayMode}
-        onDisplayMode={setDisplayMode}
       />
     );
   }
@@ -114,6 +114,8 @@ export default function AthkarScreen() {
       C={C}
       topInset={topInset}
       bottomInset={bottomInset}
+      displayMode={displayMode}
+      onDisplayMode={setDisplayMode}
       onSelect={openCategory}
     />
   );
@@ -126,10 +128,13 @@ interface GridProps {
   C: any;
   topInset: number;
   bottomInset: number;
+  displayMode: 'arabic' | 'full';
+  onDisplayMode: (m: 'arabic' | 'full') => void;
   onSelect: (cat: AthkarCategory) => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, onSelect }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect }: GridProps) {
+  const isAr = lang === 'ar';
   const NUM_COLS = 4;
   const rows: AthkarCategory[][] = [];
   for (let i = 0; i < ATHKAR_CATEGORIES.length; i += NUM_COLS) {
@@ -138,11 +143,34 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, onSelect }: Gri
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
-      <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
-        <View style={{ flex: 1 }} />
-        <AppLogo />
-        <View style={[{ flex: 1, alignItems: 'flex-end' }]}>
-          <ThemeToggle />
+      <View style={[styles.gridTopHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+            <ThemeToggle />
+            <LangToggle />
+          </View>
+          <AppLogo tintColor={C.tint} lang={lang} />
+          <View style={{ flex: 1 }} />
+        </View>
+        <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
+            style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
+          >
+            <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
+              {isAr ? 'عربي فقط' : 'Arabic'}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); onDisplayMode('full'); }}
+            style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
+          >
+            <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
+              {isAr ? 'كامل' : 'Full'}
+            </Text>
+          </Pressable>
         </View>
       </View>
 
@@ -221,14 +249,13 @@ interface ReaderProps {
   onBack: () => void;
   onReset: () => void;
   displayMode: 'arabic' | 'full';
-  onDisplayMode: (m: 'arabic' | 'full') => void;
 }
 
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
-  displayMode, onDisplayMode,
+  displayMode,
 }: ReaderProps) {
   const nameKey = category.nameKey as any;
   const catName = (tr as any)[nameKey] ?? nameKey;
@@ -307,27 +334,6 @@ function ReaderScreen({
           <Animated.View style={[styles.progressFill, { backgroundColor: C.tint }, progressStyle]} />
         </View>
         <Text style={[styles.progressLabel, { color: C.textMuted }]}>{doneCount}/{total}</Text>
-      </View>
-
-      <View style={[styles.segmentRow, { marginHorizontal: 14, marginBottom: 6, backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
-          style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
-        >
-          <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
-          <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
-            {lang === 'ar' ? 'عربي فقط' : 'Arabic'}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); onDisplayMode('full'); }}
-          style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
-        >
-          <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
-          <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
-            {lang === 'ar' ? 'كامل' : 'Full'}
-          </Text>
-        </Pressable>
       </View>
 
       <FlatList
@@ -437,6 +443,15 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  gridTopHeader: {
+    marginBottom: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',
