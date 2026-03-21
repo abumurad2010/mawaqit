@@ -195,17 +195,23 @@ export default function PrayerTimesScreen() {
 
   const nextPrayer = times ? getNextPrayer(times) : null;
 
-  // Tomorrow's Fajr — used both for the "next prayer" hero and Tahajjud time.
-  // Depends on _todayKey so it recomputes automatically at midnight.
+  // Next upcoming Fajr — always looks forward until it finds one that is genuinely
+  // in the future.  A simple "date + 1" breaks when the device timezone is far
+  // behind the prayer-location timezone (e.g. NYC device / Mecca prayers) so the
+  // computed "tomorrow's Fajr" is already in the past in UTC.
   const tomorrowFajr = useMemo(() => {
     if (!location) return null;
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const t = calculatePrayerTimes({
-      lat: location.lat, lng: location.lng,
-      date: tomorrow, method: calcMethod, asrMethod, maghribOffset,
-    });
-    return t.fajr;
+    const nowMs = Date.now();
+    for (let offset = 1; offset <= 3; offset++) {
+      const d = new Date(nowMs);
+      d.setDate(d.getDate() + offset);
+      const t = calculatePrayerTimes({
+        lat: location.lat, lng: location.lng,
+        date: d, method: calcMethod, asrMethod, maghribOffset,
+      });
+      if (t.fajr.getTime() > nowMs) return t.fajr;
+    }
+    return null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, calcMethod, asrMethod, maghribOffset, _todayKey]);
 
