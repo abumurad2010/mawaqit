@@ -28,6 +28,7 @@ export default function AthkarScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState<AthkarCategory | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>('full');
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -99,6 +100,8 @@ export default function AthkarScreen() {
         onTap={handleTap}
         onBack={closeCategory}
         onReset={resetCounts}
+        displayMode={displayMode}
+        onDisplayMode={setDisplayMode}
       />
     );
   }
@@ -217,12 +220,15 @@ interface ReaderProps {
   onTap: (cat: AthkarCategory, dhikr: Dhikr, idx: number) => void;
   onBack: () => void;
   onReset: () => void;
+  displayMode: 'arabic' | 'full';
+  onDisplayMode: (m: 'arabic' | 'full') => void;
 }
 
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
+  displayMode, onDisplayMode,
 }: ReaderProps) {
   const nameKey = category.nameKey as any;
   const catName = (tr as any)[nameKey] ?? nameKey;
@@ -303,6 +309,27 @@ function ReaderScreen({
         <Text style={[styles.progressLabel, { color: C.textMuted }]}>{doneCount}/{total}</Text>
       </View>
 
+      <View style={[styles.segmentRow, { marginHorizontal: 14, marginBottom: 6, backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
+          style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
+        >
+          <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
+          <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
+            {lang === 'ar' ? 'عربي فقط' : 'Arabic'}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); onDisplayMode('full'); }}
+          style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
+        >
+          <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
+          <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
+            {lang === 'ar' ? 'كامل' : 'Full'}
+          </Text>
+        </Pressable>
+      </View>
+
       <FlatList
         ref={readerRef}
         data={category.adhkar}
@@ -324,6 +351,7 @@ function ReaderScreen({
               translation={translation}
               isRtl={isRtl}
               C={C}
+              displayMode={displayMode}
               onTap={() => onTap(category, dhikr, index)}
             />
           );
@@ -341,10 +369,11 @@ interface CardProps {
   translation: string;
   isRtl: boolean;
   C: any;
+  displayMode: 'arabic' | 'full';
   onTap: () => void;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, onTap }: CardProps) {
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode, onTap }: CardProps) {
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
@@ -382,11 +411,13 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, onTap }: Ca
           {dhikr.arabic}
         </Text>
 
-        <Text style={[styles.translitText, { color: C.textMuted }]}>
-          {dhikr.transliteration}
-        </Text>
+        {displayMode === 'full' && (
+          <Text style={[styles.translitText, { color: C.textMuted }]}>
+            {dhikr.transliteration}
+          </Text>
+        )}
 
-        {!!translation && (
+        {displayMode === 'full' && !!translation && (
           <Text style={[
             styles.translationText,
             {
@@ -451,6 +482,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingBottom: 8,
+  },
+  segmentRow: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 3,
+  },
+  segmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  segmentLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   progressTrack: {
     height: 4,
