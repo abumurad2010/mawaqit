@@ -167,6 +167,14 @@ const base = {
   athkar_cat_quranic: 'Quranic Duas',
   athkar_cat_rizq: 'Sustenance',
   athkar_cat_debt: 'Relieving Debt',
+  athkar_cat_ruqyah: 'Ruqyah',
+  athkar_cat_home: 'Home — In & Out',
+  athkar_cat_friday: 'Friday Adhkar',
+  athkar_cat_parents: 'Dua for Parents',
+  athkar_cat_faraj: 'Dua for Relief',
+  athkar_cat_calamity: 'Upon Calamity',
+  athkar_cat_rain: 'Rain & Thunder',
+  athkar_cat_quran_khatm: 'After Quran',
 
   athkar_morning_1: "Āyat al-Kursī — The Throne Verse (Al-Baqarah 2:255). Whoever recites it in the morning will be protected until evening.",
   athkar_morning_2: "Sūrat al-Ikhlāṣ — Say: He is Allah, the One. Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent. (3×)",
@@ -260,6 +268,45 @@ const base = {
   athkar_debt_1: "O Allah, suffice me with what You have made lawful, keeping me from what You have made unlawful, and enrich me with Your favour so that I need no one other than You.",
   athkar_debt_2: "O Allah, I seek refuge in You from sin and from debt.",
   athkar_debt_3: "O Allah, I seek refuge in You from worry and grief, from incapacity and laziness, from miserliness and cowardice, from the burden of debt and from being overpowered by others.",
+
+  athkar_ruqyah_1: "In the name of Allah I perform ruqyah for you, from everything that harms you, from the evil of every soul or envious eye, may Allah heal you. In the name of Allah I perform ruqyah for you. (3×)",
+  athkar_ruqyah_2: "I seek refuge in the perfect words of Allah from every devil and poisonous creature, and from every evil eye. (3×)",
+  athkar_ruqyah_3: "In the name of Allah with Whose name nothing can cause harm in the earth nor in the heavens, and He is the All-Hearing, All-Knowing. (3×)",
+  athkar_ruqyah_4: "Āyat al-Kursī — Al-Baqarah 2:255. The greatest verse in the Quran. Recite over yourself, family, and home for protection.",
+  athkar_ruqyah_5: "Sūrat al-Ikhlāṣ — recite 3×. Equal in reward to reciting one third of the Quran.",
+  athkar_ruqyah_6: "Sūrat al-Falaq — recite 3×. Seek refuge from all created evil.",
+  athkar_ruqyah_7: "Sūrat an-Nās — recite 3×. Seek refuge from the whisperer.",
+
+  athkar_home_1: "In the name of Allah, I place my trust in Allah, and there is no might nor power except with Allah. [Said when leaving home]",
+  athkar_home_2: "In the name of Allah we enter and in the name of Allah we leave, and upon Allah our Lord we place our trust. [Said when entering home]",
+  athkar_home_3: "O Allah, I seek refuge in You lest I stray or be led astray, slip or be caused to slip, wrong others or be wronged, or behave foolishly or be treated foolishly. [Said when leaving home]",
+
+  athkar_friday_1: "O Allah, send prayers upon Muhammad and upon the family of Muhammad, as You sent prayers upon Ibrahim and upon the family of Ibrahim. O Allah, send blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and upon the family of Ibrahim. You are indeed Worthy of Praise, Full of Glory. (100×) [Abundant on Fridays]",
+  athkar_friday_2: "O Allah, I ask You, as all praise belongs to You, none has the right to be worshipped except You, the Bestower of gifts, Creator of the heavens and earth, O Possessor of glory and honour, O Ever Living, O Sustainer — I ask You for Paradise and seek refuge in You from the Fire.",
+  athkar_friday_3: "Sūrat al-Kahf — Recommended to recite in full on Fridays. Whoever recites it will have a light shining for him between the two Fridays.",
+
+  athkar_parents_1: "My Lord, forgive me and my parents and whoever enters my house as a believer, and all believing men and women. [Nūḥ 71:28]",
+  athkar_parents_2: "My Lord, have mercy on them both as they raised me when I was small. [Al-Isrāʾ 17:24]",
+  athkar_parents_3: "Our Lord, forgive me and my parents and the believers on the Day when the account is established. [Ibrāhīm 14:41]",
+  athkar_parents_4: "O Allah, forgive our living and our dead, those present and those absent, our young and our old, our males and our females.",
+
+  athkar_faraj_1: "None has the right to be worshipped except Allah, the Almighty, the Forbearing. None has the right to be worshipped except Allah, Lord of the mighty throne. None has the right to be worshipped except Allah, Lord of the heavens, Lord of the earth and Lord of the noble throne.",
+  athkar_faraj_2: "None has the right to be worshipped except You. Glory is to You. Verily I have been among the wrongdoers. (40×) [The supplication of Yunus ﷺ — reported to remove hardship]",
+  athkar_faraj_3: "O Allah, I ask You — You are Allah, the One, the Eternal Refuge, Who neither begets nor is born, nor is there to Him any equivalent — that You forgive me my sins. Verily You are the Forgiving, the Merciful.",
+  athkar_faraj_4: "O Allah, Remover of worry, Reliever of grief, Answerer of the call of the distressed, Most Merciful in this life and the next — You have mercy on me, so have mercy on me with a mercy that makes me independent of the mercy of anyone other than You.",
+
+  athkar_calamity_1: "Verily we belong to Allah and to Him we shall return. O Allah, reward me in my calamity and replace it with something better. [Upon any affliction]",
+  athkar_calamity_2: "Verily we belong to Allah and to Him we shall return. [Al-Baqarah 2:156 — said upon hearing of a death or loss]",
+  athkar_calamity_3: "O Allah, forgive him and elevate his station among the rightly guided, and be a successor to his descendants who remain. Forgive us and him, O Lord of the worlds, and make spacious his grave and illuminate it for him. [Said for the deceased]",
+  athkar_calamity_4: "O Allah, forgive our living and our dead, those present and those absent, our young and our old, our males and our females. O Allah, whomever You give life among us, give him life upon Islam; and whomever You cause to die, cause him to die upon faith.",
+
+  athkar_rain_1: "Glory is to Him Whose praises the thunder declares, as do the angels in awe of Him. [Said when hearing thunder]",
+  athkar_rain_2: "O Allah, let it be a beneficial rain. [Said when it rains]",
+  athkar_rain_3: "We have been given rain by the grace and mercy of Allah. [Said after rain]",
+  athkar_rain_4: "O Allah, I ask You for its good and the good within it and the good with which it was sent, and I seek refuge in You from its evil and the evil within it and the evil with which it was sent. [Said when fearing wind or storms]",
+
+  athkar_quran_khatm_1: "Glory is to You O Allah and praise. None has the right to be worshipped except You. I seek Your forgiveness and repent to You.",
+  athkar_quran_khatm_2: "O Allah, have mercy on me through the Quran, and make it for me a leader, a light, a guidance and a mercy. O Allah, remind me of what I have forgotten from it, teach me from it what I am ignorant of, grant me its recitation in the hours of night and the ends of day, and make it a proof for me, O Lord of the worlds.",
 };
 
 export type Translations = typeof base;
@@ -389,6 +436,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'الأدعية القرآنية',
     athkar_cat_rizq: 'دعاء الرزق',
     athkar_cat_debt: 'دعاء قضاء الدين',
+    athkar_cat_ruqyah: 'الرقية الشرعية',
+    athkar_cat_home: 'دعاء دخول وخروج البيت',
+    athkar_cat_friday: 'أذكار الجمعة',
+    athkar_cat_parents: 'دعاء الوالدين',
+    athkar_cat_faraj: 'دعاء الفرج',
+    athkar_cat_calamity: 'أذكار المصيبة',
+    athkar_cat_rain: 'دعاء المطر والرعد',
+    athkar_cat_quran_khatm: 'دعاء ختم القرآن',
   },
 
   fr: {
@@ -458,6 +513,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Invocations coraniques',
     athkar_cat_rizq: 'Subsistance',
     athkar_cat_debt: 'Remboursement des dettes',
+    athkar_cat_ruqyah: 'Roqya',
+    athkar_cat_home: 'Entrer et sortir',
+    athkar_cat_friday: 'Vendredi',
+    athkar_cat_parents: 'Dua pour les parents',
+    athkar_cat_faraj: 'Dua pour le soulagement',
+    athkar_cat_calamity: 'En cas de malheur',
+    athkar_cat_rain: 'Pluie et tonnerre',
+    athkar_cat_quran_khatm: 'Après le Coran',
   },
 
   es: {
@@ -522,6 +585,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Súplicas coránicas',
     athkar_cat_rizq: 'Sustento',
     athkar_cat_debt: 'Alivio de deudas',
+    athkar_cat_ruqyah: 'Ruqyah',
+    athkar_cat_home: 'Entrar y salir',
+    athkar_cat_friday: 'Viernes',
+    athkar_cat_parents: 'Dua por los padres',
+    athkar_cat_faraj: 'Dua por el alivio',
+    athkar_cat_calamity: 'Ante la calamidad',
+    athkar_cat_rain: 'Lluvia y truenos',
+    athkar_cat_quran_khatm: 'Tras el Corán',
   },
 
   ru: {
@@ -589,6 +660,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Коранические дуа',
     athkar_cat_rizq: 'Пропитание',
     athkar_cat_debt: 'Погашение долга',
+    athkar_cat_ruqyah: 'Рукья',
+    athkar_cat_home: 'Вход и выход из дома',
+    athkar_cat_friday: 'Пятничные азкары',
+    athkar_cat_parents: 'Дуа за родителей',
+    athkar_cat_faraj: 'Дуа об облегчении',
+    athkar_cat_calamity: 'При несчастье',
+    athkar_cat_rain: 'Дождь и гром',
+    athkar_cat_quran_khatm: 'После Корана',
   },
 
   zh: {
@@ -656,6 +735,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: '古兰经祈祷',
     athkar_cat_rizq: '求赐财富',
     athkar_cat_debt: '还债祈祷',
+    athkar_cat_ruqyah: '护身祈祷',
+    athkar_cat_home: '进出家门',
+    athkar_cat_friday: '周五祈祷',
+    athkar_cat_parents: '为父母祈祷',
+    athkar_cat_faraj: '求解困祈祷',
+    athkar_cat_calamity: '遭难时祈祷',
+    athkar_cat_rain: '雨天雷声祈祷',
+    athkar_cat_quran_khatm: '完成古兰经后',
   },
 
   tr: {
@@ -728,6 +815,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Kurani Dualar',
     athkar_cat_rizq: 'Rızık Duası',
     athkar_cat_debt: 'Borç Ödeme Duası',
+    athkar_cat_ruqyah: 'Rukye',
+    athkar_cat_home: 'Eve Giriş ve Çıkış',
+    athkar_cat_friday: 'Cuma Zikirleri',
+    athkar_cat_parents: 'Anne Baba Duası',
+    athkar_cat_faraj: 'Ferahlama Duası',
+    athkar_cat_calamity: 'Musibet Anında',
+    athkar_cat_rain: 'Yağmur ve Gök Gürültüsü',
+    athkar_cat_quran_khatm: 'Kuran Hatmi Sonrası',
   },
 
   ur: {
@@ -800,6 +895,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'قرآنی دعائیں',
     athkar_cat_rizq: 'رزق کی دعا',
     athkar_cat_debt: 'قرض ادائیگی کی دعا',
+    athkar_cat_ruqyah: 'رقیہ شرعیہ',
+    athkar_cat_home: 'گھر میں داخل اور خارج',
+    athkar_cat_friday: 'جمعہ کے اذکار',
+    athkar_cat_parents: 'والدین کے لیے دعا',
+    athkar_cat_faraj: 'فرج کی دعا',
+    athkar_cat_calamity: 'مصیبت کے وقت',
+    athkar_cat_rain: 'بارش اور بجلی',
+    athkar_cat_quran_khatm: 'ختم قرآن کی دعا',
   },
 
   id: {
@@ -869,6 +972,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Doa Qurani',
     athkar_cat_rizq: 'Doa Rezeki',
     athkar_cat_debt: 'Doa Melunasi Hutang',
+    athkar_cat_ruqyah: 'Ruqyah',
+    athkar_cat_home: 'Masuk dan Keluar Rumah',
+    athkar_cat_friday: 'Dzikir Jumat',
+    athkar_cat_parents: 'Doa untuk Orang Tua',
+    athkar_cat_faraj: 'Doa Kelapangan',
+    athkar_cat_calamity: 'Saat Musibah',
+    athkar_cat_rain: 'Hujan dan Petir',
+    athkar_cat_quran_khatm: 'Setelah Khatam Quran',
   },
 
   bn: {
@@ -936,6 +1047,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'কুরআনি দোয়া',
     athkar_cat_rizq: 'রিযকের দোয়া',
     athkar_cat_debt: 'ঋণ পরিশোধের দোয়া',
+    athkar_cat_ruqyah: 'রুকইয়াহ',
+    athkar_cat_home: 'বাড়িতে প্রবেশ ও বাহির',
+    athkar_cat_friday: 'জুমার যিকির',
+    athkar_cat_parents: 'বাবা-মার জন্য দোয়া',
+    athkar_cat_faraj: 'বিপদমুক্তির দোয়া',
+    athkar_cat_calamity: 'বিপদের সময়',
+    athkar_cat_rain: 'বৃষ্টি ও বজ্রপাত',
+    athkar_cat_quran_khatm: 'খতমের দোয়া',
   },
 
   fa: {
@@ -1008,6 +1127,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'دعاهای قرآنی',
     athkar_cat_rizq: 'دعای روزی',
     athkar_cat_debt: 'دعای ادای دین',
+    athkar_cat_ruqyah: 'رقیه شرعی',
+    athkar_cat_home: 'ورود و خروج از خانه',
+    athkar_cat_friday: 'اذکار جمعه',
+    athkar_cat_parents: 'دعا برای والدین',
+    athkar_cat_faraj: 'دعای فرج',
+    athkar_cat_calamity: 'هنگام مصیبت',
+    athkar_cat_rain: 'باران و رعد و برق',
+    athkar_cat_quran_khatm: 'دعای ختم قرآن',
   },
 
   ms: {
@@ -1072,6 +1199,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Doa Qurani',
     athkar_cat_rizq: 'Doa Rezeki',
     athkar_cat_debt: 'Doa Melangsaikan Hutang',
+    athkar_cat_ruqyah: 'Ruqyah',
+    athkar_cat_home: 'Masuk dan Keluar Rumah',
+    athkar_cat_friday: 'Zikir Jumaat',
+    athkar_cat_parents: 'Doa untuk Ibu Bapa',
+    athkar_cat_faraj: 'Doa Kelapangan',
+    athkar_cat_calamity: 'Ketika Musibah',
+    athkar_cat_rain: 'Hujan dan Petir',
+    athkar_cat_quran_khatm: 'Selepas Khatam Quran',
   },
 
   pt: {
@@ -1136,6 +1271,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Súplicas corânicas',
     athkar_cat_rizq: 'Sustento',
     athkar_cat_debt: 'Pagamento de dívidas',
+    athkar_cat_ruqyah: 'Ruqyah',
+    athkar_cat_home: 'Entrar e sair de casa',
+    athkar_cat_friday: 'Dhikrs de sexta-feira',
+    athkar_cat_parents: 'Dua pelos pais',
+    athkar_cat_faraj: 'Dua pelo alívio',
+    athkar_cat_calamity: 'Em caso de calamidade',
+    athkar_cat_rain: 'Chuva e trovão',
+    athkar_cat_quran_khatm: 'Após o Corão',
   },
 
   sw: {
@@ -1200,6 +1343,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: 'Dua za Qurani',
     athkar_cat_rizq: 'Dua ya Riziki',
     athkar_cat_debt: 'Dua ya Kulipa Deni',
+    athkar_cat_ruqyah: 'Ruqyah',
+    athkar_cat_home: 'Kuingia na Kutoka Nyumba',
+    athkar_cat_friday: 'Dhikri za Ijumaa',
+    athkar_cat_parents: 'Dua kwa Wazazi',
+    athkar_cat_faraj: 'Dua ya Faraja',
+    athkar_cat_calamity: 'Wakati wa Msiba',
+    athkar_cat_rain: 'Mvua na Radi',
+    athkar_cat_quran_khatm: 'Baada ya Kuhitimisha Quran',
   },
 
   ha: {
@@ -1264,6 +1415,14 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_quranic: "Addu'o'in Alqur'ani",
     athkar_cat_rizq: "Addu'ar Arziki",
     athkar_cat_debt: "Addu'ar Biyan Bashi",
+    athkar_cat_ruqyah: 'Ruqya',
+    athkar_cat_home: 'Shiga da Fita Gida',
+    athkar_cat_friday: "Azkar Jumma'a",
+    athkar_cat_parents: "Addu'a don Iyaye",
+    athkar_cat_faraj: "Addu'ar Saukaka",
+    athkar_cat_calamity: 'Lokacin Masifa',
+    athkar_cat_rain: 'Ruwan Sama da Tsawa',
+    athkar_cat_quran_khatm: "Bayan Kammala Alqur'ani",
   },
 };
 
