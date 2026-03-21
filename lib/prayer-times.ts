@@ -249,21 +249,40 @@ export function getNextPrayer(
   );
 
   // ── Find the first prayer whose local time is still in the future ──
-  // Rebuild each prayer as a local-time Date so the comparison is purely local:
-  //   new Date(y, m, d, h, min, s)  ← all from local getters, no UTC methods.
-  // This is equivalent to comparing the original Date objects (same instant) but
-  // makes the "local only" guarantee explicit and auditable.
+  //
+  // COMPARISON STRATEGY — seconds-of-day only, no Date objects.
+  //
+  // Why NOT "localPrayer > now" (Date comparison):
+  //   Reconstructing a Date with new Date(y, m, d, h, min, s) then comparing
+  //   it to `now` as a Date object brings the calendar DATE into the comparison.
+  //   If the prayer Date's internal UTC timestamp lands on a different calendar
+  //   day than `now` due to any timezone/DST/device-clock edge case, every prayer
+  //   reads as "past" even though its local hour:minute is clearly in the future.
+  //   The diagnostic logs confirmed this: at 18:22 local, Maghrib (18:53) and
+  //   Isha (20:05) both showed "past ✗" via Date comparison but "future" via
+  //   seconds-of-day — the date mismatch made their UTC timestamps appear earlier
+  //   than `now`'s UTC timestamp.
+  //
+  // Why seconds-of-day IS correct:
+  //   Prayer times are inherently a time-of-day concept (Fajr at dawn, Isha at
+  //   night).  `todayTimes` is always recomputed for the current LOCAL calendar
+  //   date by the useMemo in the component.  Any prayer whose H:M:S (local) is
+  //   greater than now's H:M:S (local) is, by definition, still upcoming today.
+  //   Seconds-of-day uses only getHours/getMinutes/getSeconds — no UTC methods,
+  //   no Date object construction, no timezone interpretation.
+  //
+  // getHours() always returns 0–23 (24-hour).  No AM/PM parsing anywhere.
+
+  const nowSecs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
   for (const name of order) {
     const t = times[name];
-    const localPrayer = new Date(
-      t.getFullYear(), t.getMonth(), t.getDate(),
-      t.getHours(), t.getMinutes(), t.getSeconds(), 0,
-    );
-    const isFuture = localPrayer > now;
+    const tSecs = t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds();
+    const isFuture = tSecs > nowSecs;
     if (__DEV__) {
       console.log(
         `  [Mawaqit]   ${name}: ${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`,
-        `(min ${prayerMods[name]}) →`, isFuture ? 'NEXT ✓' : 'past ✗',
+        `(secs ${tSecs} vs now ${nowSecs}) →`, isFuture ? 'NEXT ✓' : 'past ✗',
       );
     }
     if (isFuture) return { name, time: t };
