@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withSpring,
+  useSharedValue, useAnimatedStyle, withTiming, withSpring, withRepeat,
   FadeIn, interpolate, Extrapolation,
 } from 'react-native-reanimated';
-import Svg, { Circle, Line, Path, Text as SvgText, G } from 'react-native-svg';
+import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
@@ -40,6 +40,25 @@ export default function QiblaScreen() {
   const [magnetometerAvailable, setMagnetometerAvailable] = useState(true);
   const [isAlignedState, setIsAlignedState] = useState(false);
   const [isNearlyAligned, setIsNearlyAligned] = useState(false);
+  const [showCalibrate, setShowCalibrate] = useState(false);
+
+  // Pulsing animation for the ∞ symbol in the calibration modal
+  const infinityPulse = useSharedValue(1);
+  const infinityPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: infinityPulse.value }],
+    opacity: interpolate(infinityPulse.value, [0.85, 1, 1.08], [0.6, 1, 0.7], Extrapolation.CLAMP),
+  }));
+  useEffect(() => {
+    if (showCalibrate) {
+      infinityPulse.value = withRepeat(
+        withTiming(1.08, { duration: 900 }),
+        -1,
+        true,
+      );
+    } else {
+      infinityPulse.value = 1;
+    }
+  }, [showCalibrate]);
 
   const rotation = useSharedValue(0);
   const qiblaRotation = useSharedValue(0);
@@ -217,9 +236,19 @@ export default function QiblaScreen() {
               {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
             </Text>
           ) : (
-            <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-              {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
+              </Text>
+              {/* Help button */}
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setShowCalibrate(true); }}
+                style={[styles.helpBtn, { borderColor: C.separator, backgroundColor: C.backgroundCard }]}
+                hitSlop={8}
+              >
+                <Text style={[styles.helpBtnText, { color: C.tint }]}>?</Text>
+              </Pressable>
+            </View>
           )}
         </Animated.View>
 
@@ -313,6 +342,18 @@ export default function QiblaScreen() {
           })()}
         </Animated.View>
 
+        {/* Calibrate button */}
+        {magnetometerAvailable && (
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowCalibrate(true); }}
+            style={[styles.calibrateBtn, { borderColor: C.tint + '50', backgroundColor: C.tint + '12' }]}
+          >
+            <Text style={[styles.calibrateBtnText, { color: C.tint }]}>
+              {isAr ? '⟳  معايرة البوصلة' : '⟳  ' + tr.calibrateBtn}
+            </Text>
+          </Pressable>
+        )}
+
       </View>
 
       {/* Flex spacer — keeps dua at the bottom */}
@@ -327,6 +368,54 @@ export default function QiblaScreen() {
           {tr.freeApp}
         </Text>
       </View>
+
+      {/* Calibration Modal */}
+      <Modal visible={showCalibrate} transparent animationType="fade" onRequestClose={() => setShowCalibrate(false)}>
+        <View style={styles.calibrateOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCalibrate(false)} />
+          <View style={[styles.calibrateSheet, { backgroundColor: C.backgroundCard }]}>
+            {/* Title */}
+            <Text style={[styles.calibrateModalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              {tr.calibrateTitle ?? (isAr ? 'معايرة البوصلة' : 'Compass Calibration')}
+            </Text>
+
+            {/* Animated ∞ symbol */}
+            <Animated.View style={[styles.infinityWrap, infinityPulseStyle]}>
+              <Text style={[styles.infinitySymbol, { color: C.tint }]}>∞</Text>
+            </Animated.View>
+
+            {/* Step 1 */}
+            <View style={styles.calibrateStep}>
+              <View style={[styles.stepNum, { backgroundColor: C.tint }]}>
+                <Text style={styles.stepNumText}>1</Text>
+              </View>
+              <Text style={[styles.stepText, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+                {tr.calibrateStep1 ?? 'Hold your phone flat and move it in a figure-8 (∞) motion'}
+              </Text>
+            </View>
+
+            {/* Step 2 */}
+            <View style={styles.calibrateStep}>
+              <View style={[styles.stepNum, { backgroundColor: C.tint }]}>
+                <Text style={styles.stepNumText}>2</Text>
+              </View>
+              <Text style={[styles.stepText, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
+                {tr.calibrateStep2 ?? 'Repeat 2–3 times until the compass stabilises'}
+              </Text>
+            </View>
+
+            {/* Done */}
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowCalibrate(false); }}
+              style={[styles.calibrateDoneBtn, { backgroundColor: C.tint }]}
+            >
+              <Text style={[styles.calibrateDoneText, { color: C.tintText }]}>
+                {tr.calibrateDone ?? (isAr ? 'تأكيد' : 'Done')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -371,4 +460,45 @@ const styles = StyleSheet.create({
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },
   dua: { fontSize: 13, textAlign: 'center' },
   freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
+
+  // Help button (? next to instruction)
+  helpBtn: {
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 1, alignItems: 'center', justifyContent: 'center',
+  },
+  helpBtnText: { fontSize: 11, fontWeight: '700', lineHeight: 14 },
+
+  // Calibrate button below the info card
+  calibrateBtn: {
+    marginTop: 12, borderRadius: 20, borderWidth: 1,
+    paddingHorizontal: 20, paddingVertical: 8,
+  },
+  calibrateBtnText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3 },
+
+  // Calibration modal
+  calibrateOverlay: {
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 28,
+  },
+  calibrateSheet: {
+    width: '100%', borderRadius: 24,
+    paddingVertical: 28, paddingHorizontal: 24,
+    alignItems: 'center', gap: 20,
+  },
+  calibrateModalTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  infinityWrap: { alignItems: 'center', justifyContent: 'center', marginVertical: 4 },
+  infinitySymbol: { fontSize: 72, fontWeight: '300', lineHeight: 80 },
+  calibrateStep: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, width: '100%' },
+  stepNum: {
+    width: 24, height: 24, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
+  },
+  stepNumText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  stepText: { fontSize: 14, lineHeight: 20, flex: 1 },
+  calibrateDoneBtn: {
+    borderRadius: 16, paddingVertical: 13, paddingHorizontal: 32,
+    alignSelf: 'stretch', alignItems: 'center', marginTop: 4,
+  },
+  calibrateDoneText: { fontSize: 16, fontWeight: '700' },
 });

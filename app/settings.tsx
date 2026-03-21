@@ -984,8 +984,9 @@ export default function SettingsScreen() {
 
         {/* Dhuha Time Roller Modal */}
         <Modal visible={showDhuhaRoller} transparent animationType="slide">
-          <Pressable style={styles.rollerOverlay} onPress={() => setShowDhuhaRoller(false)}>
-            <Pressable onPress={() => {}} style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+          <View style={styles.rollerOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDhuhaRoller(false)} />
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت الضحى' : 'Set Dhuha Time'}
               </Text>
@@ -996,14 +997,15 @@ export default function SettingsScreen() {
               <Pressable onPress={() => setShowDhuhaRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
-            </Pressable>
-          </Pressable>
+            </View>
+          </View>
         </Modal>
 
         {/* Tahajjud Time Roller Modal */}
         <Modal visible={showTahajjudRoller} transparent animationType="slide">
-          <Pressable style={styles.rollerOverlay} onPress={() => setShowTahajjudRoller(false)}>
-            <Pressable onPress={() => {}} style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+          <View style={styles.rollerOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTahajjudRoller(false)} />
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت قيام الليل' : 'Set Qiyam Time'}
               </Text>
@@ -1014,14 +1016,15 @@ export default function SettingsScreen() {
               <Pressable onPress={() => setShowTahajjudRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
-            </Pressable>
-          </Pressable>
+            </View>
+          </View>
         </Modal>
 
         {/* Eid Prayer Time Roller Modal */}
         <Modal visible={showEidRoller} transparent animationType="slide">
-          <Pressable style={styles.rollerOverlay} onPress={() => setShowEidRoller(false)}>
-            <Pressable onPress={() => {}} style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+          <View style={styles.rollerOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowEidRoller(false)} />
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت صلاة العيد' : 'Set Eid Prayer Time'}
               </Text>
@@ -1032,8 +1035,8 @@ export default function SettingsScreen() {
               <Pressable onPress={() => setShowEidRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
                 <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
               </Pressable>
-            </Pressable>
-          </Pressable>
+            </View>
+          </View>
         </Modal>
 
         {/* First Adhan Picker Modal */}
