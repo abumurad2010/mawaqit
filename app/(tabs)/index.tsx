@@ -193,10 +193,30 @@ export default function PrayerTimesScreen() {
     setTimes(computed);
   }, [location, viewingDate, calcMethod, asrMethod, maghribOffset]);
 
-  // nextPrayer is only meaningful when viewing today — when dateOffset != 0
-  // the user is browsing a past/future day and `times` contains that day's prayers,
-  // not today's, so we must not use it for the live countdown.
-  const nextPrayer = dateOffset === 0 && times ? getNextPrayer(times) : null;
+  // todayTimes is ALWAYS today's prayer times, computed synchronously (useMemo, not
+  // useEffect) so there is never a null/stale window at app open, background-restore
+  // or day rollover.  Used exclusively for the live countdown and iqama logic.
+  // `times` (the useState above) is only used for the prayer-list display.
+  const todayTimes = useMemo(() => {
+    if (!location) return null;
+    // Build noon on the current local date so getDate() / getMonth() are unambiguous
+    const n = new Date();
+    const todayNoon = new Date(n.getFullYear(), n.getMonth(), n.getDate(), 12, 0, 0, 0);
+    return calculatePrayerTimes({
+      lat: location.lat,
+      lng: location.lng,
+      date: todayNoon,
+      method: calcMethod,
+      asrMethod,
+      maghribOffset,
+    });
+  // _todayKey changes at local midnight, ensuring the memo refreshes for the new day
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location, _todayKey, calcMethod, asrMethod, maghribOffset]);
+
+  // nextPrayer uses todayTimes so it is never null due to a stale `times` state,
+  // and never wrong because the user is browsing a different day.
+  const nextPrayer = todayTimes ? getNextPrayer(todayTimes) : null;
 
   // Next upcoming Fajr — always looks forward (from today, regardless of dateOffset)
   // until it finds one genuinely in the future.  Uses explicit noon-anchored local
@@ -230,11 +250,11 @@ export default function PrayerTimesScreen() {
 
   // Iqama window: the most recently started fardh prayer whose iqama hasn't yet passed
   const iqamaStatus = useMemo(() => {
-    if (!times || dateOffset !== 0) return null;
+    if (!todayTimes || dateOffset !== 0) return null;
     const effective = { ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) };
     for (let i = FARDH.length - 1; i >= 0; i--) {
       const key = FARDH[i];
-      const prayerTime = times[key] as Date;
+      const prayerTime = todayTimes[key] as Date;
       if (prayerTime <= now) {
         const offsetMin = effective[key] ?? 10;
         const iqamaTime = new Date(prayerTime.getTime() + offsetMin * 60000);
@@ -243,7 +263,7 @@ export default function PrayerTimesScreen() {
       }
     }
     return null;
-  }, [times, now, countryCode, iqamaOffsets, dateOffset]);
+  }, [todayTimes, now, countryCode, iqamaOffsets, dateOffset]);
 
   // Countdown target — iqama time when in window, otherwise next prayer / tomorrow Fajr
   const countdownTarget = iqamaStatus?.iqamaTime ?? displayNext?.time ?? tomorrowFajr ?? null;
