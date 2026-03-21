@@ -1,0 +1,53 @@
+There is a critical bug in the prayer time logic. The `getNextPrayer` function 
+(in lib/prayer-times.ts or wherever it is defined) always returns Fajr regardless 
+of the current time of day. The countdown then shows a wildly wrong value (14–34 hours).
+
+ROOT CAUSE:
+The prayer times returned by `calculatePrayerTimes` are decimal hours 
+(e.g. Fajr = 5.25, Maghrib = 18.75). The `getNextPrayer` function compares 
+these directly against `Date.now()` or a JavaScript Date object — these are 
+incompatible types. Since 5.25 < Date.now() (a huge millisecond number) is 
+always true, every prayer appears to be in the past, the loop finds nothing, 
+and Fajr is returned as the fallback.
+
+FIX REQUIRED — THREE PARTS:
+
+PART 1: Fix getNextPrayer in lib/prayer-times.ts
+Convert each prayer's decimal hour to a proper millisecond timestamp before 
+comparing against now. Use midnight of the current day as the base:
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const midnight = startOfDay.getTime();
+
+  for each prayer in ['fajr','sunrise','dhuhr','asr','maghrib','isha']:
+    const prayerMs = midnight + times[prayer] * 3600 * 1000;
+    if (prayerMs > Date.now()) return { name: prayer, time: new Date(prayerMs) }
+
+  return null; // all prayers passed today
+
+PART 2: Handle the post-Isha / after-midnight case in app/(tabs)/index.tsx
+When getNextPrayer returns null (all prayers passed), calculate tomorrow's 
+prayer times and return tomorrow's Fajr with the correct timestamp:
+
+  if (!result) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowTimes = calculatePrayerTimes(lat, lng, tomorrow, ...settings);
+    const tomorrowMidnight = new Date(tomorrow);
+    tomorrowMidnight.setHours(0, 0, 0, 0);
+    const fajrMs = tomorrowMidnight.getTime() + tomorrowTimes.fajr * 3600 * 1000;
+    return { name: 'fajr', time: new Date(fajrMs) };
+  }
+
+PART 3: Fix the countdown in index.tsx
+The countdown must use nextPrayer.time (a real Date object) not the decimal 
+hour value. Calculate the diff in milliseconds:
+
+  const diffMs = nextPrayer.time.getTime() - Date.now();
+  const h = Math.floor(diffMs / 3600000);
+  const m = Math.floor((diffMs % 3600000) / 60000);
+  const s = Math.floor((diffMs % 60000) / 1000);
+  // format as H:MM:SS or M:SS
+
+Do not change anything else. This is a pure logic fix.
