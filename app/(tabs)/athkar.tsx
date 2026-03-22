@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal, Dimensions, TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, FadeIn } from 'react-native-reanimated';
@@ -282,12 +282,49 @@ interface GridProps {
 
 function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang }: GridProps) {
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageListRef = useRef<FlatList<any>>(null);
   const athkarRtl = isRtlLang(athkarLang);
+  const ITEMS_PER_PAGE = 16;
   const NUM_COLS = 4;
-  const rows: { cat: AthkarCategory; gIdx: number }[][] = [];
-  for (let i = 0; i < sortedCategories.length; i += NUM_COLS) {
-    rows.push(sortedCategories.slice(i, i + NUM_COLS).map((cat, j) => ({ cat, gIdx: i + j })));
+
+  const totalCategoryPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
+  const totalPages = totalCategoryPages + 1;
+
+  const categoryPages: (AthkarCategory | null)[][] = [];
+  for (let p = 0; p < totalCategoryPages; p++) {
+    const slice: (AthkarCategory | null)[] = sortedCategories.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
+    while (slice.length < ITEMS_PER_PAGE) slice.push(null);
+    categoryPages.push(slice);
   }
+  const favPage = favourites.map(id => sortedCategories.find(c => c.id === id) ?? null).filter(Boolean) as AthkarCategory[];
+  const allPages: Array<(AthkarCategory | null)[] | 'FAVS'> = [...categoryPages, 'FAVS'];
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) setCurrentPage(viewableItems[0].index ?? 0);
+  }).current;
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return sortedCategories.filter(cat => {
+      const nameAr = ((i18n['ar'] as any)[cat.nameKey] ?? '').toLowerCase();
+      const nameTr = ((i18n[athkarLang] as any)?.[cat.nameKey] ?? '').toLowerCase();
+      const nameFallback = ((i18n['en'] as any)?.[cat.nameKey] ?? '').toLowerCase();
+      if (nameAr.includes(q) || nameTr.includes(q) || nameFallback.includes(q)) return true;
+      return cat.adhkar.some(d => {
+        const ar = d.arabic.toLowerCase();
+        const tl = d.transliteration.toLowerCase();
+        const tKey = d.translationKey as any;
+        const tEn = ((i18n['en'] as any)[tKey] ?? '').toLowerCase();
+        const tLang = ((i18n[athkarLang] as any)?.[tKey] ?? '').toLowerCase();
+        return ar.includes(q) || tl.includes(q) || tEn.includes(q) || tLang.includes(q);
+      });
+    });
+  }, [searchQuery, sortedCategories, athkarLang]);
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -298,7 +335,15 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             <LangToggle />
           </View>
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setSearchQuery(''); setShowSearch(true); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+              testID="athkar-search-btn"
+            >
+              <Ionicons name="search" size={18} color={C.tint} />
+            </Pressable>
+          </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={[styles.segmentRow, { flex: 1, backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
@@ -399,8 +444,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
 
       {!favHintSeen && (
         <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard }]}>
-          <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left' }]}>
-            {(tr as any).athkar_fav_hint ?? ''}
+          <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
+            {(tr as any).athkar_hint_updated ?? ''}
           </Text>
           <Pressable onPress={onFavHintDismiss} hitSlop={12}>
             <Ionicons name="close" size={16} color={C.textMuted} />
@@ -408,30 +453,184 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </View>
       )}
 
-      <ScrollView
-        contentContainerStyle={[styles.gridContainer, { paddingBottom: bottomInset + 20 }]}
-        showsVerticalScrollIndicator={false}
+      <FlatList
+        ref={pageListRef}
+        data={allPages}
+        keyExtractor={(_, i) => String(i)}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        style={{ flex: 1 }}
+        extraData={[favourites, displayMode, athkarLang]}
+        getItemLayout={(_, index) => ({ length: Dimensions.get('window').width, offset: Dimensions.get('window').width * index, index })}
+        renderItem={({ item: pageData }) => {
+          const w = Dimensions.get('window').width;
+          if (pageData === 'FAVS') {
+            const favRows: AthkarCategory[][] = [];
+            for (let r = 0; r < favPage.length; r += NUM_COLS) {
+              favRows.push(favPage.slice(r, r + NUM_COLS));
+            }
+            return (
+              <View style={{ width: w, paddingHorizontal: 12, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
+                <Text style={[styles.favPageTitle, { fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: isRtl ? 'right' : 'left' }]}>
+                  {(tr as any).athkar_favourites_title ?? 'Favourites'}
+                </Text>
+                {favPage.length === 0 ? (
+                  <View style={styles.noFavContainer}>
+                    <Text style={[styles.noFavText, { color: C.textMuted, textAlign: 'center', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
+                      {(tr as any).athkar_no_favourites ?? 'No favourites yet.\nLong-press any category to add it.'}
+                    </Text>
+                  </View>
+                ) : favRows.map((row, rIdx) => (
+                  <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                    {row.map(cat => (
+                      <GridCell
+                        key={cat.id}
+                        cat={cat}
+                        lang={lang}
+                        isRtl={isRtl}
+                        tr={tr}
+                        C={C}
+                        onPress={onSelect}
+                        isFavourite={true}
+                        onLongPress={onLongPress}
+                        displayMode={displayMode}
+                        athkarLang={athkarLang}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </View>
+            );
+          }
+          const pageItems = pageData as (AthkarCategory | null)[];
+          const rows: (AthkarCategory | null)[][] = [];
+          for (let r = 0; r < ITEMS_PER_PAGE / NUM_COLS; r++) {
+            rows.push(pageItems.slice(r * NUM_COLS, (r + 1) * NUM_COLS));
+          }
+          return (
+            <View style={{ width: w, paddingHorizontal: 12, paddingTop: 8 }}>
+              {rows.map((row, rIdx) => (
+                <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                  {row.map((cat, cIdx) => cat ? (
+                    <GridCell
+                      key={cat.id}
+                      cat={cat}
+                      lang={lang}
+                      isRtl={isRtl}
+                      tr={tr}
+                      C={C}
+                      onPress={onSelect}
+                      isFavourite={favourites.includes(cat.id)}
+                      onLongPress={onLongPress}
+                      displayMode={displayMode}
+                      athkarLang={athkarLang}
+                    />
+                  ) : (
+                    <View key={`empty-${rIdx}-${cIdx}`} style={[styles.cell, { backgroundColor: 'transparent', borderColor: 'transparent' }]} />
+                  ))}
+                </View>
+              ))}
+            </View>
+          );
+        }}
+      />
+
+      <View style={[styles.pageDotsRow, { paddingBottom: bottomInset + 8 }]}>
+        {Array.from({ length: totalPages }).map((_, i) => {
+          const isFav = i === totalPages - 1;
+          const active = i === currentPage;
+          if (isFav) {
+            return (
+              <Pressable key={i} onPress={() => pageListRef.current?.scrollToEnd({ animated: true })} hitSlop={8}>
+                <Text style={[styles.pageDotStar, { opacity: active ? 1 : 0.4 }]}>⭐</Text>
+              </Pressable>
+            );
+          }
+          return (
+            <Pressable
+              key={i}
+              onPress={() => pageListRef.current?.scrollToIndex({ index: i, animated: true })}
+              hitSlop={8}
+            >
+              <View style={[styles.pageDot, { backgroundColor: active ? C.tint : C.separator }]} />
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Modal
+        visible={showSearch}
+        transparent={false}
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setShowSearch(false)}
       >
-        {rows.map((row, rIdx) => (
-          <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            {row.map(({ cat }) => (
-              <GridCell
-                key={cat.id}
-                cat={cat}
-                lang={lang}
-                isRtl={isRtl}
-                tr={tr}
-                C={C}
-                onPress={onSelect}
-                isFavourite={favourites.includes(cat.id)}
-                onLongPress={onLongPress}
-                displayMode={displayMode}
-                athkarLang={athkarLang}
+        <View style={[styles.root, { backgroundColor: C.background }]}>
+          <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16, gap: 8 }]}>
+            <Pressable
+              onPress={() => setShowSearch(false)}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="close" size={20} color={C.tint} />
+            </Pressable>
+            <View style={[styles.searchInputWrap, { backgroundColor: C.backgroundCard, borderColor: C.separator, flex: 1 }]}>
+              <Ionicons name="search" size={16} color={C.textMuted} />
+              <TextInput
+                style={[styles.searchInput, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}
+                placeholder={(tr as any).athkar_search_placeholder ?? 'Search adhkar and duas...'}
+                placeholderTextColor={C.textMuted}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+                returnKeyType="search"
+                textAlign={isRtl ? 'right' : 'left'}
               />
-            ))}
+              {!!searchQuery && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={16} color={C.textMuted} />
+                </Pressable>
+              )}
+            </View>
           </View>
-        ))}
-      </ScrollView>
+          <FlatList
+            data={searchResults}
+            keyExtractor={c => c.id}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 20 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={searchQuery.trim().length > 0 ? (
+              <View style={{ alignItems: 'center', paddingTop: 40 }}>
+                <Text style={{ color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', fontSize: 15 }}>
+                  {(tr as any).athkar_search_empty ?? 'No results found'}
+                </Text>
+              </View>
+            ) : null}
+            renderItem={({ item: cat }) => {
+              const nameKey = cat.nameKey as any;
+              const catName = displayMode === 'arabic'
+                ? (i18n['ar'] as any)[nameKey] ?? nameKey
+                : (i18n[athkarLang] as any)?.[nameKey] ?? nameKey;
+              const cellRtl = displayMode === 'arabic' || isRtlLang(athkarLang);
+              return (
+                <Pressable
+                  onPress={() => { setShowSearch(false); onSelect(cat); }}
+                  style={({ pressed }) => [styles.searchResultRow, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1 }]}
+                >
+                  <MaterialCommunityIcons name={cat.icon as any} size={24} color={favourites.includes(cat.id) ? GOLD : C.tint} />
+                  <Text style={[styles.searchResultText, { color: C.text, writingDirection: cellRtl ? 'rtl' : 'ltr', fontFamily: cellRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold' }]}>
+                    {catName}
+                  </Text>
+                  <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={16} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -967,4 +1166,64 @@ const styles = StyleSheet.create({
   },
   pickerNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
   pickerLang: { fontSize: 12 },
+  pageDotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 6,
+  },
+  pageDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  pageDotStar: {
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  favPageTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    marginLeft: 4,
+    color: GOLD,
+  },
+  noFavContainer: {
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  noFavText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  searchInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
+  searchResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    marginBottom: 8,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  searchResultText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

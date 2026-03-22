@@ -1,0 +1,426 @@
+PROMPT A — ATHKAR TAB ARCHITECTURE OVERHAUL
+Swipeable pages, Favourites page, Search, 4 new categories.
+Content (remaining Hisn al-Muslim chapters) comes in Prompt B.
+
+════════════════════════════════════════════════════════
+PART 1 — DATA STRUCTURE CHANGES (constants/athkar-data.ts)
+════════════════════════════════════════════════════════
+
+The existing AthkarCategory type must support pagination.
+No change to the actual data fields — just ensure the 
+exported array is a flat list. Pages are computed 
+dynamically from the array order, not hardcoded.
+
+Add these 4 new categories to the existing array,
+inserted at the appropriate positions in the 
+popularity-ranked order:
+
+─────────────────────────────────────────
+NEW CAT: أذكار الوضوء  |  id: 'wudu'
+icon: 'water-outline'
+Popularity position: after 'after_prayer' (pos 4)
+─────────────────────────────────────────
+
+1.
+arabic: "بِسْمِ اللَّهِ"
+transliteration: "Bismillāh."
+translationKey: "athkar_wudu_1"
+count: 1
+
+2.
+arabic: "أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ، اللَّهُمَّ اجْعَلْنِي مِنَ التَّوَّابِينَ وَاجْعَلْنِي مِنَ الْمُتَطَهِّرِينَ"
+transliteration: "Ashhadu an lā ilāha illallāhu waḥdahu lā sharīka lah, wa ashhadu anna Muḥammadan ʿabduhu wa rasūluh. Allāhummaj-ʿalnī minat-tawwābīna waj-ʿalnī minal-mutaṭahhirīn."
+translationKey: "athkar_wudu_2"
+count: 1
+
+3.
+arabic: "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ"
+transliteration: "Subḥānaka Allāhumma wa biḥamdik, ashhadu an lā ilāha illā ant, astaghfiruka wa atūbu ilayk."
+translationKey: "athkar_wudu_3"
+count: 1
+
+─────────────────────────────────────────
+NEW CAT: دعاء الخلاء  |  id: 'bathroom'
+icon: 'door-closed-outline'
+Popularity position: after 'wudu'
+─────────────────────────────────────────
+
+1. [Before entering]
+arabic: "بِسْمِ اللَّهِ، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ"
+transliteration: "Bismillāh. Allāhumma innī aʿūdhu bika minal-khubuthi wal-khabāʾith."
+translationKey: "athkar_bathroom_1"
+count: 1
+
+2. [After leaving]
+arabic: "غُفْرَانَكَ"
+transliteration: "Ghufrānak."
+translationKey: "athkar_bathroom_2"
+count: 1
+
+─────────────────────────────────────────
+NEW CAT: دعاء الفزع والوحشة  |  id: 'fear'
+icon: 'shield-sun-outline'
+Popularity position: after 'distress'
+─────────────────────────────────────────
+
+1.
+arabic: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ غَضَبِهِ وَعِقَابِهِ، وَشَرِّ عِبَادِهِ، وَمِنْ هَمَزَاتِ الشَّيَاطِينِ وَأَنْ يَحْضُرُونِ"
+transliteration: "Aʿūdhu bikalimātillāhit-tāmmāti min ghaḍabihi wa ʿiqābih, wa sharri ʿibādih, wa min hamazātish-shayāṭīni wa an yaḥḍurūn."
+translationKey: "athkar_fear_1"
+count: 1
+
+2.
+arabic: "لَا إِلَهَ إِلَّا اللَّهُ"
+transliteration: "Lā ilāha illallāh."
+translationKey: "athkar_fear_2"
+count: 1
+
+3.
+arabic: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ"
+transliteration: "Aʿūdhu billāhi minash-shayṭānir-rajīm."
+translationKey: "athkar_fear_3"
+count: 1
+
+─────────────────────────────────────────
+NEW CAT: دعاء قضاء الحاجة  |  id: 'hajah'
+icon: 'hand-extended-outline'
+Popularity position: after 'istikhara'
+─────────────────────────────────────────
+
+1.
+arabic: "لَا إِلَهَ إِلَّا اللَّهُ الْحَلِيمُ الْكَرِيمُ، سُبْحَانَ اللَّهِ رَبِّ الْعَرْشِ الْعَظِيمِ، الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ، أَسْأَلُكَ مُوجِبَاتِ رَحْمَتِكَ، وَعَزَائِمَ مَغْفِرَتِكَ، وَالْغَنِيمَةَ مِنْ كُلِّ بِرٍّ، وَالسَّلَامَةَ مِنْ كُلِّ إِثْمٍ، لَا تَدَعْ لِي ذَنْبًا إِلَّا غَفَرْتَهُ، وَلَا هَمًّا إِلَّا فَرَّجْتَهُ، وَلَا حَاجَةً هِيَ لَكَ رِضًا إِلَّا قَضَيْتَهَا يَا أَرْحَمَ الرَّاحِمِينَ"
+transliteration: "Lā ilāha illallāhul-ḥalīmul-karīm. Subḥānallāhi rabbil-ʿarshil-ʿaẓīm. Al-ḥamdu lillāhi rabbil-ʿālamīn. Asʾaluka mūjibāti raḥmatik, wa ʿazāʾima maghfiratik, wal-ghanīmata min kulli birr, was-salāmata min kulli ithm. Lā tadaʿ lī dhanban illā ghafartah, wa lā hamman illā farrajtah, wa lā ḥājatan hiya laka riḍan illā qaḍaytahā yā arḥamar-rāḥimīn."
+translationKey: "athkar_hajah_1"
+count: 1
+
+2.
+arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ وَأَتَوَجَّهُ إِلَيْكَ بِنَبِيِّكَ مُحَمَّدٍ نَبِيِّ الرَّحْمَةِ، يَا مُحَمَّدُ إِنِّي تَوَجَّهْتُ بِكَ إِلَى رَبِّي فِي حَاجَتِي هَذِهِ لِتُقْضَى، اللَّهُمَّ فَشَفِّعْهُ فِيَّ"
+transliteration: "Allāhumma innī asʾaluka wa atawajjahu ilayka binabiyyika Muḥammadin nabiyyir-raḥmah. Yā Muḥammadu innī tawajjahtu bika ilā rabbī fī ḥājatī hādhihi litūqḍā. Allāhumma fashaffiʿhu fiyy."
+translationKey: "athkar_hajah_2"
+count: 1
+
+Add all new translationKeys to i18n.ts in all 15 languages:
+
+athkar_wudu_1:
+  en: "In the name of Allah." [Said before beginning wudu]
+  ar: "بسم الله. [تُقال عند البدء في الوضوء]"
+  [translate accurately in all other 13 languages]
+
+athkar_wudu_2:
+  en: "I bear witness that none has the right to be worshipped except Allah, alone, without any partner, and I bear witness that Muhammad is His servant and Messenger. O Allah, make me of those who repent and make me of those who purify themselves." [Said after completing wudu]
+  ar: "تُقال بعد الفراغ من الوضوء."
+  [translate accurately in all other 13 languages]
+
+athkar_wudu_3:
+  en: "Glory is to You O Allah and praise. I bear witness that none has the right to be worshipped except You. I seek Your forgiveness and repent to You." [Said after completing wudu]
+  ar: "تُقال بعد الفراغ من الوضوء."
+  [translate accurately in all other 13 languages]
+
+athkar_bathroom_1:
+  en: "In the name of Allah. O Allah, I seek refuge in You from the male and female unclean spirits." [Said before entering the bathroom]
+  ar: "تُقال قبل دخول الخلاء."
+  [translate accurately in all other 13 languages]
+
+athkar_bathroom_2:
+  en: "Your forgiveness." [Said upon leaving the bathroom — a supplication for Allah's forgiveness for having been in an impure place]
+  ar: "غفرانك. [تُقال عند الخروج من الخلاء]"
+  [translate accurately in all other 13 languages]
+
+athkar_fear_1:
+  en: "I seek refuge in the perfect words of Allah from His anger and punishment, from the evil of His servants, from the whispers of the devils and from their presence."
+  ar: "أعوذ بكلمات الله التامات من غضبه وعقابه..."
+  [translate accurately in all other 13 languages]
+
+athkar_fear_2:
+  en: "None has the right to be worshipped except Allah." [Repeated when feeling fear or loneliness]
+  ar: "لا إله إلا الله. [تُقال عند الفزع والوحشة]"
+  [translate accurately in all other 13 languages]
+
+athkar_fear_3:
+  en: "I seek refuge in Allah from the accursed devil."
+  ar: "أعوذ بالله من الشيطان الرجيم."
+  [translate accurately in all other 13 languages]
+
+athkar_hajah_1:
+  en: "None has the right to be worshipped except Allah, the Forbearing, the Generous. Glory is to Allah, Lord of the mighty throne. All praise is for Allah, Lord of the worlds. I ask You for the means of Your mercy, the resolve of Your forgiveness, the bounty of every good deed, and safety from every sin. Leave no sin of mine except that You forgive it, no worry except that You relieve it, and no need that is pleasing to You except that You fulfil it, O Most Merciful of those who show mercy."
+  ar: "دعاء صلاة الحاجة."
+  [translate accurately in all other 13 languages]
+
+athkar_hajah_2:
+  en: "O Allah, I ask You and turn to You through Your Prophet Muhammad, the Prophet of mercy. O Muhammad, I have turned to my Lord through you regarding this need of mine so that it may be fulfilled. O Allah, accept his intercession for me."
+  ar: "دعاء صلاة الحاجة."
+  [translate accurately in all other 13 languages]
+
+Add category name keys for all 4:
+athkar_cat_wudu:
+  ar: "أذكار الوضوء"
+  en: "Wudu Adhkar"
+  fr: "Dhikrs des ablutions"
+  es: "Adhkar de la ablución"
+  ru: "Азкары омовения"
+  zh: "小净祈祷"
+  tr: "Abdest Zikirleri"
+  ur: "وضو کے اذکار"
+  id: "Dzikir Wudhu"
+  bn: "অযুর যিকির"
+  fa: "اذکار وضو"
+  ms: "Zikir Wudhu"
+  pt: "Dhikrs das ablução"
+  sw: "Dhikri za Udhu"
+  ha: "Azkar Alwala"
+
+athkar_cat_bathroom:
+  ar: "دعاء الخلاء"
+  en: "Dua for Bathroom"
+  fr: "Invocation pour les toilettes"
+  es: "Dua para el baño"
+  ru: "Дуа для туалета"
+  zh: "入厕祈祷"
+  tr: "Tuvalet Duası"
+  ur: "بیت الخلاء کی دعا"
+  id: "Doa Masuk Kamar Mandi"
+  bn: "বাথরুমের দোয়া"
+  fa: "دعای دستشویی"
+  ms: "Doa Masuk Tandas"
+  pt: "Dua para o banheiro"
+  sw: "Dua ya Choo"
+  ha: "Addu'ar Bayan Gida"
+
+athkar_cat_fear:
+  ar: "دعاء الفزع والوحشة"
+  en: "Duas for Fear"
+  fr: "Supplications pour la peur"
+  es: "Súplicas para el miedo"
+  ru: "Дуа от страха"
+  zh: "恐惧时祈祷"
+  tr: "Korku ve Yalnızlık Duası"
+  ur: "خوف کی دعا"
+  id: "Doa Ketakutan"
+  bn: "ভয়ের দোয়া"
+  fa: "دعای ترس و وحشت"
+  ms: "Doa Ketakutan"
+  pt: "Súplicas para o medo"
+  sw: "Dua ya Hofu"
+  ha: "Addu'ar Tsoro"
+
+athkar_cat_hajah:
+  ar: "دعاء قضاء الحاجة"
+  en: "Dua for Fulfilling Needs"
+  fr: "Dua pour l'accomplissement des besoins"
+  es: "Dua para cumplir necesidades"
+  ru: "Дуа для исполнения нужд"
+  zh: "求满足需求"
+  tr: "Hacet Duası"
+  ur: "قضائے حاجت کی دعا"
+  id: "Doa Hajat"
+  bn: "হাজতের দোয়া"
+  fa: "دعای قضای حاجت"
+  ms: "Doa Hajat"
+  pt: "Dua para necessidades"
+  sw: "Dua ya Haja"
+  ha: "Addu'ar Bukata"
+
+════════════════════════════════════════════════════════
+PART 2 — SWIPEABLE PAGES ARCHITECTURE (athkar.tsx)
+════════════════════════════════════════════════════════
+
+Replace the current static grid with a horizontally 
+swipeable paged layout.
+
+PAGE STRUCTURE:
+  Each page = 4 columns × 4 rows = 16 category tiles
+  Categories distributed across pages in ranked order
+  Page count = Math.ceil(totalCategories / 16)
+  Currently 24 categories + 4 new = 28 → 2 pages
+  (Prompt B will add more, pushing to 3 pages)
+
+USE: React Native's FlatList with pagingEnabled={true} 
+and horizontal={true} for the page container.
+Do NOT use any external library.
+
+  const ITEMS_PER_PAGE = 16
+
+  // Split categories into pages
+  const pages = []
+  for (let i = 0; i < categories.length; i += ITEMS_PER_PAGE) {
+    pages.push(categories.slice(i, i + ITEMS_PER_PAGE))
+  }
+
+Each page renders a 4×4 grid of category tiles.
+The grid within each page uses the existing tile design,
+gold favourites styling, long-press behaviour, etc.
+Nothing about individual tiles changes.
+
+PAGE INDICATOR:
+  Row of dots below the grid, above the bottom bar
+  One dot per page + one dot for Favourites page
+  Active page dot: C.tint (green), size 8
+  Inactive dots: C.textMuted, size 6
+  Spacing: 8px between dots
+  Tapping a dot navigates to that page
+
+SWIPE BEHAVIOUR:
+  Horizontal swipe left/right switches pages
+  Smooth animation, snap to page
+  Works on both iOS and Android
+
+════════════════════════════════════════════════════════
+PART 3 — FAVOURITES PAGE
+════════════════════════════════════════════════════════
+
+Add a dedicated Favourites page as the LAST page 
+in the swipeable sequence (after all category pages).
+
+FAVOURITES PAGE LAYOUT:
+  Header: ⭐ + label in current language:
+    ar: "المفضلة"
+    en: "Favourites"
+    fr: "Favoris"
+    es: "Favoritos"
+    ru: "Избранное"
+    zh: "收藏"
+    tr: "Favoriler"
+    ur: "پسندیدہ"
+    id: "Favorit"
+    bn: "পছন্দসমূহ"
+    fa: "علاقه‌مندی‌ها"
+    ms: "Kegemaran"
+    pt: "Favoritos"
+    sw: "Vipendwa"
+    ha: "Abubuwan da Ake So"
+    i18n key: athkar_favourites_title
+
+  Content:
+    IF user has favourites:
+      Same 4-column grid of tiles, gold-styled
+      Same tap-to-open behaviour
+      Same long-press to remove from favourites
+      Tiles shown in the order they were favourited
+
+    IF user has no favourites:
+      Centered empty state:
+        Icon: 'star-outline', size 48, C.textMuted
+        Text in current language:
+          en: "No favourites yet.\nLong-press any category to add it."
+          ar: "لا توجد مفضلة بعد.\nاضغط مطولاً على أي فئة لإضافتها."
+          [all 15 languages]
+          i18n key: athkar_no_favourites
+
+FAVOURITES DOT:
+  The page indicator dot for the Favourites page 
+  shows a ⭐ instead of a plain dot, always gold (#C9A84C)
+  whether or not it is the active page.
+
+════════════════════════════════════════════════════════
+PART 4 — SEARCH BUTTON
+════════════════════════════════════════════════════════
+
+Add a search icon button in the Athkar tab header,
+in the same position and style as the search button 
+in the Quran tab header.
+
+SEARCH BEHAVIOUR:
+  Tapping the search icon opens a search screen/overlay
+  that covers the full tab area (not a new route).
+
+  SEARCH INPUT:
+    Full-width text input at the top
+    Placeholder in current language:
+      ar: "ابحث في الأذكار والأدعية..."
+      en: "Search adhkar and duas..."
+      [all 15 languages]
+      i18n key: athkar_search_placeholder
+    Auto-focus on open
+    Clear (×) button when input is non-empty
+
+  SEARCH SCOPE:
+    Searches across ALL categories and ALL their adhkar.
+    Searches in:
+      1. Category names (all 15 languages)
+      2. Arabic text of each dhikr
+      3. Transliterations
+      4. Translation text in current athkarLang
+
+  SEARCH RESULTS:
+    Grouped by category
+    Each result shows:
+      • Category name (small, C.textMuted, above)
+      • Arabic text of matching dhikr (truncated to 2 lines)
+      • Transliteration (if mode is transliterated)
+    Tapping a result opens that category's reader screen,
+    scrolled to / highlighting the matched dhikr
+
+  EMPTY STATE:
+    en: "No results found"
+    ar: "لا توجد نتائج"
+    [all 15 languages]
+    i18n key: athkar_search_empty
+
+  CLOSE:
+    Back arrow or × button closes search
+    Returns to whatever page was active before
+
+════════════════════════════════════════════════════════
+PART 5 — UPDATED CATEGORY ORDER (28 total, 2 pages)
+════════════════════════════════════════════════════════
+
+PAGE 1 (positions 1–16):
+ 1.  morning         أذكار الصباح
+ 2.  evening         أذكار المساء
+ 3.  after_prayer    أذكار بعد الصلاة
+ 4.  waking          أذكار الاستيقاظ
+ 5.  wudu            أذكار الوضوء          ← new
+ 6.  sleep           أذكار النوم
+ 7.  istighfar       أذكار الاستغفار
+ 8.  ruqyah          أذكار الرقية الشرعية
+ 9.  bathroom        دعاء الخلاء           ← new
+10.  anxiety         أدعية الهم والحزن
+11.  distress        أدعية الكرب
+12.  fear            دعاء الفزع والوحشة   ← new
+13.  friday          أذكار الجمعة
+14.  quranic         الأدعية القرآنية
+15.  parents         أدعية الوالدين
+16.  rizq            أدعية الرزق
+
+PAGE 2 (positions 17–28, 12 tiles + 4 empty):
+17.  debt            أدعية قضاء الدين
+18.  faraj           أدعية الفرج
+19.  calamity        أدعية رفع البلاء
+20.  hajah           دعاء قضاء الحاجة     ← new
+21.  istikhara       دعاء الاستخارة
+22.  travel          أدعية السفر
+23.  visiting_sick   أدعية عيادة المريض
+24.  quran_khatm     دعاء ختم القرآن
+25.  [empty]
+26.  [empty]
+27.  [empty]
+28.  [empty]
+
+Empty tile positions on page 2 render as invisible 
+placeholder Views (same size as tiles, no background,
+not tappable) to maintain grid alignment.
+
+════════════════════════════════════════════════════════
+PART 6 — HINT BANNER UPDATE
+════════════════════════════════════════════════════════
+
+Update the dismissible hint banner text to mention 
+both long-press AND the Favourites page:
+
+  en: "Long-press any category to favourite it. Swipe left to browse all categories. Your favourites are on the last page."
+  ar: "اضغط مطولاً على أي فئة لإضافتها للمفضلة. اسحب يساراً لتصفح جميع الفئات. مفضلتك في الصفحة الأخيرة."
+  [all 15 languages]
+  i18n key: athkar_hint_updated
+  Replace the old athkar_fav_hint value with this.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not use any external swipe/carousel library.
+Use React Native FlatList with pagingEnabled only.
+Do not change any existing dhikr content or counts.
+Do not change the dhikr reader screen (Screen 2).
+Do not change the mode toggle or language selector.
+Do not change any other tab.
+Do not add new dependencies.

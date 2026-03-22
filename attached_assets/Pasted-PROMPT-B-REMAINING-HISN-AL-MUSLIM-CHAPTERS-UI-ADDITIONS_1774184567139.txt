@@ -1,0 +1,1154 @@
+PROMPT B — REMAINING HISN AL-MUSLIM CHAPTERS + UI ADDITIONS
+
+════════════════════════════════════════════════════════
+PART 1 — UI ADDITIONS (3 changes)
+════════════════════════════════════════════════════════
+
+CHANGE A — FAVOURITES SHORTCUT BUTTON:
+In the Athkar tab header, add a ⭐ icon button 
+to the right of the search icon.
+Tapping it jumps directly to the Favourites page
+(last page in the FlatList).
+Style: same as search icon button.
+i18n key already exists: athkar_favourites_title
+
+CHANGE B — PAGE NAVIGATION ARROWS (Athkar tab):
+On each athkar page, add left and right arrow buttons:
+
+Left arrow:
+  Position: vertically centered on the left edge 
+            of the page, overlapping the grid slightly
+  Icon: 'chevron-left'
+  Size: 28
+  Color: C.textMuted
+  Opacity: 0 on first page (not hidden, just invisible
+           so layout does not shift)
+  Tapping: scrolls to previous page
+
+Right arrow:
+  Position: vertically centered on the right edge
+  Icon: 'chevron-right'
+  Size: 28
+  Color: C.textMuted
+  Opacity: 0 on last page (Favourites page)
+  Tapping: scrolls to next page
+
+Both arrows sit OUTSIDE the 4×4 grid area so they 
+do not push or resize any tiles.
+The grid remains centered between the two arrows.
+Swipe gesture continues to work alongside arrows.
+
+CHANGE C — PAGE NAVIGATION ARROWS (Prayer Timings tab):
+In app/(tabs)/index.tsx, the timings screen already 
+supports swipe left/right to navigate between days.
+Add the same left/right chevron arrows as above:
+
+Left arrow ('chevron-left'):
+  Position: vertically centered, left side of screen
+  Tapping: goes to previous day (same as swipe right)
+  Opacity: 0.4 (subtle — day navigation is secondary)
+
+Right arrow ('chevron-right'):
+  Position: vertically centered, right side of screen  
+  Tapping: goes to next day (same as swipe left)
+  Opacity: 0.4
+
+Both arrows must NOT interfere with tapping prayer rows.
+Position them so they do not overlap any prayer time row.
+Swipe gesture continues to work alongside arrows.
+
+════════════════════════════════════════════════════════
+PART 2 — ALL REMAINING HISN AL-MUSLIM CHAPTERS
+         Add to constants/athkar-data.ts
+════════════════════════════════════════════════════════
+
+Add the following new categories to the ATHKAR_CATEGORIES 
+array. Insert after the existing 28 categories.
+Total will reach ~48 filling 3 pages of 4×4.
+Any remaining empty slots on page 3 use invisible 
+placeholder tiles as per Prompt A spec.
+
+─────────────────────────────────────────
+CAT: دعاء لبس الثوب  |  id: 'clothing'
+icon: 'tshirt-crew-outline'
+─────────────────────────────────────────
+
+1. [When wearing any garment]
+arabic: "الْحَمْدُ لِلَّهِ الَّذِي كَسَانِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ"
+transliteration: "Al-ḥamdu lillāhil-ladhī kasānī hādhā wa razaqanīhi min ghayri ḥawlin minnī wa lā quwwah."
+translationKey: "athkar_clothing_1"
+count: 1
+
+2. [When wearing new clothes]
+arabic: "اللَّهُمَّ لَكَ الْحَمْدُ أَنْتَ كَسَوْتَنِيهِ، أَسْأَلُكَ مِنْ خَيْرِهِ وَخَيْرِ مَا صُنِعَ لَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّهِ وَشَرِّ مَا صُنِعَ لَهُ"
+transliteration: "Allāhumma lakal-ḥamdu anta kasawtanīhi, asʾaluka min khayrihi wa khayri mā ṣuniʿa lah, wa aʿūdhu bika min sharrihi wa sharri mā ṣuniʿa lah."
+translationKey: "athkar_clothing_2"
+count: 1
+
+─────────────────────────────────────────
+CAT: أذكار السوق  |  id: 'market'
+icon: 'store-outline'
+─────────────────────────────────────────
+
+1.
+arabic: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ يُحْيِي وَيُمِيتُ وَهُوَ حَيٌّ لَا يَمُوتُ، بِيَدِهِ الْخَيْرُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ"
+transliteration: "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamdu yuḥyī wa yumītu wa huwa ḥayyun lā yamūt, biyadihil-khayru wa huwa ʿalā kulli shayʾin qadīr."
+translationKey: "athkar_market_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء الغضب  |  id: 'anger'
+icon: 'emoticon-angry-outline'
+─────────────────────────────────────────
+
+1.
+arabic: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ"
+transliteration: "Aʿūdhu billāhi minash-shayṭānir-rajīm."
+translationKey: "athkar_anger_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء الكفارة  |  id: 'kaffarah'
+icon: 'refresh-circle-outline'
+─────────────────────────────────────────
+
+1. [Expiation for a gathering]
+arabic: "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ"
+transliteration: "Subḥānaka Allāhumma wa biḥamdik, ashhadu an lā ilāha illā ant, astaghfiruka wa atūbu ilayk."
+translationKey: "athkar_kaffarah_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء الخروج من المنزل  |  id: 'leaving_home'
+icon: 'home-export-outline'
+─────────────────────────────────────────
+
+1.
+arabic: "بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ"
+transliteration: "Bismillāh, tawakkaltu ʿalallāh, wa lā ḥawla wa lā quwwata illā billāh."
+translationKey: "athkar_leaving_home_1"
+count: 1
+
+2.
+arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ أَوْ أُضَلَّ، أَوْ أَزِلَّ أَوْ أُزَلَّ، أَوْ أَظْلِمَ أَوْ أُظْلَمَ، أَوْ أَجْهَلَ أَوْ يُجْهَلَ عَلَيَّ"
+transliteration: "Allāhumma innī aʿūdhu bika an aḍilla aw uḍall, aw azilla aw uzall, aw aẓlima aw uẓlam, aw ajhala aw yujhala ʿalayy."
+translationKey: "athkar_leaving_home_2"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء دخول المنزل  |  id: 'entering_home'
+icon: 'home-import-outline'
+─────────────────────────────────────────
+
+1.
+arabic: "بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا"
+transliteration: "Bismillāhi walajanā, wa bismillāhi kharajnā, wa ʿalallāhi rabbanā tawakkalnā."
+translationKey: "athkar_entering_home_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: أذكار المسجد  |  id: 'mosque'
+icon: 'door-open'
+─────────────────────────────────────────
+
+1. [Entering the mosque]
+arabic: "أَعُوذُ بِاللَّهِ الْعَظِيمِ، وَبِوَجْهِهِ الْكَرِيمِ، وَسُلْطَانِهِ الْقَدِيمِ، مِنَ الشَّيْطَانِ الرَّجِيمِ"
+transliteration: "Aʿūdhu billāhil-ʿaẓīm, wa biwajhihil-karīm, wa sulṭānihil-qadīm, minash-shayṭānir-rajīm."
+translationKey: "athkar_mosque_1"
+count: 1
+
+2. [Entering the mosque]
+arabic: "بِسْمِ اللَّهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللَّهِ، اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ"
+transliteration: "Bismillāh, waṣ-ṣalātu was-salāmu ʿalā rasūlillāh. Allāhummaf-taḥ lī abwāba raḥmatik."
+translationKey: "athkar_mosque_2"
+count: 1
+
+3. [Leaving the mosque]
+arabic: "بِسْمِ اللَّهِ، وَالصَّلَاةُ وَالسَّلَامُ عَلَى رَسُولِ اللَّهِ، اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ"
+transliteration: "Bismillāh, waṣ-ṣalātu was-salāmu ʿalā rasūlillāh. Allāhumma innī asʾaluka min faḍlik."
+translationKey: "athkar_mosque_3"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء الأذان  |  id: 'adhan_response'
+icon: 'bullhorn-outline'
+─────────────────────────────────────────
+
+1. [Repeat after the muadhin, except for hayya alas-salah]
+arabic: "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ"
+transliteration: "Lā ḥawla wa lā quwwata illā billāh."
+translationKey: "athkar_adhan_1"
+count: 1
+
+2. [After the adhan]
+arabic: "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ، وَالصَّلَاةِ الْقَائِمَةِ، آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ، وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ"
+transliteration: "Allāhumma rabba hādhihid-daʿwatit-tāmmah, waṣ-ṣalātil-qāʾimah, āti Muḥammadanil-wasīlata wal-faḍīlah, wabʿath-hu maqāman maḥmūdanil-ladhī waʿadtah."
+translationKey: "athkar_adhan_2"
+count: 1
+
+3. [Between adhan and iqama — dua is accepted]
+arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِحَقِّ هَذِهِ الدَّعْوَةِ التَّامَّةِ... [اذكر حاجتك]"
+transliteration: "Allāhumma innī asʾaluka biḥaqqi hādhihid-daʿwatit-tāmmah... [mention your need]"
+translationKey: "athkar_adhan_3"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء الطعام  |  id: 'food'
+icon: 'food-outline'
+─────────────────────────────────────────
+
+1. [Before eating]
+arabic: "بِسْمِ اللَّهِ"
+transliteration: "Bismillāh."
+translationKey: "athkar_food_1"
+count: 1
+
+2. [If you forget before eating]
+arabic: "بِسْمِ اللَّهِ فِي أَوَّلِهِ وَآخِرِهِ"
+transliteration: "Bismillāhi fī awwalihi wa ākhirih."
+translationKey: "athkar_food_2"
+count: 1
+
+3. [After eating]
+arabic: "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ"
+transliteration: "Al-ḥamdu lillāhil-ladhī aṭʿamanī hādhā wa razaqanīhi min ghayri ḥawlin minnī wa lā quwwah."
+translationKey: "athkar_food_3"
+count: 1
+
+4. [When hosted by someone]
+arabic: "اللَّهُمَّ أَطْعِمْ مَنْ أَطْعَمَنِي، وَاسْقِ مَنْ سَقَانِي"
+transliteration: "Allāhumma aṭʿim man aṭʿamanī, wasqi man saqānī."
+translationKey: "athkar_food_4"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء الصائم عند الإفطار  |  id: 'iftar'
+icon: 'weather-sunset'
+─────────────────────────────────────────
+
+1.
+arabic: "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الأَجْرُ إِنْ شَاءَ اللَّهُ"
+transliteration: "Dhahabath-ẓamaʾu wabtallatil-ʿurūqu wa thabatal-ajru in shāʾallāh."
+translationKey: "athkar_iftar_1"
+count: 1
+
+2.
+arabic: "اللَّهُمَّ لَكَ صُمْتُ وَعَلَى رِزْقِكَ أَفْطَرْتُ"
+transliteration: "Allāhumma laka ṣumtu wa ʿalā rizqika afṭart."
+translationKey: "athkar_iftar_2"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء القنوت  |  id: 'qunut'
+icon: 'hands-pray'
+─────────────────────────────────────────
+
+1.
+arabic: "اللَّهُمَّ اهْدِنِي فِيمَنْ هَدَيْتَ، وَعَافِنِي فِيمَنْ عَافَيْتَ، وَتَوَلَّنِي فِيمَنْ تَوَلَّيْتَ، وَبَارِكْ لِي فِيمَا أَعْطَيْتَ، وَقِنِي شَرَّ مَا قَضَيْتَ، فَإِنَّكَ تَقْضِي وَلَا يُقْضَى عَلَيْكَ، وَإِنَّهُ لَا يَذِلُّ مَنْ وَالَيْتَ، وَلَا يَعِزُّ مَنْ عَادَيْتَ، تَبَارَكْتَ رَبَّنَا وَتَعَالَيْتَ"
+transliteration: "Allāhummah-dinī fīman hadayt, wa ʿāfinī fīman ʿāfayt, wa tawallanī fīman tawallayt, wa bārik lī fīmā aʿṭayt, wa qinī sharra mā qaḍayt, fa innaka taqḍī wa lā yuqḍā ʿalayk, wa innahu lā yadhillu man wālayt, wa lā yaʿizzu man ʿādayt, tabārakta rabbanā wa taʿālayt."
+translationKey: "athkar_qunut_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء زيارة المريض  |  id: 'visiting_sick'
+Already exists — SKIP (id: visiting_sick)
+─────────────────────────────────────────
+
+─────────────────────────────────────────
+CAT: دعاء تغميض الميت  |  id: 'death'
+icon: 'candle'
+─────────────────────────────────────────
+
+1. [Upon closing the eyes of the deceased]
+arabic: "اللَّهُمَّ اغْفِرْ لِـ[فلان] وَارْفَعْ دَرَجَتَهُ فِي الْمَهْدِيِّينَ، وَاخْلُفْهُ فِي عَقِبِهِ فِي الْغَابِرِينَ، وَاغْفِرْ لَنَا وَلَهُ يَا رَبَّ الْعَالَمِينَ، وَافْسَحْ لَهُ فِي قَبْرِهِ وَنَوِّرْ لَهُ فِيهِ"
+transliteration: "Allāhummagh-fir li-[name] warfaʿ darajatahu fil-mahdiyyīn, wakhlufhu fī ʿaqibihi fil-ghābirīn, waghfir lanā wa lahu yā rabbal-ʿālamīn, wafsaḥ lahu fī qabrihi wa nawwir lahu fīh."
+translationKey: "athkar_death_1"
+count: 1
+
+2. [When closing eyes of the deceased]
+arabic: "إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ، اللَّهُمَّ أْجُرْنِي فِي مُصِيبَتِي وَأَخْلِفْ لِي خَيْرًا مِنْهَا"
+transliteration: "Innā lillāhi wa innā ilayhi rājiʿūn. Allāhumma ʾjurnī fī muṣībatī wa akhlif lī khayran minhā."
+translationKey: "athkar_death_2"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء صلاة الجنازة  |  id: 'janazah'
+icon: 'grave-stone'
+─────────────────────────────────────────
+
+1. [Takbir 1 — after Al-Fatiha]
+arabic: "اللَّهُمَّ اغْفِرْ لَهُ وَارْحَمْهُ وَعَافِهِ وَاعْفُ عَنْهُ، وَأَكْرِمْ نُزُلَهُ، وَوَسِّعْ مُدْخَلَهُ، وَاغْسِلْهُ بِالْمَاءِ وَالثَّلْجِ وَالْبَرَدِ، وَنَقِّهِ مِنَ الْخَطَايَا كَمَا نَقَّيْتَ الثَّوْبَ الْأَبْيَضَ مِنَ الدَّنَسِ، وَأَبْدِلْهُ دَارًا خَيْرًا مِنْ دَارِهِ، وَأَهْلًا خَيْرًا مِنْ أَهْلِهِ، وَزَوْجًا خَيْرًا مِنْ زَوْجِهِ، وَأَدْخِلْهُ الْجَنَّةَ وَأَعِذْهُ مِنْ عَذَابِ الْقَبْرِ وَعَذَابِ النَّارِ"
+transliteration: "Allāhummagh-fir lahu warḥamhu wa ʿāfihi waʿfu ʿanh, wa akrim nuzulah, wa wassiʿ mudkhalah, waghsilhu bil-māʾi with-thalji wal-barad, wa naqqihi minal-khaṭāyā kamā naqqayta ath-thawbal-abyaḍa minad-danas, wa abdilhu dāran khayran min dārih, wa ahlan khayran min ahlih, wa zawjan khayran min zawjih, wa adkhilhul-jannata wa aʿidh-hu min ʿadhābil-qabri wa ʿadhābin-nār."
+translationKey: "athkar_janazah_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء زيارة القبور  |  id: 'graves'
+icon: 'flower-outline'
+─────────────────────────────────────────
+
+1.
+arabic: "السَّلَامُ عَلَيْكُمْ أَهْلَ الدِّيَارِ مِنَ الْمُؤْمِنِينَ وَالْمُسْلِمِينَ، وَإِنَّا إِنْ شَاءَ اللَّهُ بِكُمْ لَاحِقُونَ، نَسْأَلُ اللَّهَ لَنَا وَلَكُمُ الْعَافِيَةَ"
+transliteration: "As-salāmu ʿalaykum ahlad-diyāri minal-muʾminīna wal-muslimīn, wa innā in shāʾallāhu bikum lāḥiqūn, nasʾalullāha lanā wa lakumul-ʿāfiyah."
+translationKey: "athkar_graves_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء المتزوج الجديد  |  id: 'wedding'
+icon: 'ring'
+─────────────────────────────────────────
+
+1. [Said to the newlywed]
+arabic: "بَارَكَ اللَّهُ لَكَ، وَبَارَكَ عَلَيْكَ، وَجَمَعَ بَيْنَكُمَا فِي خَيْرٍ"
+transliteration: "Bārakallāhu lak, wa bāraka ʿalayk, wa jamaʿa baynakumā fī khayr."
+translationKey: "athkar_wedding_1"
+count: 1
+
+2. [Wedding night dua]
+arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَهَا وَخَيْرَ مَا جَبَلْتَهَا عَلَيْهِ، وَأَعُوذُ بِكَ مِنْ شَرِّهَا وَمِنْ شَرِّ مَا جَبَلْتَهَا عَلَيْهِ"
+transliteration: "Allāhumma innī asʾaluka khayrahā wa khayra mā jabaltahā ʿalayh, wa aʿūdhu bika min sharrihā wa min sharri mā jabaltahā ʿalayh."
+translationKey: "athkar_wedding_2"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء القدوم من السفر  |  id: 'return_travel'
+icon: 'airplane-landing'
+─────────────────────────────────────────
+
+1. [Upon returning from travel]
+arabic: "آيِبُونَ تَائِبُونَ عَابِدُونَ لِرَبِّنَا حَامِدُونَ"
+transliteration: "Āʾibūna tāʾibūna ʿābidūna lirabbanā ḥāmidūn."
+translationKey: "athkar_return_travel_1"
+count: 1
+
+2.
+arabic: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، آيِبُونَ تَائِبُونَ عَابِدُونَ لِرَبِّنَا حَامِدُونَ، صَدَقَ اللَّهُ وَعْدَهُ وَنَصَرَ عَبْدَهُ وَهَزَمَ الْأَحْزَابَ وَحْدَهُ"
+transliteration: "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Āʾibūna tāʾibūna ʿābidūna lirabbanā ḥāmidūn. Ṣadaqallāhu waʿdahu wa naṣara ʿabdahu wa hazamal-aḥzāba waḥdah."
+translationKey: "athkar_return_travel_2"
+count: 3
+
+─────────────────────────────────────────
+CAT: دعاء الوسواس  |  id: 'waswas'
+icon: 'brain'
+─────────────────────────────────────────
+
+1.
+arabic: "آمَنْتُ بِاللَّهِ وَرُسُلِهِ"
+transliteration: "Āmantu billāhi wa rusulih."
+translationKey: "athkar_waswas_1"
+count: 1
+
+2.
+arabic: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ"
+transliteration: "Aʿūdhu billāhi minash-shayṭānir-rajīm."
+translationKey: "athkar_waswas_2"
+count: 1
+
+3.
+arabic: "هُوَ الْأَوَّلُ وَالْآخِرُ وَالظَّاهِرُ وَالْبَاطِنُ وَهُوَ بِكُلِّ شَيْءٍ عَلِيمٌ"
+transliteration: "Huwal-awwalu wal-ākhiru waẓ-ẓāhiru wal-bāṭinu wa huwa bikulli shayʾin ʿalīm."
+translationKey: "athkar_waswas_3"
+count: 1
+
+─────────────────────────────────────────
+CAT: الصلاة على النبي ﷺ  |  id: 'salawat'
+icon: 'star-crescent'
+─────────────────────────────────────────
+
+1. [Al-Salat al-Ibrahimiyyah]
+arabic: "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ"
+transliteration: "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā ṣallayta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd. Allāhumma bārik ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā bārakta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd."
+translationKey: "athkar_salawat_1"
+count: 10
+
+2. [Short form]
+arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ"
+transliteration: "Allāhumma ṣalli wa sallim wa bārik ʿalā nabiyyinā Muḥammad."
+translationKey: "athkar_salawat_2"
+count: 100
+
+─────────────────────────────────────────
+CAT: دعاء الفتنة  |  id: 'fitnah'
+icon: 'alert-circle-outline'
+─────────────────────────────────────────
+
+1.
+arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْفِتَنِ مَا ظَهَرَ مِنْهَا وَمَا بَطَنَ"
+transliteration: "Allāhumma innī aʿūdhu bika minal-fitani mā ẓahara minhā wa mā baṭan."
+translationKey: "athkar_fitnah_1"
+count: 1
+
+2.
+arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ شَرِّ فِتْنَةِ الْغِنَى وَأَعُوذُ بِكَ مِنْ شَرِّ فِتْنَةِ الْفَقْرِ"
+transliteration: "Allāhumma innī aʿūdhu bika min sharri fitnatil-ghinā wa aʿūdhu bika min sharri fitnatil-faqr."
+translationKey: "athkar_fitnah_2"
+count: 1
+
+3.
+arabic: "اللَّهُمَّ احْفَظْنِي مِنْ بَيْنِ يَدَيَّ، وَمِنْ خَلْفِي، وَعَنْ يَمِينِي، وَعَنْ شِمَالِي، وَمِنْ فَوْقِي، وَأَعُوذُ بِعَظَمَتِكَ أَنْ أُغْتَالَ مِنْ تَحْتِي"
+transliteration: "Allāhummah-ẓurnī min bayni yadayya, wa min khalfī, wa ʿan yamīnī, wa ʿan shimālī, wa min fawqī, wa aʿūdhu biʿaẓamatika an ughṭāla min taḥtī."
+translationKey: "athkar_fitnah_3"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء المظلوم  |  id: 'oppressed'
+icon: 'scale-balance'
+─────────────────────────────────────────
+
+1.
+arabic: "اللَّهُمَّ إِنِّي أَشْكُو إِلَيْكَ ضَعْفَ قُوَّتِي، وَقِلَّةَ حِيلَتِي، وَهَوَانِي عَلَى النَّاسِ، أَنْتَ رَبُّ الْمُسْتَضْعَفِينَ وَأَنْتَ رَبِّي"
+transliteration: "Allāhumma innī ashkū ilayka ḍaʿfa quwwatī, wa qillata ḥīlatī, wa hawānī ʿalan-nās. Anta rabbul-mustaḍʿafīna wa anta rabbī."
+translationKey: "athkar_oppressed_1"
+count: 1
+
+2.
+arabic: "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ"
+transliteration: "Ḥasbiyallāhu lā ilāha illā huwa, ʿalayhi tawakkaltu wa huwa rabbul-ʿarshil-ʿaẓīm."
+translationKey: "athkar_oppressed_2"
+count: 7
+
+─────────────────────────────────────────
+CAT: دعاء رؤية الهلال  |  id: 'new_moon'
+icon: 'moon-waning-crescent'
+─────────────────────────────────────────
+
+1.
+arabic: "اللَّهُ أَكْبَرُ، اللَّهُمَّ أَهِلَّهُ عَلَيْنَا بِالْأَمْنِ وَالْإِيمَانِ، وَالسَّلَامَةِ وَالْإِسْلَامِ، وَالتَّوْفِيقِ لِمَا تُحِبُّ وَتَرْضَى، رَبُّنَا وَرَبُّكَ اللَّهُ"
+transliteration: "Allāhu akbar. Allāhumma ahillahu ʿalaynā bil-amni wal-īmān, was-salāmati wal-islām, wat-tawfīqi limā tuḥibbu wa tarḍā, rabbunā wa rabbukallāh."
+translationKey: "athkar_new_moon_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء القيام من المجلس  |  id: 'gathering'
+icon: 'account-group-outline'
+─────────────────────────────────────────
+
+1. [Expiation of the gathering — said when leaving]
+arabic: "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ"
+transliteration: "Subḥānaka Allāhumma wa biḥamdik, ashhadu an lā ilāha illā ant, astaghfiruka wa atūbu ilayk."
+translationKey: "athkar_gathering_1"
+count: 1
+
+─────────────────────────────────────────
+CAT: دعاء المطر والريح  |  id: 'rain'
+icon: 'weather-rainy'
+─────────────────────────────────────────
+
+1. [When it rains]
+arabic: "اللَّهُمَّ صَيِّبًا نَافِعًا"
+transliteration: "Allāhumma ṣayyiban nāfiʿā."
+translationKey: "athkar_rain_1"
+count: 1
+
+2. [After rain]
+arabic: "مُطِرْنَا بِفَضْلِ اللَّهِ وَرَحْمَتِهِ"
+transliteration: "Muṭirnā bifaḍlillāhi wa raḥmatih."
+translationKey: "athkar_rain_2"
+count: 1
+
+3. [When hearing thunder]
+arabic: "سُبْحَانَ الَّذِي يُسَبِّحُ الرَّعْدُ بِحَمْدِهِ وَالْمَلَائِكَةُ مِنْ خِيفَتِهِ"
+transliteration: "Subḥānal-ladhī yusabbiḥur-raʿdu biḥamdihī wal-malāʾikatu min khīfatih."
+translationKey: "athkar_rain_3"
+count: 1
+
+4. [When fearing storm/wind]
+arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَهَا وَخَيْرَ مَا فِيهَا وَخَيْرَ مَا أُرْسِلَتْ بِهِ، وَأَعُوذُ بِكَ مِنْ شَرِّهَا وَشَرِّ مَا فِيهَا وَشَرِّ مَا أُرْسِلَتْ بِهِ"
+transliteration: "Allāhumma innī asʾaluka khayrahā wa khayra mā fīhā wa khayra mā ursilat bih, wa aʿūdhu bika min sharrihā wa sharri mā fīhā wa sharri mā ursilat bih."
+translationKey: "athkar_rain_4"
+count: 1
+
+════════════════════════════════════════════════════════
+PART 3 — i18n KEYS FOR ALL NEW CATEGORIES
+════════════════════════════════════════════════════════
+
+Add category name keys for all new categories 
+to all 15 language objects in i18n.ts:
+
+athkar_cat_clothing:
+  ar: "دعاء لبس الثوب"
+  en: "Dua for Wearing Clothes"
+  fr: "Invocation pour s'habiller"
+  es: "Dua al vestirse"
+  ru: "Дуа при одевании"
+  zh: "穿衣祈祷"
+  tr: "Giyinme Duası"
+  ur: "لباس پہننے کی دعا"
+  id: "Doa Berpakaian"
+  bn: "পোশাক পরার দোয়া"
+  fa: "دعای پوشیدن لباس"
+  ms: "Doa Memakai Pakaian"
+  pt: "Dua ao vestir-se"
+  sw: "Dua ya Kuvaa Nguo"
+  ha: "Addu'ar Sanya Tufafi"
+
+athkar_cat_market:
+  ar: "أذكار السوق"
+  en: "Market Adhkar"
+  fr: "Dhikrs du marché"
+  es: "Adhkar del mercado"
+  ru: "Азкары рынка"
+  zh: "市场祈祷"
+  tr: "Çarşı Zikirleri"
+  ur: "بازار کے اذکار"
+  id: "Dzikir di Pasar"
+  bn: "বাজারের যিকির"
+  fa: "اذکار بازار"
+  ms: "Zikir di Pasar"
+  pt: "Dhikrs do mercado"
+  sw: "Dhikri za Soko"
+  ha: "Azkar Kasuwa"
+
+athkar_cat_anger:
+  ar: "دعاء الغضب"
+  en: "Duas for Anger"
+  fr: "Invocation contre la colère"
+  es: "Dua contra la ira"
+  ru: "Дуа от гнева"
+  zh: "愤怒时祈祷"
+  tr: "Öfke Duası"
+  ur: "غصے کی دعا"
+  id: "Doa Mengatasi Marah"
+  bn: "রাগের দোয়া"
+  fa: "دعای خشم"
+  ms: "Doa Menahan Marah"
+  pt: "Dua contra a raiva"
+  sw: "Dua ya Hasira"
+  ha: "Addu'ar Fushi"
+
+athkar_cat_kaffarah:
+  ar: "دعاء كفارة المجلس"
+  en: "Expiation of Gathering"
+  fr: "Expiation de la réunion"
+  es: "Expiación de la reunión"
+  ru: "Искупление собрания"
+  zh: "聚会忏悔祈祷"
+  tr: "Meclis Kefareti"
+  ur: "مجلس کا کفارہ"
+  id: "Kafarat Majelis"
+  bn: "মজলিসের কাফফারা"
+  fa: "کفاره مجلس"
+  ms: "Kaffarah Majlis"
+  pt: "Expiação da reunião"
+  sw: "Kafara ya Mkutano"
+  ha: "Kafara ta Taro"
+
+athkar_cat_leaving_home:
+  ar: "دعاء الخروج من المنزل"
+  en: "Dua for Leaving Home"
+  fr: "Dua en quittant la maison"
+  es: "Dua al salir de casa"
+  ru: "Дуа при выходе из дома"
+  zh: "出门祈祷"
+  tr: "Evden Çıkış Duası"
+  ur: "گھر سے نکلنے کی دعا"
+  id: "Doa Keluar Rumah"
+  bn: "ঘর থেকে বের হওয়ার দোয়া"
+  fa: "دعای خروج از منزل"
+  ms: "Doa Keluar Rumah"
+  pt: "Dua ao sair de casa"
+  sw: "Dua ya Kutoka Nyumbani"
+  ha: "Addu'ar Fita Gida"
+
+athkar_cat_entering_home:
+  ar: "دعاء دخول المنزل"
+  en: "Dua for Entering Home"
+  fr: "Dua en entrant à la maison"
+  es: "Dua al entrar en casa"
+  ru: "Дуа при входе в дом"
+  zh: "进门祈祷"
+  tr: "Eve Giriş Duası"
+  ur: "گھر میں داخل ہونے کی دعا"
+  id: "Doa Masuk Rumah"
+  bn: "ঘরে প্রবেশের দোয়া"
+  fa: "دعای ورود به منزل"
+  ms: "Doa Masuk Rumah"
+  pt: "Dua ao entrar em casa"
+  sw: "Dua ya Kuingia Nyumbani"
+  ha: "Addu'ar Shiga Gida"
+
+athkar_cat_mosque:
+  ar: "أذكار المسجد"
+  en: "Mosque Adhkar"
+  fr: "Dhikrs de la mosquée"
+  es: "Adhkar de la mezquita"
+  ru: "Азкары мечети"
+  zh: "清真寺祈祷"
+  tr: "Cami Zikirleri"
+  ur: "مسجد کے اذکار"
+  id: "Dzikir Masjid"
+  bn: "মসজিদের যিকির"
+  fa: "اذکار مسجد"
+  ms: "Zikir Masjid"
+  pt: "Dhikrs da mesquita"
+  sw: "Dhikri za Msikiti"
+  ha: "Azkar Masallaci"
+
+athkar_cat_adhan_response:
+  ar: "دعاء الأذان"
+  en: "Dua After Adhan"
+  fr: "Dua après l'appel à la prière"
+  es: "Dua tras el adhan"
+  ru: "Дуа после азана"
+  zh: "宣礼后祈祷"
+  tr: "Ezan Duası"
+  ur: "اذان کے بعد دعا"
+  id: "Doa Setelah Adzan"
+  bn: "আযানের পরের দোয়া"
+  fa: "دعای بعد از اذان"
+  ms: "Doa Selepas Azan"
+  pt: "Dua após o adhan"
+  sw: "Dua Baada ya Adhan"
+  ha: "Addu'ar Bayan Kiran Sallah"
+
+athkar_cat_food:
+  ar: "أذكار الطعام"
+  en: "Food Adhkar"
+  fr: "Dhikrs du repas"
+  es: "Adhkar de la comida"
+  ru: "Азкары еды"
+  zh: "饮食祈祷"
+  tr: "Yemek Zikirleri"
+  ur: "کھانے کے اذکار"
+  id: "Dzikir Makan"
+  bn: "খাবারের যিকির"
+  fa: "اذکار غذا"
+  ms: "Zikir Makan"
+  pt: "Dhikrs da refeição"
+  sw: "Dhikri za Chakula"
+  ha: "Azkar Abinci"
+
+athkar_cat_iftar:
+  ar: "دعاء الإفطار"
+  en: "Dua for Breaking Fast"
+  fr: "Dua pour rompre le jeûne"
+  es: "Dua para romper el ayuno"
+  ru: "Дуа для ифтара"
+  zh: "开斋祈祷"
+  tr: "İftar Duası"
+  ur: "افطار کی دعا"
+  id: "Doa Berbuka Puasa"
+  bn: "ইফতারের দোয়া"
+  fa: "دعای افطار"
+  ms: "Doa Berbuka Puasa"
+  pt: "Dua para quebrar o jejum"
+  sw: "Dua ya Kufungua Saumu"
+  ha: "Addu'ar Buɗe Azumi"
+
+athkar_cat_qunut:
+  ar: "دعاء القنوت"
+  en: "Dua al-Qunut"
+  fr: "Dua al-Qunût"
+  es: "Dua al-Qunut"
+  ru: "Дуа аль-Кунут"
+  zh: "拱努特祈祷"
+  tr: "Kunut Duası"
+  ur: "دعائے قنوت"
+  id: "Doa Qunut"
+  bn: "দোয়া কুনুত"
+  fa: "دعای قنوت"
+  ms: "Doa Qunut"
+  pt: "Dua al-Qunut"
+  sw: "Dua ya Qunut"
+  ha: "Addu'ar Qunut"
+
+athkar_cat_death:
+  ar: "دعاء عند المصيبة والوفاة"
+  en: "Duas at Death"
+  fr: "Invocations au décès"
+  es: "Duas ante la muerte"
+  ru: "Дуа при смерти"
+  zh: "临终祈祷"
+  tr: "Ölüm Anı Duaları"
+  ur: "وفات کے وقت کی دعائیں"
+  id: "Doa Ketika Kematian"
+  bn: "মৃত্যুর সময়ের দোয়া"
+  fa: "دعا هنگام مرگ"
+  ms: "Doa Ketika Kematian"
+  pt: "Duas na morte"
+  sw: "Dua Wakati wa Kifo"
+  ha: "Addu'ar Lokacin Mutuwa"
+
+athkar_cat_janazah:
+  ar: "دعاء صلاة الجنازة"
+  en: "Funeral Prayer Dua"
+  fr: "Dua de la prière funèbre"
+  es: "Dua de la oración fúnebre"
+  ru: "Дуа заупокойной молитвы"
+  zh: "殡礼祈祷"
+  tr: "Cenaze Namazı Duası"
+  ur: "نماز جنازہ کی دعا"
+  id: "Doa Shalat Jenazah"
+  bn: "জানাযার নামাযের দোয়া"
+  fa: "دعای نماز جنازه"
+  ms: "Doa Solat Jenazah"
+  pt: "Dua da oração fúnebre"
+  sw: "Dua ya Sala ya Maiti"
+  ha: "Addu'ar Sallah Jana'izar"
+
+athkar_cat_graves:
+  ar: "دعاء زيارة القبور"
+  en: "Dua for Visiting Graves"
+  fr: "Dua pour la visite des tombes"
+  es: "Dua para visitar tumbas"
+  ru: "Дуа при посещении могил"
+  zh: "扫墓祈祷"
+  tr: "Kabir Ziyareti Duası"
+  ur: "قبرستان جانے کی دعا"
+  id: "Doa Ziarah Kubur"
+  bn: "কবর যিয়ারতের দোয়া"
+  fa: "دعای زیارت قبور"
+  ms: "Doa Ziarah Kubur"
+  pt: "Dua para visitar túmulos"
+  sw: "Dua ya Kutembelea Makaburi"
+  ha: "Addu'ar Ziyarar Kabari"
+
+athkar_cat_wedding:
+  ar: "دعاء المتزوج الجديد"
+  en: "Wedding Duas"
+  fr: "Duas du mariage"
+  es: "Duas de la boda"
+  ru: "Дуа на свадьбу"
+  zh: "婚礼祈祷"
+  tr: "Düğün Duaları"
+  ur: "شادی کی دعائیں"
+  id: "Doa Pernikahan"
+  bn: "বিবাহের দোয়া"
+  fa: "دعای ازدواج"
+  ms: "Doa Perkahwinan"
+  pt: "Duas do casamento"
+  sw: "Dua za Harusi"
+  ha: "Addu'ar Aure"
+
+athkar_cat_return_travel:
+  ar: "دعاء القدوم من السفر"
+  en: "Dua on Returning from Travel"
+  fr: "Dua au retour de voyage"
+  es: "Dua al volver del viaje"
+  ru: "Дуа при возвращении из путешествия"
+  zh: "归途祈祷"
+  tr: "Seferden Dönüş Duası"
+  ur: "سفر سے واپسی کی دعا"
+  id: "Doa Kembali dari Perjalanan"
+  bn: "সফর থেকে ফেরার দোয়া"
+  fa: "دعای بازگشت از سفر"
+  ms: "Doa Pulang dari Musafir"
+  pt: "Dua ao regressar da viagem"
+  sw: "Dua ya Kurudi Safarini"
+  ha: "Addu'ar Dawowar Tafiya"
+
+athkar_cat_waswas:
+  ar: "دعاء الوسواس"
+  en: "Duas Against Waswas"
+  fr: "Duas contre les chuchotements"
+  es: "Duas contra los susurros"
+  ru: "Дуа от наущений шайтана"
+  zh: "抵御魔鬼耳语祈祷"
+  tr: "Vesvese Duası"
+  ur: "وسوسے کی دعا"
+  id: "Doa Mengatasi Waswas"
+  bn: "ওয়াসওয়াসার দোয়া"
+  fa: "دعای وسواس"
+  ms: "Doa Mengatasi Waswas"
+  pt: "Duas contra os sussurros"
+  sw: "Dua dhidi ya Waswasi"
+  ha: "Addu'ar Waswasi"
+
+athkar_cat_salawat:
+  ar: "الصلاة على النبي ﷺ"
+  en: "Salawat upon the Prophet ﷺ"
+  fr: "Salawat sur le Prophète ﷺ"
+  es: "Salawat sobre el Profeta ﷺ"
+  ru: "Салават Пророку ﷺ"
+  zh: "向先知祈祷 ﷺ"
+  tr: "Peygambere Salawat ﷺ"
+  ur: "نبی ﷺ پر درود"
+  id: "Shalawat atas Nabi ﷺ"
+  bn: "নবীর উপর দরূদ ﷺ"
+  fa: "صلوات بر پیامبر ﷺ"
+  ms: "Selawat ke atas Nabi ﷺ"
+  pt: "Salawat sobre o Profeta ﷺ"
+  sw: "Swala kwa Mtume ﷺ"
+  ha: "Salati a kan Annabi ﷺ"
+
+athkar_cat_fitnah:
+  ar: "دعاء الفتنة"
+  en: "Duas in Times of Tribulation"
+  fr: "Duas en temps de tribulation"
+  es: "Duas en tiempos de tribulación"
+  ru: "Дуа во времена смуты"
+  zh: "动乱时祈祷"
+  tr: "Fitne Zamanı Duaları"
+  ur: "فتنے کے وقت کی دعائیں"
+  id: "Doa di Masa Fitnah"
+  bn: "ফিতনার সময়ের দোয়া"
+  fa: "دعای فتنه"
+  ms: "Doa di Masa Fitnah"
+  pt: "Duas em tempos de tribulação"
+  sw: "Dua za Wakati wa Fitna"
+  ha: "Addu'ar Zamanin Fitina"
+
+athkar_cat_oppressed:
+  ar: "دعاء المظلوم"
+  en: "Dua of the Oppressed"
+  fr: "Dua de l'opprimé"
+  es: "Dua del oprimido"
+  ru: "Дуа угнетённого"
+  zh: "受压迫者的祈祷"
+  tr: "Mazlumun Duası"
+  ur: "مظلوم کی دعا"
+  id: "Doa Orang yang Teraniaya"
+  bn: "মজলুমের দোয়া"
+  fa: "دعای مظلوم"
+  ms: "Doa Orang yang Dizalimi"
+  pt: "Dua do oprimido"
+  sw: "Dua ya Mdhalimiwa"
+  ha: "Addu'ar Mai Zalunci"
+
+athkar_cat_new_moon:
+  ar: "دعاء رؤية الهلال"
+  en: "Dua Upon Sighting the Moon"
+  fr: "Dua à la vue du croissant"
+  es: "Dua al ver la luna creciente"
+  ru: "Дуа при виде полумесяца"
+  zh: "见新月祈祷"
+  tr: "Hilal Görünce Dua"
+  ur: "چاند دیکھنے کی دعا"
+  id: "Doa Melihat Hilal"
+  bn: "চাঁদ দেখার দোয়া"
+  fa: "دعای رؤیت هلال"
+  ms: "Doa Melihat Anak Bulan"
+  pt: "Dua ao ver a lua crescente"
+  sw: "Dua ya Kuona Hilali"
+  ha: "Addu'ar Ganin Watan"
+
+athkar_cat_gathering:
+  ar: "دعاء القيام من المجلس"
+  en: "Dua When Leaving a Gathering"
+  fr: "Dua en quittant une assemblée"
+  es: "Dua al abandonar una reunión"
+  ru: "Дуа при уходе с собрания"
+  zh: "离开聚会时祈祷"
+  tr: "Meclisten Ayrılma Duası"
+  ur: "مجلس سے اٹھنے کی دعا"
+  id: "Doa Meninggalkan Majelis"
+  bn: "মজলিস থেকে উঠার দোয়া"
+  fa: "دعای برخاستن از مجلس"
+  ms: "Doa Meninggalkan Majlis"
+  pt: "Dua ao deixar uma reunião"
+  sw: "Dua ya Kuacha Mkutano"
+  ha: "Addu'ar Barin Taro"
+
+athkar_cat_rain:
+  ar: "دعاء المطر والريح"
+  en: "Duas for Rain & Wind"
+  fr: "Invocations pour la pluie et le vent"
+  es: "Duas por la lluvia y el viento"
+  ru: "Дуа при дожде и ветре"
+  zh: "雨风祈祷"
+  tr: "Yağmur ve Rüzgar Duası"
+  ur: "بارش اور ہوا کی دعا"
+  id: "Doa Hujan dan Angin"
+  bn: "বৃষ্টি ও বায়ুর দোয়া"
+  fa: "دعای باران و باد"
+  ms: "Doa Hujan dan Angin"
+  pt: "Duas pela chuva e pelo vento"
+  sw: "Dua ya Mvua na Upepo"
+  ha: "Addu'ar Ruwan Sama da Iska"
+
+════════════════════════════════════════════════════════
+PART 4 — DHIKR TRANSLATION KEYS (English values)
+Add to all 15 languages in i18n.ts
+════════════════════════════════════════════════════════
+
+athkar_clothing_1:
+  en: "All praise is for Allah who clothed me with this and provided it for me without any might or power on my part." [Said when wearing any garment]
+  ar: "الحمد لله الذي كساني هذا ورزقنيه من غير حول مني ولا قوة."
+  [translate accurately in all other 13 languages]
+
+athkar_clothing_2:
+  en: "O Allah, all praise is for You. You have clothed me with it. I ask You for its good and the good for which it was made, and I seek refuge in You from its evil and the evil for which it was made." [Said when wearing new clothes]
+  ar: "تُقال عند لبس الثوب الجديد."
+  [translate accurately in all other 13 languages]
+
+athkar_market_1:
+  en: "None has the right to be worshipped except Allah, alone, without any partner. To Him belongs all sovereignty and praise. He gives life and causes death, and He is living and does not die. In His hand is all good and He has power over all things." [The Prophet ﷺ said: whoever says this in a market, Allah will record one million good deeds for him and wipe away one million of his sins]
+  ar: "من قالها في السوق كتب الله له ألف ألف حسنة ومحا عنه ألف ألف سيئة."
+  [translate accurately in all other 13 languages]
+
+athkar_anger_1:
+  en: "I seek refuge in Allah from the accursed devil." [The Prophet ﷺ said: if a person says this when angry, their anger will subside]
+  ar: "قال النبي ﷺ: إن الرجل إذا غضب فقال أعوذ بالله من الشيطان الرجيم ذهب غضبه."
+  [translate accurately in all other 13 languages]
+
+athkar_kaffarah_1:
+  en: "Glory is to You O Allah and praise. I bear witness that none has the right to be worshipped except You. I seek Your forgiveness and repent to You." [Expiation for a gathering — whoever says this, it will be a seal/expiation for whatever occurred in that gathering]
+  ar: "كفارة المجلس — من قالها كانت كفارة لما كان في ذلك المجلس."
+  [translate accurately in all other 13 languages]
+
+athkar_leaving_home_1:
+  en: "In the name of Allah, I place my trust in Allah, and there is no might nor power except with Allah." [Said when leaving home — the Prophet ﷺ said: whoever says this is told 'you are guided, protected and spared']
+  ar: "قال النبي ﷺ: من قالها يقال له: كُفيتَ ووُقيتَ وتنحّى عنه الشيطان."
+  [translate accurately in all other 13 languages]
+
+athkar_leaving_home_2:
+  en: "O Allah, I seek refuge in You lest I stray or be led astray, slip or be caused to slip, wrong others or be wronged, or behave foolishly or be treated foolishly."
+  ar: "أعوذ بالله أن أضل أو أُضل..."
+  [translate accurately in all other 13 languages]
+
+athkar_entering_home_1:
+  en: "In the name of Allah we enter, in the name of Allah we leave, and upon Allah our Lord we rely."
+  ar: "بسم الله ولجنا وبسم الله خرجنا وعلى الله ربنا توكلنا."
+  [translate accurately in all other 13 languages]
+
+athkar_mosque_1:
+  en: "I seek refuge in Almighty Allah, by His noble countenance and His eternal power, from the accursed devil." [Said when entering the mosque]
+  ar: "تُقال عند دخول المسجد."
+  [translate accurately in all other 13 languages]
+
+athkar_mosque_2:
+  en: "In the name of Allah, and prayers and peace be upon the Messenger of Allah. O Allah, open the gates of Your mercy for me." [Said when entering the mosque]
+  ar: "تُقال عند دخول المسجد."
+  [translate accurately in all other 13 languages]
+
+athkar_mosque_3:
+  en: "In the name of Allah, and prayers and peace be upon the Messenger of Allah. O Allah, I ask You for Your bounty." [Said when leaving the mosque]
+  ar: "تُقال عند الخروج من المسجد."
+  [translate accurately in all other 13 languages]
+
+athkar_adhan_1:
+  en: "There is no power and no might except with Allah." [Said in response to 'Hayya ʿalaṣ-ṣalāh' and 'Hayya ʿalal-falāḥ' instead of repeating them]
+  ar: "تُقال عند سماع حي على الصلاة وحي على الفلاح."
+  [translate accurately in all other 13 languages]
+
+athkar_adhan_2:
+  en: "O Allah, Lord of this perfect call and the prayer to be offered, grant Muhammad the privilege and also the eminence, and resurrect him to the praised position that You have promised him." [Said after the adhan — whoever says this will be granted the Prophet's ﷺ intercession]
+  ar: "من قالها حلّت له شفاعة النبي ﷺ يوم القيامة."
+  [translate accurately in all other 13 languages]
+
+athkar_adhan_3:
+  en: "O Allah, I ask You by this perfect call... [mention your need]. The time between adhan and iqama is a time when duas are not rejected."
+  ar: "الدعاء لا يُرد بين الأذان والإقامة."
+  [translate accurately in all other 13 languages]
+
+athkar_food_1:
+  en: "In the name of Allah." [Said before eating — if forgotten, say the next dhikr]
+  ar: "بسم الله. [تُقال عند بدء الأكل]"
+  [translate accurately in all other 13 languages]
+
+athkar_food_2:
+  en: "In the name of Allah at its beginning and end." [Said if you forgot to say Bismillah before eating]
+  ar: "تُقال إذا نُسي قول بسم الله في أول الطعام."
+  [translate accurately in all other 13 languages]
+
+athkar_food_3:
+  en: "All praise is for Allah who fed me this and provided it for me without any might or power on my part." [Said after eating]
+  ar: "تُقال بعد الانتهاء من الطعام."
+  [translate accurately in all other 13 languages]
+
+athkar_food_4:
+  en: "O Allah, feed the one who fed me and give drink to the one who gave me drink." [Said when hosted by someone]
+  ar: "تُقال عند الضيافة."
+  [translate accurately in all other 13 languages]
+
+athkar_iftar_1:
+  en: "The thirst has gone, the veins are moistened and the reward is confirmed, if Allah wills." [Said when breaking fast]
+  ar: "تُقال عند الإفطار."
+  [translate accurately in all other 13 languages]
+
+athkar_iftar_2:
+  en: "O Allah, for You I fasted and upon Your provision I break my fast." [Said when breaking fast]
+  ar: "اللهم لك صمت وعلى رزقك أفطرت."
+  [translate accurately in all other 13 languages]
+
+athkar_qunut_1:
+  en: "O Allah, guide me among those You have guided, grant me health among those You have granted health, take me into Your care among those You have taken into Your care, bless me in what You have given, protect me from the evil of what You have decreed, for You decree and nothing is decreed upon You. Whoever You take as an ally cannot be humiliated, and whoever You take as an enemy cannot be honoured. Blessed are You our Lord and Exalted." [Dua al-Qunut for Witr prayer]
+  ar: "دعاء القنوت في الوتر."
+  [translate accurately in all other 13 languages]
+
+athkar_death_1:
+  en: "O Allah, forgive [name] and raise his station among the rightly guided, and be a successor to his descendants who remain. Forgive us and him, O Lord of the worlds, and make his grave spacious and illuminate it for him." [Said when closing the eyes of the deceased]
+  ar: "تُقال عند تغميض الميت."
+  [translate accurately in all other 13 languages]
+
+athkar_death_2:
+  en: "Verily we belong to Allah and to Him we shall return. O Allah, reward me in my calamity and replace it for me with something better."
+  ar: "إنا لله وإنا إليه راجعون، اللهم أجرني في مصيبتي..."
+  [translate accurately in all other 13 languages]
+
+athkar_janazah_1:
+  en: "O Allah, forgive him and have mercy on him, grant him well-being and pardon him, honour his reception, widen his entry, wash him with water, snow and hail, and cleanse him of sins as a white garment is cleansed of filth. Give him a home better than his home, a family better than his family, and a spouse better than his spouse. Admit him into Paradise and protect him from the torment of the grave and the torment of the Fire." [Said after the first takbeer in Janazah prayer, in place of Al-Fatiha for some scholars — follow your madhab]
+  ar: "يُقال في صلاة الجنازة."
+  [translate accurately in all other 13 languages]
+
+athkar_graves_1:
+  en: "Peace be upon you, O people of the abodes, from among the believers and Muslims. Indeed we, if Allah wills, will be joining you. We ask Allah for well-being for us and for you." [Said when entering the graveyard]
+  ar: "تُقال عند دخول المقابر."
+  [translate accurately in all other 13 languages]
+
+athkar_wedding_1:
+  en: "May Allah bless you, and shower His blessings upon you, and join you together in goodness." [Said to the newlywed couple]
+  ar: "تُقال للمتزوج."
+  [translate accurately in all other 13 languages]
+
+athkar_wedding_2:
+  en: "O Allah, I ask You for the goodness of her and the goodness of her nature which You have created in her, and I seek refuge in You from her evil and the evil of her nature which You have created in her." [Said by the husband on the wedding night, placing his hand on her forehead]
+  ar: "يقولها الزوج ليلة الزفاف واضعاً يده على ناصية زوجته."
+  [translate accurately in all other 13 languages]
+
+athkar_return_travel_1:
+  en: "Returning, repenting, worshipping and praising our Lord." [Said upon returning from travel]
+  ar: "تُقال عند القدوم من السفر."
+  [translate accurately in all other 13 languages]
+
+athkar_return_travel_2:
+  en: "None has the right to be worshipped except Allah, alone, without any partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent. Returning, repenting, worshipping and praising our Lord. Allah fulfilled His promise, aided His servant and alone defeated the confederates." (3×) [Said upon returning from travel, on high ground]
+  ar: "تُقال عند القدوم من السفر على المرتفعات."
+  [translate accurately in all other 13 languages]
+
+athkar_waswas_1:
+  en: "I believe in Allah and His messengers." [Said to repel doubts about Allah's nature — the Prophet ﷺ prescribed this]
+  ar: "يقولها من أصابه وسواس في أمر الله."
+  [translate accurately in all other 13 languages]
+
+athkar_waswas_2:
+  en: "I seek refuge in Allah from the accursed devil." [Said to repel whispers during prayer or otherwise]
+  ar: "تُقال عند الوسواس في الصلاة وغيرها."
+  [translate accurately in all other 13 languages]
+
+athkar_waswas_3:
+  en: "He is the First and the Last, the Apparent and the Hidden, and He has knowledge of all things." [Al-Hadid 57:3 — recited to repel doubts about the beginning of creation]
+  ar: "تُقال عند الوسواس في أوليات الأشياء."
+  [translate accurately in all other 13 languages]
+
+athkar_salawat_1:
+  en: "O Allah, send prayers upon Muhammad and upon the family of Muhammad, as You sent prayers upon Ibrahim and upon the family of Ibrahim. O Allah, send blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and upon the family of Ibrahim. You are indeed Worthy of Praise, Full of Glory." (10×) [Al-Salat al-Ibrahimiyyah — the most complete form of salawat]
+  ar: "الصلاة الإبراهيمية — أكمل صور الصلاة على النبي ﷺ."
+  [translate accurately in all other 13 languages]
+
+athkar_salawat_2:
+  en: "O Allah, send prayers, peace and blessings upon our Prophet Muhammad." (100×)
+  ar: "اللهم صلّ وسلّم وبارك على نبينا محمد. (١٠٠ مرة)"
+  [translate accurately in all other 13 languages]
+
+athkar_fitnah_1:
+  en: "O Allah, I seek refuge in You from trials that are apparent and those that are hidden."
+  ar: "اللهم إني أعوذ بك من الفتن ما ظهر منها وما بطن."
+  [translate accurately in all other 13 languages]
+
+athkar_fitnah_2:
+  en: "O Allah, I seek refuge in You from the evil of the trial of wealth, and I seek refuge in You from the evil of the trial of poverty."
+  ar: "اللهم إني أعوذ بك من شر فتنة الغنى ومن شر فتنة الفقر."
+  [translate accurately in all other 13 languages]
+
+athkar_fitnah_3:
+  en: "O Allah, guard me from in front of me and from behind me, from my right and from my left, and from above me. I seek refuge in Your greatness from being struck down from beneath me."
+  ar: "اللهم احفظني من بين يدي..."
+  [translate accurately in all other 13 languages]
+
+athkar_oppressed_1:
+  en: "O Allah, I complain to You of my weakness, my lack of resources and my humiliation before people. You are the Lord of the weak and You are my Lord. To whom will You entrust me?" [The Prophet ﷺ said the dua of the oppressed is not rejected]
+  ar: "دعاء الطائف — قاله النبي ﷺ عند الشدة."
+  [translate accurately in all other 13 languages]
+
+athkar_oppressed_2:
+  en: "Allah is sufficient for me, none has the right to be worshipped but Him, upon Him I rely and He is the Lord of the mighty throne." (7×) [The Prophet ﷺ said: whoever says this 7 times morning and evening, Allah will take care of his concerns]
+  ar: "من قالها سبع مرات كفاه الله همه."
+  [translate accurately in all other 13 languages]
+
+athkar_new_moon_1:
+  en: "Allah is the greatest. O Allah, bring it upon us with security and faith, safety and Islam, and with success in doing what You love and are pleased with. Our Lord and your Lord is Allah." [Said upon sighting the new crescent moon]
+  ar: "تُقال عند رؤية الهلال."
+  [translate accurately in all other 13 languages]
+
+athkar_gathering_1:
+  en: "Glory is to You O Allah and praise. I bear witness that none has the right to be worshipped except You. I seek Your forgiveness and repent to You." [The expiation of the gathering — said before leaving any sitting. The Prophet ﷺ said it expiates whatever occurred in that gathering]
+  ar: "كفارة المجلس — تُقال قبل القيام من أي مجلس."
+  [translate accurately in all other 13 languages]
+
+athkar_rain_1:
+  en: "O Allah, let it be a beneficial rain." [Said when it rains]
+  ar: "تُقال عند نزول المطر."
+  [translate accurately in all other 13 languages]
+
+athkar_rain_2:
+  en: "We have been given rain by the grace and mercy of Allah." [Said after rain — not by the stars]
+  ar: "تُقال بعد نزول المطر."
+  [translate accurately in all other 13 languages]
+
+athkar_rain_3:
+  en: "Glory is to Him Whose praises the thunder declares, as do the angels in awe of Him." [Said when hearing thunder]
+  ar: "تُقال عند سماع الرعد."
+  [translate accurately in all other 13 languages]
+
+athkar_rain_4:
+  en: "O Allah, I ask You for its good and the good within it and the good with which it was sent, and I seek refuge in You from its evil and the evil within it and the evil with which it was sent." [Said when fearing wind or storms]
+  ar: "تُقال عند الخوف من الريح والعاصفة."
+  [translate accurately in all other 13 languages]
+
+════════════════════════════════════════════════════════
+PART 5 — UPDATED GRID ORDER (3 pages × 16 = 48 slots)
+════════════════════════════════════════════════════════
+
+PAGE 1 (positions 1–16):
+ 1.  morning
+ 2.  evening
+ 3.  after_prayer
+ 4.  waking
+ 5.  wudu
+ 6.  sleep
+ 7.  istighfar
+ 8.  ruqyah
+ 9.  bathroom
+10.  anxiety
+11.  distress
+12.  fear
+13.  friday
+14.  quranic
+15.  parents
+16.  rizq
+
+PAGE 2 (positions 17–32):
+17.  debt
+18.  faraj
+19.  calamity
+20.  hajah
+21.  istikhara
+22.  travel
+23.  visiting_sick
+24.  quran_khatm
+25.  salawat
+26.  adhan_response
+27.  food
+28.  iftar
+29.  clothing
+30.  market
+31.  leaving_home
+32.  entering_home
+
+PAGE 3 (positions 33–48):
+33.  mosque
+34.  qunut
+35.  janazah
+36.  death
+37.  graves
+38.  wedding
+39.  return_travel
+40.  waswas
+41.  fitnah
+42.  oppressed
+43.  new_moon
+44.  gathering
+45.  rain
+46.  anger
+47.  kaffarah
+48.  [empty placeholder]
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any existing category content or counts.
+Do not change any UI component beyond what is specified.
+Do not add new dependencies.
+Do not change any other tab.

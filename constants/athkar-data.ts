@@ -856,6 +856,69 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
     ],
   },
   {
+    id: 'bathroom',
+    icon: 'door-closed-outline',
+    nameKey: 'athkar_cat_bathroom',
+    adhkar: [
+      {
+        arabic: "بِسْمِ اللَّهِ، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ",
+        transliteration: "Bismillāh. Allāhumma innī aʿūdhu bika minal-khubuthi wal-khabāʾith.",
+        translationKey: "athkar_bathroom_1",
+        count: 1,
+      },
+      {
+        arabic: "غُفْرَانَكَ",
+        transliteration: "Ghufrānak.",
+        translationKey: "athkar_bathroom_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'fear',
+    icon: 'shield-sun-outline',
+    nameKey: 'athkar_cat_fear',
+    adhkar: [
+      {
+        arabic: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ غَضَبِهِ وَعِقَابِهِ، وَشَرِّ عِبَادِهِ، وَمِنْ هَمَزَاتِ الشَّيَاطِينِ وَأَنْ يَحْضُرُونِ",
+        transliteration: "Aʿūdhu bikalimātillāhit-tāmmāti min ghaḍabihi wa ʿiqābih, wa sharri ʿibādih, wa min hamazātish-shayāṭīni wa an yaḥḍurūn.",
+        translationKey: "athkar_fear_1",
+        count: 1,
+      },
+      {
+        arabic: "لَا إِلَهَ إِلَّا اللَّهُ",
+        transliteration: "Lā ilāha illallāh.",
+        translationKey: "athkar_fear_2",
+        count: 1,
+      },
+      {
+        arabic: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+        transliteration: "Aʿūdhu billāhi minash-shayṭānir-rajīm.",
+        translationKey: "athkar_fear_3",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'hajah',
+    icon: 'hand-extended-outline',
+    nameKey: 'athkar_cat_hajah',
+    adhkar: [
+      {
+        arabic: "لَا إِلَهَ إِلَّا اللَّهُ الْحَلِيمُ الْكَرِيمُ، سُبْحَانَ اللَّهِ رَبِّ الْعَرْشِ الْعَظِيمِ، الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ، أَسْأَلُكَ مُوجِبَاتِ رَحْمَتِكَ، وَعَزَائِمَ مَغْفِرَتِكَ، وَالْغَنِيمَةَ مِنْ كُلِّ بِرٍّ، وَالسَّلَامَةَ مِنْ كُلِّ إِثْمٍ، لَا تَدَعْ لِي ذَنْبًا إِلَّا غَفَرْتَهُ، وَلَا هَمًّا إِلَّا فَرَّجْتَهُ، وَلَا حَاجَةً هِيَ لَكَ رِضًا إِلَّا قَضَيْتَهَا يَا أَرْحَمَ الرَّاحِمِينَ",
+        transliteration: "Lā ilāha illallāhul-ḥalīmul-karīm. Subḥānallāhi rabbil-ʿarshil-ʿaẓīm. Al-ḥamdu lillāhi rabbil-ʿālamīn. Asʾaluka mūjibāti raḥmatik, wa ʿazāʾima maghfiratik, wal-ghanīmata min kulli birr, was-salāmata min kulli ithm. Lā tadaʿ lī dhanban illā ghafartah, wa lā hamman illā farrajtah, wa lā ḥājatan hiya laka riḍan illā qaḍaytahā yā arḥamar-rāḥimīn.",
+        translationKey: "athkar_hajah_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ وَأَتَوَجَّهُ إِلَيْكَ بِنَبِيِّكَ مُحَمَّدٍ نَبِيِّ الرَّحْمَةِ، يَا مُحَمَّدُ إِنِّي تَوَجَّهْتُ بِكَ إِلَى رَبِّي فِي حَاجَتِي هَذِهِ لِتُقْضَى، اللَّهُمَّ فَشَفِّعْهُ فِيَّ",
+        transliteration: "Allāhumma innī asʾaluka wa atawajjahu ilayka binabiyyika Muḥammadin nabiyyir-raḥmah. Yā Muḥammadu innī tawajjahtu bika ilā rabbī fī ḥājatī hādhihi litūqḍā. Allāhumma fashaffiʿhu fiyy.",
+        translationKey: "athkar_hajah_2",
+        count: 1,
+      },
+    ],
+  },
+  {
     id: 'rain',
     icon: 'weather-rainy',
     nameKey: 'athkar_cat_rain',
@@ -908,9 +971,10 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
 ];
 
 const ORDER = [
-  'morning','evening','after_prayer','waking','sleep','istighfar',
-  'ruqyah','anxiety','distress','friday','quranic','parents',
-  'rizq','debt','faraj','calamity','istikhara','travel',
+  'morning','evening','after_prayer','waking','wudu','sleep',
+  'istighfar','ruqyah','bathroom','anxiety','distress','fear',
+  'friday','quranic','parents','rizq',
+  'debt','faraj','calamity','hajah','istikhara','travel',
   'visiting_sick','quran_khatm',
 ];
 
