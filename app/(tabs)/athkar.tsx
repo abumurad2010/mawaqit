@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, FadeIn } from 'react-native-reanimated';
@@ -16,7 +16,32 @@ import AppLogo from '@/components/AppLogo';
 import ATHKAR_CATEGORIES, { AthkarCategory, Dhikr } from '@/constants/athkar-data';
 
 const FAVS_KEY = 'athkar_favourites';
+const FAV_HELP_KEY = 'athkar_fav_help_seen';
 const GOLD = '#C9A84C';
+
+const DHIKR_HELP_KEYS = new Set([
+  'athkar_sleep_ikhlas', 'athkar_sleep_falaq', 'athkar_sleep_nas',
+  'athkar_sleep_aslamt', 'athkar_sleep_janb',
+  'athkar_sick_3', 'athkar_sick_4',
+  'athkar_istikhara_1', 'athkar_friday_3', 'athkar_ruqyah_1',
+]);
+
+function AthkarHelpBtn({ onPress, C }: { onPress: () => void; C: any }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={12}
+      style={({ pressed }) => ({
+        width: 18, height: 18, borderRadius: 9,
+        borderWidth: 1.5, borderColor: C.tint,
+        alignItems: 'center', justifyContent: 'center',
+        opacity: pressed ? 0.4 : 1,
+      })}
+    >
+      <Text style={{ fontSize: 10, fontWeight: '800', color: C.tint, lineHeight: 13 }}>?</Text>
+    </Pressable>
+  );
+}
 
 function getKey(catId: string, idx: number) {
   return `${catId}_${idx}`;
@@ -24,7 +49,7 @@ function getKey(catId: string, idx: number) {
 
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
-  const { lang, colors: C } = useApp();
+  const { lang, colors: C, isDark } = useApp();
   const tr = t(lang);
   const isRtl = isRtlLang(lang);
 
@@ -35,12 +60,17 @@ export default function AthkarScreen() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>('full');
   const [favourites, setFavourites] = useState<string[]>([]);
+  const [helpContent, setHelpContent] = useState<string | null>(null);
+  const [favHelpSeen, setFavHelpSeen] = useState(true);
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(FAVS_KEY).then(raw => {
       if (raw) setFavourites(JSON.parse(raw));
+    }).catch(() => {});
+    AsyncStorage.getItem(FAV_HELP_KEY).then(val => {
+      setFavHelpSeen(val === 'true');
     }).catch(() => {});
   }, []);
 
@@ -124,43 +154,87 @@ export default function AthkarScreen() {
     return (counts[getKey(catId, idx)] ?? 0) >= required;
   }, [counts]);
 
-  if (selectedCategory) {
-    return (
-      <ReaderScreen
-        category={selectedCategory}
-        lang={lang}
-        isRtl={isRtl}
-        tr={tr}
-        C={C}
-        topInset={topInset}
-        bottomInset={bottomInset}
-        readerRef={readerRef}
-        counts={counts}
-        getCount={getCount}
-        isDone={isDone}
-        onTap={handleTap}
-        onBack={closeCategory}
-        onReset={resetCounts}
-        displayMode={displayMode}
-      />
-    );
-  }
+  const showHelp = useCallback((text: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setHelpContent(text);
+  }, []);
+
+  const dismissFavHelp = useCallback(() => {
+    setFavHelpSeen(true);
+    AsyncStorage.setItem(FAV_HELP_KEY, 'true').catch(() => {});
+  }, []);
+
+  const dismissHelp = useCallback(() => setHelpContent(null), []);
+
+  const gotItLabel = lang === 'ar' ? 'حسناً' : (lang === 'ur' || lang === 'fa') ? 'ٹھیک ہے' : 'Got it';
 
   return (
-    <GridScreen
-      lang={lang}
-      isRtl={isRtl}
-      tr={tr}
-      C={C}
-      topInset={topInset}
-      bottomInset={bottomInset}
-      displayMode={displayMode}
-      onDisplayMode={setDisplayMode}
-      onSelect={openCategory}
-      favourites={favourites}
-      onLongPress={toggleFavourite}
-      sortedCategories={sortedCategories}
-    />
+    <View style={{ flex: 1 }}>
+      {selectedCategory ? (
+        <ReaderScreen
+          category={selectedCategory}
+          lang={lang}
+          isRtl={isRtl}
+          tr={tr}
+          C={C}
+          topInset={topInset}
+          bottomInset={bottomInset}
+          readerRef={readerRef}
+          counts={counts}
+          getCount={getCount}
+          isDone={isDone}
+          onTap={handleTap}
+          onBack={closeCategory}
+          onReset={resetCounts}
+          displayMode={displayMode}
+          showHelp={showHelp}
+        />
+      ) : (
+        <GridScreen
+          lang={lang}
+          isRtl={isRtl}
+          tr={tr}
+          C={C}
+          topInset={topInset}
+          bottomInset={bottomInset}
+          displayMode={displayMode}
+          onDisplayMode={setDisplayMode}
+          onSelect={openCategory}
+          favourites={favourites}
+          onLongPress={toggleFavourite}
+          sortedCategories={sortedCategories}
+          showHelp={showHelp}
+          favHelpSeen={favHelpSeen}
+          onFavHelpDismiss={dismissFavHelp}
+        />
+      )}
+
+      <Modal
+        visible={!!helpContent}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={dismissHelp}
+      >
+        <Pressable style={styles.helpBackdrop} onPress={dismissHelp}>
+          <Pressable
+            style={[styles.helpCard, { backgroundColor: isDark ? '#0e2b1a' : '#ffffff', borderColor: C.tint }]}
+            onPress={() => {}}
+          >
+            <View style={[styles.helpBar, { backgroundColor: C.tint }]} />
+            <Text style={[styles.helpText, { color: C.text, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
+              {helpContent ?? ''}
+            </Text>
+            <Pressable
+              onPress={dismissHelp}
+              style={({ pressed }) => [styles.helpDismiss, { backgroundColor: C.tint, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={[styles.helpDismissText, { color: C.tintText }]}>{gotItLabel}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </View>
   );
 }
 
@@ -177,13 +251,16 @@ interface GridProps {
   favourites: string[];
   onLongPress: (cat: AthkarCategory) => void;
   sortedCategories: AthkarCategory[];
+  showHelp: (text: string) => void;
+  favHelpSeen: boolean;
+  onFavHelpDismiss: () => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHelpSeen, onFavHelpDismiss }: GridProps) {
   const NUM_COLS = 4;
-  const rows: AthkarCategory[][] = [];
+  const rows: { cat: AthkarCategory; gIdx: number }[][] = [];
   for (let i = 0; i < sortedCategories.length; i += NUM_COLS) {
-    rows.push(sortedCategories.slice(i, i + NUM_COLS));
+    rows.push(sortedCategories.slice(i, i + NUM_COLS).map((cat, j) => ({ cat, gIdx: i + j })));
   }
 
   return (
@@ -197,25 +274,28 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={{ flex: 1 }} />
         </View>
-        <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
-            style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
-          >
-            <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
-            <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
-              {tr.athkar_mode_arabic}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); onDisplayMode('full'); }}
-            style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
-          >
-            <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
-            <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
-              {tr.athkar_mode_transliterated}
-            </Text>
-          </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={[styles.segmentRow, { flex: 1, backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
+              style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
+            >
+              <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
+              <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
+                {tr.athkar_mode_arabic}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); onDisplayMode('full'); }}
+              style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
+            >
+              <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
+              <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
+                {tr.athkar_mode_transliterated}
+              </Text>
+            </Pressable>
+          </View>
+          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
         </View>
       </View>
 
@@ -225,7 +305,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
       >
         {rows.map((row, rIdx) => (
           <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            {row.map((cat) => (
+            {row.map(({ cat, gIdx }) => (
               <GridCell
                 key={cat.id}
                 cat={cat}
@@ -236,6 +316,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                 onPress={onSelect}
                 isFavourite={favourites.includes(cat.id)}
                 onLongPress={onLongPress}
+                showFavHelpBadge={gIdx === 0 && favourites.includes(cat.id) && !favHelpSeen}
+                onFavHelpBadge={() => { showHelp((tr as any).help_athkar_favourites ?? ''); onFavHelpDismiss(); }}
               />
             ))}
           </View>
@@ -254,9 +336,11 @@ interface CellProps {
   onPress: (cat: AthkarCategory) => void;
   isFavourite: boolean;
   onLongPress: (cat: AthkarCategory) => void;
+  showFavHelpBadge: boolean;
+  onFavHelpBadge: () => void;
 }
 
-function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress }: CellProps) {
+function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, showFavHelpBadge, onFavHelpBadge }: CellProps) {
   const nameKey = cat.nameKey as any;
   const name = (tr as any)[nameKey] ?? nameKey;
 
@@ -277,6 +361,11 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress }
       {isFavourite && (
         <View style={styles.favBadge}>
           <Text style={styles.favStar}>⭐</Text>
+        </View>
+      )}
+      {showFavHelpBadge && (
+        <View style={styles.favHelpBadge}>
+          <AthkarHelpBtn onPress={onFavHelpBadge} C={C} />
         </View>
       )}
       <MaterialCommunityIcons name={cat.icon as any} size={28} color={isFavourite ? GOLD : C.tint} />
@@ -313,13 +402,14 @@ interface ReaderProps {
   onBack: () => void;
   onReset: () => void;
   displayMode: 'arabic' | 'full';
+  showHelp: (text: string) => void;
 }
 
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
-  displayMode,
+  displayMode, showHelp,
 }: ReaderProps) {
   const nameKey = category.nameKey as any;
   const catName = (tr as any)[nameKey] ?? nameKey;
@@ -386,6 +476,7 @@ function ReaderScreen({
           {catName}
         </Text>
         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_language ?? '')} C={C} />
           <LangToggle />
           <Pressable
             onPress={onReset}
@@ -393,6 +484,7 @@ function ReaderScreen({
           >
             <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
           </Pressable>
+          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_counter ?? '')} C={C} />
         </View>
       </View>
 
@@ -426,6 +518,7 @@ function ReaderScreen({
               C={C}
               displayMode={displayMode}
               onTap={() => onTap(category, dhikr, index)}
+              showHelp={showHelp}
             />
           );
         }}
@@ -444,9 +537,11 @@ interface CardProps {
   C: any;
   displayMode: 'arabic' | 'full';
   onTap: () => void;
+  showHelp: (text: string) => void;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode, onTap }: CardProps) {
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode, onTap, showHelp }: CardProps) {
+  const hasHelpNote = DHIKR_HELP_KEYS.has(dhikr.translationKey);
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
@@ -477,6 +572,9 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode
             <Animated.View entering={ZoomIn.duration(200)}>
               <Ionicons name="checkmark-circle" size={20} color={C.tint} style={{ marginLeft: 4 }} />
             </Animated.View>
+          )}
+          {hasHelpNote && !!translation && (
+            <AthkarHelpBtn onPress={() => showHelp(translation)} C={C} />
           )}
         </View>
 
@@ -562,6 +660,11 @@ const styles = StyleSheet.create({
   },
   favStar: {
     fontSize: 10,
+  },
+  favHelpBadge: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
   },
   cellLabel: {
     fontSize: 11,
@@ -686,4 +789,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  helpBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20,
+  },
+  helpCard: {
+    width: '100%', borderRadius: 18, borderWidth: 1, overflow: 'hidden',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3, shadowRadius: 20, elevation: 12,
+  },
+  helpBar: { height: 4 },
+  helpText: { fontSize: 14, lineHeight: 22, padding: 20, paddingBottom: 12 },
+  helpDismiss: {
+    margin: 16, marginTop: 4, paddingVertical: 10,
+    borderRadius: 12, alignItems: 'center',
+  },
+  helpDismissText: { fontSize: 14, fontWeight: '700' },
 });

@@ -1,0 +1,76 @@
+Add help (ⓘ) icons to the Athkar tab in the following locations:
+
+════════════════════════════════════════════════════════
+LOCATIONS & CONTENT
+════════════════════════════════════════════════════════
+
+1. DISPLAY MODE TOGGLE (top of Athkar main screen)
+   — small ⓘ to the right of the toggle bar
+   — tapping shows:
+
+   en: "Arabic: shows the dhikr text in Arabic only.\nTransliterated: adds Latin pronunciation and translation in your chosen language."
+   ar: "عربي: يعرض النص العربي فقط.\nنقل حرفي: يضيف النطق اللاتيني والترجمة بلغتك المختارة."
+   [all 15 languages]
+   key: help_athkar_toggle
+
+2. FAVOURITES — ⓘ next to the first favourited tile 
+   (only shown the FIRST TIME a user has at least one 
+   favourite — dismiss permanently via AsyncStorage 
+   key 'athkar_fav_help_seen')
+   — tapping shows:
+
+   en: "Long-press any category to add or remove it from your favourites. Favourites appear first and are highlighted in gold."
+   ar: "اضغط مطولاً على أي فئة لإضافتها إلى المفضلة أو إزالتها منها. تظهر المفضلة أولاً وتتميز باللون الذهبي."
+   [all 15 languages]
+   key: help_athkar_favourites
+
+3. COUNTER — ⓘ in the dhikr reader screen header 
+   (next to the reset button)
+   — tapping shows:
+
+   en: "Tap anywhere on a dhikr card to count. The card completes automatically when you reach the required number and advances to the next dhikr."
+   ar: "اضغط في أي مكان على بطاقة الذكر للعدّ. تكتمل البطاقة تلقائياً عند الوصول إلى العدد المطلوب وتنتقل للذكر التالي."
+   [all 15 languages]
+   key: help_athkar_counter
+
+4. LANGUAGE SELECTOR in transliteration mode
+   — small ⓘ next to the language dropdown
+   — tapping shows:
+
+   en: "This changes the translation language for Athkar only. It does not affect the app's main language setting."
+   ar: "يغيّر هذا لغة ترجمة الأذكار فقط، ولا يؤثر على لغة التطبيق الرئيسية."
+   [all 15 languages]
+   key: help_athkar_language
+
+5. INDIVIDUAL DHIKR CARDS — for any dhikr that has 
+   a note about correct performance (nafth, wiping body, 
+   specific body position, etc.), add a small ⓘ badge 
+   on the card itself. Tapping shows the relevant note 
+   from the translation text.
+   
+   Specifically apply to these translationKeys:
+   - athkar_sleep_ikhlas    (nafth + wiping instruction)
+   - athkar_sleep_falaq     (nafth + wiping instruction)
+   - athkar_sleep_nas       (nafth + wiping instruction)
+   - athkar_sleep_aslamt    (make it last thing you say)
+   - athkar_sleep_janb      (lie on right side instruction)
+   - athkar_sick_3          (place hand on pain instruction)
+   - athkar_sick_4          (said 7× to the sick person)
+   - athkar_istikhara_1     (pray 2 rakat first instruction)
+   - athkar_friday_3        (recite full surah instruction)
+   - athkar_ruqyah_1        (blow into palms instruction)
+
+════════════════════════════════════════════════════════
+IMPLEMENTATION
+════════════════════════════════════════════════════════
+
+- Use the EXACT same HelpBtn component and modal style 
+  already implemented in the Settings screen — do not 
+  create a new design
+- ⓘ icon size: match existing help buttons in the app
+- Modal dismisses on tap outside
+- Add all help text keys to i18n.ts in all 15 languages
+  following the exact same pattern as existing help keys
+
+Do not change any other behaviour or layout.
+Do not add new dependencies.

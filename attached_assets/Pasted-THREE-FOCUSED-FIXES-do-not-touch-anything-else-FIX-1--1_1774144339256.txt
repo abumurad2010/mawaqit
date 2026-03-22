@@ -1,0 +1,76 @@
+THREE FOCUSED FIXES — do not touch anything else:
+
+════════════════════════════════════════
+FIX 1 — LANGUAGE SELECTOR (still missing)
+════════════════════════════════════════
+
+This has been requested multiple times and is still 
+not implemented. Do it now.
+
+In app/(tabs)/athkar.tsx, in the dhikr READER screen 
+(Screen 2 — the screen that shows individual adhkar 
+after tapping a category):
+
+When the display mode is 'transliterated', render a 
+language selector dropdown DIRECTLY below the 
+mode toggle bar, in the same position and using 
+the exact same component as the language dropdown 
+in app/(tabs)/quran.tsx.
+
+To find the correct component: open app/(tabs)/quran.tsx, 
+locate the language selector dropdown that appears in 
+transliteration mode, copy that exact component and 
+its state logic into athkar.tsx.
+
+Requirements:
+- Visible only in transliterated mode
+- Hidden in arabic-only mode  
+- Lists all 15 app languages
+- Controls which language the translation text 
+  displays in for each dhikr card
+- Default value: current app language from context
+- Changing it here does NOT change global app language
+- Store selection in component state only (no AsyncStorage needed)
+
+════════════════════════════════════════
+FIX 2 — FAVOURITES: do NOT reorder tiles
+════════════════════════════════════════
+
+When a category is marked as favourite:
+- It STAYS in its current grid position — do not move it
+- Only visual changes:
+    • Border becomes gold (#C9A84C)
+    • Background: #C9A84C at 10% opacity
+    • Icon colour: #C9A84C
+    • Category name text: #C9A84C
+    • Small ⭐ appears in top-right corner of the tile
+
+Remove ALL sorting/reordering logic for favourites.
+The grid order is always fixed by the popularity ranking.
+Favourites are only distinguished by colour and star badge.
+
+════════════════════════════════════════
+FIX 3 — ICONS: morning vs waking still identical
+════════════════════════════════════════
+
+Open constants/athkar-data.ts and find the two categories:
+  id: 'morning'   — أذكار الصباح
+  id: 'waking'    — أذكار الاستيقاظ
+
+Print the current icon value for BOTH to the console 
+so we can see what is actually set, then:
+
+Set 'morning'  icon to: 'weather-sunset-up'
+Set 'waking'   icon to: 'alarm'
+
+These are two completely different icon names and must 
+render as two completely different visuals.
+If either icon name is not found in MaterialCommunityIcons,
+run this check in the console:
+  console.log(MaterialCommunityIcons.glyphMap['alarm'])
+  console.log(MaterialCommunityIcons.glyphMap['weather-sunset-up'])
+And use the first available fallback:
+  'morning' fallback order: 'weather-sunset-up' → 'white-balance-sunny' → 'brightness-7'
+  'waking'  fallback order: 'alarm' → 'alarm-outline' → 'clock-alert-outline'
+
+Do not change any other icons.
