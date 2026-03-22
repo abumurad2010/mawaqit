@@ -18,7 +18,21 @@ import ATHKAR_CATEGORIES, { AthkarCategory, Dhikr } from '@/constants/athkar-dat
 
 const FAVS_KEY = 'athkar_favourites';
 const FAV_HINT_KEY = 'athkar_fav_hint_seen';
+const ATHKAR_FS_KEY = 'athkar_font_size';
 const GOLD = '#C9A84C';
+const OUTER_PADDING = 12;
+const GAP = 10;
+const COLUMNS = 4;
+const SCREEN_W = Dimensions.get('window').width;
+const TILE_SIZE = (SCREEN_W - OUTER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
+
+type AthkarFontSize = 'small' | 'medium' | 'large';
+const FS_STEPS: AthkarFontSize[] = ['small', 'medium', 'large'];
+const FS_LABEL: Record<AthkarFontSize, { label: number; arabic: number; translit: number; translation: number }> = {
+  small:  { label: 10, arabic: 18, translit: 11, translation: 11 },
+  medium: { label: 12, arabic: 22, translit: 13, translation: 13 },
+  large:  { label: 13, arabic: 26, translit: 15, translation: 15 },
+};
 
 const DHIKR_HELP_KEYS = new Set([
   'athkar_sleep_ikhlas', 'athkar_sleep_falaq', 'athkar_sleep_nas',
@@ -66,8 +80,14 @@ export default function AthkarScreen() {
   const [helpContent, setHelpContent] = useState<string | null>(null);
   const [favHintSeen, setFavHintSeen] = useState(false);
   const [athkarLang, setAthkarLang] = useState<Lang>((lang as Lang) || 'ar');
+  const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('medium');
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setAthkarFontSize = useCallback((fs: AthkarFontSize) => {
+    setAthkarFontSizeState(fs);
+    AsyncStorage.setItem(ATHKAR_FS_KEY, fs).catch(() => {});
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem(FAVS_KEY).then(raw => {
@@ -75,6 +95,9 @@ export default function AthkarScreen() {
     }).catch(() => {});
     AsyncStorage.getItem(FAV_HINT_KEY).then(val => {
       setFavHintSeen(val === 'true');
+    }).catch(() => {});
+    AsyncStorage.getItem(ATHKAR_FS_KEY).then(val => {
+      if (val === 'small' || val === 'medium' || val === 'large') setAthkarFontSizeState(val);
     }).catch(() => {});
   }, []);
 
@@ -208,6 +231,7 @@ export default function AthkarScreen() {
           displayMode={displayMode}
           showHelp={showHelp}
           athkarLang={athkarLang}
+          athkarFontSize={athkarFontSize}
         />
       ) : (
         <GridScreen
@@ -228,6 +252,8 @@ export default function AthkarScreen() {
           onFavHintDismiss={dismissFavHint}
           athkarLang={athkarLang}
           setAthkarLang={setAthkarLang}
+          athkarFontSize={athkarFontSize}
+          setAthkarFontSize={setAthkarFontSize}
         />
       )}
 
@@ -278,9 +304,11 @@ interface GridProps {
   onFavHintDismiss: () => void;
   athkarLang: Lang;
   setAthkarLang: (l: Lang) => void;
+  athkarFontSize: AthkarFontSize;
+  setAthkarFontSize: (fs: AthkarFontSize) => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -289,6 +317,10 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const athkarRtl = isRtlLang(athkarLang);
   const ITEMS_PER_PAGE = 16;
   const NUM_COLS = 4;
+  const fsIdx = FS_STEPS.indexOf(athkarFontSize);
+  const canDecrease = fsIdx > 0;
+  const canIncrease = fsIdx < FS_STEPS.length - 1;
+  const labelFontSize = FS_LABEL[athkarFontSize].label;
 
   const totalCategoryPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
   const totalPages = totalCategoryPages + 1;
@@ -379,6 +411,22 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
                 {tr.athkar_mode_transliterated}
               </Text>
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Pressable
+              onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(FS_STEPS[fsIdx - 1]); } }}
+              disabled={!canDecrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setAthkarFontSize(FS_STEPS[fsIdx + 1]); } }}
+              disabled={!canIncrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
             </Pressable>
           </View>
           <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
@@ -472,17 +520,19 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         style={{ flex: 1 }}
-        extraData={[favourites, displayMode, athkarLang]}
+        extraData={[favourites, displayMode, athkarLang, athkarFontSize]}
         getItemLayout={(_, index) => ({ length: Dimensions.get('window').width, offset: Dimensions.get('window').width * index, index })}
         renderItem={({ item: pageData }) => {
           const w = Dimensions.get('window').width;
           if (pageData === 'FAVS') {
-            const favRows: AthkarCategory[][] = [];
-            for (let r = 0; r < favPage.length; r += NUM_COLS) {
-              favRows.push(favPage.slice(r, r + NUM_COLS));
+            const padded: (AthkarCategory | null)[] = [...favPage];
+            while (padded.length % NUM_COLS !== 0) padded.push(null);
+            const favRows: (AthkarCategory | null)[][] = [];
+            for (let r = 0; r < padded.length; r += NUM_COLS) {
+              favRows.push(padded.slice(r, r + NUM_COLS));
             }
             return (
-              <View style={{ width: w, paddingHorizontal: 12, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
+              <View style={{ width: w, paddingHorizontal: OUTER_PADDING, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
                 <Text style={[styles.favPageTitle, { fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: isRtl ? 'right' : 'left' }]}>
                   {(tr as any).athkar_favourites_title ?? 'Favourites'}
                 </Text>
@@ -494,7 +544,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                   </View>
                 ) : favRows.map((row, rIdx) => (
                   <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                    {row.map(cat => (
+                    {row.map((cat, cIdx) => cat ? (
                       <GridCell
                         key={cat.id}
                         cat={cat}
@@ -507,7 +557,11 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                         onLongPress={onLongPress}
                         displayMode={displayMode}
                         athkarLang={athkarLang}
+                        tileSize={TILE_SIZE}
+                        labelFontSize={labelFontSize}
                       />
+                    ) : (
+                      <View key={`fav-empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: 'transparent' }} />
                     ))}
                   </View>
                 ))}
@@ -520,7 +574,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             rows.push(pageItems.slice(r * NUM_COLS, (r + 1) * NUM_COLS));
           }
           return (
-            <View style={{ width: w, paddingHorizontal: 12, paddingTop: 8 }}>
+            <View style={{ width: w, paddingHorizontal: OUTER_PADDING, paddingTop: 8 }}>
               {rows.map((row, rIdx) => (
                 <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                   {row.map((cat, cIdx) => cat ? (
@@ -536,9 +590,11 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                       onLongPress={onLongPress}
                       displayMode={displayMode}
                       athkarLang={athkarLang}
+                      tileSize={TILE_SIZE}
+                      labelFontSize={labelFontSize}
                     />
                   ) : (
-                    <View key={`empty-${rIdx}-${cIdx}`} style={[styles.cell, { backgroundColor: 'transparent', borderColor: 'transparent' }]} />
+                    <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: 'transparent' }} />
                   ))}
                 </View>
               ))}
@@ -699,9 +755,11 @@ interface CellProps {
   onLongPress: (cat: AthkarCategory) => void;
   displayMode: 'arabic' | 'full';
   athkarLang: Lang;
+  tileSize: number;
+  labelFontSize: number;
 }
 
-function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, displayMode, athkarLang }: CellProps) {
+function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, displayMode, athkarLang, tileSize, labelFontSize }: CellProps) {
   const nameKey = cat.nameKey as any;
   const name = displayMode === 'arabic'
     ? (i18n['ar'] as any)[nameKey] ?? nameKey
@@ -716,6 +774,8 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
       style={({ pressed }) => [
         styles.cell,
         {
+          width: tileSize,
+          height: tileSize,
           backgroundColor: isFavourite ? GOLD + '1A' : C.backgroundCard,
           borderColor: isFavourite ? GOLD : C.separator,
           opacity: pressed ? 0.75 : 1,
@@ -732,6 +792,7 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
         style={[
           styles.cellLabel,
           {
+            fontSize: labelFontSize,
             color: isFavourite ? GOLD : C.text,
             textAlign: 'center',
             writingDirection: cellRtl ? 'rtl' : 'ltr',
@@ -764,15 +825,17 @@ interface ReaderProps {
   displayMode: 'arabic' | 'full';
   showHelp: (text: string) => void;
   athkarLang: Lang;
+  athkarFontSize: AthkarFontSize;
 }
 
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
-  displayMode, showHelp, athkarLang,
+  displayMode, showHelp, athkarLang, athkarFontSize,
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
+  const cardFS = FS_LABEL[athkarFontSize];
 
   useEffect(() => {
     console.log('Athkar lang selector mounted:', athkarLang);
@@ -892,6 +955,9 @@ function ReaderScreen({
               displayMode={displayMode}
               onTap={() => onTap(category, dhikr, index)}
               showHelp={showHelp}
+              arabicFontSize={cardFS.arabic}
+              translitFontSize={cardFS.translit}
+              translationFontSize={cardFS.translation}
             />
           );
         }}
@@ -913,9 +979,12 @@ interface CardProps {
   displayMode: 'arabic' | 'full';
   onTap: () => void;
   showHelp: (text: string) => void;
+  arabicFontSize: number;
+  translitFontSize: number;
+  translationFontSize: number;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, showHelp }: CardProps) {
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, showHelp, arabicFontSize, translitFontSize, translationFontSize }: CardProps) {
   const hasHelpNote = DHIKR_HELP_KEYS.has(dhikr.translationKey);
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
@@ -953,12 +1022,12 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
           )}
         </View>
 
-        <Text style={[styles.arabicText, { color: done ? C.tint : C.text }]}>
+        <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.75, color: done ? C.tint : C.text }]}>
           {dhikr.arabic}
         </Text>
 
         {displayMode === 'full' && (
-          <Text style={[styles.translitText, { color: C.textMuted }]}>
+          <Text style={[styles.translitText, { fontSize: translitFontSize, lineHeight: translitFontSize * 1.5, color: C.textMuted }]}>
             {dhikr.transliteration}
           </Text>
         )}
@@ -967,6 +1036,8 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
           <Text style={[
             styles.translationText,
             {
+              fontSize: translationFontSize,
+              lineHeight: translationFontSize * 1.5,
               color: done ? C.tint + 'cc' : C.textSecond,
               textAlign: translationRtl ? 'right' : 'left',
               writingDirection: translationRtl ? 'rtl' : 'ltr',
@@ -1020,14 +1091,24 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cell: {
-    flex: 1,
-    aspectRatio: 1,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
     gap: 6,
+    overflow: 'hidden',
+  },
+  fontPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fontPillLabel: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   favBadge: {
     position: 'absolute',
