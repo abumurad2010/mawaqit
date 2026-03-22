@@ -1,0 +1,68 @@
+Fix the Iqama banner layout in app/(tabs)/index.tsx.
+
+════════════════════════════════════════════════════════
+CURRENT LAYOUT
+════════════════════════════════════════════════════════
+
+Top-left:    prayer name (e.g. العصر)
+Bottom-left: الإقامة بعد  ← too small
+Right:       countdown 00:10:22
+
+════════════════════════════════════════════════════════
+NEW LAYOUT
+════════════════════════════════════════════════════════
+
+The banner has two sides:
+
+LEFT SIDE — stacked vertically, justified center:
+  Line 1: الإقامة بعد  (iqama label)
+           fontSize: 16
+           fontWeight: '600'
+           color: rgba(255,255,255,0.90)
+           fontFamily: Amiri_700Bold for Arabic/Urdu/Persian,
+                       existing serif for others
+
+RIGHT SIDE — single element:
+  Countdown timer  e.g. 00:10:22
+  fontSize: 28
+  fontWeight: bold
+  color: white
+  unchanged from current
+
+TOP CENTER — spanning full width above both sides:
+  Prayer name  e.g. العصر / Asr
+  Position: absolute, top: 10, left: 0, right: 0
+  textAlign: center
+  fontSize: 13
+  color: rgba(255,255,255,0.65)
+  fontFamily: Amiri_700Bold for Arabic/Urdu/Persian,
+              existing serif for others
+  letterSpacing: 0.06em
+
+IMPLEMENTATION:
+
+Use position: 'relative' on the banner container.
+Add the prayer name as a position: 'absolute' Text
+at the top center of the banner, above the 
+left/right content row.
+
+Add extra paddingTop to the banner container 
+(approximately 28px) to make room for the 
+centered prayer name above the two-column row.
+
+  <View style={bannerContainer}>
+    {/* Prayer name — top center */}
+    <Text style={topCenterStyle}>{prayerName}</Text>
+    
+    {/* Two-column row */}
+    <View style={rowStyle}>
+      <View style={leftStyle}>
+        <Text style={iqamaLabelStyle}>{tr.iqama_in}</Text>
+      </View>
+      <Text style={countdownStyle}>{countdown}</Text>
+    </View>
+  </View>
+
+Do not change countdown logic or when banner appears.
+Do not change banner background, border radius, or margins.
+Do not add new dependencies.

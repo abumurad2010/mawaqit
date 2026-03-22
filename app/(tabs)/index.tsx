@@ -496,16 +496,32 @@ export default function PrayerTimesScreen() {
           </View>
         </View>
 
-        {/* Row 2: date display (swipe left/right on screen to change day) */}
-        <View style={styles.datesBlock}>
-          <Text
-            style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6 }]}
-            numberOfLines={1}
-          >{gregorianStr}</Text>
-          <Text
-            style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5 }]}
-            numberOfLines={1}
-          >{hijriStr}</Text>
+        {/* Row 2: date display with prev/next day arrows */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Pressable
+            onPress={() => navigateDay(-1)}
+            hitSlop={12}
+            style={({ pressed }) => ({ opacity: pressed ? 0.4 : 0.7 })}
+          >
+            <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={pageMuted} />
+          </Pressable>
+          <View style={styles.datesBlock}>
+            <Text
+              style={[styles.dateText, { color: pageText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: dFS, lineHeight: dFS + 6 }]}
+              numberOfLines={1}
+            >{gregorianStr}</Text>
+            <Text
+              style={[styles.hijriText, { color: pageMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: hFS, lineHeight: hFS + 5 }]}
+              numberOfLines={1}
+            >{hijriStr}</Text>
+          </View>
+          <Pressable
+            onPress={() => navigateDay(1)}
+            hitSlop={12}
+            style={({ pressed }) => ({ opacity: pressed ? 0.4 : 0.7 })}
+          >
+            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={20} color={pageMuted} />
+          </Pressable>
         </View>
 
         {/* Row 3: location */}

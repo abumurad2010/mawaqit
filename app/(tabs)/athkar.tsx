@@ -335,7 +335,14 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             <LangToggle />
           </View>
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end' }}>
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); pageListRef.current?.scrollToEnd({ animated: true }); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+              testID="athkar-favs-btn"
+            >
+              <Ionicons name="star" size={17} color={GOLD} />
+            </Pressable>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); setSearchQuery(''); setShowSearch(true); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
@@ -453,6 +460,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </View>
       )}
 
+      <View style={{ flex: 1 }}>
       <FlatList
         ref={pageListRef}
         data={allPages}
@@ -538,6 +546,51 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           );
         }}
       />
+
+      {/* Page nav arrows — overlaid left/right edges of the grid */}
+      {currentPage > 0 && (
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            pageListRef.current?.scrollToIndex({ index: currentPage - 1, animated: true });
+          }}
+          hitSlop={8}
+          style={({ pressed }) => ({
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 36,
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: pressed ? 0.4 : 0.55,
+          })}
+        >
+          <Ionicons name={isRtl ? 'chevron-forward' : 'chevron-back'} size={24} color={C.tint} />
+        </Pressable>
+      )}
+      {currentPage < totalPages - 1 && (
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            pageListRef.current?.scrollToIndex({ index: currentPage + 1, animated: true });
+          }}
+          hitSlop={8}
+          style={({ pressed }) => ({
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 36,
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: pressed ? 0.4 : 0.55,
+          })}
+        >
+          <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={24} color={C.tint} />
+        </Pressable>
+      )}
+      </View>
 
       <View style={[styles.pageDotsRow, { paddingBottom: bottomInset + 8 }]}>
         {Array.from({ length: totalPages }).map((_, i) => {

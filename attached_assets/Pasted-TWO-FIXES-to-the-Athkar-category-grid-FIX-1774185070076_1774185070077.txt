@@ -1,0 +1,78 @@
+TWO FIXES to the Athkar category grid:
+
+════════════════════════════════════════════════════════
+FIX 1 — SPACING BETWEEN TILES
+════════════════════════════════════════════════════════
+
+Currently tiles are touching with no gap between them.
+Add consistent spacing both horizontally and vertically.
+
+In app/(tabs)/athkar.tsx, find the grid layout for 
+the category tiles and apply:
+
+GAP between tiles: 10px (both horizontal and vertical)
+OUTER PADDING: 12px on left and right of the full grid
+
+Recalculate tile size to account for gaps:
+  const OUTER_PADDING = 12
+  const GAP = 10
+  const COLUMNS = 4
+  const TILE_SIZE = (screenWidth - (OUTER_PADDING * 2) - (GAP * (COLUMNS - 1))) / COLUMNS
+
+If using FlatList:
+  columnWrapperStyle={{ gap: GAP }}
+  contentContainerStyle={{ gap: GAP, paddingHorizontal: OUTER_PADDING }}
+
+If using a manual grid (rows of Views):
+  Each row: flexDirection row, gap: GAP, paddingHorizontal: OUTER_PADDING
+  Between rows: marginBottom: GAP
+
+Apply the SAME gap and padding values to the 
+Favourites page grid so tiles are consistent.
+
+Also apply the recalculated TILE_SIZE to placeholder 
+tiles so they maintain the same spacing.
+
+════════════════════════════════════════════════════════
+FIX 2 — FONT SIZE CONTROL ON MAIN ATHKAR PAGE
+════════════════════════════════════════════════════════
+
+Add A- / A+ font size controls to the top of the 
+Athkar main screen (Screen 1 — the category grid page).
+
+POSITION: Same row as the mode toggle and help button,
+on the RIGHT side of the screen — or as a separate row 
+directly below the mode toggle, matching the exact 
+same style and position as the font size controls 
+in the Quran tab or Prayer Timings tab.
+
+Copy the exact A- / A+ component from wherever it 
+already exists in the app (Quran tab or index.tsx).
+
+WHAT IT CONTROLS:
+  The font size of:
+  1. Category tile labels on the grid
+  2. Arabic text inside dhikr cards (Screen 2)
+  3. Transliteration text inside dhikr cards (Screen 2)
+  4. Translation text inside dhikr cards (Screen 2)
+
+SIZE STEPS — three levels:
+  Small:  tile label 10px, Arabic 18px, translit 11px, translation 11px
+  Medium: tile label 12px, Arabic 22px, translit 13px, translation 13px (default)
+  Large:  tile label 13px, Arabic 26px, translit 15px, translation 15px
+
+PERSISTENCE:
+  Store in AsyncStorage under key 'athkar_font_size'
+  Values: 'small', 'medium', 'large'
+  Default: 'medium'
+  Load on mount, apply immediately
+
+A- button: decreases one step (medium→small, small stays small)
+A+ button: increases one step (medium→large, large stays large)
+
+Buttons visually disabled (opacity 0.3) at min/max limits.
+
+Do not change any dhikr content, icons, or counts.
+Do not change the Favourites page layout beyond the 
+gap fix applied in Fix 1.
+Do not add new dependencies.

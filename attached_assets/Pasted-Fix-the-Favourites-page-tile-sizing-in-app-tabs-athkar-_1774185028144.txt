@@ -1,0 +1,69 @@
+Fix the Favourites page tile sizing in app/(tabs)/athkar.tsx.
+
+════════════════════════════════════════════════════════
+PROBLEM
+════════════════════════════════════════════════════════
+
+The Favourites page currently stretches or resizes tiles 
+to fill available space. When only 1 favourite exists,
+that tile fills the entire page. This is wrong.
+
+════════════════════════════════════════════════════════
+FIX
+════════════════════════════════════════════════════════
+
+The Favourites page must use EXACTLY the same tile 
+dimensions as the main category pages — no exceptions.
+
+RULE: Tile size is always determined by the 4-column grid 
+layout, never by the number of items present.
+
+IMPLEMENTATION:
+
+Step 1 — Extract tile dimensions:
+Find where tile width is calculated for the main grid.
+It is likely something like:
+  const tileSize = (screenWidth - horizontalPadding - gaps) / 4
+
+Extract this into a shared constant used by BOTH the 
+main pages AND the Favourites page:
+  const TILE_SIZE = (screenWidth - PADDING * 2 - GAP * 3) / 4
+
+Step 2 — Apply to Favourites page:
+The Favourites page must render tiles in a 4-column grid
+where each tile has:
+  width:  TILE_SIZE  (same as main pages)
+  height: TILE_SIZE  (same as main pages)
+
+Tiles must be LEFT-ALIGNED, filling left to right,
+top to bottom — exactly like the main pages.
+
+Empty positions after the last favourite tile must 
+render as INVISIBLE PLACEHOLDER VIEWS:
+  width:  TILE_SIZE
+  height: TILE_SIZE
+  backgroundColor: transparent
+  not tappable
+
+The grid must always have columns of 4, with enough 
+placeholder tiles to complete the last row.
+e.g. 1 favourite → 1 real tile + 3 placeholders
+     5 favourites → 5 real tiles + 3 placeholders
+     8 favourites → 8 real tiles + 0 placeholders
+
+Step 3 — Use FlatList with fixed numColumns:
+Render the favourites grid using FlatList with:
+  numColumns={4}
+  scrollEnabled={false}
+  data={[...favouriteCategories, ...placeholders]}
+
+Where placeholders are dummy objects with a flag 
+  { id: 'placeholder_N', isPlaceholder: true }
+that render as empty transparent Views.
+
+The grid should be TOP-ALIGNED within the page,
+not vertically centered. Same top padding as main pages.
+
+Do not change anything else.
+Do not change tile styling (gold border, star badge etc).
+Do not add new dependencies.
