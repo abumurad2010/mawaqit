@@ -19,7 +19,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp, getDefaultIqamaOffsets } from '@/contexts/AppContext';
-import { t } from '@/constants/i18n';
+import { t, isRtlLang } from '@/constants/i18n';
 import {
   calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
@@ -549,30 +549,57 @@ export default function PrayerTimesScreen() {
       {dateOffset === 0 && (
       <View style={{ paddingHorizontal: 16, marginTop: 4, marginBottom: 6 }}>
         {displayNext && times ? (
-          <Animated.View
-            entering={FadeIn.duration(500)}
-            style={[styles.heroCard, { backgroundColor: C.heroCardBg }]}
-          >
-            <Animated.View style={pulseStyle}>
-              <MaterialCommunityIcons
-                name={PRAYER_ICONS[iqamaStatus ? iqamaStatus.name : displayNext.name] as any}
-                size={16} color={C.heroCardSubtext}
-              />
+          iqamaStatus ? (
+            <Animated.View
+              entering={FadeIn.duration(500)}
+              style={[styles.iqamaBannerCard, { backgroundColor: C.heroCardBg }]}
+            >
+              {/* TOP ROW: icon + prayer name */}
+              <View style={styles.iqamaTopRow}>
+                <Animated.View style={pulseStyle}>
+                  <MaterialCommunityIcons
+                    name={PRAYER_ICONS[iqamaStatus.name] as any}
+                    size={16} color={C.heroCardSubtext}
+                  />
+                </Animated.View>
+                <Text style={[styles.iqamaTopText, { color: C.heroCardSubtext }]}>
+                  {prayerLabel(iqamaStatus.name)}
+                </Text>
+              </View>
+              {/* MIDDLE ROW: "Iqama" in current language */}
+              <Text style={[
+                styles.iqamaMiddleLabel,
+                { fontFamily: isRtlLang(lang) ? 'Amiri_700Bold' : SERIF_EN },
+              ]}>
+                {(tr as any).iqama_label ?? 'Iqama'}
+              </Text>
+              {/* BOTTOM ROW: countdown timer */}
+              <Text style={styles.iqamaBottomTimer}>{countdown}</Text>
             </Animated.View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.heroLabel, { color: C.heroCardSubtext, fontSize: [8,9,10,11][fsIdx] ?? 9, lineHeight: ([8,9,10,11][fsIdx] ?? 9) + 4 }]}>
-                {iqamaStatus
-                  ? tr.iqamaIn
-                  : 'isTomorrow' in displayNext && displayNext.isTomorrow
+          ) : (
+            <Animated.View
+              entering={FadeIn.duration(500)}
+              style={[styles.heroCard, { backgroundColor: C.heroCardBg }]}
+            >
+              <Animated.View style={pulseStyle}>
+                <MaterialCommunityIcons
+                  name={PRAYER_ICONS[displayNext.name] as any}
+                  size={16} color={C.heroCardSubtext}
+                />
+              </Animated.View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.heroLabel, { color: C.heroCardSubtext, fontSize: [8,9,10,11][fsIdx] ?? 9, lineHeight: ([8,9,10,11][fsIdx] ?? 9) + 4 }]}>
+                  {'isTomorrow' in displayNext && displayNext.isTomorrow
                     ? tr.tomorrowFajr
                     : tr.nextPrayer}
-              </Text>
-              <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: pFS, lineHeight: pLH }]}>
-                {prayerLabel(iqamaStatus ? iqamaStatus.name : displayNext.name)}
-              </Text>
-            </View>
-            <Text style={[styles.heroCountdown, { color: C.heroCardText, fontWeight: fw, fontSize: [16,20,24,28][fsIdx] ?? 20 }]}>{countdown}</Text>
-          </Animated.View>
+                </Text>
+                <Text style={[styles.heroPrayerName, { color: C.heroCardText, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: pFS, lineHeight: pLH }]}>
+                  {prayerLabel(displayNext.name)}
+                </Text>
+              </View>
+              <Text style={[styles.heroCountdown, { color: C.heroCardText, fontWeight: fw, fontSize: [16,20,24,28][fsIdx] ?? 20 }]}>{countdown}</Text>
+            </Animated.View>
+          )
         ) : (
           <View style={[styles.heroCard, styles.heroCardEmpty, { backgroundColor: C.backgroundCard }]}>
             <Text style={[styles.heroEmptyText, { color: C.textMuted, fontWeight: fw }]}>
@@ -818,6 +845,40 @@ const styles = StyleSheet.create({
   metaDot: { fontSize: 11, marginHorizontal: 1 },
   headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+
+  /* Iqama countdown banner — 3-row column layout */
+  iqamaBannerCard: {
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    flexDirection: 'column',
+  },
+  iqamaTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+  },
+  iqamaTopText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  iqamaMiddleLabel: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 2,
+    marginBottom: 2,
+  },
+  iqamaBottomTimer: {
+    fontSize: 42,
+    fontWeight: '700',
+    color: 'white',
+    fontVariant: ['tabular-nums'] as any,
+    letterSpacing: -1,
+  },
 
   /* Next prayer hero */
   heroCard: {

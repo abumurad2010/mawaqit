@@ -1,0 +1,91 @@
+TWO FIXES for the Athkar tab and app-wide language default:
+
+════════════════════════════════════════════════════════
+FIX 1 — LANGUAGE SELECTOR LOCATION
+════════════════════════════════════════════════════════
+
+PROBLEM: The language selector is rendering inside 
+each individual dhikr reader screen (Screen 2).
+It must NOT be there.
+
+REMOVE the language selector from the dhikr reader 
+screen (Screen 2) entirely.
+
+PLACE IT ONLY in the main Athkar category grid screen 
+(Screen 1), in this exact position:
+
+  Row 1: Arabic | نقل حرفي  ← mode toggle (already there)
+  Row 2: [language dropdown] ← ADD HERE
+  Row 3: favourites hint banner (if not dismissed)
+  Row 4: 4×5 category grid
+
+The language dropdown on Screen 1:
+- Visible only when mode === 'transliterated'
+- Hidden when mode === 'arabic'
+- Full width, same width as mode toggle above it
+- Lists all 15 app languages with native names
+- Selection persists in component state
+- When user taps a category and enters Screen 2 (reader),
+  the selected language is PASSED as a prop or via 
+  context into the reader so dhikr translations render
+  in the chosen language
+- The reader screen itself has NO language selector UI —
+  it just uses whatever language was selected on Screen 1
+
+════════════════════════════════════════════════════════
+FIX 2 — DEFAULT LANGUAGE: Arabic first, then follows 
+         user's selected app language
+════════════════════════════════════════════════════════
+
+CURRENT PROBLEM: The app defaults to English or 
+auto-detected language on first launch.
+
+NEW BEHAVIOUR — apply app-wide across all tabs:
+
+On FIRST LAUNCH (no language ever selected by user):
+  → Default language: Arabic (ar)
+  → All UI labels, prayer names, athkar categories,
+    quran transliteration language, everything → Arabic
+
+Once the USER EXPLICITLY SELECTS a language in Settings:
+  → All tabs switch to that selected language
+  → That selection persists via AsyncStorage 
+    (already stored as existing language preference key)
+  → Arabic is no longer the default from that point
+
+IMPLEMENTATION:
+In the language initialization logic 
+(likely in contexts/AppContext.tsx or app/_layout.tsx),
+find where the initial language is set.
+
+Change the fallback/default from 'en' or 'auto' to 'ar':
+
+  BEFORE (likely):
+    const savedLang = await AsyncStorage.getItem('appLanguage')
+    setLanguage(savedLang || 'en')
+    // or: setLanguage(savedLang || deviceLocale || 'en')
+
+  AFTER:
+    const savedLang = await AsyncStorage.getItem('appLanguage')
+    setLanguage(savedLang || 'ar')
+
+This means:
+  - If user has never set a language → Arabic
+  - If user has set a language → that language
+  - Auto-detection from device locale: DISABLED
+    (remove any device locale fallback logic)
+
+ALSO update the default in these specific places 
+if they have their own language defaults:
+  - Quran tab transliteration language selector → 'ar'
+  - Athkar tab transliteration language selector → 'ar'
+  - Any other tab with its own language state → 'ar'
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any dhikr content, counts, or icons.
+Do not change the Settings language selection UI.
+Do not add new dependencies.
+Do not change anything else.
