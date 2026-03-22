@@ -312,7 +312,15 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => { Haptics.selectionAsync(); onDisplayMode('full'); }}
+              onPress={() => {
+                Haptics.selectionAsync();
+                onDisplayMode('full');
+                if (athkarLang === 'ar') {
+                  setAthkarLang(
+                    (lang && lang !== 'ar') ? (lang as Lang) : 'en'
+                  );
+                }
+              }}
               style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
             >
               <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
@@ -360,7 +368,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               </Text>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {(Object.keys(LANG_META) as Lang[]).map(l => {
+              {(Object.keys(LANG_META) as Lang[]).filter(l => l !== 'ar').map(l => {
                 const active = l === athkarLang;
                 const rtl = isRtlLang(l);
                 return (
