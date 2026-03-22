@@ -425,6 +425,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                 onPress={onSelect}
                 isFavourite={favourites.includes(cat.id)}
                 onLongPress={onLongPress}
+                displayMode={displayMode}
+                athkarLang={athkarLang}
               />
             ))}
           </View>
@@ -443,11 +445,16 @@ interface CellProps {
   onPress: (cat: AthkarCategory) => void;
   isFavourite: boolean;
   onLongPress: (cat: AthkarCategory) => void;
+  displayMode: 'arabic' | 'full';
+  athkarLang: Lang;
 }
 
-function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress }: CellProps) {
+function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, displayMode, athkarLang }: CellProps) {
   const nameKey = cat.nameKey as any;
-  const name = (tr as any)[nameKey] ?? nameKey;
+  const name = displayMode === 'arabic'
+    ? (i18n['ar'] as any)[nameKey] ?? nameKey
+    : (i18n[athkarLang] as any)?.[nameKey] ?? nameKey;
+  const cellRtl = displayMode === 'arabic' || isRtlLang(athkarLang);
 
   return (
     <Pressable
@@ -475,7 +482,8 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress }
           {
             color: isFavourite ? GOLD : C.text,
             textAlign: 'center',
-            writingDirection: isRtl ? 'rtl' : 'ltr',
+            writingDirection: cellRtl ? 'rtl' : 'ltr',
+            fontFamily: cellRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold',
           },
         ]}
         numberOfLines={2}
@@ -520,7 +528,10 @@ function ReaderScreen({
   }, [athkarLang]);
 
   const nameKey = category.nameKey as any;
-  const catName = (tr as any)[nameKey] ?? nameKey;
+  const catName = displayMode === 'arabic'
+    ? (i18n['ar'] as any)[nameKey] ?? nameKey
+    : (i18n[athkarLang] as any)?.[nameKey] ?? nameKey;
+  const catNameRtl = displayMode === 'arabic' || isRtlLang(athkarLang);
   const total = category.adhkar.length;
   const doneCount = category.adhkar.filter((d, i) => isDone(category.id, i, d.count)).length;
   const progress = total > 0 ? doneCount / total : 0;
@@ -543,14 +554,14 @@ function ReaderScreen({
           >
             <Ionicons name={isRtl ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: C.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { color: C.text, flex: 1, textAlign: 'center', fontFamily: catNameRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold', writingDirection: catNameRtl ? 'rtl' : 'ltr' }]} numberOfLines={1}>
             {catName}
           </Text>
           <View style={{ width: 36 }} />
         </View>
         <Animated.View entering={ZoomIn.duration(400)} style={[styles.completionView, { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }]}>
           <Text style={[styles.completionArabic, { color: C.tint }]}>الحمد لله</Text>
-          <Text style={[styles.completionSub, { color: C.textMuted, marginTop: 12 }]}>{catName}</Text>
+          <Text style={[styles.completionSub, { color: C.textMuted, marginTop: 12, fontFamily: catNameRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold', writingDirection: catNameRtl ? 'rtl' : 'ltr' }]}>{catName}</Text>
           <Pressable
             onPress={onBack}
             style={({ pressed }) => [styles.doneBtn, { backgroundColor: C.tint, opacity: pressed ? 0.85 : 1, marginTop: 32 }]}
@@ -580,7 +591,7 @@ function ReaderScreen({
         >
           <Ionicons name={isRtl ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
         </Pressable>
-        <Text style={[styles.headerTitle, { color: C.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: C.text, flex: 1, textAlign: 'center', fontFamily: catNameRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold', writingDirection: catNameRtl ? 'rtl' : 'ltr' }]} numberOfLines={1}>
           {catName}
         </Text>
         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>

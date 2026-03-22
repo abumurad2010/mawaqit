@@ -1,0 +1,66 @@
+Apply transliteration mode to Athkar category tile labels.
+
+════════════════════════════════════════════════════════
+CURRENT BEHAVIOUR
+════════════════════════════════════════════════════════
+
+The category tile labels on the Athkar grid (Screen 1)
+always show the name in the current app language
+regardless of the mode toggle setting.
+
+════════════════════════════════════════════════════════
+REQUIRED BEHAVIOUR
+════════════════════════════════════════════════════════
+
+MODE = 'arabic':
+  Each tile shows the Arabic category name only
+  e.g. "أذكار الصباح"
+
+MODE = 'transliterated':
+  Each tile shows the category name in the language 
+  selected in the athkarLang selector
+  e.g. "Morning Adhkar" (if English selected)
+       "Dhikrs du matin" (if French selected)
+       "Azkar Pagi" (if Indonesian selected)
+  etc.
+
+════════════════════════════════════════════════════════
+IMPLEMENTATION
+════════════════════════════════════════════════════════
+
+In app/(tabs)/athkar.tsx, find where each category 
+tile renders its label. Currently likely:
+
+  <Text>{tr[cat.nameKey]}</Text>
+  // or: i18n[appLanguage][cat.nameKey]
+
+Change to:
+
+  <Text>
+    {mode === 'arabic'
+      ? i18n['ar'][cat.nameKey]
+      : i18n[athkarLang][cat.nameKey]}
+  </Text>
+
+This means:
+  - Arabic mode → always shows Arabic name from i18n.ar
+  - Transliterated mode → shows name in athkarLang
+  - athkarLang is the same state used for dhikr 
+    translation language selector on Screen 1
+
+ALSO apply the same logic to:
+  - The category header title shown at the top of 
+    Screen 2 (the dhikr reader) when a category is open
+  - The completion screen text at the end of a category
+    (the "category complete" message)
+
+RTL AWARENESS:
+  - When mode is 'arabic' → text direction RTL, 
+    fontFamily Amiri_700Bold
+  - When mode is 'transliterated' and athkarLang is 
+    one of (ar, ur, fa) → RTL, appropriate font
+  - All other languages → LTR, existing sans-serif font
+
+Do not change any dhikr content, icons, or counts.
+Do not change the favourites gold styling.
+Do not add new dependencies.
