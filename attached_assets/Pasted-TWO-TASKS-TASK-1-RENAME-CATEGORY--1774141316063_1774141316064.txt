@@ -1,0 +1,195 @@
+TWO TASKS:
+
+════════════════════════════════════════════════════════
+TASK 1 — RENAME CATEGORY: أذكار المصيبة → أذكار رفع البلاء
+════════════════════════════════════════════════════════
+
+In constants/athkar-data.ts, change the nameKey display 
+value for category id 'calamity' in all 15 languages as follows:
+
+ar:   "أذكار رفع البلاء"      (was: أذكار المصيبة)
+en:   "Upon Calamity"          (unchanged)
+fr:   "Lever l'épreuve"
+es:   "Aliviar la tribulación"
+ru:   "Снятие бедствия"
+zh:   "消除灾难"
+tr:   "Belayı Kaldırma"
+ur:   "بلا دور کرنے کی دعا"
+id:   "Mengangkat Bala"
+bn:   "বিপদ দূর করার দোয়া"
+fa:   "رفع بلا"
+ms:   "Mengangkat Bala"
+pt:   "Afastar a tribulação"
+sw:   "Kuondoa Msiba"
+ha:   "Kawar Da Bala'i"
+
+Update the i18n key athkar_cat_calamity in all 15 language 
+objects in i18n.ts to match the above values.
+Do not change the category id, icon, adhkar content, 
+or any other property.
+
+════════════════════════════════════════════════════════
+TASK 2 — EXPAND أذكار النوم with full prophetic sequence
+════════════════════════════════════════════════════════
+
+Replace the current sleep adhkar array in constants/athkar-data.ts
+with the following complete sequence as prescribed by the Prophet ﷺ.
+This is the full Hisn al-Muslim sleep chapter in correct order:
+
+─────────────────────────────────────────
+ITEM 1 — Al-Ikhlas + Mu'awwidhatain with nafth
+─────────────────────────────────────────
+arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ"
+transliteration: "Qul huwallāhu aḥad. Allāhuṣ-ṣamad. Lam yalid wa lam yūlad. Wa lam yakun lahu kufuwan aḥad."
+translationKey: "athkar_sleep_ikhlas"
+count: 3
+
+ITEM 2:
+arabic: "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ"
+transliteration: "Qul aʿūdhu birabbil-falaq. Min sharri mā khalaq. Wa min sharri ghāsiqin idhā waqab. Wa min sharrin-naffāthāti fil-ʿuqad. Wa min sharri ḥāsidin idhā ḥasad."
+translationKey: "athkar_sleep_falaq"
+count: 3
+
+ITEM 3:
+arabic: "قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ"
+transliteration: "Qul aʿūdhu birabbin-nās. Malikin-nās. Ilāhin-nās. Min sharril-waswāsil-khannās. Alladhī yuwaswisu fī ṣudūrin-nās. Minal-jinnati wan-nās."
+translationKey: "athkar_sleep_nas"
+count: 3
+
+─────────────────────────────────────────
+ITEM 4 — Ayat al-Kursi
+─────────────────────────────────────────
+arabic: "اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ"
+transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm. Lā taʾkhudhuhu sinatun wa lā nawm. Lahu mā fis-samāwāti wa mā fil-arḍ. Man dhalladhī yashfaʿu ʿindahu illā biʾidhnih. Yaʿlamu mā bayna aydīhim wa mā khalfahum wa lā yuḥīṭūna bishayʾin min ʿilmihi illā bimā shāʾ. Wasiʿa kursiyyuhus-samāwāti wal-arḍ, wa lā yaʾūduhu ḥifẓuhumā wa huwal-ʿaliyyul-ʿaẓīm."
+translationKey: "athkar_sleep_kursi"
+count: 1
+
+─────────────────────────────────────────
+ITEM 5 — Khawatim Al-Baqarah (last 2 verses)
+─────────────────────────────────────────
+arabic: "آمَنَ الرَّسُولُ بِمَا أُنْزِلَ إِلَيْهِ مِنْ رَبِّهِ وَالْمُؤْمِنُونَ ۚ كُلٌّ آمَنَ بِاللَّهِ وَمَلَائِكَتِهِ وَكُتُبِهِ وَرُسُلِهِ لَا نُفَرِّقُ بَيْنَ أَحَدٍ مِنْ رُسُلِهِ ۚ وَقَالُوا سَمِعْنَا وَأَطَعْنَا ۖ غُفْرَانَكَ رَبَّنَا وَإِلَيْكَ الْمَصِيرُ ۝ لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا ۚ لَهَا مَا كَسَبَتْ وَعَلَيْهَا مَا اكْتَسَبَتْ ۗ رَبَّنَا لَا تُؤَاخِذْنَا إِنْ نَسِينَا أَوْ أَخْطَأْنَا ۚ رَبَّنَا وَلَا تَحْمِلْ عَلَيْنَا إِصْرًا كَمَا حَمَلْتَهُ عَلَى الَّذِينَ مِنْ قَبْلِنَا ۚ رَبَّنَا وَلَا تُحَمِّلْنَا مَا لَا طَاقَةَ لَنَا بِهِ ۖ وَاعْفُ عَنَّا وَاغْفِرْ لَنَا وَارْحَمْنَا ۚ أَنْتَ مَوْلَانَا فَانْصُرْنَا عَلَى الْقَوْمِ الْكَافِرِينَ"
+transliteration: "Āmanar-rasūlu bimā unzila ilayhi min rabbihi wal-muʾminūn. Kullun āmana billāhi wa malāʾikatihi wa kutubihi wa rusulihi lā nufarriqu bayna aḥadin min rusulih. Wa qālū samiʿnā wa aṭaʿnā, ghufrānaka rabbanā wa ilaykal-maṣīr. Lā yukallifullāhu nafsan illā wusʿahā, lahā mā kasabat wa ʿalayhā mak-tasabat. Rabbanā lā tuʾākhidhnā in nasīnā aw akhṭaʾnā. Rabbanā wa lā taḥmil ʿalaynā iṣran kamā ḥamaltahu ʿalal-ladhīna min qablinā. Rabbanā wa lā tuḥammilnā mā lā ṭāqata lanā bih. Waʿfu ʿannā, waghfir lanā, warḥamnā. Anta mawlānā fanṣurnā ʿalal-qawmil-kāfirīn."
+translationKey: "athkar_sleep_baqarah"
+count: 1
+
+─────────────────────────────────────────
+ITEM 6 — Tasbih 33×
+─────────────────────────────────────────
+arabic: "سُبْحَانَ اللَّهِ"
+transliteration: "Subḥānallāh."
+translationKey: "athkar_sleep_subhan"
+count: 33
+
+─────────────────────────────────────────
+ITEM 7 — Tahmid 33×
+─────────────────────────────────────────
+arabic: "الْحَمْدُ لِلَّهِ"
+transliteration: "Al-ḥamdu lillāh."
+translationKey: "athkar_sleep_hamd"
+count: 33
+
+─────────────────────────────────────────
+ITEM 8 — Takbir 34×
+─────────────────────────────────────────
+arabic: "اللَّهُ أَكْبَرُ"
+transliteration: "Allāhu akbar."
+translationKey: "athkar_sleep_akbar"
+count: 34
+
+─────────────────────────────────────────
+ITEM 9 — Placing one's side down
+─────────────────────────────────────────
+arabic: "بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي، وَبِكَ أَرْفَعُهُ، فَإِنْ أَمْسَكْتَ نَفْسِي فَارْحَمْهَا، وَإِنْ أَرْسَلْتَهَا فَاحْفَظْهَا بِمَا تَحْفَظُ بِهِ عِبَادَكَ الصَّالِحِينَ"
+transliteration: "Bismika rabbī waḍaʿtu janbī, wa bika arfaʿuh. Fa in amsakta nafsī farḥamhā, wa in arsaltahā faḥfaẓhā bimā taḥfaẓu bihi ʿibādakas-ṣāliḥīn."
+translationKey: "athkar_sleep_janb"
+count: 1
+
+─────────────────────────────────────────
+ITEM 10 — Entrusting affairs to Allah
+─────────────────────────────────────────
+arabic: "اللَّهُمَّ أَسْلَمْتُ نَفْسِي إِلَيْكَ، وَفَوَّضْتُ أَمْرِي إِلَيْكَ، وَوَجَّهْتُ وَجْهِي إِلَيْكَ، وَأَلْجَأْتُ ظَهْرِي إِلَيْكَ، رَغْبَةً وَرَهْبَةً إِلَيْكَ، لَا مَلْجَأَ وَلَا مَنْجَا مِنْكَ إِلَّا إِلَيْكَ، آمَنْتُ بِكِتَابِكَ الَّذِي أَنْزَلْتَ، وَبِنَبِيِّكَ الَّذِي أَرْسَلْتَ"
+transliteration: "Allāhumma aslamtu nafsī ilayk, wa fawwaḍtu amrī ilayk, wa wajjahtu wajhī ilayk, wa aljaʾtu ẓahrī ilayk, raghbatan wa rahbatan ilayk. Lā maljaʾa wa lā manjā minka illā ilayk. Āmantu bikitābikalladhī anzalt, wa binabiyyikalladhī arsalt."
+translationKey: "athkar_sleep_aslamt"
+count: 1
+
+─────────────────────────────────────────
+ITEM 11 — Dua before sleep
+─────────────────────────────────────────
+arabic: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا"
+transliteration: "Bismika Allāhumma amūtu wa aḥyā."
+translationKey: "athkar_sleep_bismika"
+count: 1
+
+─────────────────────────────────────────
+ITEM 12 — Protection from punishment
+─────────────────────────────────────────
+arabic: "اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ"
+transliteration: "Allāhumma qinī ʿadhābaka yawma tabʿathu ʿibādak."
+translationKey: "athkar_sleep_qini"
+count: 3
+
+Add translation keys to all 15 languages:
+
+athkar_sleep_ikhlas:
+  en: "Sūrat al-Ikhlāṣ — recite 3×. The Prophet ﷺ would gather his palms, blow into them, recite al-Ikhlāṣ, al-Falaq and an-Nās, then wipe as much of his body as he could, starting from his head, face and the front of his body. He would do this three times."
+  ar: "سورة الإخلاص — تُقرأ ٣ مرات. كان النبي ﷺ يجمع كفيه، ينفث فيهما، يقرأ فيهما قل هو الله أحد والمعوذتين، ثم يمسح بهما ما استطاع من جسده، يبدأ بهما على رأسه ووجهه وما أقبل من جسده، يفعل ذلك ثلاث مرات."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_falaq:
+  en: "Sūrat al-Falaq — recite 3×. Part of the three Mu'awwidhat blown into the palms and wiped over the body before sleep."
+  ar: "سورة الفلق — تُقرأ ٣ مرات. إحدى المعوذات الثلاث التي تُنفث في الكفين وتُمسح بهما على الجسد قبل النوم."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_nas:
+  en: "Sūrat an-Nās — recite 3×. The last of the three Mu'awwidhat. After reciting all three, wipe both hands over the body three times."
+  ar: "سورة الناس — تُقرأ ٣ مرات. آخر المعوذات الثلاث. بعد قراءة الثلاث، امسح بكفيك على جسدك ثلاث مرات."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_kursi:
+  en: "Āyat al-Kursī — Al-Baqarah 2:255. The Prophet ﷺ said: whoever recites it when he lies down to sleep, Allah will appoint a guardian over him and no devil will come near him until morning."
+  ar: "آية الكرسي — البقرة 2:255. قال النبي ﷺ: من قرأها حين يأوي إلى فراشه وكّل الله به حافظاً ولم يقربه شيطان حتى يصبح."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_baqarah:
+  en: "The last two verses of Sūrat al-Baqarah (2:285–286). The Prophet ﷺ said: whoever recites the last two verses of Al-Baqarah at night, they will suffice him."
+  ar: "خاتمة سورة البقرة (الآيتان 285–286). قال النبي ﷺ: من قرأ الآيتين الأخيرتين من سورة البقرة في ليلة كفتاه."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_subhan:
+  en: "Glory is to Allah. (33×) — The Prophet ﷺ said: shall I not tell you something better than a servant? When you go to bed, say Subḥānallāh 33 times, Alḥamdulillāh 33 times, and Allāhu Akbar 34 times — it is better for you than a servant."
+  ar: "سبحان الله (٣٣ مرة) — قال النبي ﷺ: ألا أدلكم على خير مما تسألون؟ إذا أخذتم مضاجعكم فسبّحوا ثلاثاً وثلاثين، واحمدوا ثلاثاً وثلاثين، وكبّروا أربعاً وثلاثين — فهو خير لكم من خادم."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_hamd:
+  en: "All praise is for Allah. (33×)"
+  ar: "الحمد لله (٣٣ مرة)"
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_akbar:
+  en: "Allah is the greatest. (34×)"
+  ar: "الله أكبر (٣٤ مرة)"
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_janb:
+  en: "In Your name my Lord, I lie down on my side, and in Your name I raise it. If You take my soul then have mercy on it, and if You return it then protect it as You protect Your righteous servants."
+  ar: "باسمك ربي وضعت جنبي وبك أرفعه، فإن أمسكت نفسي فارحمها، وإن أرسلتها فاحفظها بما تحفظ به عبادك الصالحين."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_aslamt:
+  en: "O Allah, I submit myself to You, entrust my affairs to You, turn my face to You, and lay myself down depending upon You, in hope and fear of You. There is no refuge and no escape except to You. I believe in Your Book which You have revealed and in Your Prophet whom You have sent. The Prophet ﷺ said: make this the last thing you say before you sleep."
+  ar: "اللهم أسلمت نفسي إليك... قال النبي ﷺ: اجعلهن آخر ما تتكلم به."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_bismika:
+  en: "In Your name O Allah, I die and I live."
+  ar: "باسمك اللهم أموت وأحيا."
+  [translate accurately in all other 13 languages]
+
+athkar_sleep_qini:
+  en: "O Allah, protect me from Your punishment on the Day You resurrect Your servants." (3×)
+  ar: "اللهم قني عذابك يوم تبعث عبادك. (٣ مرات)"
+  [translate accurately in all other 13 languages]
+
+Do not change any other category.
+Do not change any UI code.
+Do not add new dependencies.

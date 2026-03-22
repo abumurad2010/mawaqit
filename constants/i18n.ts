@@ -178,10 +178,10 @@ const base = {
   athkar_cat_rain: 'Rain & Thunder',
   athkar_cat_quran_khatm: 'After Quran',
 
-  athkar_morning_1: "Āyat al-Kursī — The Throne Verse (Al-Baqarah 2:255). Whoever recites it in the morning will be protected until evening.",
-  athkar_morning_2: "Sūrat al-Ikhlāṣ — Say: He is Allah, the One. Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent. (3×)",
-  athkar_morning_3: "Sūrat al-Falaq — Say: I seek refuge in the Lord of daybreak from the evil of what He has created… (3×)",
-  athkar_morning_4: "Sūrat an-Nās — Say: I seek refuge in the Lord of mankind, the Sovereign of mankind, the God of mankind… (3×)",
+  athkar_morn_eve_ayatul_kursi: "The Throne Verse — Al-Baqarah 2:255. The greatest verse in the Quran. Whoever recites it in the morning will be protected by Allah until the evening, and whoever recites it in the evening will be protected until the morning.",
+  athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — recite 3×. The Prophet ﷺ said: whoever recites it 3 times in the morning and evening, it will suffice him against everything.",
+  athkar_morn_eve_falaq: "Sūrat al-Falaq — recite 3×. The Prophet ﷺ said: whoever recites the Muʿawwidhāt 3 times in the morning and evening, they will suffice him against everything.",
+  athkar_morn_eve_nas: "Sūrat an-Nās — recite 3×. Part of the three Muʿawwidhāt — the three protections. Recite 3 times each morning and evening.",
   athkar_morning_5: "We have reached the morning and at this very time all sovereignty belongs to Allah. All praise is for Allah. None has the right to be worshipped except Allah, alone, without any partner. My Lord, I ask You for the good of this day and the good of what follows it, and I seek refuge in You from its evil and the evil of what follows it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and punishment in the grave.",
   athkar_morning_6: "O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the resurrection.",
   athkar_morning_7: "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant. I abide by Your covenant and promise as best I can. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for there is none who forgives sins but You. [Sayyid al-Istighfar]",
@@ -364,6 +364,10 @@ const translations: Record<Lang, PartialT> = {
     english: 'الإنجليزية',
     athkar_mode_arabic: 'عربي',
     athkar_mode_transliterated: 'نقل حرفي',
+    athkar_morn_eve_ayatul_kursi: "آية الكرسي — البقرة 2:255. أعظم آية في كتاب الله. من قرأها حين يصبح أُجير من الجن حتى يمسي، ومن قرأها حين يمسي أُجير من الجن حتى يصبح.",
+    athkar_morn_eve_ikhlas: "سورة الإخلاص — تُقرأ ٣ مرات. قال النبي ﷺ: من قرأها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء.",
+    athkar_morn_eve_falaq: "سورة الفلق — تُقرأ ٣ مرات. قال النبي ﷺ: من قرأ المعوذات ثلاثاً حين يصبح وحين يمسي كفته من كل شيء.",
+    athkar_morn_eve_nas: "سورة الناس — تُقرأ ٣ مرات. إحدى المعوذات الثلاث. تُقرأ ثلاث مرات صباحاً ومساءً.",
     qiblaDirection: 'اتجاه القبلة',
     degrees: 'درجة',
     searching: 'جاري البحث...',
@@ -526,6 +530,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Pluie et tonnerre',
     athkar_cat_quran_khatm: 'Après le Coran',
     athkar_mode_transliterated: 'Translittéré',
+    athkar_morn_eve_ayatul_kursi: "Le Verset du Trône — Al-Baqara 2:255. Le plus grand verset du Coran. Quiconque le récite le matin sera protégé par Allah jusqu'au soir, et quiconque le récite le soir sera protégé jusqu'au matin.",
+    athkar_morn_eve_ikhlas: "Sourate al-Ikhlâs — réciter 3×. Le Prophète ﷺ a dit : quiconque la récite 3 fois le matin et le soir, cela lui suffira contre tout.",
+    athkar_morn_eve_falaq: "Sourate al-Falaq — réciter 3×. Le Prophète ﷺ a dit : quiconque récite les Muʿawwidhāt 3 fois le matin et le soir, cela lui suffira contre tout.",
+    athkar_morn_eve_nas: "Sourate an-Nâs — réciter 3×. L'une des trois Muʿawwidhāt — les trois protections. Réciter 3 fois chaque matin et soir.",
   },
 
   es: {
@@ -599,6 +607,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Lluvia y truenos',
     athkar_cat_quran_khatm: 'Tras el Corán',
     athkar_mode_transliterated: 'Transliterado',
+    athkar_morn_eve_ayatul_kursi: "El Versículo del Trono — Al-Baqara 2:255. El versículo más grande del Corán. Quien lo recite por la mañana estará protegido por Allah hasta la tarde, y quien lo recite por la tarde estará protegido hasta la mañana.",
+    athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — recitar 3×. El Profeta ﷺ dijo: quien la recite 3 veces por la mañana y por la tarde, le bastará contra todo.",
+    athkar_morn_eve_falaq: "Sūrat al-Falaq — recitar 3×. El Profeta ﷺ dijo: quien recite las Muʿawwidhāt 3 veces por la mañana y por la tarde, le bastará contra todo.",
+    athkar_morn_eve_nas: "Sūrat an-Nās — recitar 3×. Parte de las tres Muʿawwidhāt — las tres protecciones. Recitar 3 veces cada mañana y tarde.",
   },
 
   ru: {
@@ -675,6 +687,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Дождь и гром',
     athkar_cat_quran_khatm: 'После Корана',
     athkar_mode_transliterated: 'Транслитерация',
+    athkar_morn_eve_ayatul_kursi: "Аят аль-Курси — Аль-Бакара 2:255. Величайший аят Корана. Кто прочитает его утром, тот будет под защитой Аллаха до вечера, а кто прочитает вечером — до утра.",
+    athkar_morn_eve_ikhlas: "Сура Аль-Ихлас — читать 3×. Пророк ﷺ сказал: кто прочитает её 3 раза утром и вечером, этого ему будет достаточно от всего.",
+    athkar_morn_eve_falaq: "Сура Аль-Фаляк — читать 3×. Пророк ﷺ сказал: кто прочитает Муаввидат 3 раза утром и вечером, этого ему будет достаточно от всего.",
+    athkar_morn_eve_nas: "Сура Ан-Нас — читать 3×. Одна из трёх Муаввидат — трёх защит. Читать 3 раза каждое утро и вечером.",
   },
 
   zh: {
@@ -751,6 +767,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: '雨天雷声祈祷',
     athkar_cat_quran_khatm: '完成古兰经后',
     athkar_mode_transliterated: '音译',
+    athkar_morn_eve_ayatul_kursi: "宝座节 — 黄牛章2:255。古兰经最伟大的节文。早晨诵读者，真主将保护他直到傍晚；傍晚诵读者，真主将保护他直到清晨。",
+    athkar_morn_eve_ikhlas: "忠诚章 — 诵读3×。先知ﷺ说：早晨和傍晚各读三遍，可为他抵御一切灾害。",
+    athkar_morn_eve_falaq: "黎明章 — 诵读3×。先知ﷺ说：早晨和傍晚各读庇护三章三遍，可为他抵御一切灾害。",
+    athkar_morn_eve_nas: "人类章 — 诵读3×。三章庇护之一。每天早晨和傍晚各读三遍。",
   },
 
   tr: {
@@ -832,6 +852,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Yağmur ve Gök Gürültüsü',
     athkar_cat_quran_khatm: 'Kuran Hatmi Sonrası',
     athkar_mode_transliterated: 'Okunuş',
+    athkar_morn_eve_ayatul_kursi: "Kürsî Âyeti — Bakara 2:255. Kur'an'ın en büyük âyeti. Sabah okuyan, Allah'ın koruması altında akşama kavuşur; akşam okuyan ise sabaha kavuşur.",
+    athkar_morn_eve_ikhlas: "İhlâs Sûresi — 3× oku. Peygamber ﷺ buyurdu: Sabah ve akşam üç kez okuyan, her şeye karşı korunmuş olur.",
+    athkar_morn_eve_falaq: "Felak Sûresi — 3× oku. Peygamber ﷺ buyurdu: Sabah ve akşam Muavvizat'ı üç kez okuyan, her şeye karşı korunmuş olur.",
+    athkar_morn_eve_nas: "Nâs Sûresi — 3× oku. Üç Muavvize'den biri — üç koruma. Her sabah ve akşam 3 kez oku.",
   },
 
   ur: {
@@ -913,6 +937,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'بارش اور بجلی',
     athkar_cat_quran_khatm: 'ختم قرآن کی دعا',
     athkar_mode_transliterated: 'حرفی نقل',
+    athkar_morn_eve_ayatul_kursi: "آیت الکرسی — البقرۃ 2:255۔ قرآن کریم کی عظیم ترین آیت۔ جو شخص صبح اسے پڑھے، شام تک جنات سے اللہ کی پناہ میں رہتا ہے، اور جو شام کو پڑھے، صبح تک محفوظ رہتا ہے۔",
+    athkar_morn_eve_ikhlas: "سورۃ الاخلاص — 3× پڑھیں۔ نبی کریم ﷺ نے فرمایا: جو شخص صبح و شام اسے تین مرتبہ پڑھے، وہ ہر چیز سے کافی ہو جاتی ہے۔",
+    athkar_morn_eve_falaq: "سورۃ الفلق — 3× پڑھیں۔ نبی کریم ﷺ نے فرمایا: جو معوذات کو صبح و شام تین بار پڑھے، وہ ہر چیز سے کافی ہو جاتی ہیں۔",
+    athkar_morn_eve_nas: "سورۃ الناس — 3× پڑھیں۔ تین معوذات میں سے ایک — تین حفاظتیں۔ ہر صبح و شام 3 مرتبہ پڑھیں۔",
   },
 
   id: {
@@ -991,6 +1019,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Hujan dan Petir',
     athkar_cat_quran_khatm: 'Setelah Khatam Quran',
     athkar_mode_transliterated: 'Transliterasi',
+    athkar_morn_eve_ayatul_kursi: "Ayat Kursi — Al-Baqarah 2:255. Ayat terbesar dalam Al-Quran. Barang siapa membacanya di pagi hari, Allah akan melindunginya hingga sore; dan barang siapa membacanya di sore hari, akan dilindungi hingga pagi.",
+    athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — baca 3×. Nabi ﷺ bersabda: barang siapa membacanya 3 kali di pagi dan sore hari, hal itu akan mencukupinya dari segala sesuatu.",
+    athkar_morn_eve_falaq: "Sūrat al-Falaq — baca 3×. Nabi ﷺ bersabda: barang siapa membaca Muʿawwidhāt 3 kali di pagi dan sore, hal itu akan mencukupinya dari segala sesuatu.",
+    athkar_morn_eve_nas: "Sūrat an-Nās — baca 3×. Bagian dari tiga Muʿawwidhāt — tiga perlindungan. Baca 3 kali setiap pagi dan sore.",
   },
 
   bn: {
@@ -1067,6 +1099,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'বৃষ্টি ও বজ্রপাত',
     athkar_cat_quran_khatm: 'খতমের দোয়া',
     athkar_mode_transliterated: 'প্রতিবর্ণীকরণ',
+    athkar_morn_eve_ayatul_kursi: "আয়াতুল কুরসী — আল-বাকারা 2:255। কুরআনের সর্বশ্রেষ্ঠ আয়াত। যে সকালে পড়বে সন্ধ্যা পর্যন্ত এবং যে সন্ধ্যায় পড়বে সকাল পর্যন্ত আল্লাহর হেফাজতে থাকবে।",
+    athkar_morn_eve_ikhlas: "সূরা ইখলাস — ৩× পড়ুন। নবী ﷺ বলেছেন: যে সকাল-সন্ধ্যায় তিনবার পড়বে, তার জন্য সবকিছু থেকে যথেষ্ট হবে।",
+    athkar_morn_eve_falaq: "সূরা আল-ফালাক — ৩× পড়ুন। নবী ﷺ বলেছেন: যে সকাল-সন্ধ্যায় মুআউওয়িযাত তিনবার পড়বে, তার জন্য সবকিছু থেকে যথেষ্ট হবে।",
+    athkar_morn_eve_nas: "সূরা আন-নাস — ৩× পড়ুন। তিনটি মুআউওয়িযাতের একটি — তিনটি সুরক্ষা। প্রতি সকাল ও সন্ধ্যায় ৩ বার পড়ুন।",
   },
 
   fa: {
@@ -1148,6 +1184,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'باران و رعد و برق',
     athkar_cat_quran_khatm: 'دعای ختم قرآن',
     athkar_mode_transliterated: 'نویسه‌گردانی',
+    athkar_morn_eve_ayatul_kursi: "آیت‌الکرسی — البقره 2:255. بزرگ‌ترین آیه قرآن. هر کس آن را صبح بخواند تا شب و هر کس شب بخواند تا صبح در پناه الهی خواهد بود.",
+    athkar_morn_eve_ikhlas: "سوره اخلاص — 3× بخوان. پیامبر ﷺ فرمود: هر کس صبح و شب آن را سه‌بار بخواند، برای او در برابر همه چیز کافی است.",
+    athkar_morn_eve_falaq: "سوره فلق — 3× بخوان. پیامبر ﷺ فرمود: هر کس معوذات را صبح و شب سه‌بار بخواند، برای او در برابر همه چیز کافی است.",
+    athkar_morn_eve_nas: "سوره ناس — 3× بخوان. یکی از سه معوذات — سه حفاظت. هر صبح و شب 3 بار بخوان.",
   },
 
   ms: {
@@ -1221,6 +1261,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Hujan dan Petir',
     athkar_cat_quran_khatm: 'Selepas Khatam Quran',
     athkar_mode_transliterated: 'Transliterasi',
+    athkar_morn_eve_ayatul_kursi: "Ayat al-Kursi — Al-Baqarah 2:255. Ayat terbesar dalam Al-Quran. Sesiapa yang membacanya pada waktu pagi, Allah akan melindunginya hingga petang; dan sesiapa yang membacanya pada waktu petang, akan dilindungi hingga pagi.",
+    athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — baca 3×. Nabi ﷺ bersabda: sesiapa yang membacanya 3 kali pada waktu pagi dan petang, ia akan mencukupinya dari segala sesuatu.",
+    athkar_morn_eve_falaq: "Sūrat al-Falaq — baca 3×. Nabi ﷺ bersabda: sesiapa yang membaca Muʿawwidhāt 3 kali pada waktu pagi dan petang, ia akan mencukupinya dari segala sesuatu.",
+    athkar_morn_eve_nas: "Sūrat an-Nās — baca 3×. Salah satu daripada tiga Muʿawwidhāt — tiga perlindungan. Baca 3 kali setiap pagi dan petang.",
   },
 
   pt: {
@@ -1294,6 +1338,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Chuva e trovão',
     athkar_cat_quran_khatm: 'Após o Corão',
     athkar_mode_transliterated: 'Transliterado',
+    athkar_morn_eve_ayatul_kursi: "O Versículo do Trono — Al-Baqarah 2:255. O maior versículo do Alcorão. Quem o recitar de manhã estará protegido por Allah até à tarde, e quem o recitar à tarde estará protegido até à manhã.",
+    athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — recitar 3×. O Profeta ﷺ disse: quem a recitar 3 vezes de manhã e à tarde, isso lhe bastará contra tudo.",
+    athkar_morn_eve_falaq: "Sūrat al-Falaq — recitar 3×. O Profeta ﷺ disse: quem recitar as Muʿawwidhāt 3 vezes de manhã e à tarde, isso lhe bastará contra tudo.",
+    athkar_morn_eve_nas: "Sūrat an-Nās — recitar 3×. Parte das três Muʿawwidhāt — as três proteções. Recitar 3 vezes cada manhã e tarde.",
   },
 
   sw: {
@@ -1367,6 +1415,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Mvua na Radi',
     athkar_cat_quran_khatm: 'Baada ya Kuhitimisha Quran',
     athkar_mode_transliterated: 'Uandishi wa Sauti',
+    athkar_morn_eve_ayatul_kursi: "Aya ya Kiti cha Enzi — Al-Baqarah 2:255. Aya kubwa zaidi katika Quran. Anayeisoma asubuhi atalindwa na Allah hadi jioni, na anayeisoma jioni atalindwa hadi asubuhi.",
+    athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — soma 3×. Nabii ﷺ alisema: anayeisoma mara 3 asubuhi na jioni, itamtosha dhidi ya kila kitu.",
+    athkar_morn_eve_falaq: "Sūrat al-Falaq — soma 3×. Nabii ﷺ alisema: anayesoma Muʿawwidhāt mara 3 asubuhi na jioni, zitamtosha dhidi ya kila kitu.",
+    athkar_morn_eve_nas: "Sūrat an-Nās — soma 3×. Moja ya Muʿawwidhāt tatu — ulinzi mara tatu. Soma mara 3 kila asubuhi na jioni.",
   },
 
   ha: {
@@ -1440,6 +1492,10 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_rain: 'Ruwan Sama da Tsawa',
     athkar_cat_quran_khatm: "Bayan Kammala Alqur'ani",
     athkar_mode_transliterated: 'Rubutun Sauti',
+    athkar_morn_eve_ayatul_kursi: "Ayar Kursiyyi — Al-Baqarah 2:255. Mafi girman ayar Alkur'ani. Wanda ya karanta ta da safe Allah zai kare shi har dare, wanda ya karanta ta da dare zai kare shi har asuba.",
+    athkar_morn_eve_ikhlas: "Sūrat al-Ikhlāṣ — karanta 3×. Manzon Allah ﷺ ya ce: wanda ya karanta sau uku da safe da maraice, ya isa masa daga komai.",
+    athkar_morn_eve_falaq: "Sūrat al-Falaq — karanta 3×. Manzon Allah ﷺ ya ce: wanda ya karanta Muʿawwidhāt sau uku da safe da maraice, sun isa masa daga komai.",
+    athkar_morn_eve_nas: "Sūrat an-Nās — karanta 3×. Ɗaya daga cikin Muʿawwidhāt uku — kariyar uku. Karanta sau 3 kowace safe da maraice.",
   },
 };
 

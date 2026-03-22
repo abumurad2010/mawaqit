@@ -1,0 +1,206 @@
+TWO TASKS for the Athkar tab:
+
+════════════════════════════════════════════════════════
+TASK 1 — ADD AYAT AL-KURSI + THREE MU'AWWIDHAT 
+         TO MORNING AND EVENING ADHKAR
+════════════════════════════════════════════════════════
+
+In constants/athkar-data.ts, for BOTH the 'morning' and 
+'evening' categories, insert the following four adhkar 
+as the FIRST four items (before all existing items).
+Do not remove any existing items — just prepend these four:
+
+POSITION 1 — Ayat al-Kursi:
+arabic: "اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ"
+transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm. Lā taʾkhudhuhu sinatun wa lā nawm. Lahu mā fis-samāwāti wa mā fil-arḍ. Man dhalladhī yashfaʿu ʿindahu illā biʾidhnih. Yaʿlamu mā bayna aydīhim wa mā khalfahum wa lā yuḥīṭūna bishayʾin min ʿilmihi illā bimā shāʾ. Wasiʿa kursiyyuhus-samāwāti wal-arḍ, wa lā yaʾūduhu ḥifẓuhumā wa huwal-ʿaliyyul-ʿaẓīm."
+translationKey: "athkar_morn_eve_ayatul_kursi"
+count: 1
+
+POSITION 2 — Surat Al-Ikhlas:
+arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ"
+transliteration: "Qul huwallāhu aḥad. Allāhuṣ-ṣamad. Lam yalid wa lam yūlad. Wa lam yakun lahu kufuwan aḥad."
+translationKey: "athkar_morn_eve_ikhlas"
+count: 3
+
+POSITION 3 — Surat Al-Falaq:
+arabic: "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ"
+transliteration: "Qul aʿūdhu birabbil-falaq. Min sharri mā khalaq. Wa min sharri ghāsiqin idhā waqab. Wa min sharrin-naffāthāti fil-ʿuqad. Wa min sharri ḥāsidin idhā ḥasad."
+translationKey: "athkar_morn_eve_falaq"
+count: 3
+
+POSITION 4 — Surat An-Nas:
+arabic: "قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ"
+transliteration: "Qul aʿūdhu birabbin-nās. Malikin-nās. Ilāhin-nās. Min sharril-waswāsil-khannās. Alladhī yuwaswisu fī ṣudūrin-nās. Minal-jinnati wan-nās."
+translationKey: "athkar_morn_eve_nas"
+count: 3
+
+Add translation keys to all 15 languages:
+athkar_morn_eve_ayatul_kursi:
+  en: "The Throne Verse — Al-Baqarah 2:255. The greatest verse in the Quran. Whoever recites it in the morning will be protected by Allah until the evening, and whoever recites it in the evening will be protected until the morning."
+  ar: "آية الكرسي — البقرة 2:255. أعظم آية في كتاب الله. من قرأها حين يصبح أُجير من الجن حتى يمسي، ومن قرأها حين يمسي أُجير من الجن حتى يصبح."
+  [add accurate translations in all other 13 languages]
+
+athkar_morn_eve_ikhlas:
+  en: "Sūrat al-Ikhlāṣ — recite 3×. The Prophet ﷺ said: whoever recites it 3 times in the morning and evening, it will suffice him against everything."
+  ar: "سورة الإخلاص — تُقرأ ٣ مرات. قال النبي ﷺ: من قرأها ثلاث مرات حين يصبح وحين يمسي كفته من كل شيء."
+  [add accurate translations in all other 13 languages]
+
+athkar_morn_eve_falaq:
+  en: "Sūrat al-Falaq — recite 3×. The Prophet ﷺ said: whoever recites the Mu'awwidhat 3 times in the morning and evening, they will suffice him against everything."
+  ar: "سورة الفلق — تُقرأ ٣ مرات. قال النبي ﷺ: من قرأ المعوذات ثلاثاً حين يصبح وحين يمسي كفته من كل شيء."
+  [add accurate translations in all other 13 languages]
+
+athkar_morn_eve_nas:
+  en: "Sūrat an-Nās — recite 3×. Part of the three Mu'awwidhat — the three protections. Recite 3 times each morning and evening."
+  ar: "سورة الناس — تُقرأ ٣ مرات. إحدى المعوذات الثلاث. تُقرأ ثلاث مرات صباحاً ومساءً."
+  [add accurate translations in all other 13 languages]
+
+Note: since morning already had these as items 1-4 from 
+the previous prompt, REMOVE the old duplicates at positions 
+1-4 of morning (athkar_morning_1 through athkar_morning_4) 
+and replace them with these four new shared keys. 
+The content is the same — this just avoids duplication 
+between morning and evening data.
+
+════════════════════════════════════════════════════════
+TASK 2 — VERIFY AND CORRECT ALL REPEAT COUNTS
+════════════════════════════════════════════════════════
+
+Update the count values in constants/athkar-data.ts 
+to match the following verified counts from Hisn al-Muslim.
+Find each dhikr by its translationKey and set the exact count:
+
+── MORNING & EVENING ───────────────────────────────────
+athkar_morn_eve_ayatul_kursi    → count: 1
+athkar_morn_eve_ikhlas          → count: 3
+athkar_morn_eve_falaq           → count: 3
+athkar_morn_eve_nas             → count: 3
+athkar_morning_5                → count: 1
+athkar_morning_6                → count: 1
+athkar_morning_7  (Sayyid)      → count: 1
+athkar_morning_8                → count: 1
+athkar_morning_9                → count: 3
+athkar_morning_10               → count: 3
+athkar_morning_11               → count: 3
+athkar_morning_12               → count: 3
+athkar_morning_13               → count: 1
+athkar_morning_14               → count: 1
+athkar_morning_15               → count: 100
+athkar_morning_16               → count: 10
+athkar_morning_17               → count: 1
+athkar_morning_18               → count: 3
+athkar_morning_19               → count: 10
+athkar_morning_20               → count: 7
+
+── AFTER PRAYER ────────────────────────────────────────
+athkar_afterprayer_1  (Astaghfirullah)           → count: 3
+athkar_afterprayer_2  (Allahumma antas-salam)    → count: 1
+athkar_afterprayer_3  (La ilaha + La mani')      → count: 1
+athkar_afterprayer_4  (Subhanallah)              → count: 33
+athkar_afterprayer_5  (Alhamdulillah)            → count: 33
+athkar_afterprayer_6  (Allahu Akbar)             → count: 33
+athkar_afterprayer_7  (La ilaha short)           → count: 1
+athkar_afterprayer_8  (Allahumma a'inni)         → count: 1
+athkar_afterprayer_9  (Ayat al-Kursi)            → count: 1
+
+── SLEEP ───────────────────────────────────────────────
+athkar_sleep_1  (Bismika amutu)    → count: 1
+athkar_sleep_2  (Allahumma qini)   → count: 3
+athkar_sleep_3  (Subhanallah)      → count: 33
+athkar_sleep_4  (Alhamdulillah)    → count: 33
+athkar_sleep_5  (Allahu Akbar)     → count: 34
+athkar_sleep_6  (Aslamtu)          → count: 1
+athkar_sleep_7  (Bismika ahya)     → count: 1
+
+── WAKING ──────────────────────────────────────────────
+athkar_waking_1   → count: 1
+athkar_waking_2   → count: 1
+athkar_waking_3   → count: 1
+
+── WUDU ────────────────────────────────────────────────
+athkar_wudu_1   → count: 1
+athkar_wudu_2   → count: 1
+athkar_wudu_3   → count: 1
+
+── MOSQUE ──────────────────────────────────────────────
+athkar_mosque_1   → count: 1
+athkar_mosque_2   → count: 1
+athkar_mosque_3   → count: 1
+
+── ISTIGHFAR ───────────────────────────────────────────
+athkar_istighfar_1  (Sayyid)              → count: 1
+athkar_istighfar_2  (al-Hayyal-Qayyum)   → count: 3
+athkar_istighfar_3  (wa atubu ilayh)      → count: 100
+athkar_istighfar_4  (Rabbighfir li)       → count: 100
+athkar_istighfar_5  (Rabbana zalamna)     → count: 1
+
+── ANXIETY ─────────────────────────────────────────────
+athkar_anxiety_1   → count: 1
+athkar_anxiety_2   → count: 1
+athkar_anxiety_3   → count: 1
+
+── DISTRESS ────────────────────────────────────────────
+athkar_distress_1   → count: 1
+athkar_distress_2   → count: 7
+athkar_distress_3   → count: 1
+
+── ISTIKHARA ───────────────────────────────────────────
+athkar_istikhara_1   → count: 1
+
+── TRAVEL ──────────────────────────────────────────────
+athkar_travel_1   → count: 1
+athkar_travel_2   → count: 1
+
+── VISITING SICK ───────────────────────────────────────
+athkar_sick_1   → count: 1
+athkar_sick_2   → count: 1
+athkar_sick_3   → count: 7
+athkar_sick_4   → count: 7
+
+── QURANIC DUAS ────────────────────────────────────────
+athkar_quranic_1  through  athkar_quranic_6   → count: 1 each
+
+── RIZQ ────────────────────────────────────────────────
+athkar_rizq_1  through  athkar_rizq_4   → count: 1 each
+
+── DEBT ────────────────────────────────────────────────
+athkar_debt_1  through  athkar_debt_3   → count: 1 each
+
+── RUQYAH ──────────────────────────────────────────────
+athkar_ruqyah_1   → count: 3
+athkar_ruqyah_2   → count: 3
+athkar_ruqyah_3   → count: 3
+athkar_ruqyah_4   → count: 1
+athkar_ruqyah_5   → count: 3
+athkar_ruqyah_6   → count: 3
+athkar_ruqyah_7   → count: 3
+
+── HOME ────────────────────────────────────────────────
+athkar_home_1  through  athkar_home_3   → count: 1 each
+
+── FRIDAY ──────────────────────────────────────────────
+athkar_friday_1   → count: 100
+athkar_friday_2   → count: 1
+athkar_friday_3   → count: 1
+
+── PARENTS ─────────────────────────────────────────────
+athkar_parents_1  through  athkar_parents_4   → count: 1 each
+
+── FARAJ ───────────────────────────────────────────────
+athkar_faraj_1   → count: 1
+athkar_faraj_2   → count: 40
+athkar_faraj_3   → count: 1
+athkar_faraj_4   → count: 1
+
+── CALAMITY ────────────────────────────────────────────
+athkar_calamity_1  through  athkar_calamity_4   → count: 1 each
+
+── RAIN ────────────────────────────────────────────────
+athkar_rain_1  through  athkar_rain_4   → count: 1 each
+
+── QURAN KHATM ─────────────────────────────────────────
+athkar_quran_khatm_1  → count: 1
+athkar_quran_khatm_2  → count: 1
+
+Do not change any Arabic text, transliterations, 
+translation keys, or UI code. Count values only.

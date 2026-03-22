@@ -321,12 +321,15 @@ function ReaderScreen({
         <Text style={[styles.headerTitle, { color: C.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
           {catName}
         </Text>
-        <Pressable
-          onPress={onReset}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+          <LangToggle />
+          <Pressable
+            onPress={onReset}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={[styles.progressRow, { paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
