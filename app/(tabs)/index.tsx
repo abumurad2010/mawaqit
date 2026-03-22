@@ -552,29 +552,17 @@ export default function PrayerTimesScreen() {
           iqamaStatus ? (
             <Animated.View
               entering={FadeIn.duration(500)}
-              style={[styles.iqamaBannerCard, { backgroundColor: C.heroCardBg }]}
+              style={[styles.heroCard, { backgroundColor: C.heroCardBg }]}
             >
-              {/* TOP ROW: icon + prayer name */}
-              <View style={styles.iqamaTopRow}>
-                <Animated.View style={pulseStyle}>
-                  <MaterialCommunityIcons
-                    name={PRAYER_ICONS[iqamaStatus.name] as any}
-                    size={16} color={C.heroCardSubtext}
-                  />
-                </Animated.View>
-                <Text style={[styles.iqamaTopText, { color: C.heroCardSubtext }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.iqamaPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
                   {prayerLabel(iqamaStatus.name)}
                 </Text>
+                <Text style={[styles.iqamaInLabel, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                  {(tr as any).iqama_in ?? 'Iqama in'}
+                </Text>
               </View>
-              {/* MIDDLE ROW: "Iqama" in current language */}
-              <Text style={[
-                styles.iqamaMiddleLabel,
-                { fontFamily: isRtlLang(lang) ? 'Amiri_700Bold' : SERIF_EN },
-              ]}>
-                {(tr as any).iqama_label ?? 'Iqama'}
-              </Text>
-              {/* BOTTOM ROW: countdown timer */}
-              <Text style={styles.iqamaBottomTimer}>{countdown}</Text>
+              <Text style={styles.iqamaCountdown}>{countdown}</Text>
             </Animated.View>
           ) : (
             <Animated.View
@@ -846,38 +834,24 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
-  /* Iqama countdown banner — 3-row column layout */
-  iqamaBannerCard: {
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    flexDirection: 'column',
-  },
-  iqamaTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 4,
-  },
-  iqamaTopText: {
-    fontSize: 12,
+  /* Iqama countdown banner — same size as next-prayer heroCard */
+  iqamaPrayerName: {
+    fontSize: 13,
     fontWeight: '600',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  iqamaMiddleLabel: {
-    fontSize: 15,
     color: 'rgba(255,255,255,0.75)',
-    letterSpacing: 2,
-    marginBottom: 2,
+    marginBottom: 3,
   },
-  iqamaBottomTimer: {
-    fontSize: 42,
-    fontWeight: '700',
+  iqamaInLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.55)',
+    fontStyle: 'italic',
+  },
+  iqamaCountdown: {
+    fontSize: 28,
+    fontWeight: 'bold',
     color: 'white',
     fontVariant: ['tabular-nums'] as any,
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
 
   /* Next prayer hero */
