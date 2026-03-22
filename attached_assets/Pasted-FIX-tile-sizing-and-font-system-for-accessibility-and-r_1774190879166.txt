@@ -1,0 +1,106 @@
+FIX tile sizing and font system for accessibility and readability:
+
+════════════════════════════════════════════════════════
+CHANGE 1 — TILE DIMENSIONS: rectangular not square
+════════════════════════════════════════════════════════
+
+Change tile shape from square to a fixed-height rectangle.
+
+  const OUTER_PADDING = 14
+  const GAP = 10
+  const COLUMNS = 4
+  const TILE_WIDTH = Math.floor(
+    (SCREEN_WIDTH - (OUTER_PADDING * 2) - (GAP * (COLUMNS - 1))) / COLUMNS
+  )
+  const TILE_HEIGHT = TILE_WIDTH * 1.35  // taller than wide
+
+This gives enough vertical space for:
+  - Icon (top 45% of tile)
+  - Label text (bottom 55% of tile, up to 3 lines)
+
+TILE INTERNAL LAYOUT:
+  flexDirection: 'column'
+  alignItems: 'center'
+  justifyContent: 'center'
+  paddingHorizontal: 6
+  paddingVertical: 10
+  gap: 6 between icon and label
+
+ICON:
+  size: 26 (fixed regardless of font size setting)
+  position: upper portion of tile
+
+LABEL TEXT:
+  textAlign: 'center'
+  numberOfLines: 3
+  flexShrink: 1
+  adjustsFontSizeToFit: false  ← we control size via A-/A+
+  lineHeight: fontSize * 1.35
+
+════════════════════════════════════════════════════════
+CHANGE 2 — FONT SIZE STEPS: redesigned for accessibility
+════════════════════════════════════════════════════════
+
+REMOVE the current 5-step system.
+REPLACE with this new 5-step system with higher base values:
+
+  const FONT_STEPS = {
+    xs:  { tile: 10, arabic: 18, translit: 12, translation: 12 },
+    sm:  { tile: 12, arabic: 20, translit: 13, translation: 13 },
+    md:  { tile: 14, arabic: 24, translit: 15, translation: 15 },  // NEW DEFAULT
+    lg:  { tile: 16, arabic: 28, translit: 17, translation: 17 },
+    xl:  { tile: 18, arabic: 32, translit: 19, translation: 19 },
+  }
+
+  const STEP_ORDER = ['xs', 'sm', 'md', 'lg', 'xl']
+
+KEY CHANGES from previous:
+  - Default is now 'md' (tile 14px) not 'sm' (tile 10px)
+  - Minimum 'xs' tile is 10px not 9px
+  - Maximum 'xl' tile is 18px — clearly readable for elderly
+  - All steps are significantly larger than before
+
+REASONING:
+  - 'md' (14px) is the baseline comfortable size for most adults
+  - 'lg' (16px) is the comfortable size for users over 50
+  - 'xl' (18px) is the accessible size for elderly users
+  - 'xs' and 'sm' exist for users who want more tiles visible
+
+════════════════════════════════════════════════════════
+CHANGE 3 — MIGRATE existing stored font size
+════════════════════════════════════════════════════════
+
+On load, if stored value is 'small' → set to 'sm'
+If stored value is 'medium' → set to 'md'
+If stored value is 'large' → set to 'lg'
+If stored value is null/undefined → set to 'md'
+
+════════════════════════════════════════════════════════
+CHANGE 4 — A-/A+ BUTTON LABELS
+════════════════════════════════════════════════════════
+
+Show the current size label next to the buttons
+so the user knows where they are in the scale:
+
+  A-  [sm]  A+
+
+The label between the buttons shows the current 
+step name in a human-readable way:
+
+  xs  → display as "XS"
+  sm  → display as "S"
+  md  → display as "M"
+  lg  → display as "L"
+  xl  → display as "XL"
+
+  fontSize: 11
+  color: C.textMuted
+  minWidth: 28
+  textAlign: 'center'
+
+This replaces the current dot indicator between A- and A+.
+
+Do not change any dhikr content, counts, or translations.
+Do not change the Favourites page beyond inheriting 
+the new TILE_HEIGHT.
+Do not add new dependencies.

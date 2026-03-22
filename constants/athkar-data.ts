@@ -1379,6 +1379,42 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         translationKey: "athkar_laylatul_qadr_1",
         count: 1,
       },
+      {
+        arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي",
+        transliteration: "Allāhumma innaka ʿafuwwun karīmun tuḥibbul-ʿafwa faʿfu ʿannī.",
+        translationKey: "athkar_laylatul_qadr_2",
+        count: 1,
+      },
+      {
+        arabic: "إِنَّا أَنْزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ ۝ وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ ۝ لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ ۝ تَنَزَّلُ الْمَلَائِكَةُ وَالرُّوحُ فِيهَا بِإِذْنِ رَبِّهِمْ مِنْ كُلِّ أَمْرٍ ۝ سَلَامٌ هِيَ حَتَّى مَطْلَعِ الْفَجْرِ",
+        transliteration: "Innā anzalnāhu fī laylatal-qadr. Wa mā adrāka mā laylatul-qadr. Laylatul-qadri khayrun min alfi shahr. Tanazzalul-malāʾikatu war-rūḥu fīhā biʾidhni rabbihim min kulli amr. Salāmun hiya ḥattā maṭlaʿil-fajr.",
+        translationKey: "athkar_laylatul_qadr_3",
+        count: 1,
+      },
+      {
+        arabic: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
+        transliteration: "Yā ḥayyu yā qayyūmu biraḥmatika astaghīth, aṣliḥ lī shaʾnī kullahu wa lā takilnī ilā nafsī ṭarfata ʿayn.",
+        translationKey: "athkar_laylatul_qadr_4",
+        count: 1,
+      },
+      {
+        arabic: "أَسْتَغْفِرُ اللَّهَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ",
+        transliteration: "Astaghfirullāhal-ladhī lā ilāha illā huwal-ḥayyul-qayyūmu wa atūbu ilayh.",
+        translationKey: "athkar_laylatul_qadr_5",
+        count: 100,
+      },
+      {
+        arabic: "اللَّهُمَّ إِنَّكَ قُلْتَ فِي كِتَابِكَ الْمُنَزَّلِ لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ، وَقَدْ مَضَتِ الْآلَافُ مِنَ الشُّهُورِ وَلَمْ أَغْتَنِمْ مِنْهَا لَيْلَةَ الْقَدْرِ، فَاللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي، وَاجْعَلِ الْقُرْآنَ رَبِيعَ قَلْبِي وَنُورَ صَدْرِي وَجِلَاءَ حُزْنِي وَذَهَابَ هَمِّي",
+        transliteration: "Allāhumma innaka qulta fī kitābikal-munazzali laylatul-qadri khayrun min alfi shahr, wa qad maḍatil-ālāfu minash-shuhūri wa lam aghtanim minhā laylatal-qadr. Fallāhumma innaka ʿafuwwun karīmun tuḥibbul-ʿafwa faʿfu ʿannī, wajʿalil-Qurʾāna rabīʿa qalbī wa nūra ṣadrī wa jalāʾa ḥuznī wa dhahāba hammī.",
+        translationKey: "athkar_laylatul_qadr_6",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ اجْعَلْنِي مِمَّنْ يُحْيِي هَذِهِ اللَّيْلَةَ وَيَغْتَنِمُهَا، وَاقْبَلْ تَوْبَتِي وَاغْفِرْ ذُنُوبِي، وَأَعِنِّي عَلَى طَاعَتِكَ وَعِبَادَتِكَ، وَلَا تَحْرِمْنِي خَيْرَهَا وَبَرَكَتَهَا يَا أَرْحَمَ الرَّاحِمِينَ",
+        transliteration: "Allāhummaj-ʿalnī mimman yuḥyī hādhihil-laylata wa yaghtanimuhā, waqbal tawbatī waghfir dhunūbī, wa aʿinnī ʿalā ṭāʿatika wa ʿibādatik, wa lā taḥrimnī khayrahā wa barakatahā yā arḥamar-rāḥimīn.",
+        translationKey: "athkar_laylatul_qadr_7",
+        count: 1,
+      },
     ],
   },
   {

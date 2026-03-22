@@ -7,6 +7,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, FadeIn 
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
 import i18n, { t, isRtlLang, LANG_META } from '@/constants/i18n';
@@ -879,6 +880,58 @@ function ReaderScreen({
     progressWidth.value = withTiming(progress, { duration: 300 });
   }, [progress]);
 
+  const [copyHighlightIdx, setCopyHighlightIdx] = useState<number | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastOpacity = useSharedValue(0);
+  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity.value }));
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastVisible(true);
+    toastOpacity.value = withTiming(1, { duration: 200 });
+    toastTimerRef.current = setTimeout(() => {
+      toastOpacity.value = withTiming(0, { duration: 300 });
+      setTimeout(() => setToastVisible(false), 300);
+    }, 1500);
+  }, []);
+
+  const handleCopy = useCallback((dhikr: Dhikr, translation: string, index: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setCopyHighlightIdx(index);
+    const copyText = async (text: string) => {
+      setCopyHighlightIdx(null);
+      await Clipboard.setStringAsync(text);
+      showToast();
+    };
+    const clearHighlight = () => setCopyHighlightIdx(null);
+    const tCopy = (key: string, fallback: string) => (tr as any)[key] ?? fallback;
+    if (displayMode === 'arabic') {
+      Alert.alert(
+        tCopy('copy_dhikr_title', 'Copy Dhikr'),
+        undefined,
+        [
+          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(dhikr.arabic) },
+          { text: tCopy('btn_cancel', 'Cancel'), style: 'cancel', onPress: clearHighlight },
+        ],
+      );
+    } else {
+      Alert.alert(
+        tCopy('copy_dhikr_title', 'Copy Dhikr'),
+        undefined,
+        [
+          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(dhikr.arabic) },
+          { text: tCopy('copy_translit_only', 'Transliteration only'), onPress: () => copyText(dhikr.transliteration) },
+          { text: tCopy('copy_translation_only', 'Translation only'), onPress: () => copyText(translation) },
+          { text: tCopy('copy_arabic_translit', 'Arabic + Transliteration'), onPress: () => copyText(dhikr.arabic + '\n\n' + dhikr.transliteration) },
+          { text: tCopy('copy_arabic_translation', 'Arabic + Translation'), onPress: () => copyText(dhikr.arabic + '\n\n' + translation) },
+          { text: tCopy('copy_all', 'Copy all'), onPress: () => copyText(dhikr.arabic + '\n\n' + dhikr.transliteration + '\n\n' + translation) },
+          { text: tCopy('btn_cancel', 'Cancel'), style: 'cancel', onPress: clearHighlight },
+        ],
+      );
+    }
+  }, [displayMode, tr, showToast]);
+
   if (allDone) {
     return (
       <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -953,7 +1006,7 @@ function ReaderScreen({
         ref={readerRef}
         data={category.adhkar}
         keyExtractor={(_, i) => String(i)}
-        extraData={athkarLang}
+        extraData={[athkarLang, copyHighlightIdx]}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={() => {}}
@@ -974,6 +1027,8 @@ function ReaderScreen({
               C={C}
               displayMode={displayMode}
               onTap={() => onTap(category, dhikr, index)}
+              onCopy={() => handleCopy(dhikr, translation, index)}
+              highlighted={copyHighlightIdx === index}
               showHelp={showHelp}
               arabicFontSize={cardFS.arabic}
               translitFontSize={cardFS.translit}
@@ -983,6 +1038,12 @@ function ReaderScreen({
         }}
       />
 
+      {toastVisible && (
+        <Animated.View style={[styles.toast, toastStyle, { backgroundColor: C.tint }]} pointerEvents="none">
+          <Ionicons name="checkmark-circle" size={16} color={C.tintText} />
+          <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copied_toast ?? 'Copied'}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -998,23 +1059,27 @@ interface CardProps {
   C: any;
   displayMode: 'arabic' | 'full';
   onTap: () => void;
+  onCopy: () => void;
+  highlighted: boolean;
   showHelp: (text: string) => void;
   arabicFontSize: number;
   translitFontSize: number;
   translationFontSize: number;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, showHelp, arabicFontSize, translitFontSize, translationFontSize }: CardProps) {
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, showHelp, arabicFontSize, translitFontSize, translationFontSize }: CardProps) {
   const hasHelpNote = DHIKR_HELP_KEYS.has(dhikr.translationKey);
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
         onPress={onTap}
+        onLongPress={onCopy}
+        delayLongPress={400}
         style={({ pressed }) => [
           styles.card,
           {
             backgroundColor: done ? C.tint + '18' : C.backgroundCard,
-            borderColor: done ? C.tint + '55' : C.separator,
+            borderColor: highlighted ? C.tint + '66' : done ? C.tint + '55' : C.separator,
             opacity: pressed && !done ? 0.88 : 1,
           },
         ]}
@@ -1379,5 +1444,26 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  toastText: {
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
 });
