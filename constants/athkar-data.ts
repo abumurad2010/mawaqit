@@ -194,7 +194,7 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
   },
   {
     id: 'waking',
-    icon: 'weather-sunset-up',
+    icon: 'alarm',
     nameKey: 'athkar_cat_waking',
     adhkar: [
       {
@@ -658,7 +658,7 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
   },
   {
     id: 'ruqyah',
-    icon: 'shield-cross-outline',
+    icon: 'eye-off-outline',
     nameKey: 'athkar_cat_ruqyah',
     adhkar: [
       {
@@ -907,4 +907,13 @@ const ORDER = [
   'calamity','istikhara','travel','visiting_sick','rain','quran_khatm',
 ];
 
-export default ORDER.map(id => ATHKAR_CATEGORIES.find(c => c.id === id)!) as AthkarCategory[];
+const _ORDERED = ORDER.map(id => ATHKAR_CATEGORIES.find(c => c.id === id)!) as AthkarCategory[];
+
+const _ruqyah = _ORDERED.find(c => c.id === 'ruqyah');
+const _morning = _ORDERED.find(c => c.id === 'morning');
+const _waking = _ORDERED.find(c => c.id === 'waking');
+console.log('Ruqyah icon set to:', _ruqyah?.icon);
+console.log('Morning icon set to:', _morning?.icon);
+console.log('Waking icon set to:', _waking?.icon);
+
+export default _ORDERED;

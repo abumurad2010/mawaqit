@@ -9,7 +9,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
-import { t, isRtlLang } from '@/constants/i18n';
+import { t, isRtlLang, LANG_META } from '@/constants/i18n';
+import type { Lang } from '@/constants/i18n';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
@@ -62,6 +63,7 @@ export default function AthkarScreen() {
   const [favourites, setFavourites] = useState<string[]>([]);
   const [helpContent, setHelpContent] = useState<string | null>(null);
   const [favHelpSeen, setFavHelpSeen] = useState(true);
+  const [athkarLang, setAthkarLang] = useState<Lang>(lang as Lang);
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,11 +76,7 @@ export default function AthkarScreen() {
     }).catch(() => {});
   }, []);
 
-  const sortedCategories = useMemo(() => {
-    const favs = ATHKAR_CATEGORIES.filter(c => favourites.includes(c.id));
-    const rest = ATHKAR_CATEGORIES.filter(c => !favourites.includes(c.id));
-    return [...favs, ...rest];
-  }, [favourites]);
+  const sortedCategories = useMemo(() => ATHKAR_CATEGORIES, []);
 
   const toggleFavourite = useCallback((cat: AthkarCategory) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -188,6 +186,8 @@ export default function AthkarScreen() {
           onReset={resetCounts}
           displayMode={displayMode}
           showHelp={showHelp}
+          athkarLang={athkarLang}
+          setAthkarLang={setAthkarLang}
         />
       ) : (
         <GridScreen
@@ -262,6 +262,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   for (let i = 0; i < sortedCategories.length; i += NUM_COLS) {
     rows.push(sortedCategories.slice(i, i + NUM_COLS).map((cat, j) => ({ cat, gIdx: i + j })));
   }
+  const firstFavGIdx = sortedCategories.findIndex(c => favourites.includes(c.id));
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -316,7 +317,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                 onPress={onSelect}
                 isFavourite={favourites.includes(cat.id)}
                 onLongPress={onLongPress}
-                showFavHelpBadge={gIdx === 0 && favourites.includes(cat.id) && !favHelpSeen}
+                showFavHelpBadge={gIdx === firstFavGIdx && firstFavGIdx !== -1 && !favHelpSeen}
                 onFavHelpBadge={() => { showHelp((tr as any).help_athkar_favourites ?? ''); onFavHelpDismiss(); }}
               />
             ))}
@@ -403,14 +404,19 @@ interface ReaderProps {
   onReset: () => void;
   displayMode: 'arabic' | 'full';
   showHelp: (text: string) => void;
+  athkarLang: Lang;
+  setAthkarLang: (l: Lang) => void;
 }
 
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
-  displayMode, showHelp,
+  displayMode, showHelp, athkarLang, setAthkarLang,
 }: ReaderProps) {
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const athkarTr = t(athkarLang);
+  const athkarRtl = isRtlLang(athkarLang);
   const nameKey = category.nameKey as any;
   const catName = (tr as any)[nameKey] ?? nameKey;
   const total = category.adhkar.length;
@@ -495,6 +501,25 @@ function ReaderScreen({
         <Text style={[styles.progressLabel, { color: C.textMuted }]}>{doneCount}/{total}</Text>
       </View>
 
+      {displayMode === 'full' && (
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
+          style={({ pressed }) => [
+            styles.athkarLangDropdown,
+            { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1 },
+          ]}
+        >
+          <Ionicons name="language-outline" size={15} color={C.tint} />
+          <Text style={[styles.athkarLangDropdownText, { color: C.text, fontFamily: athkarRtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+            {LANG_META[athkarLang]?.native ?? athkarLang}
+          </Text>
+          <Text style={[styles.athkarLangDropdownLabel, { color: C.textMuted }]}>
+            {LANG_META[athkarLang]?.label ?? ''}
+          </Text>
+          <Ionicons name="chevron-down" size={14} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+        </Pressable>
+      )}
+
       <FlatList
         ref={readerRef}
         data={category.adhkar}
@@ -505,7 +530,7 @@ function ReaderScreen({
         renderItem={({ item: dhikr, index }) => {
           const done = isDone(category.id, index, dhikr.count);
           const cur = getCount(category.id, index);
-          const translation = (tr as any)[dhikr.translationKey] ?? '';
+          const translation = (athkarTr as any)[dhikr.translationKey] ?? '';
 
           return (
             <DhikrCard
@@ -515,6 +540,7 @@ function ReaderScreen({
               cur={cur}
               translation={translation}
               isRtl={isRtl}
+              translationRtl={athkarRtl}
               C={C}
               displayMode={displayMode}
               onTap={() => onTap(category, dhikr, index)}
@@ -523,6 +549,52 @@ function ReaderScreen({
           );
         }}
       />
+
+      <Modal
+        visible={showLangPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
+          <Pressable
+            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
+            onPress={() => {}}
+          >
+            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
+              <Text style={[styles.pickerTitle, { color: C.text }]}>
+                {(tr as any).help_athkar_language ? ((isRtl ? 'لغة الترجمة' : 'Translation language')) : 'Translation language'}
+              </Text>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {(Object.keys(LANG_META) as Lang[]).map(l => {
+                const active = l === athkarLang;
+                const rtl = isRtlLang(l);
+                return (
+                  <Pressable
+                    key={l}
+                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l); setShowLangPicker(false); }}
+                    style={({ pressed }) => [
+                      styles.pickerRow,
+                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+                        {LANG_META[l]?.native ?? l}
+                      </Text>
+                      <Text style={[styles.pickerLang, { color: C.textMuted }]}>
+                        {LANG_META[l]?.label ?? l}
+                      </Text>
+                    </View>
+                    {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -534,13 +606,14 @@ interface CardProps {
   cur: number;
   translation: string;
   isRtl: boolean;
+  translationRtl: boolean;
   C: any;
   displayMode: 'arabic' | 'full';
   onTap: () => void;
   showHelp: (text: string) => void;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode, onTap, showHelp }: CardProps) {
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, showHelp }: CardProps) {
   const hasHelpNote = DHIKR_HELP_KEYS.has(dhikr.translationKey);
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
@@ -593,8 +666,9 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, C, displayMode
             styles.translationText,
             {
               color: done ? C.tint + 'cc' : C.textSecond,
-              textAlign: isRtl ? 'right' : 'left',
-              writingDirection: isRtl ? 'rtl' : 'ltr',
+              textAlign: translationRtl ? 'right' : 'left',
+              writingDirection: translationRtl ? 'rtl' : 'ltr',
+              fontFamily: translationRtl ? 'Amiri_400Regular' : 'Inter_400Regular',
             },
           ]}>
             {translation}
@@ -805,4 +879,32 @@ const styles = StyleSheet.create({
     borderRadius: 12, alignItems: 'center',
   },
   helpDismissText: { fontSize: 14, fontWeight: '700' },
+  athkarLangDropdown: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 16, marginBottom: 6,
+    paddingHorizontal: 12, paddingVertical: 9,
+    borderRadius: 12, borderWidth: StyleSheet.hairlineWidth,
+  },
+  athkarLangDropdownText: { fontSize: 14, fontWeight: '600' },
+  athkarLangDropdownLabel: { fontSize: 12, opacity: 0.6 },
+  pickerBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  pickerSheet: {
+    width: '88%', maxHeight: 420, borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden',
+  },
+  pickerHeader: {
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  pickerTitle: { fontSize: 16, fontWeight: '600' },
+  pickerRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  pickerNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
+  pickerLang: { fontSize: 12 },
 });
