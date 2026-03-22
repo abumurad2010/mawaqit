@@ -1,0 +1,165 @@
+FOUR CHANGES to the Athkar tab:
+
+════════════════════════════════════════════════════════
+CHANGE 1 — FAVOURITES ONBOARDING HINT
+════════════════════════════════════════════════════════
+
+Remove the ⓘ help badge that appears on favourited tiles.
+
+Replace with a DISMISSIBLE BANNER displayed ABOVE the 
+category grid (below the mode toggle), shown only when 
+the user has never dismissed it before.
+
+BANNER SPEC:
+- Full width, subtle background (C.backgroundCard), 
+  small rounded corners, padding 10px vertical 14px horizontal
+- Text (left/RTL-aware): 
+  en: "Long-press any category to mark it as a favourite"
+  ar: "اضغط مطولاً على أي فئة لإضافتها إلى المفضلة"
+  fr: "Appuyez longuement sur une catégorie pour la mettre en favori"
+  es: "Mantén pulsada una categoría para marcarla como favorita"
+  ru: "Удерживайте категорию, чтобы добавить в избранное"
+  zh: "长按任意类别将其标记为收藏"
+  tr: "Bir kategoriyi favori olarak işaretlemek için uzun basın"
+  ur: "کسی بھی زمرے کو پسندیدہ بنانے کے لیے دیر تک دبائیں"
+  id: "Tekan lama kategori untuk menandainya sebagai favorit"
+  bn: "যেকোনো বিভাগ দীর্ঘক্ষণ চেপে ধরুন প্রিয় হিসেবে চিহ্নিত করতে"
+  fa: "برای علاقه‌مند کردن یک دسته، روی آن نگه دارید"
+  ms: "Tekan lama mana-mana kategori untuk jadikan kegemaran"
+  pt: "Pressione longamente uma categoria para marcá-la como favorita"
+  sw: "Bonyeza kwa muda mrefu kategoria yoyote kuiweka kama kipenzi"
+  ha: "Danna tsayi akan kowane rukuni don sanya shi a cikin abubuwan da ake so"
+  i18n key: athkar_fav_hint
+
+- X button on the right side to dismiss
+- On X tap: 
+    • Banner disappears immediately
+    • Store dismissal in AsyncStorage key 'athkar_fav_hint_seen'
+    • Never show again
+- Do NOT show this banner if 'athkar_fav_hint_seen' is true
+- Do NOT tie its visibility to whether user has favourites —
+  show it from first launch until dismissed
+
+════════════════════════════════════════════════════════
+CHANGE 2 — REMOVE 4 CATEGORIES
+════════════════════════════════════════════════════════
+
+Remove the following categories entirely from 
+constants/athkar-data.ts and from the grid in athkar.tsx:
+
+  id: 'home'     — دعاء دخول وخروج البيت
+  id: 'mosque'   — أذكار المسجد
+  id: 'rain'     — دعاء المطر والرعد
+  id: 'wudu'     — أذكار الوضوء
+
+Also remove their i18n keys (athkar_cat_home, 
+athkar_cat_mosque, athkar_cat_rain, athkar_cat_wudu)
+and all their dhikr translationKeys from i18n.ts.
+
+Remaining 20 categories displayed in a 4-column × 5-row grid
+in this order:
+
+ 1. morning        أذكار الصباح
+ 2. evening        أذكار المساء
+ 3. after_prayer   أذكار بعد الصلاة
+ 4. waking         أذكار الاستيقاظ
+ 5. sleep          أذكار النوم
+ 6. istighfar      الاستغفار
+ 7. ruqyah         الرقية الشرعية
+ 8. anxiety        أدعية الهم والحزن
+ 9. distress       أدعية الكرب
+10. friday         أذكار الجمعة
+11. quranic        الأدعية القرآنية
+12. parents        أدعية الوالدين
+13. rizq           أدعية الرزق
+14. debt           أدعية قضاء الدين
+15. faraj          أدعية الفرج
+16. calamity       أدعية رفع البلاء
+17. istikhara      دعاء الاستخارة
+18. travel         أدعية السفر
+19. visiting_sick  أدعية عيادة المريض
+20. quran_khatm    دعاء ختم القرآن
+
+════════════════════════════════════════════════════════
+CHANGE 3 — DIFFERENTIATE أذكار vs أدعية
+════════════════════════════════════════════════════════
+
+Update the display names for all 20 categories in ALL 
+15 languages in i18n.ts using the correct Islamic 
+terminology — أذكار for remembrance/recitation-based 
+categories, أدعية for supplication-based categories:
+
+CATEGORIES THAT ARE أذكار (remembrance/recitation):
+  morning        → أذكار الصباح
+  evening        → أذكار المساء
+  after_prayer   → أذكار بعد الصلاة
+  waking         → أذكار الاستيقاظ
+  sleep          → أذكار النوم
+  friday         → أذكار الجمعة
+  ruqyah         → أذكار الرقية الشرعية
+  istighfar      → أذكار الاستغفار  
+                   (istighfar is repeated dhikr, not a one-off dua)
+
+CATEGORIES THAT ARE أدعية (supplication):
+  anxiety        → أدعية الهم والحزن
+  distress       → أدعية الكرب
+  quranic        → الأدعية القرآنية  (already correct)
+  parents        → أدعية الوالدين
+  rizq           → أدعية الرزق
+  debt           → أدعية قضاء الدين
+  faraj          → أدعية الفرج
+  calamity       → أدعية رفع البلاء
+  travel         → أدعية السفر
+  visiting_sick  → أدعية عيادة المريض
+
+SINGULAR (neither fits neatly as plural):
+  istikhara      → دعاء الاستخارة  (singular — one specific dua)
+  quran_khatm    → دعاء ختم القرآن (singular — one specific dua)
+
+Update the English equivalents accordingly:
+  أذكار → "Adhkar of..."   e.g. "Morning Adhkar"
+  أدعية → "Duas of..."     e.g. "Duas for Anxiety"
+  دعاء  → "Dua of..."      e.g. "Dua of Istikhara"
+
+Full English values:
+  morning:       "Morning Adhkar"
+  evening:       "Evening Adhkar"
+  after_prayer:  "Adhkar After Prayer"
+  waking:        "Adhkar Upon Waking"
+  sleep:         "Sleep Adhkar"
+  friday:        "Friday Adhkar"
+  ruqyah:        "Ruqyah Adhkar"
+  istighfar:     "Adhkar of Istighfar"
+  anxiety:       "Duas for Anxiety & Grief"
+  distress:      "Duas for Distress"
+  quranic:       "Quranic Duas"
+  parents:       "Duas for Parents"
+  rizq:          "Duas for Sustenance"
+  debt:          "Duas for Debt Relief"
+  faraj:         "Duas for Relief"
+  calamity:      "Duas to Lift Hardship"
+  istikhara:     "Dua of Istikhara"
+  travel:        "Duas for Travel"
+  visiting_sick: "Duas for the Sick"
+  quran_khatm:   "Dua After Quran"
+
+Apply equivalent terminological distinction accurately 
+in all other 13 languages — أذكار/أدعية distinction 
+exists in all languages that have borrowed these terms 
+(Urdu, Indonesian, Malay, Persian, Turkish, Bengali).
+For languages without direct equivalents use:
+  fr: "Invocations" (adhkar) vs "Supplications" (duas)
+  es: "Recitaciones" vs "Súplicas"
+  ru: "Азкары" vs "Дуа"
+  zh: "念诵" vs "祈祷"
+  pt: "Recitações" vs "Súplicas"
+  sw: "Dhikri" vs "Dua"
+  ha: "Azkar" vs "Addu'a"
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any dhikr content, counts, or transliterations.
+Do not change any UI behaviour beyond what is specified.
+Do not add new dependencies.

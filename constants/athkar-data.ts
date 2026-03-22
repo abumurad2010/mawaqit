@@ -902,9 +902,9 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
 
 const ORDER = [
   'morning','evening','after_prayer','waking','sleep','istighfar',
-  'ruqyah','wudu','anxiety','distress','home','mosque',
-  'friday','quranic','parents','rizq','debt','faraj',
-  'calamity','istikhara','travel','visiting_sick','rain','quran_khatm',
+  'ruqyah','anxiety','distress','friday','quranic','parents',
+  'rizq','debt','faraj','calamity','istikhara','travel',
+  'visiting_sick','quran_khatm',
 ];
 
 const _ORDERED = ORDER.map(id => ATHKAR_CATEGORIES.find(c => c.id === id)!) as AthkarCategory[];

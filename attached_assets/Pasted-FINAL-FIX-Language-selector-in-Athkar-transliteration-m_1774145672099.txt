@@ -1,0 +1,89 @@
+FINAL FIX — Language selector in Athkar transliteration mode.
+This has been requested repeatedly. Follow these exact steps:
+
+════════════════════════════════════════════════════════
+STEP 1 — FIND THE WORKING IMPLEMENTATION
+════════════════════════════════════════════════════════
+
+Open app/(tabs)/quran.tsx.
+Find the language selector that appears in transliteration mode.
+Copy the following three things EXACTLY as they are:
+
+1. The state variable that holds the selected language
+   e.g. const [transLang, setTransLang] = useState(...)
+
+2. The dropdown/picker component that renders the 
+   language list and handles selection
+
+3. The logic that uses the selected language to determine
+   which translation string to display for each item
+
+Do not rewrite or reimagine these. Copy them verbatim
+and adapt only the variable names to avoid conflicts.
+
+════════════════════════════════════════════════════════
+STEP 2 — PASTE INTO ATHKAR READER
+════════════════════════════════════════════════════════
+
+Open app/(tabs)/athkar.tsx.
+Find the dhikr reader screen (Screen 2 — shown after 
+tapping a category tile).
+
+Add the copied state variable at the top of the component.
+
+Render the copied dropdown component:
+- POSITION: directly below the Arabic/Transliterated 
+  mode toggle bar
+- VISIBILITY: only when mode === 'transliterated'
+  wrap it in: {mode === 'transliterated' && ( ... )}
+- FULL WIDTH: same width as the toggle bar above it
+
+════════════════════════════════════════════════════════
+STEP 3 — WIRE TO TRANSLATION DISPLAY
+════════════════════════════════════════════════════════
+
+In each dhikr card, the translation text is currently 
+pulled from i18n using the app's global language.
+
+Change it so that when in transliterated mode, the 
+translation text uses the language selected in the 
+dropdown — NOT the global app language.
+
+Specifically:
+  BEFORE: tr[dhikr.translationKey]  
+          or however the translation is currently retrieved
+
+  AFTER:  i18n[athkarLang][dhikr.translationKey]
+          where athkarLang is the state variable from 
+          the dropdown selection
+
+The dropdown must list ALL 15 languages the app supports:
+  Arabic, English, French, Spanish, Russian, Chinese,
+  Turkish, Urdu, Indonesian, Bengali, Persian, Malay,
+  Portuguese, Swahili, Hausa
+
+Each option displays the language's native name 
+(e.g. "العربية", "English", "Français", etc.)
+exactly as they appear in the Quran tab selector.
+
+════════════════════════════════════════════════════════
+STEP 4 — VERIFY
+════════════════════════════════════════════════════════
+
+After implementing, confirm by logging to console:
+  console.log('Athkar lang selector mounted:', athkarLang)
+  console.log('Available languages:', Object.keys(i18n))
+
+The selector must show all 15 languages.
+Selecting any language must immediately update the 
+translation text shown on all dhikr cards.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change the Quran tab in any way.
+Do not change the global app language setting.
+Do not change any dhikr Arabic text or transliterations.
+Do not add new dependencies.
+Do not change anything else in the Athkar tab.

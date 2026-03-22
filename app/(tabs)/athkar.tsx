@@ -17,7 +17,7 @@ import AppLogo from '@/components/AppLogo';
 import ATHKAR_CATEGORIES, { AthkarCategory, Dhikr } from '@/constants/athkar-data';
 
 const FAVS_KEY = 'athkar_favourites';
-const FAV_HELP_KEY = 'athkar_fav_help_seen';
+const FAV_HINT_KEY = 'athkar_fav_hint_seen';
 const GOLD = '#C9A84C';
 
 const DHIKR_HELP_KEYS = new Set([
@@ -62,7 +62,7 @@ export default function AthkarScreen() {
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>('full');
   const [favourites, setFavourites] = useState<string[]>([]);
   const [helpContent, setHelpContent] = useState<string | null>(null);
-  const [favHelpSeen, setFavHelpSeen] = useState(true);
+  const [favHintSeen, setFavHintSeen] = useState(false);
   const [athkarLang, setAthkarLang] = useState<Lang>(lang as Lang);
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,8 +71,8 @@ export default function AthkarScreen() {
     AsyncStorage.getItem(FAVS_KEY).then(raw => {
       if (raw) setFavourites(JSON.parse(raw));
     }).catch(() => {});
-    AsyncStorage.getItem(FAV_HELP_KEY).then(val => {
-      setFavHelpSeen(val === 'true');
+    AsyncStorage.getItem(FAV_HINT_KEY).then(val => {
+      setFavHintSeen(val === 'true');
     }).catch(() => {});
   }, []);
 
@@ -157,9 +157,9 @@ export default function AthkarScreen() {
     setHelpContent(text);
   }, []);
 
-  const dismissFavHelp = useCallback(() => {
-    setFavHelpSeen(true);
-    AsyncStorage.setItem(FAV_HELP_KEY, 'true').catch(() => {});
+  const dismissFavHint = useCallback(() => {
+    setFavHintSeen(true);
+    AsyncStorage.setItem(FAV_HINT_KEY, 'true').catch(() => {});
   }, []);
 
   const dismissHelp = useCallback(() => setHelpContent(null), []);
@@ -204,8 +204,8 @@ export default function AthkarScreen() {
           onLongPress={toggleFavourite}
           sortedCategories={sortedCategories}
           showHelp={showHelp}
-          favHelpSeen={favHelpSeen}
-          onFavHelpDismiss={dismissFavHelp}
+          favHintSeen={favHintSeen}
+          onFavHintDismiss={dismissFavHint}
         />
       )}
 
@@ -252,17 +252,16 @@ interface GridProps {
   onLongPress: (cat: AthkarCategory) => void;
   sortedCategories: AthkarCategory[];
   showHelp: (text: string) => void;
-  favHelpSeen: boolean;
-  onFavHelpDismiss: () => void;
+  favHintSeen: boolean;
+  onFavHintDismiss: () => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHelpSeen, onFavHelpDismiss }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss }: GridProps) {
   const NUM_COLS = 4;
   const rows: { cat: AthkarCategory; gIdx: number }[][] = [];
   for (let i = 0; i < sortedCategories.length; i += NUM_COLS) {
     rows.push(sortedCategories.slice(i, i + NUM_COLS).map((cat, j) => ({ cat, gIdx: i + j })));
   }
-  const firstFavGIdx = sortedCategories.findIndex(c => favourites.includes(c.id));
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -300,13 +299,24 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </View>
       </View>
 
+      {!favHintSeen && (
+        <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard }]}>
+          <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left' }]}>
+            {(tr as any).athkar_fav_hint ?? ''}
+          </Text>
+          <Pressable onPress={onFavHintDismiss} hitSlop={12}>
+            <Ionicons name="close" size={16} color={C.textMuted} />
+          </Pressable>
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={[styles.gridContainer, { paddingBottom: bottomInset + 20 }]}
         showsVerticalScrollIndicator={false}
       >
         {rows.map((row, rIdx) => (
           <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            {row.map(({ cat, gIdx }) => (
+            {row.map(({ cat }) => (
               <GridCell
                 key={cat.id}
                 cat={cat}
@@ -317,8 +327,6 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                 onPress={onSelect}
                 isFavourite={favourites.includes(cat.id)}
                 onLongPress={onLongPress}
-                showFavHelpBadge={gIdx === firstFavGIdx && firstFavGIdx !== -1 && !favHelpSeen}
-                onFavHelpBadge={() => { showHelp((tr as any).help_athkar_favourites ?? ''); onFavHelpDismiss(); }}
               />
             ))}
           </View>
@@ -337,11 +345,9 @@ interface CellProps {
   onPress: (cat: AthkarCategory) => void;
   isFavourite: boolean;
   onLongPress: (cat: AthkarCategory) => void;
-  showFavHelpBadge: boolean;
-  onFavHelpBadge: () => void;
 }
 
-function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, showFavHelpBadge, onFavHelpBadge }: CellProps) {
+function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress }: CellProps) {
   const nameKey = cat.nameKey as any;
   const name = (tr as any)[nameKey] ?? nameKey;
 
@@ -362,11 +368,6 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
       {isFavourite && (
         <View style={styles.favBadge}>
           <Text style={styles.favStar}>⭐</Text>
-        </View>
-      )}
-      {showFavHelpBadge && (
-        <View style={styles.favHelpBadge}>
-          <AthkarHelpBtn onPress={onFavHelpBadge} C={C} />
         </View>
       )}
       <MaterialCommunityIcons name={cat.icon as any} size={28} color={isFavourite ? GOLD : C.tint} />
@@ -735,10 +736,20 @@ const styles = StyleSheet.create({
   favStar: {
     fontSize: 10,
   },
-  favHelpBadge: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
+  favHintBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    gap: 8,
+  },
+  favHintText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
   },
   cellLabel: {
     fontSize: 11,
