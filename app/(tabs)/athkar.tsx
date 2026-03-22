@@ -159,7 +159,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           >
             <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
             <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
-              {isAr ? 'عربي فقط' : 'Arabic'}
+              {tr.athkar_mode_arabic}
             </Text>
           </Pressable>
           <Pressable
@@ -168,7 +168,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           >
             <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
             <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
-              {isAr ? 'كامل' : 'Full'}
+              {tr.athkar_mode_transliterated}
             </Text>
           </Pressable>
         </View>

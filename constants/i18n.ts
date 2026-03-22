@@ -90,6 +90,8 @@ const base = {
   language: 'Language',
   arabic: 'Arabic',
   english: 'English',
+  athkar_mode_arabic: 'Arabic',
+  athkar_mode_transliterated: 'Transliterated',
   qiblaDirection: 'Qibla Direction',
   degrees: '°',
   searching: 'Searching...',
@@ -360,6 +362,8 @@ const translations: Record<Lang, PartialT> = {
     language: 'اللغة',
     arabic: 'العربية',
     english: 'الإنجليزية',
+    athkar_mode_arabic: 'عربي',
+    athkar_mode_transliterated: 'نقل حرفي',
     qiblaDirection: 'اتجاه القبلة',
     degrees: 'درجة',
     searching: 'جاري البحث...',
@@ -521,6 +525,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'En cas de malheur',
     athkar_cat_rain: 'Pluie et tonnerre',
     athkar_cat_quran_khatm: 'Après le Coran',
+    athkar_mode_transliterated: 'Translittéré',
   },
 
   es: {
@@ -593,6 +598,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Ante la calamidad',
     athkar_cat_rain: 'Lluvia y truenos',
     athkar_cat_quran_khatm: 'Tras el Corán',
+    athkar_mode_transliterated: 'Transliterado',
   },
 
   ru: {
@@ -668,6 +674,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'При несчастье',
     athkar_cat_rain: 'Дождь и гром',
     athkar_cat_quran_khatm: 'После Корана',
+    athkar_mode_transliterated: 'Транслитерация',
   },
 
   zh: {
@@ -743,6 +750,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: '遭难时祈祷',
     athkar_cat_rain: '雨天雷声祈祷',
     athkar_cat_quran_khatm: '完成古兰经后',
+    athkar_mode_transliterated: '音译',
   },
 
   tr: {
@@ -823,6 +831,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Musibet Anında',
     athkar_cat_rain: 'Yağmur ve Gök Gürültüsü',
     athkar_cat_quran_khatm: 'Kuran Hatmi Sonrası',
+    athkar_mode_transliterated: 'Okunuş',
   },
 
   ur: {
@@ -903,6 +912,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'مصیبت کے وقت',
     athkar_cat_rain: 'بارش اور بجلی',
     athkar_cat_quran_khatm: 'ختم قرآن کی دعا',
+    athkar_mode_transliterated: 'حرفی نقل',
   },
 
   id: {
@@ -980,6 +990,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Saat Musibah',
     athkar_cat_rain: 'Hujan dan Petir',
     athkar_cat_quran_khatm: 'Setelah Khatam Quran',
+    athkar_mode_transliterated: 'Transliterasi',
   },
 
   bn: {
@@ -1055,6 +1066,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'বিপদের সময়',
     athkar_cat_rain: 'বৃষ্টি ও বজ্রপাত',
     athkar_cat_quran_khatm: 'খতমের দোয়া',
+    athkar_mode_transliterated: 'প্রতিবর্ণীকরণ',
   },
 
   fa: {
@@ -1135,6 +1147,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'هنگام مصیبت',
     athkar_cat_rain: 'باران و رعد و برق',
     athkar_cat_quran_khatm: 'دعای ختم قرآن',
+    athkar_mode_transliterated: 'نویسه‌گردانی',
   },
 
   ms: {
@@ -1207,6 +1220,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Ketika Musibah',
     athkar_cat_rain: 'Hujan dan Petir',
     athkar_cat_quran_khatm: 'Selepas Khatam Quran',
+    athkar_mode_transliterated: 'Transliterasi',
   },
 
   pt: {
@@ -1279,6 +1293,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Em caso de calamidade',
     athkar_cat_rain: 'Chuva e trovão',
     athkar_cat_quran_khatm: 'Após o Corão',
+    athkar_mode_transliterated: 'Transliterado',
   },
 
   sw: {
@@ -1351,6 +1366,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Wakati wa Msiba',
     athkar_cat_rain: 'Mvua na Radi',
     athkar_cat_quran_khatm: 'Baada ya Kuhitimisha Quran',
+    athkar_mode_transliterated: 'Uandishi wa Sauti',
   },
 
   ha: {
@@ -1423,6 +1439,7 @@ const translations: Record<Lang, PartialT> = {
     athkar_cat_calamity: 'Lokacin Masifa',
     athkar_cat_rain: 'Ruwan Sama da Tsawa',
     athkar_cat_quran_khatm: "Bayan Kammala Alqur'ani",
+    athkar_mode_transliterated: 'Rubutun Sauti',
   },
 };
 
