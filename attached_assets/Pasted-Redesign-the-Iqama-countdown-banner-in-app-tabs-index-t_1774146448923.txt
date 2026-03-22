@@ -1,0 +1,85 @@
+Redesign the Iqama countdown banner in app/(tabs)/index.tsx.
+
+════════════════════════════════════════════════════════
+CURRENT PROBLEM
+════════════════════════════════════════════════════════
+
+The current layout shows:
+  Top-left small:    "IQAMA IN"
+  Bottom-left large: "Fajr"
+  Right large:       "00:11:53"
+
+This is illogical — "Fajr" is visually dominant but it's 
+already shown in the prayer list below. The purpose of 
+this banner is the Iqama countdown, which should be 
+the hero element.
+
+════════════════════════════════════════════════════════
+NEW LAYOUT
+════════════════════════════════════════════════════════
+
+Restructure the banner as follows:
+
+TOP ROW — small, muted, centered or left-aligned:
+  Icon (existing prayer icon, size 16) + prayer name
+  e.g.  ☽  Fajr
+  font: existing C.textMuted, fontSize 12, 
+        letterSpacing 0.08em, uppercase
+
+MIDDLE ROW — hero element, centered:
+  The word "Iqama" in the app's current language:
+    ar: "الإقامة"
+    en: "Iqama"
+    fr: "Iqâma"
+    es: "Iqama"
+    ru: "Икама"
+    zh: "伊卡玛"
+    tr: "İkamet"
+    ur: "اقامت"
+    id: "Iqamah"
+    bn: "ইকামাহ"
+    fa: "اقامه"
+    ms: "Iqamat"
+    pt: "Iqama"
+    sw: "Iqama"
+    ha: "Iqama"
+  i18n key: iqama_label
+  font: Amiri_700Bold for Arabic/Urdu/Persian/Bengali/Hausa,
+        existing serif font for others
+  fontSize: 15
+  color: rgba(255,255,255,0.75)
+  letterSpacing: 0.12em
+
+BOTTOM ROW — largest element, centered:
+  The countdown timer  e.g.  00:11:53
+  fontSize: 42
+  fontWeight: bold
+  color: white
+  fontFamily: existing monospace or Cinzel used elsewhere
+              for timers in the app
+
+OVERALL BANNER:
+  - Keep existing gradient background colors
+  - Keep existing border radius and margin
+  - Height: increase slightly to accommodate 3 rows 
+    (add ~12px to current height)
+  - All three rows centered horizontally
+  - Vertical padding: 14px top and bottom
+  - Row spacing: 4px between top and middle, 
+                 2px between middle and bottom
+
+════════════════════════════════════════════════════════
+i18n
+════════════════════════════════════════════════════════
+
+Add key 'iqama_label' to all 15 language objects in 
+i18n.ts with the values listed above.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change Iqama timing logic.
+Do not change when the banner appears or disappears.
+Do not change the next-prayer banner (separate component).
+Do not add new dependencies.

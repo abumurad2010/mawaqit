@@ -76,6 +76,15 @@ export default function AthkarScreen() {
     }).catch(() => {});
   }, []);
 
+  useEffect(() => {
+    ATHKAR_CATEGORIES.forEach(cat =>
+      console.log(
+        cat.id, '→', cat.icon,
+        (MaterialCommunityIcons as any).glyphMap?.[cat.icon] ? 'FOUND' : 'MISSING — FALLBACK NEEDED',
+      )
+    );
+  }, []);
+
   const sortedCategories = useMemo(() => ATHKAR_CATEGORIES, []);
 
   const toggleFavourite = useCallback((cat: AthkarCategory) => {

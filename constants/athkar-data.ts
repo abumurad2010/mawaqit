@@ -1,3 +1,14 @@
+/*
+ * BANNED ICONS — never use these in this app:
+ * Any icon whose name contains: 'cross', 'christian',
+ * 'church', 'hospital', 'medical-bag', 'hospital-box',
+ * 'ambulance' (has cross), 'pharmacy' (has cross),
+ * 'star-david', 'star-of-david', 'star-outline' (hexagram risk),
+ * 'sun-compass' (hexagram risk), 'asterisk' (cross risk),
+ * 'plus' standalone icons (cross appearance),
+ * 'shield-cross', 'shield-cross-outline'
+ */
+
 export interface Dhikr {
   arabic: string;
   transliteration: string;
@@ -528,7 +539,7 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
   },
   {
     id: 'visiting_sick',
-    icon: 'medical-bag',
+    icon: 'hand-heart-outline',
     nameKey: 'athkar_cat_visiting_sick',
     adhkar: [
       {
@@ -819,7 +830,7 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
   },
   {
     id: 'calamity',
-    icon: 'heart-broken-outline',
+    icon: 'candle',
     nameKey: 'athkar_cat_calamity',
     adhkar: [
       {
