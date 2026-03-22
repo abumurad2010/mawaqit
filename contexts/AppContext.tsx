@@ -116,7 +116,7 @@ interface AppContextValue extends AppSettings {
 const DEFAULT_SETTINGS: AppSettings = {
   lang: 'ar',
   secondLang: 'auto',
-  translitLang: 'en',
+  translitLang: 'ar',
   themeMode: 'dark',
   accessibilityTheme: 'default',
   calcMethod: 'MWL',

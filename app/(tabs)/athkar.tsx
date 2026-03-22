@@ -196,7 +196,6 @@ export default function AthkarScreen() {
           displayMode={displayMode}
           showHelp={showHelp}
           athkarLang={athkarLang}
-          setAthkarLang={setAthkarLang}
         />
       ) : (
         <GridScreen
@@ -215,6 +214,8 @@ export default function AthkarScreen() {
           showHelp={showHelp}
           favHintSeen={favHintSeen}
           onFavHintDismiss={dismissFavHint}
+          athkarLang={athkarLang}
+          setAthkarLang={setAthkarLang}
         />
       )}
 
@@ -263,9 +264,13 @@ interface GridProps {
   showHelp: (text: string) => void;
   favHintSeen: boolean;
   onFavHintDismiss: () => void;
+  athkarLang: Lang;
+  setAthkarLang: (l: Lang) => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang }: GridProps) {
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const athkarRtl = isRtlLang(athkarLang);
   const NUM_COLS = 4;
   const rows: { cat: AthkarCategory; gIdx: number }[][] = [];
   for (let i = 0; i < sortedCategories.length; i += NUM_COLS) {
@@ -306,7 +311,71 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           </View>
           <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
         </View>
+        {displayMode === 'full' && (
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
+            style={({ pressed }) => [
+              styles.athkarLangDropdown,
+              { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1, marginTop: 8 },
+            ]}
+          >
+            <Ionicons name="language-outline" size={15} color={C.tint} />
+            <Text style={[styles.athkarLangDropdownText, { color: C.text, fontFamily: athkarRtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+              {LANG_META[athkarLang]?.native ?? athkarLang}
+            </Text>
+            <Text style={[styles.athkarLangDropdownLabel, { color: C.textMuted }]}>
+              {LANG_META[athkarLang]?.label ?? ''}
+            </Text>
+            <Ionicons name="chevron-down" size={14} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+          </Pressable>
+        )}
       </View>
+
+      <Modal
+        visible={showLangPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
+          <Pressable
+            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
+            onPress={e => e.stopPropagation()}
+          >
+            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
+              <Text style={[styles.pickerTitle, { color: C.text }]}>
+                {isRtl ? 'لغة الترجمة' : 'Translation language'}
+              </Text>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {(Object.keys(LANG_META) as Lang[]).map(l => {
+                const active = l === athkarLang;
+                const rtl = isRtlLang(l);
+                return (
+                  <Pressable
+                    key={l}
+                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l); setShowLangPicker(false); }}
+                    style={({ pressed }) => [
+                      styles.pickerRow,
+                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+                        {LANG_META[l]?.native ?? l}
+                      </Text>
+                      <Text style={[styles.pickerLang, { color: C.textMuted }]}>
+                        {LANG_META[l]?.label ?? l}
+                      </Text>
+                    </View>
+                    {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {!favHintSeen && (
         <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard }]}>
@@ -415,16 +484,14 @@ interface ReaderProps {
   displayMode: 'arabic' | 'full';
   showHelp: (text: string) => void;
   athkarLang: Lang;
-  setAthkarLang: (l: Lang) => void;
 }
 
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
-  displayMode, showHelp, athkarLang, setAthkarLang,
+  displayMode, showHelp, athkarLang,
 }: ReaderProps) {
-  const [showLangPicker, setShowLangPicker] = useState(false);
   const athkarRtl = isRtlLang(athkarLang);
 
   useEffect(() => {
@@ -516,25 +583,6 @@ function ReaderScreen({
         <Text style={[styles.progressLabel, { color: C.textMuted }]}>{doneCount}/{total}</Text>
       </View>
 
-      {displayMode === 'full' && (
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
-          style={({ pressed }) => [
-            styles.athkarLangDropdown,
-            { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1 },
-          ]}
-        >
-          <Ionicons name="language-outline" size={15} color={C.tint} />
-          <Text style={[styles.athkarLangDropdownText, { color: C.text, fontFamily: athkarRtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
-            {LANG_META[athkarLang]?.native ?? athkarLang}
-          </Text>
-          <Text style={[styles.athkarLangDropdownLabel, { color: C.textMuted }]}>
-            {LANG_META[athkarLang]?.label ?? ''}
-          </Text>
-          <Ionicons name="chevron-down" size={14} color={C.textMuted} style={{ marginLeft: 'auto' }} />
-        </Pressable>
-      )}
-
       <FlatList
         ref={readerRef}
         data={category.adhkar}
@@ -566,51 +614,6 @@ function ReaderScreen({
         }}
       />
 
-      <Modal
-        visible={showLangPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLangPicker(false)}
-      >
-        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
-          <Pressable
-            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-            onPress={e => e.stopPropagation()}
-          >
-            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
-              <Text style={[styles.pickerTitle, { color: C.text }]}>
-                {(tr as any).help_athkar_language ? ((isRtl ? 'لغة الترجمة' : 'Translation language')) : 'Translation language'}
-              </Text>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {(Object.keys(LANG_META) as Lang[]).map(l => {
-                const active = l === athkarLang;
-                const rtl = isRtlLang(l);
-                return (
-                  <Pressable
-                    key={l}
-                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l); setShowLangPicker(false); }}
-                    style={({ pressed }) => [
-                      styles.pickerRow,
-                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
-                        {LANG_META[l]?.native ?? l}
-                      </Text>
-                      <Text style={[styles.pickerLang, { color: C.textMuted }]}>
-                        {LANG_META[l]?.label ?? l}
-                      </Text>
-                    </View>
-                    {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
