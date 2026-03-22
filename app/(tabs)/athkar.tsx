@@ -325,6 +325,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const { width: screenWidth } = useWindowDimensions();
   const TILE_WIDTH = Math.floor((screenWidth - OUTER_PADDING * 2 - TILE_GAP * (COLUMNS - 1)) / COLUMNS);
   const TILE_HEIGHT = Math.floor(TILE_WIDTH * 1.35);
+  const GRID_ROWS = 4;
+  const GRID_HEIGHT = 8 + (TILE_HEIGHT * GRID_ROWS) + (TILE_GAP * (GRID_ROWS - 1));
   const fsIdx = STEP_ORDER.indexOf(athkarFontSize);
   const canDecrease = fsIdx > 0;
   const canIncrease = fsIdx < STEP_ORDER.length - 1;
@@ -509,6 +511,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </Pressable>
       </Modal>
 
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 80 }}>
       {!favHintSeen && (
         <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard }]}>
           <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
@@ -520,7 +523,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </View>
       )}
 
-      <View style={{ flex: 1 }}>
+      <View style={{ height: GRID_HEIGHT }}>
       <FlatList
         ref={pageListRef}
         data={allPages}
@@ -531,7 +534,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         bounces={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        style={{ flex: 1 }}
+        style={{ height: GRID_HEIGHT }}
         extraData={[favourites, displayMode, athkarLang, athkarFontSize]}
         getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
         renderItem={({ item: pageData }) => {
@@ -544,7 +547,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             }
             console.log('TILE_WIDTH:', TILE_WIDTH, 'TILE_HEIGHT:', TILE_HEIGHT, 'GAP:', TILE_GAP, 'TOTAL:', (TILE_WIDTH * COLUMNS) + (TILE_GAP * (COLUMNS - 1)) + (OUTER_PADDING * 2), 'SCREEN:', screenWidth);
             return (
-              <View style={{ width: screenWidth, paddingHorizontal: OUTER_PADDING, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
+              <View style={{ width: screenWidth, paddingHorizontal: OUTER_PADDING, paddingTop: 8 }}>
                 <Text style={[styles.favPageTitle, { fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: isRtl ? 'right' : 'left' }]}>
                   {(tr as any).athkar_favourites_title ?? 'Favourites'}
                 </Text>
@@ -676,7 +679,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
       )}
       </View>
 
-      <View style={[styles.pageDotsRow, { paddingBottom: bottomInset + 8 }]}>
+      <View style={styles.pageDotsRow}>
         {Array.from({ length: totalPages }).map((_, i) => {
           const isFav = i === totalPages - 1;
           const active = i === currentPage;
@@ -698,6 +701,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           );
         })}
       </View>
+      </ScrollView>
 
       <Modal
         visible={showSearch}

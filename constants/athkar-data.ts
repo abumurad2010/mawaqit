@@ -1366,6 +1366,24 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         translationKey: "athkar_quran_khatm_2",
         count: 1,
       },
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِكُلِّ اسْمٍ هُوَ لَكَ سَمَّيْتَ بِهِ نَفْسَكَ، أَوْ عَلَّمْتَهُ أَحَدًا مِنْ خَلْقِكَ، أَوْ أَنْزَلْتَهُ فِي كِتَابِكَ، أَوِ اسْتَأْثَرْتَ بِهِ فِي عِلْمِ الْغَيْبِ عِنْدَكَ، أَنْ تَجْعَلَ الْقُرْآنَ رَبِيعَ قَلْبِي، وَنُورَ صَدْرِي، وَجَلَاءَ حُزْنِي، وَذَهَابَ هَمِّي",
+        transliteration: "Allāhumma innī asʾaluka bikulli ismin huwa lak, sammayta bihi nafsak, aw ʿallamtahu aḥadan min khalqik, aw anzaltahu fī kitābik, aw istaʾtharta bihi fī ʿilmil-ghaybi ʿindak, an tajʿalal-Qurʾāna rabīʿa qalbī, wa nūra ṣadrī, wa jalāʾa ḥuznī, wa dhahāba hammī.",
+        translationKey: "athkar_quran_khatm_3",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ اجْعَلْنَا مِنْ أَهْلِ الْقُرْآنِ الَّذِينَ هُمْ أَهْلُ اللَّهِ وَخَاصَّتُهُ",
+        transliteration: "Allāhummaj-ʿalnā min ahlil-Qurʾānil-ladhīna hum ahlullāhi wa khāṣṣatuh.",
+        translationKey: "athkar_quran_khatm_4",
+        count: 1,
+      },
+      {
+        arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
+        transliteration: "Rabbanā ātinā fid-dunyā ḥasanatan wa fil-ākhirati ḥasanatan wa qinā ʿadhāban-nār.",
+        translationKey: "athkar_quran_khatm_5",
+        count: 1,
+      },
     ],
   },
   {
