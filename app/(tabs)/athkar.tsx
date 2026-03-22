@@ -59,11 +59,13 @@ export default function AthkarScreen() {
 
   const [selectedCategory, setSelectedCategory] = useState<AthkarCategory | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>('full');
+  const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
+    (!lang || lang === 'ar') ? 'arabic' : 'full'
+  );
   const [favourites, setFavourites] = useState<string[]>([]);
   const [helpContent, setHelpContent] = useState<string | null>(null);
   const [favHintSeen, setFavHintSeen] = useState(false);
-  const [athkarLang, setAthkarLang] = useState<Lang>(lang as Lang);
+  const [athkarLang, setAthkarLang] = useState<Lang>((lang as Lang) || 'ar');
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -84,6 +86,16 @@ export default function AthkarScreen() {
       )
     );
   }, []);
+
+  useEffect(() => {
+    if (!lang || lang === 'ar') {
+      setDisplayMode('arabic');
+      setAthkarLang('ar');
+    } else {
+      setDisplayMode('full');
+      setAthkarLang(lang as Lang);
+    }
+  }, [lang]);
 
   const sortedCategories = useMemo(() => ATHKAR_CATEGORIES, []);
 

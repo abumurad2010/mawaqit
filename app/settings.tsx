@@ -64,6 +64,9 @@ export default function SettingsScreen() {
   const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
   const [draftShowQiyam, setDraftShowQiyam] = useState(showQiyam !== false);
   const [draftEidPrayerTime, setDraftEidPrayerTime] = useState(eidPrayerTime ?? '07:30');
+  const [tempDhuhaTime, setTempDhuhaTime] = useState(dhuhaTime ?? '07:30');
+  const [tempTahajjudTime, setTempTahajjudTime] = useState(tahajjudTime ?? '03:00');
+  const [tempEidPrayerTime, setTempEidPrayerTime] = useState(eidPrayerTime ?? '07:30');
   const [showDhuhaRoller, setShowDhuhaRoller] = useState(false);
   const [showTahajjudRoller, setShowTahajjudRoller] = useState(false);
   const [showEidRoller, setShowEidRoller] = useState(false);
@@ -929,7 +932,7 @@ export default function SettingsScreen() {
             </Text>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowDhuha && { opacity: 0.38 }]} pointerEvents={draftShowDhuha ? 'auto' : 'none'}>
               <Pressable
-                onPress={() => { Haptics.selectionAsync(); setShowDhuhaRoller(true); }}
+                onPress={() => { Haptics.selectionAsync(); setTempDhuhaTime(draftDhuhaTime); setShowDhuhaRoller(true); }}
                 style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
               >
                 <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftDhuhaTime}</Text>
@@ -950,7 +953,7 @@ export default function SettingsScreen() {
             </Text>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowQiyam && { opacity: 0.38 }]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
               <Pressable
-                onPress={() => { Haptics.selectionAsync(); setShowTahajjudRoller(true); }}
+                onPress={() => { Haptics.selectionAsync(); setTempTahajjudTime(draftTahajjudTime); setShowTahajjudRoller(true); }}
                 style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
               >
                 <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftTahajjudTime}</Text>
@@ -972,7 +975,7 @@ export default function SettingsScreen() {
               </Text>
               <HelpBtn helpKey="eid" />
               <Pressable
-                onPress={() => { Haptics.selectionAsync(); setShowEidRoller(true); }}
+                onPress={() => { Haptics.selectionAsync(); setTempEidPrayerTime(draftEidPrayerTime); setShowEidRoller(true); }}
                 style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
               >
                 <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftEidPrayerTime}</Text>
@@ -990,12 +993,12 @@ export default function SettingsScreen() {
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت الضحى' : 'Set Dhuha Time'}
               </Text>
-              <TimeRoller value={draftDhuhaTime} onChange={setDraftDhuhaTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
+              <TimeRoller value={tempDhuhaTime} onChange={setTempDhuhaTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
                 {isAr ? 'يُصلَّى الضحى بعد ارتفاع الشمس وقبل الظهر' : 'Prayed after sunrise and before Dhuhr'}
               </Text>
-              <Pressable onPress={() => setShowDhuhaRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
-                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
+              <Pressable onPress={() => { setDraftDhuhaTime(tempDhuhaTime); setShowDhuhaRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{(tr as any).btn_done ?? 'Done'}</Text>
               </Pressable>
             </View>
           </View>
@@ -1009,12 +1012,12 @@ export default function SettingsScreen() {
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت قيام الليل' : 'Set Qiyam Time'}
               </Text>
-              <TimeRoller value={draftTahajjudTime} onChange={setDraftTahajjudTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
+              <TimeRoller value={tempTahajjudTime} onChange={setTempTahajjudTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
                 {isAr ? 'الثلث الأخير من الليل: من نحو ٢ – ٤ صباحاً' : 'Last third of night: approx 2–4 AM'}
               </Text>
-              <Pressable onPress={() => setShowTahajjudRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
-                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
+              <Pressable onPress={() => { setDraftTahajjudTime(tempTahajjudTime); setShowTahajjudRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{(tr as any).btn_done ?? 'Done'}</Text>
               </Pressable>
             </View>
           </View>
@@ -1028,12 +1031,12 @@ export default function SettingsScreen() {
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
                 {isAr ? 'حدد وقت صلاة العيد' : 'Set Eid Prayer Time'}
               </Text>
-              <TimeRoller value={draftEidPrayerTime} onChange={setDraftEidPrayerTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
+              <TimeRoller value={tempEidPrayerTime} onChange={setTempEidPrayerTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
                 {isAr ? 'أدخل الوقت الرسمي لصلاة العيد في مدينتك' : 'Enter the official Eid prayer time for your city or mosque'}
               </Text>
-              <Pressable onPress={() => setShowEidRoller(false)} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
-                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{isAr ? 'تأكيد' : 'Done'}</Text>
+              <Pressable onPress={() => { setDraftEidPrayerTime(tempEidPrayerTime); setShowEidRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{(tr as any).btn_done ?? 'Done'}</Text>
               </Pressable>
             </View>
           </View>

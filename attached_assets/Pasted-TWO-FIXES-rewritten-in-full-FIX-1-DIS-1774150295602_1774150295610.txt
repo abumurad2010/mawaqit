@@ -1,0 +1,212 @@
+TWO FIXES — rewritten in full:
+
+════════════════════════════════════════════════════════
+FIX 1 — DISMISS BEHAVIOUR FOR ALL POPUPS APP-WIDE
+════════════════════════════════════════════════════════
+
+RULE: Tapping outside any popup, modal, sheet, overlay, 
+or picker must ONLY close it. It must NEVER save, apply, 
+or commit any change. Changes are only committed when 
+the user explicitly taps a confirm/save/done button 
+inside the popup.
+
+STEP 1 — FIND EVERY POPUP IN THE APP
+
+Run these searches and list every result:
+
+grep -rn "Modal\|BottomSheet\|Overlay\|Picker\|ActionSheet\|Alert\|popup\|sheet\|backdrop" \
+  app/ components/ --include="*.tsx" --include="*.ts"
+
+grep -rn "onDismiss\|onRequestClose\|onBackdropPress\|onBackgroundPress\|TouchableWithoutFeedback\|Pressable" \
+  app/ components/ --include="*.tsx" --include="*.ts"
+
+grep -rn "setVisible(false)\|setShow(false)\|setOpen(false)\|setModal" \
+  app/ components/ --include="*.tsx" --include="*.ts"
+
+STEP 2 — FOR EVERY POPUP FOUND, APPLY THIS PATTERN
+
+Each popup must follow this exact state management pattern:
+
+  // On open: snapshot current saved value into temp
+  const handleOpen = () => {
+    setTempValue(currentSavedValue)  // copy, don't reference
+    setVisible(true)
+  }
+
+  // On dismiss (tap outside, back button, swipe away):
+  const handleDismiss = () => {
+    setTempValue(currentSavedValue)  // revert temp to saved
+    setVisible(false)                // just close
+    // DO NOT call any save/apply/update function here
+  }
+
+  // On explicit confirm (Done / Save / Apply / حفظ / تأكيد):
+  const handleConfirm = () => {
+    currentSavedValue = tempValue    // commit the change
+    persistToStorage(tempValue)      // save if needed
+    setVisible(false)                // then close
+  }
+
+  // All interactive elements inside the popup:
+  // update tempValue only, never currentSavedValue directly
+
+STEP 3 — SPECIFIC POPUPS TO FIX
+
+Fix ALL of the following — this list may not be exhaustive,
+fix every popup found in Step 1 regardless:
+
+IN app/settings.tsx:
+  □ Dhuha time selector (TimeRoller popup)
+  □ Qiyam al-Layl time selector (TimeRoller popup)
+  □ Eid Prayer time selector (TimeRoller popup)
+  □ Any other TimeRoller popup
+  □ Calculation method picker/selector
+  □ Asr method picker/selector
+  □ Maghrib offset picker/stepper popup
+  □ First Adhan offset picker popup
+  □ Language selection sheet
+  □ Theme selection sheet
+  □ Font size picker
+  □ Hijri adjustment picker
+  □ Any help text modal — these are read-only so 
+    dismiss behaviour is fine, no change needed
+  □ Any other settings popup
+
+IN app/(tabs)/athkar.tsx:
+  □ Favourites confirmation prompt — 
+    dismiss without tapping Add/Remove = no change
+  □ Language selector dropdown if rendered as modal
+  □ Any help modals — read-only, no change needed
+
+IN app/(tabs)/quran.tsx:
+  □ Language selector if rendered as modal/sheet
+  □ Jump to page modal
+  □ Any other picker
+
+IN app/(tabs)/qibla.tsx:
+  □ Any location picker popup
+  □ Any settings overlay
+
+IN app/(tabs)/index.tsx:
+  □ Location search/picker modal
+  □ Manual coordinate entry popup
+  □ Any other popup
+
+IN components/ (any shared components):
+  □ Any modal component that applies state on dismiss
+
+STEP 4 — VISUAL REQUIREMENT
+
+Every popup that has a confirm action must have 
+an EXPLICIT visible button for that action.
+If a popup currently only closes via outside tap
+with no confirm button, ADD a confirm button.
+
+Button labels by app language:
+  en: "Done"      / "Cancel"
+  ar: "حفظ"       / "إلغاء"
+  fr: "Terminer"  / "Annuler"
+  es: "Listo"     / "Cancelar"
+  ru: "Готово"    / "Отмена"
+  zh: "完成"       / "取消"
+  tr: "Tamam"     / "İptal"
+  ur: "ہو گیا"    / "منسوخ"
+  id: "Selesai"   / "Batal"
+  bn: "সম্পন্ন"   / "বাতিল"
+  fa: "تأیید"     / "لغو"
+  ms: "Selesai"   / "Batal"
+  pt: "Concluído" / "Cancelar"
+  sw: "Maliza"    / "Ghairi"
+  ha: "Tabbata"   / "Soke"
+
+Add i18n keys:
+  btn_done:   all values above
+  btn_cancel: all values above
+
+Use these keys for all confirm/cancel buttons 
+throughout the app — replace any hardcoded strings.
+
+STEP 5 — BACK BUTTON / SWIPE DOWN / GESTURE DISMISS
+
+On Android, the hardware back button inside a popup
+must also behave as Cancel (no save).
+
+On iOS, swipe-down to dismiss a bottom sheet must 
+also behave as Cancel (no save).
+
+In both cases: revert tempValue, close, no commit.
+
+════════════════════════════════════════════════════════
+FIX 2 — ATHKAR TAB DEFAULT MODE
+════════════════════════════════════════════════════════
+
+RULE:
+  The Athkar tab mode toggle has two states:
+    'arabic'          — shows Arabic text only
+    'transliterated'  — shows Arabic + transliteration 
+                        + translation in selected language
+
+DEFAULT ON EVERY LAUNCH / TAB VISIT:
+
+  CASE A — User has never selected an app language
+  (AsyncStorage language key is null or 'ar'):
+    → Mode defaults to 'arabic'
+    → Language selector hidden (arabic mode)
+    → This is the out-of-box experience
+
+  CASE B — User has selected a non-Arabic app language
+  (AsyncStorage language key is 'en', 'fr', 'tr', etc.):
+    → Mode defaults to 'transliterated'
+    → Language selector defaults to the user's app language
+    → Translation shown in that language
+
+  In ALL cases, 'arabic' is the safe fallback.
+  Never default to 'transliterated' unless a non-Arabic 
+  app language is explicitly saved.
+
+IMPLEMENTATION in app/(tabs)/athkar.tsx:
+
+  // Get saved app language from context or AsyncStorage
+  const { language } = useApp()  
+  // or: const language = await AsyncStorage.getItem('appLanguage')
+
+  // Determine default mode
+  const defaultMode = (!language || language === 'ar')
+    ? 'arabic'
+    : 'transliterated'
+
+  // Initialize mode state
+  const [mode, setMode] = useState<'arabic' | 'transliterated'>(defaultMode)
+
+  // Initialize language selector state
+  const [athkarLang, setAthkarLang] = useState<string>(
+    language || 'ar'
+  )
+
+  // When app language changes globally, update athkar defaults:
+  useEffect(() => {
+    if (!language || language === 'ar') {
+      setMode('arabic')
+      setAthkarLang('ar')
+    } else {
+      setMode('transliterated')
+      setAthkarLang(language)
+    }
+  }, [language])
+
+NOTE: Once the user manually toggles the mode or 
+changes the language selector WITHIN the Athkar tab, 
+their in-session choice takes over and must not be 
+overridden until they leave and return to the tab.
+On returning to the tab, re-apply the defaults above.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any content, dhikr text, icons, or counts.
+Do not change help modals (read-only, no state to save).
+Do not change Alert.alert confirmations that already
+  require explicit button press (those are correct).
+Do not add new dependencies.
+Do not change any navigation behaviour.
