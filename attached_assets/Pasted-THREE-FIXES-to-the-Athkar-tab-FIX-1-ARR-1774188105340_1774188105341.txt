@@ -1,0 +1,135 @@
+THREE FIXES to the Athkar tab:
+
+════════════════════════════════════════════════════════
+FIX 1 — ARROW DIRECTIONS
+════════════════════════════════════════════════════════
+
+PROBLEM: The navigation arrows are pointing inward 
+(toward the center of the page) instead of outward
+(toward the edge they navigate to).
+
+The arrows indicate direction of travel:
+  Left arrow  → points LEFT  → goes to PREVIOUS page
+  Right arrow → points RIGHT → goes to NEXT page
+
+Find the two chevron icons and swap their names:
+
+LEFT side arrow (previous page):
+  CHANGE FROM: 'chevron-right'
+  CHANGE TO:   'chevron-left'
+
+RIGHT side arrow (next page):
+  CHANGE FROM: 'chevron-left'  
+  CHANGE TO:   'chevron-right'
+
+Do not change their positions, tap handlers, or opacity logic.
+
+════════════════════════════════════════════════════════
+FIX 2 — TILE SPACING (still not applied)
+════════════════════════════════════════════════════════
+
+The gaps between tiles are still not rendering.
+The previous fix did not take effect.
+
+DO THIS INSTEAD — rebuild the grid layout from scratch
+using a manual approach that guarantees gaps:
+
+REMOVE any FlatList columnWrapperStyle gap approach.
+REPLACE with this explicit manual grid calculation:
+
+  const SCREEN_WIDTH = useWindowDimensions().width
+  const OUTER_PADDING = 14        // left and right screen edge
+  const TILE_GAP = 10             // gap between tiles
+  const COLUMNS = 4
+  const TILE_WIDTH = Math.floor(
+    (SCREEN_WIDTH - (OUTER_PADDING * 2) - (TILE_GAP * (COLUMNS - 1))) / COLUMNS
+  )
+  const TILE_HEIGHT = TILE_WIDTH  // square tiles
+
+Render the grid as ROWS of Views, not FlatList:
+
+  // Split categories array into rows of 4
+  const rows = []
+  for (let i = 0; i < categories.length; i += COLUMNS) {
+    rows.push(categories.slice(i, i + COLUMNS))
+  }
+
+  // Render
+  <View style={{ paddingHorizontal: OUTER_PADDING }}>
+    {rows.map((row, rowIndex) => (
+      <View 
+        key={rowIndex}
+        style={{ 
+          flexDirection: 'row',
+          gap: TILE_GAP,
+          marginBottom: rowIndex < rows.length - 1 ? TILE_GAP : 0
+        }}
+      >
+        {row.map((cat) => (
+          <CategoryTile
+            key={cat.id}
+            category={cat}
+            style={{ width: TILE_WIDTH, height: TILE_HEIGHT }}
+          />
+        ))}
+        {/* Fill incomplete last row with placeholders */}
+        {row.length < COLUMNS && 
+          Array(COLUMNS - row.length).fill(null).map((_, i) => (
+            <View 
+              key={`ph_${i}`} 
+              style={{ width: TILE_WIDTH, height: TILE_HEIGHT }} 
+            />
+          ))
+        }
+      </View>
+    ))}
+  </View>
+
+Apply IDENTICAL layout logic to the Favourites page.
+
+VERIFY by logging:
+  console.log('TILE_WIDTH:', TILE_WIDTH, 'GAP:', TILE_GAP, 
+              'TOTAL:', (TILE_WIDTH * 4) + (TILE_GAP * 3) + (OUTER_PADDING * 2),
+              'SCREEN:', SCREEN_WIDTH)
+The TOTAL should equal SCREEN_WIDTH.
+
+════════════════════════════════════════════════════════
+FIX 3 — FONT SIZE: MULTIPLE STEPS
+════════════════════════════════════════════════════════
+
+PROBLEM: Font size currently only increments once 
+then stops. The A+ and A- buttons must support 
+5 distinct size steps, not 3.
+
+Replace the current 3-step system with 5 steps:
+
+  const FONT_STEPS = {
+    xs:   { tile: 9,  arabic: 16, translit: 10, translation: 10 },
+    sm:   { tile: 10, arabic: 18, translit: 11, translation: 11 },
+    md:   { tile: 12, arabic: 22, translit: 13, translation: 13 },  // default
+    lg:   { tile: 13, arabic: 26, translit: 15, translation: 15 },
+    xl:   { tile: 14, arabic: 30, translit: 17, translation: 17 },
+  }
+
+  const STEP_ORDER = ['xs', 'sm', 'md', 'lg', 'xl']
+
+A- decreases one step: xl→lg→md→sm→xs (stops at xs)
+A+ increases one step: xs→sm→md→lg→xl (stops at xl)
+
+A- disabled/opacity 0.3 when at 'xs'
+A+ disabled/opacity 0.3 when at 'xl'
+
+Update AsyncStorage key 'athkar_font_size' to store 
+one of: 'xs', 'sm', 'md', 'lg', 'xl'
+Default: 'md'
+
+Migrate old values:
+  'small'  → 'sm'
+  'medium' → 'md'  
+  'large'  → 'lg'
+
+The A- and A+ buttons must remain responsive for all 
+5 presses before reaching the limit — not just 1.
+
+Do not change any other behaviour.
+Do not add new dependencies.

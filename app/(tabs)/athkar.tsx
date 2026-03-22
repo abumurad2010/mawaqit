@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal, Dimensions, TextInput,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal, Dimensions, TextInput, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, FadeIn } from 'react-native-reanimated';
@@ -20,18 +20,18 @@ const FAVS_KEY = 'athkar_favourites';
 const FAV_HINT_KEY = 'athkar_fav_hint_seen';
 const ATHKAR_FS_KEY = 'athkar_font_size';
 const GOLD = '#C9A84C';
-const OUTER_PADDING = 12;
-const GAP = 10;
+const OUTER_PADDING = 14;
+const TILE_GAP = 10;
 const COLUMNS = 4;
-const SCREEN_W = Dimensions.get('window').width;
-const TILE_SIZE = (SCREEN_W - OUTER_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS;
 
-type AthkarFontSize = 'small' | 'medium' | 'large';
-const FS_STEPS: AthkarFontSize[] = ['small', 'medium', 'large'];
-const FS_LABEL: Record<AthkarFontSize, { label: number; arabic: number; translit: number; translation: number }> = {
-  small:  { label: 10, arabic: 18, translit: 11, translation: 11 },
-  medium: { label: 12, arabic: 22, translit: 13, translation: 13 },
-  large:  { label: 13, arabic: 26, translit: 15, translation: 15 },
+type AthkarFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+const STEP_ORDER: AthkarFontSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+const FONT_STEPS: Record<AthkarFontSize, { tile: number; arabic: number; translit: number; translation: number }> = {
+  xs: { tile: 9,  arabic: 16, translit: 10, translation: 10 },
+  sm: { tile: 10, arabic: 18, translit: 11, translation: 11 },
+  md: { tile: 12, arabic: 22, translit: 13, translation: 13 },
+  lg: { tile: 13, arabic: 26, translit: 15, translation: 15 },
+  xl: { tile: 14, arabic: 30, translit: 17, translation: 17 },
 };
 
 const DHIKR_HELP_KEYS = new Set([
@@ -80,7 +80,7 @@ export default function AthkarScreen() {
   const [helpContent, setHelpContent] = useState<string | null>(null);
   const [favHintSeen, setFavHintSeen] = useState(false);
   const [athkarLang, setAthkarLang] = useState<Lang>((lang as Lang) || 'ar');
-  const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('medium');
+  const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('md');
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -97,7 +97,11 @@ export default function AthkarScreen() {
       setFavHintSeen(val === 'true');
     }).catch(() => {});
     AsyncStorage.getItem(ATHKAR_FS_KEY).then(val => {
-      if (val === 'small' || val === 'medium' || val === 'large') setAthkarFontSizeState(val);
+      const migrated: Record<string, AthkarFontSize> = { small: 'sm', medium: 'md', large: 'lg' };
+      const mapped = val ? (migrated[val] ?? val) : null;
+      if (mapped && STEP_ORDER.includes(mapped as AthkarFontSize)) {
+        setAthkarFontSizeState(mapped as AthkarFontSize);
+      }
     }).catch(() => {});
   }, []);
 
@@ -317,10 +321,12 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const athkarRtl = isRtlLang(athkarLang);
   const ITEMS_PER_PAGE = 16;
   const NUM_COLS = 4;
-  const fsIdx = FS_STEPS.indexOf(athkarFontSize);
+  const { width: screenWidth } = useWindowDimensions();
+  const TILE_SIZE = Math.floor((screenWidth - OUTER_PADDING * 2 - TILE_GAP * (COLUMNS - 1)) / COLUMNS);
+  const fsIdx = STEP_ORDER.indexOf(athkarFontSize);
   const canDecrease = fsIdx > 0;
-  const canIncrease = fsIdx < FS_STEPS.length - 1;
-  const labelFontSize = FS_LABEL[athkarFontSize].label;
+  const canIncrease = fsIdx < STEP_ORDER.length - 1;
+  const labelFontSize = FONT_STEPS[athkarFontSize].tile;
 
   const totalCategoryPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
   const totalPages = totalCategoryPages + 1;
@@ -415,14 +421,14 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           </View>
           <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
             <Pressable
-              onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(FS_STEPS[fsIdx - 1]); } }}
+              onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx - 1]); } }}
               disabled={!canDecrease}
               style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
             >
               <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
             </Pressable>
             <Pressable
-              onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setAthkarFontSize(FS_STEPS[fsIdx + 1]); } }}
+              onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx + 1]); } }}
               disabled={!canIncrease}
               style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
             >
@@ -521,9 +527,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         viewabilityConfig={viewabilityConfig}
         style={{ flex: 1 }}
         extraData={[favourites, displayMode, athkarLang, athkarFontSize]}
-        getItemLayout={(_, index) => ({ length: Dimensions.get('window').width, offset: Dimensions.get('window').width * index, index })}
+        getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
         renderItem={({ item: pageData }) => {
-          const w = Dimensions.get('window').width;
           if (pageData === 'FAVS') {
             const padded: (AthkarCategory | null)[] = [...favPage];
             while (padded.length % NUM_COLS !== 0) padded.push(null);
@@ -531,8 +536,9 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             for (let r = 0; r < padded.length; r += NUM_COLS) {
               favRows.push(padded.slice(r, r + NUM_COLS));
             }
+            console.log('TILE_SIZE:', TILE_SIZE, 'GAP:', TILE_GAP, 'TOTAL:', (TILE_SIZE * COLUMNS) + (TILE_GAP * (COLUMNS - 1)) + (OUTER_PADDING * 2), 'SCREEN:', screenWidth);
             return (
-              <View style={{ width: w, paddingHorizontal: OUTER_PADDING, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
+              <View style={{ width: screenWidth, paddingHorizontal: OUTER_PADDING, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
                 <Text style={[styles.favPageTitle, { fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: isRtl ? 'right' : 'left' }]}>
                   {(tr as any).athkar_favourites_title ?? 'Favourites'}
                 </Text>
@@ -543,7 +549,14 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                     </Text>
                   </View>
                 ) : favRows.map((row, rIdx) => (
-                  <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                  <View
+                    key={rIdx}
+                    style={{
+                      flexDirection: isRtl ? 'row-reverse' : 'row',
+                      gap: TILE_GAP,
+                      marginBottom: rIdx < favRows.length - 1 ? TILE_GAP : 0,
+                    }}
+                  >
                     {row.map((cat, cIdx) => cat ? (
                       <GridCell
                         key={cat.id}
@@ -561,7 +574,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                         labelFontSize={labelFontSize}
                       />
                     ) : (
-                      <View key={`fav-empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: 'transparent' }} />
+                      <View key={`fav-empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE }} />
                     ))}
                   </View>
                 ))}
@@ -574,9 +587,16 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             rows.push(pageItems.slice(r * NUM_COLS, (r + 1) * NUM_COLS));
           }
           return (
-            <View style={{ width: w, paddingHorizontal: OUTER_PADDING, paddingTop: 8 }}>
+            <View style={{ width: screenWidth, paddingHorizontal: OUTER_PADDING, paddingTop: 8 }}>
               {rows.map((row, rIdx) => (
-                <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <View
+                  key={rIdx}
+                  style={{
+                    flexDirection: isRtl ? 'row-reverse' : 'row',
+                    gap: TILE_GAP,
+                    marginBottom: rIdx < rows.length - 1 ? TILE_GAP : 0,
+                  }}
+                >
                   {row.map((cat, cIdx) => cat ? (
                     <GridCell
                       key={cat.id}
@@ -594,7 +614,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                       labelFontSize={labelFontSize}
                     />
                   ) : (
-                    <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: 'transparent' }} />
+                    <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE }} />
                   ))}
                 </View>
               ))}
@@ -622,7 +642,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             opacity: pressed ? 0.4 : 0.55,
           })}
         >
-          <Ionicons name={isRtl ? 'chevron-forward' : 'chevron-back'} size={24} color={C.tint} />
+          <Ionicons name="chevron-back" size={24} color={C.tint} />
         </Pressable>
       )}
       {currentPage < totalPages - 1 && (
@@ -643,7 +663,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             opacity: pressed ? 0.4 : 0.55,
           })}
         >
-          <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={24} color={C.tint} />
+          <Ionicons name="chevron-forward" size={24} color={C.tint} />
         </Pressable>
       )}
       </View>
@@ -835,7 +855,7 @@ function ReaderScreen({
   displayMode, showHelp, athkarLang, athkarFontSize,
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
-  const cardFS = FS_LABEL[athkarFontSize];
+  const cardFS = FONT_STEPS[athkarFontSize];
 
   useEffect(() => {
     console.log('Athkar lang selector mounted:', athkarLang);
