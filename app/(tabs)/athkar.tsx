@@ -395,6 +395,56 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             </Pressable>
           </View>
         </View>
+      </View>
+
+      <Modal
+        visible={showLangPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
+          <Pressable
+            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
+            onPress={e => e.stopPropagation()}
+          >
+            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
+              <Text style={[styles.pickerTitle, { color: C.text }]}>
+                {isRtl ? 'لغة الترجمة' : 'Translation language'}
+              </Text>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {(Object.keys(LANG_META) as Lang[]).filter(l => l !== 'ar').map(l => {
+                const active = l === athkarLang;
+                const rtl = isRtlLang(l);
+                return (
+                  <Pressable
+                    key={l}
+                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l); setShowLangPicker(false); }}
+                    style={({ pressed }) => [
+                      styles.pickerRow,
+                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+                        {LANG_META[l]?.native ?? l}
+                      </Text>
+                      <Text style={[styles.pickerLang, { color: C.textMuted }]}>
+                        {LANG_META[l]?.label ?? l}
+                      </Text>
+                    </View>
+                    {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 80 }}>
+      <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={[styles.segmentRow, { flex: 1, backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
             <Pressable
@@ -464,54 +514,6 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           </Pressable>
         )}
       </View>
-
-      <Modal
-        visible={showLangPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLangPicker(false)}
-      >
-        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
-          <Pressable
-            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-            onPress={e => e.stopPropagation()}
-          >
-            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
-              <Text style={[styles.pickerTitle, { color: C.text }]}>
-                {isRtl ? 'لغة الترجمة' : 'Translation language'}
-              </Text>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {(Object.keys(LANG_META) as Lang[]).filter(l => l !== 'ar').map(l => {
-                const active = l === athkarLang;
-                const rtl = isRtlLang(l);
-                return (
-                  <Pressable
-                    key={l}
-                    onPress={() => { Haptics.selectionAsync(); setAthkarLang(l); setShowLangPicker(false); }}
-                    style={({ pressed }) => [
-                      styles.pickerRow,
-                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
-                        {LANG_META[l]?.native ?? l}
-                      </Text>
-                      <Text style={[styles.pickerLang, { color: C.textMuted }]}>
-                        {LANG_META[l]?.label ?? l}
-                      </Text>
-                    </View>
-                    {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 80 }}>
       {!favHintSeen && (
         <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard }]}>
           <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
