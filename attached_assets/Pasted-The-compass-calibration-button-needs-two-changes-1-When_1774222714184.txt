@@ -1,0 +1,20 @@
+The compass calibration button needs two changes:
+1. When the calibration button is tapped, immediately perform a programmatic compass reset — restart or refresh the magnetometer/heading sensor so the reading is forced to update from the current sensor state. This gives the user instant feedback that something happened.
+2. Remove any modal, alert, or popup that currently appears when the button is tapped explaining the figure-8 motion.
+3. Below the calibration button, always display static instruction text — visible at all times, not only after tapping. It should appear in a small font, muted colour, centred below the button — subtle and non-intrusive. The text must display in the app’s current language using the following translations:
+English: “For best accuracy, slowly move your phone in a figure-8 motion.”
+Arabic: “للحصول على أفضل دقة، حرّك هاتفك ببطء على شكل رقم 8.”
+French: “Pour une meilleure précision, déplacez lentement votre téléphone en forme de 8.”
+Turkish: “En iyi doğruluk için telefonunuzu yavaşça 8 rakamı şeklinde hareket ettirin.”
+Urdu: “بہترین درستگی کے لیے، اپنے فون کو آہستہ آہستہ 8 کی شکل میں حرکت دیں۔”
+Indonesian: “Untuk akurasi terbaik, gerakkan ponsel Anda perlahan membentuk angka 8.”
+Malay: “Untuk ketepatan terbaik, gerakkan telefon anda perlahan dalam bentuk angka 8.”
+Bengali: “সর্বোত্তম নির্ভুলতার জন্য, আপনার ফোনটি ধীরে ধীরে 8 আকৃতিতে সরান।”
+Persian: “برای بهترین دقت، گوشی خود را به آرامی به شکل عدد ۸ حرکت دهید.”
+Chinese: “为获得最佳精度，请缓慢地将手机移动成8字形。”
+Portuguese: “Para maior precisão, mova o seu telemóvel lentamente em forma de 8.”
+Russian: “Для лучшей точности медленно перемещайте телефон в форме цифры 8.”
+Spanish: “Para mayor precisión, mueva su teléfono lentamente en forma de 8.”
+Swahili: “Kwa usahihi bora, sogeza simu yako polepole katika mwendo wa nane.”
+Hausa: “Don ingantaccen daidaito, motsa wayar ku a hankali cikin siffar lamba 8.”
+4. Note for implementation: smartphones do not expose an API to fully calibrate the magnetometer programmatically. The figure-8 physical motion is the only true calibration method. The button handles the software reset; the static text guides the user to complete the hardware calibration themselves.​​​​​​​​​​​​​​​​

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withSpring, withRepeat,
+  useSharedValue, useAnimatedStyle, withTiming, withSpring,
   FadeIn, interpolate, Extrapolation,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
@@ -40,25 +40,7 @@ export default function QiblaScreen() {
   const [magnetometerAvailable, setMagnetometerAvailable] = useState(true);
   const [isAlignedState, setIsAlignedState] = useState(false);
   const [isNearlyAligned, setIsNearlyAligned] = useState(false);
-  const [showCalibrate, setShowCalibrate] = useState(false);
-
-  // Pulsing animation for the ∞ symbol in the calibration modal
-  const infinityPulse = useSharedValue(1);
-  const infinityPulseStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: infinityPulse.value }],
-    opacity: interpolate(infinityPulse.value, [0.85, 1, 1.08], [0.6, 1, 0.7], Extrapolation.CLAMP),
-  }));
-  useEffect(() => {
-    if (showCalibrate) {
-      infinityPulse.value = withRepeat(
-        withTiming(1.08, { duration: 900 }),
-        -1,
-        true,
-      );
-    } else {
-      infinityPulse.value = 1;
-    }
-  }, [showCalibrate]);
+  const [resetKey, setResetKey] = useState(0);
 
   const rotation = useSharedValue(0);
   const qiblaRotation = useSharedValue(0);
@@ -95,12 +77,14 @@ export default function QiblaScreen() {
     })();
   }, []);
 
-  // Magnetometer
+  // Magnetometer — re-subscribes when resetKey changes (software reset)
   useEffect(() => {
     let sub: any;
+    let cancelled = false;
+    prevHeading.current = -1; // fresh start on each (re)mount or reset
     (async () => {
       const avail = await Magnetometer.isAvailableAsync();
-      if (!avail) { setMagnetometerAvailable(false); return; }
+      if (!avail || cancelled) { setMagnetometerAvailable(false); return; }
       Magnetometer.setUpdateInterval(16); // 60 Hz
       sub = Magnetometer.addListener(({ x, y }) => {
         let angle = Math.atan2(-x, y) * (180 / Math.PI);
@@ -122,8 +106,8 @@ export default function QiblaScreen() {
         setHeading(smoothed);
       });
     })();
-    return () => sub?.remove();
-  }, []);
+    return () => { cancelled = true; sub?.remove(); };
+  }, [resetKey]);
 
   // Animate compass rotation — shortest-path unwrapped to prevent spin-around
   useEffect(() => {
@@ -345,13 +329,18 @@ export default function QiblaScreen() {
         {/* Calibrate button */}
         {magnetometerAvailable && (
           <Pressable
-            onPress={() => { Haptics.selectionAsync(); setShowCalibrate(true); }}
+            onPress={() => { Haptics.selectionAsync(); setResetKey(k => k + 1); }}
             style={[styles.calibrateBtn, { borderColor: C.tint + '50', backgroundColor: C.tint + '12' }]}
           >
             <Text style={[styles.calibrateBtnText, { color: C.tint }]}>
               {isAr ? '⟳  معايرة البوصلة' : '⟳  ' + tr.calibrateBtn}
             </Text>
           </Pressable>
+        )}
+        {magnetometerAvailable && (
+          <Text style={[styles.calibrateHintText, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+            {tr.calibrateHint}
+          </Text>
         )}
 
       </View>
@@ -369,53 +358,6 @@ export default function QiblaScreen() {
         </Text>
       </View>
 
-      {/* Calibration Modal */}
-      <Modal visible={showCalibrate} transparent animationType="fade" onRequestClose={() => setShowCalibrate(false)}>
-        <View style={styles.calibrateOverlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowCalibrate(false)} />
-          <View style={[styles.calibrateSheet, { backgroundColor: C.backgroundCard }]}>
-            {/* Title */}
-            <Text style={[styles.calibrateModalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
-              {tr.calibrateTitle ?? (isAr ? 'معايرة البوصلة' : 'Compass Calibration')}
-            </Text>
-
-            {/* Animated ∞ symbol */}
-            <Animated.View style={[styles.infinityWrap, infinityPulseStyle]}>
-              <Text style={[styles.infinitySymbol, { color: C.tint }]}>∞</Text>
-            </Animated.View>
-
-            {/* Step 1 */}
-            <View style={styles.calibrateStep}>
-              <View style={[styles.stepNum, { backgroundColor: C.tint }]}>
-                <Text style={styles.stepNumText}>1</Text>
-              </View>
-              <Text style={[styles.stepText, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
-                {tr.calibrateStep1 ?? 'Hold your phone flat and move it in a figure-8 (∞) motion'}
-              </Text>
-            </View>
-
-            {/* Step 2 */}
-            <View style={styles.calibrateStep}>
-              <View style={[styles.stepNum, { backgroundColor: C.tint }]}>
-                <Text style={styles.stepNumText}>2</Text>
-              </View>
-              <Text style={[styles.stepText, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left' }]}>
-                {tr.calibrateStep2 ?? 'Repeat 2–3 times until the compass stabilises'}
-              </Text>
-            </View>
-
-            {/* Done */}
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowCalibrate(false); }}
-              style={[styles.calibrateDoneBtn, { backgroundColor: C.tint }]}
-            >
-              <Text style={[styles.calibrateDoneText, { color: C.tintText }]}>
-                {tr.calibrateDone ?? (isAr ? 'تأكيد' : 'Done')}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -474,6 +416,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 8,
   },
   calibrateBtnText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3 },
+  calibrateHintText: { fontSize: 11, textAlign: 'center', marginTop: 8, paddingHorizontal: 20, lineHeight: 16 },
 
   // Calibration modal
   calibrateOverlay: {

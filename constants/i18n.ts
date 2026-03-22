@@ -113,7 +113,7 @@ const base = {
   calibrateStep1: 'Hold your phone flat and move it in a figure-8 (∞) motion',
   calibrateStep2: 'Repeat 2–3 times until the compass stabilises',
   calibrateDone: 'Done',
-  calibrateHint: 'To calibrate, move your device in a ∞ pattern',
+  calibrateHint: 'For best accuracy, slowly move your phone in a figure-8 motion.',
   compassNotAvailable: 'Compass not available',
   locationPermission: 'Location Permission Required',
   requestPermission: 'Grant Permission',
@@ -568,7 +568,7 @@ const translations: Record<Lang, PartialT> = {
     calibrateStep1: 'أمسك هاتفك أفقياً وحرّكه برسم شكل ∞ (رقم ثمانية)',
     calibrateStep2: 'كرّر الحركة 2-3 مرات حتى تستقر البوصلة',
     calibrateDone: 'تأكيد',
-    calibrateHint: 'لمعايرة البوصلة، حرّك الجهاز برسم ∞',
+    calibrateHint: 'للحصول على أفضل دقة، حرّك هاتفك ببطء على شكل رقم 8.',
     compassNotAvailable: 'البوصلة غير متاحة',
     locationPermission: 'يلزم إذن الموقع',
     requestPermission: 'منح الإذن',
@@ -795,6 +795,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   fr: {
+    calibrateHint: 'Pour une meilleure précision, déplacez lentement votre téléphone en forme de 8.',
     prayers: 'Horaires de Prière',
     qibla: 'Qibla',
     quran: 'Coran',
@@ -1050,6 +1051,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   es: {
+    calibrateHint: 'Para mayor precisión, mueva su teléfono lentamente en forma de 8.',
     prayers: 'Horarios de Oración',
     qibla: 'Qibla',
     quran: 'Corán',
@@ -1300,6 +1302,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ru: {
+    calibrateHint: 'Для лучшей точности медленно перемещайте телефон в форме цифры 8.',
     prayers: 'Время Намаза',
     qibla: 'Кибла',
     quran: 'Коран',
@@ -1553,6 +1556,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   zh: {
+    calibrateHint: '为获得最佳精度，请缓慢地将手机移动成8字形。',
     prayers: '礼拜时间',
     qibla: '朝拜方向',
     quran: '古兰经',
@@ -1806,6 +1810,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   tr: {
+    calibrateHint: 'En iyi doğruluk için telefonunuzu yavaşça 8 rakamı şeklinde hareket ettirin.',
     prayers: 'Namaz Vakitleri',
     qibla: 'Kıble',
     quran: 'Kuran',
@@ -2064,6 +2069,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ur: {
+    calibrateHint: 'بہترین درستگی کے لیے، اپنے فون کو آہستہ آہستہ 8 کی شکل میں حرکت دیں۔',
     prayers: 'نماز کے اوقات',
     qibla: 'قبلہ',
     quran: 'قرآن کریم',
@@ -2322,6 +2328,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   id: {
+    calibrateHint: 'Untuk akurasi terbaik, gerakkan ponsel Anda perlahan membentuk angka 8.',
     prayers: 'Waktu Shalat',
     qibla: 'Kiblat',
     quran: 'Al-Quran',
@@ -2577,6 +2584,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   bn: {
+    calibrateHint: 'সর্বোত্তম নির্ভুলতার জন্য, আপনার ফোনটি ধীরে ধীরে 8 আকৃতিতে সরান।',
     prayers: 'নামাজের সময়',
     qibla: 'কিবলা',
     quran: 'কুরআন কারীম',
@@ -2830,6 +2838,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   fa: {
+    calibrateHint: 'برای بهترین دقت، گوشی خود را به آرامی به شکل عدد ۸ حرکت دهید.',
     prayers: 'اوقات نماز',
     qibla: 'قبله',
     quran: 'قرآن کریم',
@@ -3088,6 +3097,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ms: {
+    calibrateHint: 'Untuk ketepatan terbaik, gerakkan telefon anda perlahan dalam bentuk angka 8.',
     prayers: 'Waktu Solat',
     qibla: 'Kiblat',
     quran: 'Al-Quran',
@@ -3338,6 +3348,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   pt: {
+    calibrateHint: 'Para maior precisão, mova o seu telemóvel lentamente em forma de 8.',
     prayers: 'Horários de Oração',
     qibla: 'Qibla',
     quran: 'Alcorão',
@@ -3588,6 +3599,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   sw: {
+    calibrateHint: 'Kwa usahihi bora, sogeza simu yako polepole katika mwendo wa nane.',
     prayers: 'Nyakati za Sala',
     qibla: 'Qibla',
     quran: 'Quran',
@@ -3838,6 +3850,7 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ha: {
+    calibrateHint: 'Don ingantaccen daidaito, motsa wayar ku a hankali cikin siffar lamba 8.',
     prayers: 'Lokutan Sallah',
     qibla: 'Kibla',
     quran: "Al-Qur'ani",
