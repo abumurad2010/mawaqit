@@ -1,18 +1,22 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
 import ATHKAR_CATEGORIES, { AthkarCategory, Dhikr } from '@/constants/athkar-data';
+
+const FAVS_KEY = 'athkar_favourites';
+const GOLD = '#C9A84C';
 
 function getKey(catId: string, idx: number) {
   return `${catId}_${idx}`;
@@ -30,8 +34,44 @@ export default function AthkarScreen() {
   const [selectedCategory, setSelectedCategory] = useState<AthkarCategory | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>('full');
+  const [favourites, setFavourites] = useState<string[]>([]);
   const readerRef = useRef<FlatList<Dhikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(FAVS_KEY).then(raw => {
+      if (raw) setFavourites(JSON.parse(raw));
+    }).catch(() => {});
+  }, []);
+
+  const sortedCategories = useMemo(() => {
+    const favs = ATHKAR_CATEGORIES.filter(c => favourites.includes(c.id));
+    const rest = ATHKAR_CATEGORIES.filter(c => !favourites.includes(c.id));
+    return [...favs, ...rest];
+  }, [favourites]);
+
+  const toggleFavourite = useCallback((cat: AthkarCategory) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFavourites(prev => {
+      const isFav = prev.includes(cat.id);
+      const name = (tr as any)[cat.nameKey] ?? cat.nameKey;
+      const prompt = isFav ? (tr as any).athkar_fav_remove_prompt : (tr as any).athkar_fav_add_prompt;
+      const btn = isFav ? (tr as any).athkar_fav_remove_btn : (tr as any).athkar_fav_add_btn;
+      Alert.alert(name, prompt, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: btn,
+          style: isFav ? 'destructive' : 'default',
+          onPress: () => {
+            const next = isFav ? prev.filter(id => id !== cat.id) : [...prev, cat.id];
+            setFavourites(next);
+            AsyncStorage.setItem(FAVS_KEY, JSON.stringify(next)).catch(() => {});
+          },
+        },
+      ]);
+      return prev;
+    });
+  }, [tr]);
 
   const openCategory = useCallback((cat: AthkarCategory) => {
     Haptics.selectionAsync();
@@ -117,6 +157,9 @@ export default function AthkarScreen() {
       displayMode={displayMode}
       onDisplayMode={setDisplayMode}
       onSelect={openCategory}
+      favourites={favourites}
+      onLongPress={toggleFavourite}
+      sortedCategories={sortedCategories}
     />
   );
 }
@@ -131,14 +174,16 @@ interface GridProps {
   displayMode: 'arabic' | 'full';
   onDisplayMode: (m: 'arabic' | 'full') => void;
   onSelect: (cat: AthkarCategory) => void;
+  favourites: string[];
+  onLongPress: (cat: AthkarCategory) => void;
+  sortedCategories: AthkarCategory[];
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect }: GridProps) {
-  const isAr = lang === 'ar';
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories }: GridProps) {
   const NUM_COLS = 4;
   const rows: AthkarCategory[][] = [];
-  for (let i = 0; i < ATHKAR_CATEGORIES.length; i += NUM_COLS) {
-    rows.push(ATHKAR_CATEGORIES.slice(i, i + NUM_COLS));
+  for (let i = 0; i < sortedCategories.length; i += NUM_COLS) {
+    rows.push(sortedCategories.slice(i, i + NUM_COLS));
   }
 
   return (
@@ -181,7 +226,17 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         {rows.map((row, rIdx) => (
           <View key={rIdx} style={[styles.gridRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
             {row.map((cat) => (
-              <GridCell key={cat.id} cat={cat} lang={lang} isRtl={isRtl} tr={tr} C={C} onPress={onSelect} />
+              <GridCell
+                key={cat.id}
+                cat={cat}
+                lang={lang}
+                isRtl={isRtl}
+                tr={tr}
+                C={C}
+                onPress={onSelect}
+                isFavourite={favourites.includes(cat.id)}
+                onLongPress={onLongPress}
+              />
             ))}
           </View>
         ))}
@@ -197,30 +252,39 @@ interface CellProps {
   tr: any;
   C: any;
   onPress: (cat: AthkarCategory) => void;
+  isFavourite: boolean;
+  onLongPress: (cat: AthkarCategory) => void;
 }
 
-function GridCell({ cat, lang, isRtl, tr, C, onPress }: CellProps) {
+function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress }: CellProps) {
   const nameKey = cat.nameKey as any;
   const name = (tr as any)[nameKey] ?? nameKey;
 
   return (
     <Pressable
       onPress={() => onPress(cat)}
+      onLongPress={() => onLongPress(cat)}
+      delayLongPress={400}
       style={({ pressed }) => [
         styles.cell,
         {
-          backgroundColor: C.backgroundCard,
-          borderColor: C.separator,
+          backgroundColor: isFavourite ? GOLD + '1A' : C.backgroundCard,
+          borderColor: isFavourite ? GOLD : C.separator,
           opacity: pressed ? 0.75 : 1,
         },
       ]}
     >
-      <MaterialCommunityIcons name={cat.icon as any} size={28} color={C.tint} />
+      {isFavourite && (
+        <View style={styles.favBadge}>
+          <Text style={styles.favStar}>⭐</Text>
+        </View>
+      )}
+      <MaterialCommunityIcons name={cat.icon as any} size={28} color={isFavourite ? GOLD : C.tint} />
       <Text
         style={[
           styles.cellLabel,
           {
-            color: C.text,
+            color: isFavourite ? GOLD : C.text,
             textAlign: 'center',
             writingDirection: isRtl ? 'rtl' : 'ltr',
           },
@@ -490,6 +554,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 8,
     gap: 6,
+  },
+  favBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+  },
+  favStar: {
+    fontSize: 10,
   },
   cellLabel: {
     fontSize: 11,

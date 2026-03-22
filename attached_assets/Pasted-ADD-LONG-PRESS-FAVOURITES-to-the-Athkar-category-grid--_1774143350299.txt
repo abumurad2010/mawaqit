@@ -1,0 +1,117 @@
+ADD LONG-PRESS FAVOURITES to the Athkar category grid.
+
+════════════════════════════════════════════════════════
+BEHAVIOUR
+════════════════════════════════════════════════════════
+
+LONG PRESS on any category tile:
+- Triggers a confirmation prompt asking:
+  "Add [category name] to favourites?" 
+  with two options: "Add" and "Cancel"
+  (If already a favourite, prompt asks:
+  "Remove [category name] from favourites?"
+  with options: "Remove" and "Cancel")
+
+ON CONFIRM — ADD:
+- Tile immediately changes to the gold colour theme:
+    • Border: #C9A84C (gold)
+    • Background: #C9A84C at 10% opacity
+    • Category name text: #C9A84C
+    • Icon colour: #C9A84C
+    • Small ⭐ badge in top-right corner of tile
+- Tile moves to appear before non-favourited tiles 
+  in the grid, maintaining relative order 
+  among other favourites
+
+ON CONFIRM — REMOVE:
+- Tile reverts to default styling
+- Tile returns to its original position 
+  in the popularity-ranked order
+
+PERSISTENCE:
+- Store favourite category ids in AsyncStorage 
+  under key 'athkar_favourites'
+  as a JSON array: e.g. ["morning", "sleep", "istighfar"]
+- Load on mount and apply gold styling immediately
+- No maximum limit — user can favourite as many as they want
+
+════════════════════════════════════════════════════════
+IMPLEMENTATION NOTES
+════════════════════════════════════════════════════════
+
+- Use Haptics.ImpactFeedbackStyle.Medium on long press trigger
+- The confirmation prompt should use the app's existing 
+  Alert or modal pattern — do not introduce new components
+- The prompt text should use the current app language 
+  via the existing tr (translations) object — add these keys:
+
+  athkar_fav_add_prompt:
+    en: "Add to Favourites?"
+    ar: "إضافة إلى المفضلة؟"
+    fr: "Ajouter aux favoris ?"
+    es: "¿Añadir a favoritos?"
+    ru: "Добавить в избранное?"
+    zh: "添加到收藏？"
+    tr: "Favorilere eklensin mi?"
+    ur: "پسندیدہ میں شامل کریں؟"
+    id: "Tambah ke Favorit?"
+    bn: "পছন্দে যোগ করবেন?"
+    fa: "به علاقه‌مندی‌ها اضافه شود؟"
+    ms: "Tambah ke Kegemaran?"
+    pt: "Adicionar aos favoritos?"
+    sw: "Ongeza kwenye Vipendwa?"
+    ha: "Ƙara zuwa Abubuwan da Ake So?"
+
+  athkar_fav_remove_prompt:
+    en: "Remove from Favourites?"
+    ar: "إزالة من المفضلة؟"
+    fr: "Retirer des favoris ?"
+    es: "¿Quitar de favoritos?"
+    ru: "Удалить из избранного?"
+    zh: "从收藏中移除？"
+    tr: "Favorilerden çıkarılsın mı?"
+    ur: "پسندیدہ سے ہٹائیں؟"
+    id: "Hapus dari Favorit?"
+    bn: "পছন্দ থেকে সরাবেন?"
+    fa: "از علاقه‌مندی‌ها حذف شود؟"
+    ms: "Buang dari Kegemaran?"
+    pt: "Remover dos favoritos?"
+    sw: "Ondoa kwenye Vipendwa?"
+    ha: "Cire daga Abubuwan da Ake So?"
+
+  athkar_fav_add_btn:
+    en: "Add"
+    ar: "إضافة"
+    fr: "Ajouter"
+    es: "Añadir"
+    ru: "Добавить"
+    zh: "添加"
+    tr: "Ekle"
+    ur: "شامل کریں"
+    id: "Tambah"
+    bn: "যোগ করুন"
+    fa: "اضافه کن"
+    ms: "Tambah"
+    pt: "Adicionar"
+    sw: "Ongeza"
+    ha: "Ƙara"
+
+  athkar_fav_remove_btn:
+    en: "Remove"
+    ar: "إزالة"
+    fr: "Retirer"
+    es: "Quitar"
+    ru: "Удалить"
+    zh: "移除"
+    tr: "Çıkar"
+    ur: "ہٹائیں"
+    id: "Hapus"
+    bn: "সরান"
+    fa: "حذف کن"
+    ms: "Buang"
+    pt: "Remover"
+    sw: "Ondoa"
+    ha: "Cire"
+
+Do not change any other behaviour, icons, or layout.
+Do not add new dependencies.
