@@ -28,11 +28,11 @@ const COLUMNS = 4;
 type AthkarFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 const STEP_ORDER: AthkarFontSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
 const FONT_STEPS: Record<AthkarFontSize, { tile: number; arabic: number; translit: number; translation: number }> = {
-  xs: { tile: 9,  arabic: 16, translit: 10, translation: 10 },
-  sm: { tile: 10, arabic: 18, translit: 11, translation: 11 },
-  md: { tile: 12, arabic: 22, translit: 13, translation: 13 },
-  lg: { tile: 13, arabic: 26, translit: 15, translation: 15 },
-  xl: { tile: 14, arabic: 30, translit: 17, translation: 17 },
+  xs: { tile: 10, arabic: 18, translit: 12, translation: 12 },
+  sm: { tile: 12, arabic: 20, translit: 13, translation: 13 },
+  md: { tile: 14, arabic: 24, translit: 15, translation: 15 },
+  lg: { tile: 16, arabic: 28, translit: 17, translation: 17 },
+  xl: { tile: 18, arabic: 32, translit: 19, translation: 19 },
 };
 
 const DHIKR_HELP_KEYS = new Set([
@@ -323,11 +323,13 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const ITEMS_PER_PAGE = 16;
   const NUM_COLS = 4;
   const { width: screenWidth } = useWindowDimensions();
-  const TILE_SIZE = Math.floor((screenWidth - OUTER_PADDING * 2 - TILE_GAP * (COLUMNS - 1)) / COLUMNS);
+  const TILE_WIDTH = Math.floor((screenWidth - OUTER_PADDING * 2 - TILE_GAP * (COLUMNS - 1)) / COLUMNS);
+  const TILE_HEIGHT = Math.floor(TILE_WIDTH * 1.35);
   const fsIdx = STEP_ORDER.indexOf(athkarFontSize);
   const canDecrease = fsIdx > 0;
   const canIncrease = fsIdx < STEP_ORDER.length - 1;
   const labelFontSize = FONT_STEPS[athkarFontSize].tile;
+  const SIZE_LABELS: Record<AthkarFontSize, string> = { xs: 'XS', sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
 
   const totalCategoryPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
   const totalPages = totalCategoryPages + 1;
@@ -428,6 +430,9 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             >
               <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
             </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {SIZE_LABELS[athkarFontSize]}
+            </Text>
             <Pressable
               onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx + 1]); } }}
               disabled={!canIncrease}
@@ -537,7 +542,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             for (let r = 0; r < padded.length; r += NUM_COLS) {
               favRows.push(padded.slice(r, r + NUM_COLS));
             }
-            console.log('TILE_SIZE:', TILE_SIZE, 'GAP:', TILE_GAP, 'TOTAL:', (TILE_SIZE * COLUMNS) + (TILE_GAP * (COLUMNS - 1)) + (OUTER_PADDING * 2), 'SCREEN:', screenWidth);
+            console.log('TILE_WIDTH:', TILE_WIDTH, 'TILE_HEIGHT:', TILE_HEIGHT, 'GAP:', TILE_GAP, 'TOTAL:', (TILE_WIDTH * COLUMNS) + (TILE_GAP * (COLUMNS - 1)) + (OUTER_PADDING * 2), 'SCREEN:', screenWidth);
             return (
               <View style={{ width: screenWidth, paddingHorizontal: OUTER_PADDING, paddingTop: 8, paddingBottom: bottomInset + 16 }}>
                 <Text style={[styles.favPageTitle, { fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: isRtl ? 'right' : 'left' }]}>
@@ -571,11 +576,12 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                         onLongPress={onLongPress}
                         displayMode={displayMode}
                         athkarLang={athkarLang}
-                        tileSize={TILE_SIZE}
+                        tileSize={TILE_WIDTH}
+                        tileHeight={TILE_HEIGHT}
                         labelFontSize={labelFontSize}
                       />
                     ) : (
-                      <View key={`fav-empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE }} />
+                      <View key={`fav-empty-${rIdx}-${cIdx}`} style={{ width: TILE_WIDTH, height: TILE_HEIGHT }} />
                     ))}
                   </View>
                 ))}
@@ -611,11 +617,12 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                       onLongPress={onLongPress}
                       displayMode={displayMode}
                       athkarLang={athkarLang}
-                      tileSize={TILE_SIZE}
+                      tileSize={TILE_WIDTH}
+                      tileHeight={TILE_HEIGHT}
                       labelFontSize={labelFontSize}
                     />
                   ) : (
-                    <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_SIZE, height: TILE_SIZE }} />
+                    <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_WIDTH, height: TILE_HEIGHT }} />
                   ))}
                 </View>
               ))}
@@ -777,10 +784,11 @@ interface CellProps {
   displayMode: 'arabic' | 'full';
   athkarLang: Lang;
   tileSize: number;
+  tileHeight: number;
   labelFontSize: number;
 }
 
-function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, displayMode, athkarLang, tileSize, labelFontSize }: CellProps) {
+function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, displayMode, athkarLang, tileSize, tileHeight, labelFontSize }: CellProps) {
   const nameKey = cat.nameKey as any;
   const name = displayMode === 'arabic'
     ? (i18n['ar'] as any)[nameKey] ?? nameKey
@@ -796,7 +804,7 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
         styles.cell,
         {
           width: tileSize,
-          height: tileSize,
+          height: tileHeight,
           backgroundColor: isFavourite ? GOLD + '1A' : C.backgroundCard,
           borderColor: isFavourite ? GOLD : C.separator,
           opacity: pressed ? 0.75 : 1,
@@ -808,19 +816,21 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
           <Text style={styles.favStar}>⭐</Text>
         </View>
       )}
-      <MaterialCommunityIcons name={cat.icon as any} size={28} color={isFavourite ? GOLD : C.tint} />
+      <MaterialCommunityIcons name={cat.icon as any} size={26} color={isFavourite ? GOLD : C.tint} />
       <Text
         style={[
           styles.cellLabel,
           {
             fontSize: labelFontSize,
+            lineHeight: labelFontSize * 1.35,
             color: isFavourite ? GOLD : C.text,
             textAlign: 'center',
             writingDirection: cellRtl ? 'rtl' : 'ltr',
             fontFamily: cellRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold',
           },
         ]}
-        numberOfLines={2}
+        numberOfLines={3}
+        adjustsFontSizeToFit={false}
       >
         {name}
       </Text>
@@ -1178,9 +1188,11 @@ const styles = StyleSheet.create({
   cell: {
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
     gap: 6,
     overflow: 'hidden',
   },
@@ -1221,7 +1233,7 @@ const styles = StyleSheet.create({
   cellLabel: {
     fontSize: 11,
     fontWeight: '500',
-    lineHeight: 14,
+    flexShrink: 1,
   },
   progressRow: {
     alignItems: 'center',
