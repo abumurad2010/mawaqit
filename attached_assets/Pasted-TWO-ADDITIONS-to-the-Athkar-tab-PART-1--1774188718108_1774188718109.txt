@@ -1,0 +1,278 @@
+TWO ADDITIONS to the Athkar tab:
+
+════════════════════════════════════════════════════════
+PART 1 — COPY FUNCTION FOR DHIKR CARDS
+════════════════════════════════════════════════════════
+
+TRIGGER:
+Long-press on any dhikr card in the reader screen 
+(Screen 2) triggers the copy flow.
+
+Note: Long-press on the CATEGORY GRID (Screen 1) 
+is already used for favourites — do not conflict.
+Long-press only applies to individual dhikr cards 
+inside the reader.
+
+HAPTIC on long-press trigger:
+  Haptics.ImpactFeedbackStyle.Medium
+
+COPY OPTIONS SHEET:
+After long-press, show an Action Sheet (bottom sheet
+or Alert with options) with the following choices.
+The sheet title in current app language:
+
+  ar: "نسخ الذكر"
+  en: "Copy Dhikr"
+  fr: "Copier le dhikr"
+  es: "Copiar dhikr"
+  ru: "Копировать зикр"
+  zh: "复制祈祷"
+  tr: "Zikri kopyala"
+  ur: "ذکر کاپی کریں"
+  id: "Salin dzikir"
+  bn: "যিকির কপি করুন"
+  fa: "کپی ذکر"
+  ms: "Salin zikir"
+  pt: "Copiar dhikr"
+  sw: "Nakili dhikri"
+  ha: "Kwafi zikiri"
+  i18n key: copy_dhikr_title
+
+OPTIONS (show only what is available in current mode):
+
+Option 1 — Arabic text only:
+  ar: "النص العربي فقط"
+  en: "Arabic text only"
+  fr: "Texte arabe uniquement"
+  es: "Solo texto árabe"
+  ru: "Только арабский текст"
+  zh: "仅阿拉伯文"
+  tr: "Yalnızca Arapça metin"
+  ur: "صرف عربی متن"
+  id: "Teks Arab saja"
+  bn: "শুধু আরবি টেক্সট"
+  fa: "فقط متن عربی"
+  ms: "Teks Arab sahaja"
+  pt: "Apenas texto árabe"
+  sw: "Maandishi ya Kiarabu tu"
+  ha: "Rubutun Larabci kawai"
+  i18n key: copy_arabic_only
+
+Option 2 — Transliteration only:
+  ar: "النقل الحرفي فقط"
+  en: "Transliteration only"
+  [all 15 languages]
+  i18n key: copy_translit_only
+  SHOW ONLY when mode is 'transliterated'
+
+Option 3 — Translation only:
+  ar: "الترجمة فقط"
+  en: "Translation only"
+  [all 15 languages]
+  i18n key: copy_translation_only
+  SHOW ONLY when mode is 'transliterated'
+
+Option 4 — Arabic + Transliteration:
+  ar: "عربي مع النقل الحرفي"
+  en: "Arabic + Transliteration"
+  [all 15 languages]
+  i18n key: copy_arabic_translit
+  SHOW ONLY when mode is 'transliterated'
+
+Option 5 — Arabic + Translation:
+  ar: "عربي مع الترجمة"
+  en: "Arabic + Translation"
+  [all 15 languages]
+  i18n key: copy_arabic_translation
+  SHOW ONLY when mode is 'transliterated'
+
+Option 6 — All (Arabic + Transliteration + Translation):
+  ar: "نسخ الكل"
+  en: "Copy all"
+  [all 15 languages]
+  i18n key: copy_all
+  SHOW ONLY when mode is 'transliterated'
+
+Option 7 — Cancel:
+  use existing btn_cancel i18n key
+  Destructive style (red on iOS)
+
+COPY BEHAVIOUR per option:
+
+Option 1 — copies:
+  [arabic text]
+
+Option 2 — copies:
+  [transliteration]
+
+Option 3 — copies:
+  [translation in selected athkarLang]
+
+Option 4 — copies:
+  [arabic text]
+  [blank line]
+  [transliteration]
+
+Option 5 — copies:
+  [arabic text]
+  [blank line]
+  [translation in selected athkarLang]
+
+Option 6 — copies:
+  [arabic text]
+  [blank line]
+  [transliteration]
+  [blank line]
+  [translation in selected athkarLang]
+
+In ARABIC MODE (mode === 'arabic'):
+  Only show Option 1 and Cancel.
+  No need for a sheet — show a simple 2-button Alert:
+    "Copy Arabic text?" with Copy and Cancel buttons.
+
+AFTER COPY:
+  Use Clipboard.setStringAsync() from expo-clipboard
+  Check if expo-clipboard is already installed:
+    grep -r "expo-clipboard" package.json
+  If not installed, run: npx expo install expo-clipboard
+
+  Show a brief success toast/snackbar:
+    ar: "تم النسخ"
+    en: "Copied"
+    fr: "Copié"
+    es: "Copiado"
+    ru: "Скопировано"
+    zh: "已复制"
+    tr: "Kopyalandı"
+    ur: "کاپی ہو گیا"
+    id: "Disalin"
+    bn: "কপি হয়েছে"
+    fa: "کپی شد"
+    ms: "Disalin"
+    pt: "Copiado"
+    sw: "Imenakiliwa"
+    ha: "An kwafi"
+    i18n key: copied_toast
+
+  Toast appears for 1.5 seconds then disappears.
+  Use existing toast/snackbar pattern if one exists,
+  otherwise a simple animated View that fades in 
+  and out — no new library.
+
+VISUAL CUE on the card:
+  While the copy sheet is open, the dhikr card 
+  gets a subtle highlight border (C.tint at 40% opacity).
+  Returns to normal after sheet closes.
+
+════════════════════════════════════════════════════════
+PART 2 — EXPANDED LAYLAT AL-QADR DUAS
+Update constants/athkar-data.ts
+════════════════════════════════════════════════════════
+
+Find the category with id: 'laylatul_qadr'
+Replace its current single dhikr with this 
+expanded set of 7 adhkar:
+
+─────────────────────────────────────────
+ITEM 1 — The core dua (already exists, keep it)
+─────────────────────────────────────────
+arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي"
+transliteration: "Allāhumma innaka ʿafuwwun tuḥibbul-ʿafwa faʿfu ʿannī."
+translationKey: "athkar_laylatul_qadr_1"
+count: 1
+
+─────────────────────────────────────────
+ITEM 2 — Extended version with كريم
+─────────────────────────────────────────
+arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي"
+transliteration: "Allāhumma innaka ʿafuwwun karīmun tuḥibbul-ʿafwa faʿfu ʿannī."
+translationKey: "athkar_laylatul_qadr_2"
+count: 1
+
+─────────────────────────────────────────
+ITEM 3 — Surah al-Qadr
+─────────────────────────────────────────
+arabic: "إِنَّا أَنْزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ ۝ وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ ۝ لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ ۝ تَنَزَّلُ الْمَلَائِكَةُ وَالرُّوحُ فِيهَا بِإِذْنِ رَبِّهِمْ مِنْ كُلِّ أَمْرٍ ۝ سَلَامٌ هِيَ حَتَّى مَطْلَعِ الْفَجْرِ"
+transliteration: "Innā anzalnāhu fī laylatal-qadr. Wa mā adrāka mā laylatul-qadr. Laylatul-qadri khayrun min alfi shahr. Tanazzalul-malāʾikatu war-rūḥu fīhā biʾidhni rabbihim min kulli amr. Salāmun hiya ḥattā maṭlaʿil-fajr."
+translationKey: "athkar_laylatul_qadr_3"
+count: 1
+
+─────────────────────────────────────────
+ITEM 4 — Last third of the night dua
+─────────────────────────────────────────
+arabic: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ"
+transliteration: "Yā ḥayyu yā qayyūmu biraḥmatika astaghīth, aṣliḥ lī shaʾnī kullahu wa lā takilnī ilā nafsī ṭarfata ʿayn."
+translationKey: "athkar_laylatul_qadr_4"
+count: 1
+
+─────────────────────────────────────────
+ITEM 5 — Abundant istighfar specific to the night
+─────────────────────────────────────────
+arabic: "أَسْتَغْفِرُ اللَّهَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ"
+transliteration: "Astaghfirullāhal-ladhī lā ilāha illā huwal-ḥayyul-qayyūmu wa atūbu ilayh."
+translationKey: "athkar_laylatul_qadr_5"
+count: 100
+
+─────────────────────────────────────────
+ITEM 6 — Dua asking Allah to grant the blessing of the night
+─────────────────────────────────────────
+arabic: "اللَّهُمَّ إِنَّكَ قُلْتَ فِي كِتَابِكَ الْمُنَزَّلِ لَيْلَةُ الْقَدْرِ خَيْرٌ مِنْ أَلْفِ شَهْرٍ، وَقَدْ مَضَتِ الْآلَافُ مِنَ الشُّهُورِ وَلَمْ أَغْتَنِمْ مِنْهَا لَيْلَةَ الْقَدْرِ، فَاللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي، وَاجْعَلِ الْقُرْآنَ رَبِيعَ قَلْبِي وَنُورَ صَدْرِي وَجِلَاءَ حُزْنِي وَذَهَابَ هَمِّي"
+transliteration: "Allāhumma innaka qulta fī kitābikalm-munazzali laylatul-qadri khayrun min alfi shahr, wa qad maḍatil-ālāfu minash-shuhūri wa lam aghtanim minhā laylatal-qadr. Fallāhumma innaka ʿafuwwun karīmun tuḥibbul-ʿafwa faʿfu ʿannī, wajʿalil-Qurʾāna rabīʿa qalbī wa nūra ṣadrī wa jalāʾa ḥuznī wa dhahāba hammī."
+translationKey: "athkar_laylatul_qadr_6"
+count: 1
+
+─────────────────────────────────────────
+ITEM 7 — Comprehensive end-of-night dua
+─────────────────────────────────────────
+arabic: "اللَّهُمَّ اجْعَلْنِي مِمَّنْ يُحْيِي هَذِهِ اللَّيْلَةَ وَيَغْتَنِمُهَا، وَاقْبَلْ تَوْبَتِي وَاغْفِرْ ذُنُوبِي، وَأَعِنِّي عَلَى طَاعَتِكَ وَعِبَادَتِكَ، وَلَا تَحْرِمْنِي خَيْرَهَا وَبَرَكَتَهَا يَا أَرْحَمَ الرَّاحِمِينَ"
+transliteration: "Allāhummaj-ʿalnī mimman yuḥyī hādhihil-laylata wa yaghتanimuhā, waqbal tawbatī waghfir dhunūbī, wa aʿinnī ʿalā ṭāʿatika wa ʿibādatik, wa lā taḥrimnī khayrahā wa barakatahā yā arḥamar-rāḥimīn."
+translationKey: "athkar_laylatul_qadr_7"
+count: 1
+
+════════════════════════════════════════════════════════
+PART 3 — i18n KEYS FOR NEW DHIKR TRANSLATIONS
+Add to all 15 languages in i18n.ts
+════════════════════════════════════════════════════════
+
+athkar_laylatul_qadr_2:
+  en: "O Allah, You are Pardoning and Generous, You love to pardon, so pardon me." [Extended version adding 'Generous' — both forms are authentically narrated. This version emphasises Allah's generosity alongside His pardoning nature]
+  ar: "رواية بزيادة كريم — كلا الروايتين ثابتتان."
+  [translate accurately in all other 13 languages]
+
+athkar_laylatul_qadr_3:
+  en: "Sūrat al-Qadr (97) — Indeed, We sent the Quran down during the Night of Decree. And what can make you know what is the Night of Decree? The Night of Decree is better than a thousand months. The angels and the Spirit descend therein by permission of their Lord for every matter. Peace it is until the emergence of dawn." [Recite abundantly on Laylat al-Qadr — this surah describes the very night you are in]
+  ar: "سورة القدر — تُقرأ كثيراً في ليلة القدر."
+  [translate accurately in all other 13 languages]
+
+athkar_laylatul_qadr_4:
+  en: "O Ever Living, O Sustainer of all, in Your mercy I seek relief. Rectify all my affairs and do not leave me to depend upon myself for the blink of an eye." [Said in the last third of the night — the time Allah descends to the lowest heaven and asks: who is calling upon Me that I may answer him?]
+  ar: "تُقال في الثلث الأخير من الليل."
+  [translate accurately in all other 13 languages]
+
+athkar_laylatul_qadr_5:
+  en: "I seek the forgiveness of Allah, there is none worthy of worship but He, the Ever-Living, the Sustainer of all, and I repent to Him." (100×) [The Prophet ﷺ said: whoever turns to Allah in repentance on Laylat al-Qadr, Allah will forgive him. Fill the night with istighfar]
+  ar: "أكثر من الاستغفار في ليلة القدر."
+  [translate accurately in all other 13 languages]
+
+athkar_laylatul_qadr_6:
+  en: "O Allah, You said in Your revealed Book that the Night of Decree is better than a thousand months. Thousands of months have passed and I did not make the most of a Night of Decree. So O Allah, You are Pardoning and Generous, You love to pardon, so pardon me. Make the Quran the spring of my heart, the light of my chest, the departure of my grief, and the release of my anxiety." [A comprehensive personal dua for Laylat al-Qadr combining acknowledgement, regret, and multiple specific requests]
+  ar: "دعاء جامع لليلة القدر."
+  [translate accurately in all other 13 languages]
+
+athkar_laylatul_qadr_7:
+  en: "O Allah, make me among those who revive this night and make the most of it. Accept my repentance, forgive my sins, help me in Your obedience and worship, and do not deprive me of its goodness and blessing, O Most Merciful of those who show mercy." [Said at the end of the night — asking Allah to accept the night's worship and not deprive you of its reward]
+  ar: "تُقال في آخر الليل."
+  [translate accurately in all other 13 languages]
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Install expo-clipboard if not already present:
+  npx expo install expo-clipboard
+
+Do not change any existing dhikr content or counts.
+Do not change the long-press behaviour on the category 
+grid tiles (that is reserved for favourites).
+Do not change any other tab.
+Do not add any other new dependencies.

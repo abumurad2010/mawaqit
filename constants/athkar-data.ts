@@ -1368,6 +1368,328 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
       },
     ],
   },
+  {
+    id: 'laylatul_qadr',
+    icon: 'star-shooting-outline',
+    nameKey: 'athkar_cat_laylatul_qadr',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي",
+        transliteration: "Allāhumma innaka ʿafuwwun tuḥibbul-ʿafwa faʿfu ʿannī.",
+        translationKey: "athkar_laylatul_qadr_1",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'arafah',
+    icon: 'white-balance-sunny',
+    nameKey: 'athkar_cat_arafah',
+    adhkar: [
+      {
+        arabic: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+        transliteration: "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr.",
+        translationKey: "athkar_arafah_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ لَكَ الْحَمْدُ كَالَّذِي تَقُولُ وَخَيْرًا مِمَّا نَقُولُ، اللَّهُمَّ لَكَ صَلَاتِي وَنُسُكِي وَمَحْيَايَ وَمَمَاتِي وَإِلَيْكَ مَآبِي، وَلَكَ رَبِّ تُرَاثِي، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ عَذَابِ الْقَبْرِ وَوَسْوَسَةِ الصَّدْرِ وَشَتَاتِ الْأَمْرِ",
+        transliteration: "Allāhumma lakal-ḥamdu kalladhī taqūlu wa khayran mimmā naqūl. Allāhumma laka ṣalātī wa nusukī wa maḥyāya wa mamātī wa ilayka maʾābī wa laka rabbī turāthī. Allāhumma innī aʿūdhu bika min ʿadhābil-qabri wa waswasatiṣ-ṣadri wa shatātil-amr.",
+        translationKey: "athkar_arafah_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'fasting',
+    icon: 'moon-waning-crescent',
+    nameKey: 'athkar_cat_fasting',
+    adhkar: [
+      {
+        arabic: "إِنِّي صَائِمٌ، إِنِّي صَائِمٌ",
+        transliteration: "Innī ṣāʾim, innī ṣāʾim.",
+        translationKey: "athkar_fasting_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِرَحْمَتِكَ الَّتِي وَسِعَتْ كُلَّ شَيْءٍ أَنْ تَغْفِرَ لِي",
+        transliteration: "Allāhumma innī asʾaluka biraḥmatikallatī wasiʿat kulla shayʾin an taghfira lī.",
+        translationKey: "athkar_fasting_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'newborn',
+    icon: 'baby-outline',
+    nameKey: 'athkar_cat_newborn',
+    adhkar: [
+      {
+        arabic: "أَذَانُ الصَّلَاةِ فِي أُذُنِ الْمَوْلُودِ الْيُمْنَى",
+        transliteration: "Adhānus-ṣalāti fī udhunilmawlūdil-yumnā.",
+        translationKey: "athkar_newborn_1",
+        count: 1,
+      },
+      {
+        arabic: "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّةِ مِنْ كُلِّ شَيْطَانٍ وَهَامَّةٍ، وَمِنْ كُلِّ عَيْنٍ لَامَّةٍ",
+        transliteration: "Aʿūdhu bikalimātillāhit-tāmmati min kulli shayṭānin wa hāmmah, wa min kulli ʿaynin lāmmah.",
+        translationKey: "athkar_newborn_2",
+        count: 1,
+      },
+      {
+        arabic: "بَارَكَ اللَّهُ لَكَ فِي الْمَوْهُوبِ لَكَ، وَشَكَرْتَ الْوَاهِبَ، وَبَلَغَ أَشُدَّهُ، وَرُزِقْتَ بِرَّهُ",
+        transliteration: "Bārakallāhu laka fil-mawhūbi lak, wa shakarta al-wāhib, wa balagha ashuddah, wa ruziqta birrah.",
+        translationKey: "athkar_newborn_3",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'children_protection',
+    icon: 'shield-account-outline',
+    nameKey: 'athkar_cat_children_protection',
+    adhkar: [
+      {
+        arabic: "أُعِيذُكُمَا بِكَلِمَاتِ اللَّهِ التَّامَّةِ، مِنْ كُلِّ شَيْطَانٍ وَهَامَّةٍ، وَمِنْ كُلِّ عَيْنٍ لَامَّةٍ",
+        transliteration: "Uʿīdhukumā bikalimātillāhit-tāmmah, min kulli shayṭānin wa hāmmah, wa min kulli ʿaynin lāmmah.",
+        translationKey: "athkar_children_1",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'condolences',
+    icon: 'hand-heart-outline',
+    nameKey: 'athkar_cat_condolences',
+    adhkar: [
+      {
+        arabic: "إِنَّ لِلَّهِ مَا أَخَذَ، وَلَهُ مَا أَعْطَى، وَكُلُّ شَيْءٍ عِنْدَهُ بِأَجَلٍ مُسَمًّى، فَلْتَصْبِرْ وَلْتَحْتَسِبْ",
+        transliteration: "Inna lillāhi mā akhadha, wa lahu mā aʿṭā, wa kullu shayʾin ʿindahu biajalin musammā, faltaṣbir waltaḥtasib.",
+        translationKey: "athkar_condolences_1",
+        count: 1,
+      },
+      {
+        arabic: "أَعْظَمَ اللَّهُ أَجْرَكَ، وَأَحْسَنَ عَزَاءَكَ، وَغَفَرَ لِمَيِّتِكَ",
+        transliteration: "Aʿẓamallāhu ajrak, wa aḥsana ʿazāʾak, wa ghafara limayyitak.",
+        translationKey: "athkar_condolences_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'going_prayer',
+    icon: 'walk',
+    nameKey: 'athkar_cat_going_prayer',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ اجْعَلْ فِي قَلْبِي نُورًا، وَفِي لِسَانِي نُورًا، وَاجْعَلْ فِي سَمْعِي نُورًا، وَاجْعَلْ فِي بَصَرِي نُورًا، وَاجْعَلْ مِنْ خَلْفِي نُورًا، وَمِنْ أَمَامِي نُورًا، وَاجْعَلْ مِنْ فَوْقِي نُورًا، وَمِنْ تَحْتِي نُورًا، اللَّهُمَّ أَعْطِنِي نُورًا",
+        transliteration: "Allāhummaj-ʿal fī qalbī nūrā, wa fī lisānī nūrā, waj-ʿal fī samʿī nūrā, waj-ʿal fī baṣarī nūrā, waj-ʿal min khalfī nūrā, wa min amāmī nūrā, waj-ʿal min fawqī nūrā, wa min taḥtī nūrā, Allāhumma aʿṭinī nūrā.",
+        translationKey: "athkar_going_prayer_1",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'after_tashahhud',
+    icon: 'hands-pray',
+    nameKey: 'athkar_cat_after_tashahhud',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ عَذَابِ جَهَنَّمَ، وَمِنْ عَذَابِ الْقَبْرِ، وَمِنْ فِتْنَةِ الْمَحْيَا وَالْمَمَاتِ، وَمِنْ شَرِّ فِتْنَةِ الْمَسِيحِ الدَّجَّالِ",
+        transliteration: "Allāhumma innī aʿūdhu bika min ʿadhābi jahannam, wa min ʿadhābil-qabr, wa min fitnatil-maḥyā wal-mamāt, wa min sharri fitnatil-masīḥid-dajjāl.",
+        translationKey: "athkar_after_tashahhud_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْمَأْثَمِ وَالْمَغْرَمِ",
+        transliteration: "Allāhumma innī aʿūdhu bika minal-maʾthami wal-maghram.",
+        translationKey: "athkar_after_tashahhud_2",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ إِنِّي ظَلَمْتُ نَفْسِي ظُلْمًا كَثِيرًا، وَلَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ، فَاغْفِرْ لِي مَغْفِرَةً مِنْ عِنْدِكَ، وَارْحَمْنِي، إِنَّكَ أَنْتَ الْغَفُورُ الرَّحِيمُ",
+        transliteration: "Allāhumma innī ẓalamtu nafsī ẓulman kathīrā, wa lā yaghfirudh-dhunūba illā ant, faghfir lī maghfiratan min ʿindik, warḥamnī, innaka antal-ghafūrur-raḥīm.",
+        translationKey: "athkar_after_tashahhud_3",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'entering_town',
+    icon: 'city-variant-outline',
+    nameKey: 'athkar_cat_entering_town',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ رَبَّ السَّمَاوَاتِ السَّبْعِ وَمَا أَظْلَلْنَ، وَرَبَّ الْأَرَضِينَ السَّبْعِ وَمَا أَقْلَلْنَ، وَرَبَّ الشَّيَاطِينِ وَمَا أَضْلَلْنَ، وَرَبَّ الرِّيَاحِ وَمَا ذَرَيْنَ، أَسْأَلُكَ خَيْرَ هَذِهِ الْقَرْيَةِ وَخَيْرَ أَهْلِهَا وَخَيْرَ مَا فِيهَا، وَأَعُوذُ بِكَ مِنْ شَرِّهَا وَشَرِّ أَهْلِهَا وَشَرِّ مَا فِيهَا",
+        transliteration: "Allāhumma rabbas-samāwātis-sabʿi wa mā aẓlalna, wa rabbal-araḍīnas-sabʿi wa mā aqllna, wa rabbash-shayāṭīni wa mā aḍllna, wa rabbar-riyāḥi wa mā dharayn. Asʾaluka khayra hādhihil-qaryati wa khayra ahlihā wa khayra mā fīhā, wa aʿūdhu bika min sharrihā wa sharri ahlihā wa sharri mā fīhā.",
+        translationKey: "athkar_entering_town_1",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'fear_people',
+    icon: 'account-alert-outline',
+    nameKey: 'athkar_cat_fear_people',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ إِنَّا نَجْعَلُكَ فِي نُحُورِهِمْ، وَنَعُوذُ بِكَ مِنْ شُرُورِهِمْ",
+        transliteration: "Allāhumma innā najʿaluka fī nuḥūrihim, wa naʿūdhu bika min shurūrihim.",
+        translationKey: "athkar_fear_people_1",
+        count: 1,
+      },
+      {
+        arabic: "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+        transliteration: "Ḥasbunallāhu wa niʿmal-wakīl.",
+        translationKey: "athkar_fear_people_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'dying',
+    icon: 'candle',
+    nameKey: 'athkar_cat_dying',
+    adhkar: [
+      {
+        arabic: "لَا إِلَهَ إِلَّا اللَّهُ",
+        transliteration: "Lā ilāha illallāh.",
+        translationKey: "athkar_dying_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ اغْفِرْ لِي وَارْحَمْنِي وَأَلْحِقْنِي بِالرَّفِيقِ الْأَعْلَى",
+        transliteration: "Allāhummagh-fir lī warḥamnī wa alḥiqnī bir-rafīqil-aʿlā.",
+        translationKey: "athkar_dying_2",
+        count: 1,
+      },
+      {
+        arabic: "بِسْمِ اللَّهِ وَعَلَى مِلَّةِ رَسُولِ اللَّهِ",
+        transliteration: "Bismillāhi wa ʿalā millati rasūlillāh.",
+        translationKey: "athkar_dying_3",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'rooster',
+    icon: 'weather-sunset-up',
+    nameKey: 'athkar_cat_rooster',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ",
+        transliteration: "Allāhumma innī asʾaluka min faḍlik.",
+        translationKey: "athkar_rooster_1",
+        count: 1,
+      },
+      {
+        arabic: "أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+        transliteration: "Aʿūdhu billāhi minash-shayṭānir-rajīm.",
+        translationKey: "athkar_rooster_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'amazement',
+    icon: 'emoticon-excited-outline',
+    nameKey: 'athkar_cat_amazement',
+    adhkar: [
+      {
+        arabic: "سُبْحَانَ اللَّهِ",
+        transliteration: "Subḥānallāh.",
+        translationKey: "athkar_amazement_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُ أَكْبَرُ",
+        transliteration: "Allāhu akbar.",
+        translationKey: "athkar_amazement_2",
+        count: 1,
+      },
+      {
+        arabic: "الْحَمْدُ لِلَّهِ الَّذِي بِنِعْمَتِهِ تَتِمُّ الصَّالِحَاتُ",
+        transliteration: "Al-ḥamdu lillāhil-ladhī biniʿmatihi tatimmuṣ-ṣāliḥāt.",
+        translationKey: "athkar_amazement_3",
+        count: 1,
+      },
+      {
+        arabic: "الْحَمْدُ لِلَّهِ عَلَى كُلِّ حَالٍ",
+        transliteration: "Al-ḥamdu lillāhi ʿalā kulli ḥāl.",
+        translationKey: "athkar_amazement_4",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'blessing_joy',
+    icon: 'heart-outline',
+    nameKey: 'athkar_cat_blessing_joy',
+    adhkar: [
+      {
+        arabic: "الْحَمْدُ لِلَّهِ الَّذِي بِنِعْمَتِهِ تَتِمُّ الصَّالِحَاتُ",
+        transliteration: "Al-ḥamdu lillāhil-ladhī biniʿmatihi tatimmuṣ-ṣāliḥāt.",
+        translationKey: "athkar_joy_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ كَمَا حَسَّنْتَ خَلْقِي فَحَسِّنْ خُلُقِي",
+        transliteration: "Allāhumma kamā ḥassanta khalqī faḥassin khuluqī.",
+        translationKey: "athkar_joy_2",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ بَارِكْ فِيهِ",
+        transliteration: "Allāhumma bārik fīh.",
+        translationKey: "athkar_joy_3",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'eclipse',
+    icon: 'eclipse-outline',
+    nameKey: 'athkar_cat_eclipse',
+    adhkar: [
+      {
+        arabic: "اللَّهُ أَكْبَرُ، لَا إِلَهَ إِلَّا اللَّهُ، أَسْتَغْفِرُ اللَّهَ",
+        transliteration: "Allāhu akbar. Lā ilāha illallāh. Astaghfirullāh.",
+        translationKey: "athkar_eclipse_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ فِتْنَةِ هَذَا الزَّمَانِ",
+        transliteration: "Allāhumma innī aʿūdhu bika min fitnat hādha az-zamān.",
+        translationKey: "athkar_eclipse_2",
+        count: 1,
+      },
+    ],
+  },
+  {
+    id: 'istisqa',
+    icon: 'weather-pouring',
+    nameKey: 'athkar_cat_istisqa',
+    adhkar: [
+      {
+        arabic: "اللَّهُمَّ اسْقِنَا، اللَّهُمَّ اسْقِنَا، اللَّهُمَّ اسْقِنَا",
+        transliteration: "Allāhumas-qinā, Allāhumas-qinā, Allāhumas-qinā.",
+        translationKey: "athkar_istisqa_1",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ اسْقِ عِبَادَكَ وَبَهَائِمَكَ، وَانْشُرْ رَحْمَتَكَ، وَأَحْيِ بَلَدَكَ الْمَيِّتَ",
+        transliteration: "Allāhumas-qi ʿibādaka wa bahāʾimak, wanshur raḥmatak, wa aḥyi baladakal-mayyit.",
+        translationKey: "athkar_istisqa_2",
+        count: 1,
+      },
+      {
+        arabic: "اللَّهُمَّ أَغِثْنَا، اللَّهُمَّ أَغِثْنَا، اللَّهُمَّ أَغِثْنَا",
+        transliteration: "Allāhumma aghithnā, Allāhumma aghithnā, Allāhumma aghithnā.",
+        translationKey: "athkar_istisqa_3",
+        count: 1,
+      },
+    ],
+  },
 ];
 
 const ORDER = [
@@ -1383,6 +1705,10 @@ const ORDER = [
   'mosque','qunut','janazah','death','graves','wedding',
   'return_travel','waswas','fitnah','oppressed','new_moon',
   'gathering','rain','anger','kaffarah',
+  // PAGE 4 (49-64)
+  'laylatul_qadr','arafah','fasting','newborn','children_protection','condolences',
+  'going_prayer','after_tashahhud','entering_town','fear_people','dying','rooster',
+  'amazement','blessing_joy','eclipse','istisqa',
 ];
 
 const _ORDERED = ORDER.map(id => ATHKAR_CATEGORIES.find(c => c.id === id)!) as AthkarCategory[];
