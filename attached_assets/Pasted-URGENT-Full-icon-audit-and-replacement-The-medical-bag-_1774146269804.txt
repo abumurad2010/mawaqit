@@ -1,0 +1,119 @@
+URGENT — Full icon audit and replacement.
+The 'medical-bag' icon renders with a Christian cross/plus symbol.
+This is the third icon violation. Audit and fix ALL icons now.
+
+════════════════════════════════════════════════════════
+STEP 1 — MANDATORY AUDIT
+════════════════════════════════════════════════════════
+
+Search the entire codebase for every icon name used 
+in athkar category definitions AND anywhere else in the app.
+
+Run:
+grep -r "icon.*'" constants/athkar-data.ts
+grep -r "icon.*'" app/(tabs)/athkar.tsx
+
+For EVERY icon found, check if its visual rendering contains:
+  • A cross of any shape (+ or †)
+  • A Star of David or hexagram
+  • Any symbol associated with a non-Islamic religion
+  • Any symbol that could be offensive in Islamic context
+
+════════════════════════════════════════════════════════
+STEP 2 — MANDATORY REPLACEMENTS
+════════════════════════════════════════════════════════
+
+Apply these replacements immediately regardless of 
+what is currently set:
+
+KNOWN VIOLATIONS — replace now:
+
+visiting_sick (أدعية عيادة المريض):
+  REMOVE: 'medical-bag' — renders with a cross/plus
+  REMOVE: 'hospital-box' — cross
+  REMOVE: 'hospital' — cross
+  REMOVE: 'pill' — acceptable but unrelated
+  SET TO: 'hand-heart-outline'
+  Fallback order if unavailable:
+    1. 'hand-heart-outline'
+    2. 'heart-pulse'
+    3. 'human-handsup'
+    4. 'account-heart-outline'
+
+ruqyah (أذكار الرقية الشرعية):
+  REMOVE: anything containing 'cross' or 'shield-cross'
+  SET TO: 'eye-off-outline'
+  Fallback order:
+    1. 'eye-off-outline'
+    2. 'eye-off'
+    3. 'shield-outline'
+    4. 'lock-outline'
+
+waking (أذكار الاستيقاظ):
+  SET TO: 'alarm'
+  Fallback order:
+    1. 'alarm'
+    2. 'alarm-outline'
+    3. 'clock-alert-outline'
+
+════════════════════════════════════════════════════════
+STEP 3 — SAFE ICON ASSIGNMENTS FOR ALL 20 CATEGORIES
+════════════════════════════════════════════════════════
+
+Override ALL category icons with this verified safe list.
+Do not keep any existing icon — replace all 20:
+
+morning        → 'weather-sunset-up'
+evening        → 'weather-night'
+after_prayer   → 'mosque'
+waking         → 'alarm'
+sleep          → 'sleep'
+istighfar      → 'hands-pray'
+ruqyah         → 'eye-off-outline'
+anxiety        → 'cloud-outline'
+distress       → 'heart-pulse'
+friday         → 'calendar-star'
+quranic        → 'book-open-variant'
+parents        → 'account-heart-outline'
+rizq           → 'sprout-outline'
+debt           → 'hand-coin-outline'
+faraj          → 'weather-sunny-alert'
+calamity       → 'candle'
+istikhara      → 'help-circle-outline'
+travel         → 'airplane'
+visiting_sick  → 'hand-heart-outline'
+quran_khatm    → 'book-check-outline'
+
+════════════════════════════════════════════════════════
+STEP 4 — BANNED ICON LIST
+════════════════════════════════════════════════════════
+
+Add a comment at the top of constants/athkar-data.ts:
+
+/*
+ * BANNED ICONS — never use these in this app:
+ * Any icon whose name contains: 'cross', 'christian',
+ * 'church', 'hospital', 'medical-bag', 'hospital-box',
+ * 'ambulance' (has cross), 'pharmacy' (has cross),
+ * 'star-david', 'star-of-david', 'star-outline' (hexagram risk),
+ * 'sun-compass' (hexagram risk), 'asterisk' (cross risk),
+ * 'plus' standalone icons (cross appearance),
+ * 'shield-cross', 'shield-cross-outline'
+ */
+
+════════════════════════════════════════════════════════
+STEP 5 — VERIFY BEFORE FINISHING
+════════════════════════════════════════════════════════
+
+After making changes, log every icon name to console:
+  ATHKAR_CATEGORIES.forEach(cat => 
+    console.log(cat.id, '→', cat.icon, 
+      MaterialCommunityIcons.glyphMap[cat.icon] 
+        ? 'FOUND' : 'MISSING — FALLBACK NEEDED')
+  )
+
+If any icon logs MISSING, apply the fallback immediately 
+before considering this task complete.
+
+Do not change any text, translations, counts, or behaviour.
+Do not add new dependencies.

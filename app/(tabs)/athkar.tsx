@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
-import { t, isRtlLang, LANG_META } from '@/constants/i18n';
+import i18n, { t, isRtlLang, LANG_META } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
@@ -416,8 +416,13 @@ function ReaderScreen({
   displayMode, showHelp, athkarLang, setAthkarLang,
 }: ReaderProps) {
   const [showLangPicker, setShowLangPicker] = useState(false);
-  const athkarTr = t(athkarLang);
   const athkarRtl = isRtlLang(athkarLang);
+
+  useEffect(() => {
+    console.log('Athkar lang selector mounted:', athkarLang);
+    console.log('Available languages:', Object.keys(i18n));
+  }, [athkarLang]);
+
   const nameKey = category.nameKey as any;
   const catName = (tr as any)[nameKey] ?? nameKey;
   const total = category.adhkar.length;
@@ -525,13 +530,14 @@ function ReaderScreen({
         ref={readerRef}
         data={category.adhkar}
         keyExtractor={(_, i) => String(i)}
+        extraData={athkarLang}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={() => {}}
         renderItem={({ item: dhikr, index }) => {
           const done = isDone(category.id, index, dhikr.count);
           const cur = getCount(category.id, index);
-          const translation = (athkarTr as any)[dhikr.translationKey] ?? '';
+          const translation = (i18n[athkarLang] as any)?.[dhikr.translationKey] ?? '';
 
           return (
             <DhikrCard
@@ -560,7 +566,7 @@ function ReaderScreen({
         <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
           <Pressable
             style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-            onPress={() => {}}
+            onPress={e => e.stopPropagation()}
           >
             <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
               <Text style={[styles.pickerTitle, { color: C.text }]}>
