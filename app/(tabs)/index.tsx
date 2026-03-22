@@ -568,17 +568,19 @@ export default function PrayerTimesScreen() {
           iqamaStatus ? (
             <Animated.View
               entering={FadeIn.duration(500)}
-              style={[styles.heroCard, { backgroundColor: C.heroCardBg }]}
+              style={[styles.heroCard, styles.iqamaBanner, { backgroundColor: C.heroCardBg }]}
             >
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.iqamaPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
-                  {prayerLabel(iqamaStatus.name)}
-                </Text>
-                <Text style={[styles.iqamaInLabel, { fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
-                  {(tr as any).iqama_in ?? 'Iqama in'}
-                </Text>
+              <Text style={[styles.iqamaPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+                {prayerLabel(iqamaStatus.name)}
+              </Text>
+              <View style={styles.iqamaRow}>
+                <View style={styles.iqamaLeft}>
+                  <Text style={[styles.iqamaInLabel, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+                    {(tr as any).iqama_in ?? 'Iqama in'}
+                  </Text>
+                </View>
+                <Text style={styles.iqamaCountdown}>{countdown}</Text>
               </View>
-              <Text style={styles.iqamaCountdown}>{countdown}</Text>
             </Animated.View>
           ) : (
             <Animated.View
@@ -851,16 +853,36 @@ const styles = StyleSheet.create({
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
 
   /* Iqama countdown banner — same size as next-prayer heroCard */
+  iqamaBanner: {
+    position: 'relative',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 0,
+    paddingTop: 34,
+  },
   iqamaPrayerName: {
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     fontSize: 13,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.75)',
-    marginBottom: 3,
+    color: 'rgba(255,255,255,0.65)',
+    letterSpacing: 0.06,
+  },
+  iqamaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  iqamaLeft: {
+    flex: 1,
+    justifyContent: 'center',
   },
   iqamaInLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.55)',
-    fontStyle: 'italic',
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.90)',
   },
   iqamaCountdown: {
     fontSize: 28,
