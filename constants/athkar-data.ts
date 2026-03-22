@@ -149,26 +149,22 @@ const MORNING_ADHKAR: Dhikr[] = [
 function makeEveningAdhkar(): Dhikr[] {
   const evening: Dhikr[] = [];
 
-  evening.push({
-    arabic: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
-    transliteration: "Amsaynā wa amsal-mulku lillāh, wal-ḥamdu lillāh, wa lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Rabbi asʾaluka khayra mā fī hādhihil-laylati wa khayra mā baʿdahā, wa aʿūdhu bika min sharri hādhihil-laylati wa sharri mā baʿdahā. Rabbi aʿūdhu bika minal-kasali wa sūʾil-kibar. Rabbi aʿūdhu bika min ʿadhābin fin-nār wa ʿadhābin fil-qabr.",
-    translationKey: "athkar_evening_1",
-    count: 1,
-  });
-
   MORNING_ADHKAR.forEach((d, i) => {
+    // i === 4 (morning_5) is the evening duplicate of athkar_evening_1.
+    // Skip it and insert athkar_evening_1 in its place (after the 4 shared surahs).
+    if (i === 4) {
+      evening.push({
+        arabic: "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+        transliteration: "Amsaynā wa amsal-mulku lillāh, wal-ḥamdu lillāh, wa lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Rabbi asʾaluka khayra mā fī hādhihil-laylati wa khayra mā baʿdahā, wa aʿūdhu bika min sharri hādhihil-laylati wa sharri mā baʿdahā. Rabbi aʿūdhu bika minal-kasali wa sūʾil-kibar. Rabbi aʿūdhu bika min ʿadhābin fin-nār wa ʿadhābin fil-qabr.",
+        translationKey: "athkar_evening_1",
+        count: 1,
+      });
+      return;
+    }
+
     let arabic = d.arabic;
     let translit = d.transliteration;
     let tKey = d.translationKey;
-
-    if (i === 4) {
-      arabic = arabic
-        .replace("أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ", "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ")
-        .replace(/هَذَا الْيَوْمِ/g, "هَذِهِ اللَّيْلَةِ");
-      translit = translit
-        .replace("Aṣbaḥnā wa aṣbaḥal-mulku", "Amsaynā wa amsal-mulku")
-        .replace(/hādhal-yawm/g, "hādhihil-layla");
-    }
 
     if (i === 5) {
       arabic = arabic
