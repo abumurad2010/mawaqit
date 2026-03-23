@@ -395,6 +395,30 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             </Pressable>
           </View>
         </View>
+
+        {/* Font sizer — right below search/favourites buttons */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Pressable
+              onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx - 1]); } }}
+              disabled={!canDecrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {SIZE_LABELS[athkarFontSize]}
+            </Text>
+            <Pressable
+              onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx + 1]); } }}
+              disabled={!canIncrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
+            </Pressable>
+          </View>
+          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
+        </View>
       </View>
 
       <Modal
@@ -445,31 +469,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 80 }}>
       <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
-        {/* Row 1: font sizer + help right-aligned, above the segment row */}
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-            <Pressable
-              onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx - 1]); } }}
-              disabled={!canDecrease}
-              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
-            >
-              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
-            </Pressable>
-            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
-              {SIZE_LABELS[athkarFontSize]}
-            </Text>
-            <Pressable
-              onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx + 1]); } }}
-              disabled={!canIncrease}
-              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
-            >
-              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
-            </Pressable>
-          </View>
-          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
-        </View>
-
-        {/* Row 2: Arabic / Transliterated segment — full width */}
+        {/* Arabic / Transliterated segment — full width */}
         <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
