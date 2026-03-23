@@ -862,12 +862,12 @@ const styles = StyleSheet.create({
   },
   iqamaPrayerName: {
     position: 'absolute',
-    top: 10,
+    top: 8,
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 13,
-    color: 'rgba(201,168,76,0.75)',
+    fontSize: 16,
+    color: '#FFFFFF',
     letterSpacing: 0.06,
   },
   iqamaRow: {
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iqamaInLabel: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
     color: '#C9A84C',
   },
