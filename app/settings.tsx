@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Switch,
+  Animated, LayoutAnimation, UIManager, Image,
 } from 'react-native';
 import { gregorianToHijri } from '@/lib/hijri';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import Colors from '@/constants/colors';
 import type { AccessibilityTheme } from '@/constants/colors';
@@ -16,11 +18,19 @@ import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
-
 import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import type { SecondLang } from '@/contexts/AppContext';
+import Constants from 'expo-constants';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+const riwaqLogoDark = require('@/assets/images/riwaq-labs-logo-dark.jpg');
+const riwaqLogoLight = require('@/assets/images/riwaq-labs-logo.png');
+const APP_VERSION: string = Constants.expoConfig?.version ?? '1.0.0';
 
 const SANS = 'Inter_400Regular';
 const SANS_MD = 'Inter_500Medium';
@@ -72,6 +82,8 @@ export default function SettingsScreen() {
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
+  const [showAbout, setShowAbout] = useState(false);
+  const chevronAnim = useRef(new Animated.Value(0)).current;
 
   // ── Eid proximity — visibility window for the Eid Prayer row ────────────────
   //
@@ -347,6 +359,17 @@ export default function SettingsScreen() {
   };
 
   const recommendedMethod = getMethodForCountry(countryCode);
+
+  const toggleAbout = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const next = !showAbout;
+    setShowAbout(next);
+    Animated.timing(chevronAnim, {
+      toValue: next ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1128,6 +1151,80 @@ export default function SettingsScreen() {
           {tr.dua}
         </Text>
 
+        {/* ─── About row trigger ─── */}
+        <Pressable
+          onPress={toggleAbout}
+          style={[styles.aboutRow, { borderTopColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
+        >
+          <MaterialCommunityIcons name="information-outline" size={20} color={C.tint} />
+          <Text style={[styles.aboutRowLabel, { color: C.text, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+            {tr.about_label}
+          </Text>
+          <Animated.View style={{ transform: [{ rotate: chevronAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+            <MaterialCommunityIcons name="chevron-down" size={20} color={C.textMuted} />
+          </Animated.View>
+        </Pressable>
+
+        {/* ─── About expanded card ─── */}
+        {showAbout && (
+          <View style={[styles.aboutCard, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+            {/* X close button */}
+            <Pressable onPress={toggleAbout} style={styles.aboutClose} hitSlop={12}>
+              <MaterialCommunityIcons name="close" size={18} color={C.textMuted} />
+            </Pressable>
+
+            {/* Block 1: Developed by + Logo */}
+            <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'center', marginBottom: 8 }}>
+              {tr.developed_by}
+            </Text>
+            <Image
+              source={isDark ? riwaqLogoDark : riwaqLogoLight}
+              style={{ width: 180, height: 65, resizeMode: 'contain', alignSelf: 'center' }}
+            />
+
+            {/* Block 2: Tagline */}
+            <Text style={{ fontSize: 12, color: C.textMuted, fontStyle: 'italic', textAlign: 'center', marginTop: 6 }}>
+              {tr.about_tagline}
+            </Text>
+
+            {/* Block 3: Mission short */}
+            <Text style={{ fontSize: 13, color: C.textMuted, textAlign: 'center', lineHeight: 20, marginTop: 12, paddingHorizontal: 8 }}>
+              {tr.about_mission_short}
+            </Text>
+
+            {/* Block 4: Three pillar badges */}
+            <View style={[styles.aboutBadges, { marginTop: 14 }]}>
+              {([
+                { icon: 'currency-usd-off', key: 'about_badge_free' },
+                { icon: 'eye-off-outline',  key: 'about_badge_tracking' },
+                { icon: 'hand-heart-outline', key: 'about_badge_allah' },
+              ] as const).map(({ icon, key }) => (
+                <View key={key} style={[styles.aboutBadge, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+                  <MaterialCommunityIcons name={icon} size={12} color={C.tint} />
+                  <Text style={{ fontSize: 11, color: C.textMuted }}>{(tr as any)[key]}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Block 5: App name + version + links + copyright */}
+            <Text style={{ fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 12 }}>
+              {`Mawaqit | مواقيت  v${APP_VERSION}`}
+            </Text>
+            <View style={styles.aboutLinks}>
+              <Pressable onPress={() => Linking.openURL('https://mawaqits.com/privacy')}>
+                <Text style={{ fontSize: 12, color: C.tint }}>{tr.about_privacy_link}</Text>
+              </Pressable>
+              <Text style={{ fontSize: 12, color: C.textMuted }}>{' · '}</Text>
+              <Pressable onPress={() => Linking.openURL('mailto:contact@riwaqlabs.com')}>
+                <Text style={{ fontSize: 12, color: C.tint }}>{tr.about_contact_link}</Text>
+              </Pressable>
+            </View>
+            <Text style={{ fontSize: 11, color: C.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+              {'© 2025 Riwaq Labs · رواق لابز'}
+            </Text>
+          </View>
+        )}
+
       </ScrollView>
 
     </View>
@@ -1338,4 +1435,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rollerDoneText: { fontSize: 16, fontWeight: '700' },
+  aboutRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8,
+  },
+  aboutRowLabel: { flex: 1, fontSize: 15 },
+  aboutCard: {
+    marginHorizontal: 16, marginBottom: 24,
+    borderRadius: 12, borderWidth: 1,
+    padding: 16, overflow: 'hidden',
+  },
+  aboutClose: {
+    position: 'absolute', top: 12, right: 12, zIndex: 10,
+  },
+  aboutBadges: {
+    flexDirection: 'row', flexWrap: 'wrap',
+    justifyContent: 'center', gap: 8,
+  },
+  aboutBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderRadius: 20, borderWidth: 1,
+    paddingHorizontal: 10, paddingVertical: 5,
+  },
+  aboutLinks: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    marginTop: 8,
+  },
 });

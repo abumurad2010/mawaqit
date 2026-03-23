@@ -1,0 +1,270 @@
+MOVE ABOUT SECTION: from separate tab to bottom of Settings page.
+
+════════════════════════════════════════════════════════
+PART 1 — REMOVE THE ABOUT TAB
+════════════════════════════════════════════════════════
+
+Delete app/(tabs)/about.tsx entirely.
+Remove the About tab from the bottom navigation bar 
+in app/(tabs)/_layout.tsx.
+Remove the tab_about i18n key references from i18n.ts.
+
+════════════════════════════════════════════════════════
+PART 2 — ADD ABOUT CARD AT BOTTOM OF SETTINGS
+════════════════════════════════════════════════════════
+
+In app/settings.tsx, at the very bottom of the 
+ScrollView — after all existing settings sections 
+and before the closing tag — add this About card.
+
+TRIGGER: A simple tappable row at the bottom of settings:
+  Left: 'information-outline' icon (C.tint, size 20)
+  Label in current language:
+    ar: "عن التطبيق"
+    en: "About"
+    fr: "À propos"
+    es: "Acerca de"
+    ru: "О приложении"
+    zh: "关于"
+    tr: "Hakkında"
+    ur: "معلومات"
+    id: "Tentang"
+    bn: "সম্পর্কে"
+    fa: "درباره"
+    ms: "Tentang"
+    pt: "Sobre"
+    sw: "Kuhusu"
+    ha: "Game da"
+    i18n key: about_label
+  Right: 'chevron-down' when collapsed, 
+         'chevron-up' when expanded
+  Color: C.textMuted
+
+EXPANDED STATE:
+When tapped, the card expands inline below the row
+(not a modal, not a new screen — inline expansion).
+An X button appears in the top-right of the expanded 
+card to collapse it back.
+
+════════════════════════════════════════════════════════
+PART 3 — ABOUT CARD CONTENT (expanded state)
+════════════════════════════════════════════════════════
+
+The expanded card contains all of the following,
+in a compact, scrollable-within-card layout:
+
+──────────────────────────────────────────
+BLOCK 1 — Developed by + Logo
+──────────────────────────────────────────
+
+Small label centered:
+  ar: "طُوِّر بواسطة"
+  en: "Developed by"
+  fr: "Développé par"
+  es: "Desarrollado por"
+  ru: "Разработано"
+  zh: "开发者"
+  tr: "Geliştiren"
+  ur: "تیار کردہ"
+  id: "Dikembangkan oleh"
+  bn: "ডেভেলপ করেছেন"
+  fa: "توسعه یافته توسط"
+  ms: "Dibangunkan oleh"
+  pt: "Desenvolvido por"
+  sw: "Imetengenezwa na"
+  ha: "An gina ta"
+  i18n key: developed_by
+  fontSize: 12
+  color: C.textMuted
+  textAlign: center
+  marginBottom: 8
+
+Riwaq Labs logo image centered below:
+  const riwaqLogoDark = require('@/assets/images/riwaq-labs-logo-dark.jpg')
+  const riwaqLogoLight = require('@/assets/images/riwaq-labs-logo.png')
+
+  Use riwaqLogoDark when isDark is true
+  Use riwaqLogoLight when isDark is false
+
+  <Image
+    source={isDark ? riwaqLogoDark : riwaqLogoLight}
+    style={{
+      width: 180,
+      height: 65,
+      resizeMode: 'contain',
+      alignSelf: 'center',
+    }}
+  />
+
+──────────────────────────────────────────
+BLOCK 2 — Tagline
+──────────────────────────────────────────
+
+Centered italic text below logo:
+  ar: "حيث يجتمع العلم"
+  en: "Where knowledge gathers"
+  fr: "Là où le savoir se rassemble"
+  es: "Donde se reúne el conocimiento"
+  ru: "Там, где собираются знания"
+  zh: "知识汇聚之处"
+  tr: "Bilginin buluştuğu yer"
+  ur: "جہاں علم جمع ہوتا ہے"
+  id: "Tempat ilmu berkumpul"
+  bn: "যেখানে জ্ঞান একত্রিত হয়"
+  fa: "جایی که دانش گرد می‌آید"
+  ms: "Tempat ilmu berhimpun"
+  pt: "Onde o conhecimento se reúne"
+  sw: "Mahali ambapo maarifa hukusanyika"
+  ha: "Inda ilimi ke taro"
+  i18n key: about_tagline
+  fontSize: 12
+  color: C.textMuted
+  fontStyle: italic
+  textAlign: center
+  marginTop: 6
+
+──────────────────────────────────────────
+BLOCK 3 — Mission (short version)
+──────────────────────────────────────────
+
+Short paragraph, centered:
+  ar: "رواق لابز استوديو تقني إسلامي مستقل يبني أدوات رقمية مجانية للمسلمين في كل مكان — لوجه الله تعالى، بلا إعلانات ولا تتبع ولا مقابل."
+  en: "Riwaq Labs is an independent Islamic technology studio building free digital tools for Muslims worldwide — for the sake of Allah, with no ads, no tracking, and nothing asked in return."
+  fr: "Riwaq Labs est un studio de technologie islamique indépendant qui crée des outils numériques gratuits pour les musulmans du monde entier — pour l'amour d'Allah, sans publicités, sans suivi et sans contrepartie."
+  es: "Riwaq Labs es un estudio de tecnología islámica independiente que crea herramientas digitales gratuitas para musulmanes de todo el mundo — por amor a Allah, sin anuncios, sin seguimiento y sin pedir nada a cambio."
+  ru: "Riwaq Labs — независимая студия исламских технологий, создающая бесплатные цифровые инструменты для мусульман по всему миру — ради Аллаха, без рекламы, без слежки и без каких-либо требований взамен."
+  zh: "Riwaq Labs 是一家独立的伊斯兰技术工作室，为全球穆斯林打造免费数字工具 — 为了真主的缘故，无广告、无追踪、不求任何回报。"
+  tr: "Riwaq Labs, Allah rızası için dünya genelindeki Müslümanlara ücretsiz dijital araçlar geliştiren bağımsız bir İslami teknoloji stüdyosudur — reklamsız, takipsiz ve karşılıksız."
+  ur: "رواق لابز ایک آزاد اسلامی ٹیکنالوجی اسٹوڈیو ہے جو دنیا بھر کے مسلمانوں کے لیے لوجہ اللہ مفت ڈیجیٹل ٹولز بناتا ہے — بلا اشتہار، بلا ٹریکنگ، بلا کچھ مانگے۔"
+  id: "Riwaq Labs adalah studio teknologi Islam independen yang membangun alat digital gratis untuk Muslim di seluruh dunia — karena Allah Ta'ala, tanpa iklan, tanpa pelacakan, dan tanpa meminta imbalan."
+  bn: "রিওয়াক ল্যাবস একটি স্বাধীন ইসলামিক প্রযুক্তি স্টুডিও যা আল্লাহর জন্য বিশ্বব্যাপী মুসলিমদের জন্য বিনামূল্যে ডিজিটাল সরঞ্জাম তৈরি করে — কোনো বিজ্ঞাপন নেই, কোনো ট্র্যাকিং নেই, বিনিময়ে কিছুই চাওয়া হয় না।"
+  fa: "رواق لابز یک استودیوی مستقل فناوری اسلامی است که برای رضای خدا ابزارهای دیجیتال رایگان برای مسلمانان سراسر جهان می‌سازد — بدون تبلیغات، بدون ردیابی، و بدون هیچ چشمداشتی."
+  ms: "Riwaq Labs ialah studio teknologi Islam yang bebas, membina alat digital percuma untuk Muslim di seluruh dunia — kerana Allah Ta'ala, tanpa iklan, tanpa penjejakan dan tanpa meminta apa-apa sebagai balasan."
+  pt: "Riwaq Labs é um estúdio de tecnologia islâmica independente que cria ferramentas digitais gratuitas para muçulmanos em todo o mundo — pelo amor de Allah, sem anúncios, sem rastreamento e sem pedir nada em troca."
+  sw: "Riwaq Labs ni studio huru ya teknolojia ya Kiislamu inayojenga zana za kidijitali za bure kwa Waislamu duniani kote — kwa ajili ya Allah, bila matangazo, bila ufuatiliaji, na bila kuomba chochote kama malipo."
+  ha: "Riwaq Labs wani ɗakin fasahar Musulunci ne mai zaman kansa wanda ke gina kayan aikin dijital kyauta ga Musulmai a duk duniya — don Allah Ta'ala, ba tare da tallace-tallace, ba tare da bin sawu, kuma ba tare da neman komai a madadin ba."
+  i18n key: about_mission_short
+  fontSize: 13
+  color: C.textSecondary
+  textAlign: center
+  lineHeight: 20
+  marginTop: 12
+  paddingHorizontal: 8
+
+──────────────────────────────────────────
+BLOCK 4 — Three pillars (compact, horizontal)
+──────────────────────────────────────────
+
+Three small badges in a row, centered:
+
+Badge 1: 'currency-usd-off' icon + 
+  ar: "مجاني للأبد"
+  en: "Free Forever"
+  i18n key: about_badge_free
+
+Badge 2: 'eye-off-outline' icon + 
+  ar: "بلا تتبع"
+  en: "No Tracking"
+  i18n key: about_badge_tracking
+
+Badge 3: 'hand-heart-outline' icon + 
+  ar: "لوجه الله"
+  en: "For Allah"
+  i18n key: about_badge_allah
+
+Each badge:
+  backgroundColor: C.backgroundCard
+  borderRadius: 20
+  paddingHorizontal: 10
+  paddingVertical: 5
+  flexDirection: 'row'
+  gap: 4
+  icon size: 12, color: C.tint
+  text fontSize: 11, color: C.textMuted
+
+──────────────────────────────────────────
+BLOCK 5 — App + version + links
+──────────────────────────────────────────
+
+App name + version centered:
+  "Mawaqit | مواقيت  v{appVersion}"
+  fontSize: 11
+  color: C.textMuted
+  textAlign: center
+  marginTop: 12
+
+Two links side by side, centered:
+
+Privacy Policy:
+  ar: "سياسة الخصوصية"
+  en: "Privacy Policy"
+  i18n key: about_privacy_link
+  → opens https://mawaqits.com/privacy via Linking.openURL
+
+Contact:
+  ar: "تواصل معنا"
+  en: "Get in touch"
+  i18n key: about_contact_link
+  → opens mailto:contact@riwaqlabs.com
+
+Both links:
+  fontSize: 12
+  color: C.tint
+  separated by a " · " divider
+
+Copyright:
+  "© 2025 Riwaq Labs · رواق لابز"
+  fontSize: 11
+  color: C.textMuted
+  textAlign: center
+  marginTop: 4
+  marginBottom: 16
+
+════════════════════════════════════════════════════════
+PART 4 — EXPAND/COLLAPSE BEHAVIOUR
+════════════════════════════════════════════════════════
+
+State: const [showAbout, setShowAbout] = useState(false)
+
+Tapping the "About" row: setShowAbout(true)
+
+X button (top-right of expanded card):
+  icon: 'close'
+  size: 18
+  color: C.textMuted
+  onPress: setShowAbout(false)
+  position: absolute, top: 12, right: 12
+
+Expansion animation:
+  Use Animated or LayoutAnimation for a smooth 
+  expand/collapse — keep it subtle, 200ms
+
+The expanded card:
+  backgroundColor: C.backgroundCard
+  borderRadius: 12
+  marginHorizontal: 16
+  marginBottom: 24
+  padding: 16
+  border: 1px C.separator
+  overflow: 'hidden'
+
+The chevron on the trigger row rotates 180° 
+when expanded using Animated.
+
+════════════════════════════════════════════════════════
+PART 5 — READ VERSION FROM app.json
+════════════════════════════════════════════════════════
+
+  import appJson from '../../app.json'
+  const appVersion = appJson.expo.version
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not create a new screen or modal.
+Do not change any existing settings rows.
+The about card must be the LAST item in the 
+settings ScrollView — below all other settings.
+Add all new i18n keys to i18n.ts in all 15 languages.
+Do not add new dependencies.
