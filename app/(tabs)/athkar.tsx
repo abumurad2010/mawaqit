@@ -372,7 +372,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <View style={[styles.gridTopHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        <View style={styles.headerTop}>
+        <View style={[styles.headerTop, { marginBottom: 2 }]}>
           <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
             <ThemeToggle />
             <LangToggle />
@@ -397,7 +397,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </View>
 
         {/* Font sizer — right below search/favourites buttons */}
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
             <Pressable
               onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx - 1]); } }}
