@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '@/contexts/AppContext';
-import i18n, { t, isRtlLang, LANG_META } from '@/constants/i18n';
+import i18n, { t, isRtlLang, LANG_META, LANG_FLAG } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
@@ -416,7 +416,6 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             <ScrollView showsVerticalScrollIndicator={false}>
               {(Object.keys(LANG_META) as Lang[]).filter(l => l !== 'ar').map(l => {
                 const active = l === athkarLang;
-                const rtl = isRtlLang(l);
                 return (
                   <Pressable
                     key={l}
@@ -426,11 +425,12 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                       { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
                     ]}
                   >
+                    <Text style={styles.pickerFlag}>{LANG_FLAG[l] ?? ''}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: 'Inter_600SemiBold', textAlign: 'left' }]}>
                         {LANG_META[l]?.native ?? l}
                       </Text>
-                      <Text style={[styles.pickerLang, { color: C.textMuted }]}>
+                      <Text style={[styles.pickerLang, { color: C.textMuted, textAlign: 'left' }]}>
                         {LANG_META[l]?.label ?? l}
                       </Text>
                     </View>
@@ -1401,6 +1401,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  pickerFlag: { fontSize: 22, lineHeight: 28, marginRight: 2 },
   pickerNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
   pickerLang: { fontSize: 12 },
   pageDotsRow: {

@@ -25,6 +25,12 @@ export const LANG_META: Record<Lang, { native: string; label: string; code: stri
   ha: { native: 'Hausa',             label: 'Hausa',      code: 'HA' },
 };
 
+export const LANG_FLAG: Record<Lang, string> = {
+  ar: '🇸🇦', en: '🇬🇧', fr: '🇫🇷', es: '🇪🇸', ru: '🇷🇺',
+  zh: '🇨🇳', tr: '🇹🇷', ur: '🇵🇰', id: '🇮🇩', bn: '🇧🇩',
+  fa: '🇮🇷', ms: '🇲🇾', pt: '🇵🇹', sw: '🇰🇪', ha: '🇳🇬',
+};
+
 export function detectSecondLang(countryCode: string | null): Lang {
   if (!countryCode) return 'en';
   const map: Record<string, Lang> = {

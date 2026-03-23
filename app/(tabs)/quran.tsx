@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
-import { t, LANG_META, isRtlLang } from '@/constants/i18n';
+import { t, LANG_META, LANG_FLAG, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
 import { SUPPORTED_TRANSLIT_LANGS, fetchSurahNamesByLang, isLangBundled } from '@/lib/quran-transliteration';
@@ -213,7 +213,6 @@ export default function QuranScreen() {
               <ScrollView showsVerticalScrollIndicator={false}>
                 {SUPPORTED_TRANSLIT_LANGS.map(l => {
                   const active = l === translitLang;
-                  const rtl = isRtlLang(l);
                   return (
                     <Pressable
                       key={l}
@@ -223,11 +222,12 @@ export default function QuranScreen() {
                         { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
                       ]}
                     >
+                      <Text style={styles.pickerFlag}>{LANG_FLAG[l] ?? ''}</Text>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                        <Text style={[styles.pickerNative, { color: C.text, fontFamily: SERIF_EN, textAlign: 'left' }]}>
                           {LANG_META[l]?.native ?? l}
                         </Text>
-                        <Text style={[styles.pickerLang, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+                        <Text style={[styles.pickerLang, { color: C.textMuted, fontFamily: SERIF_EN, textAlign: 'left' }]}>
                           {LANG_META[l]?.label ?? l}
                         </Text>
                       </View>
@@ -324,6 +324,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  pickerFlag: { fontSize: 22, lineHeight: 28, marginRight: 2 },
   pickerNative: { fontSize: 15, fontWeight: '600', marginBottom: 1 },
   pickerLang: { fontSize: 12 },
   continueBtn: {

@@ -4,28 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/contexts/AppContext';
-import { LANG_META } from '@/constants/i18n';
+import { LANG_META, LANG_FLAG } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 
 const ALL_LANGS: Lang[] = ['ar','en','fr','es','ru','zh','tr','ur','id','bn','fa','ms','pt','sw','ha'];
-
-const LANG_FLAG: Record<Lang, string> = {
-  ar: '🇸🇦',
-  en: '🇬🇧',
-  fr: '🇫🇷',
-  es: '🇪🇸',
-  ru: '🇷🇺',
-  zh: '🇨🇳',
-  tr: '🇹🇷',
-  ur: '🇵🇰',
-  id: '🇮🇩',
-  bn: '🇧🇩',
-  fa: '🇮🇷',
-  ms: '🇲🇾',
-  pt: '🇵🇹',
-  sw: '🇰🇪',
-  ha: '🇳🇬',
-};
 
 export default function LangToggle() {
   const { lang, colors: C, updateSettings } = useApp();
