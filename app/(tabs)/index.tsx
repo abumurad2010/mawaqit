@@ -570,6 +570,7 @@ export default function PrayerTimesScreen() {
               entering={FadeIn.duration(500)}
               style={[styles.heroCard, styles.iqamaBanner, { backgroundColor: C.heroCardBg }]}
             >
+              <View style={[StyleSheet.absoluteFillObject, styles.iqamaLighten]} />
               <Text style={[styles.iqamaPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
                 {prayerLabel(iqamaStatus.name)}
               </Text>
@@ -887,10 +888,11 @@ const styles = StyleSheet.create({
   iqamaCountdown: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#C9A84C',
     fontVariant: ['tabular-nums'] as any,
     letterSpacing: -0.5,
   },
+  iqamaLighten: { borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.10)' },
 
   /* Next prayer hero */
   heroCard: {
