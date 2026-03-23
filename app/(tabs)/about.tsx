@@ -15,13 +15,14 @@ import * as Linking from 'expo-linking';
 
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { SERIF_EN } from '@/constants/typography';
 
 const APP_VERSION = '1.0.0';
 const GOLD = '#C9A84C';
+const riwaqLogoDark = require('@/assets/images/riwaq-labs-logo-dark.jpg');
+const riwaqLogoLight = require('@/assets/images/riwaq-labs-logo.png');
 
 export default function AboutScreen() {
-  const { colors, lang, isRtl } = useApp();
+  const { colors, lang, isRtl, isDark } = useApp();
   const C = colors;
   const tr = t(lang);
   const insets = useSafeAreaInsets();
@@ -68,12 +69,16 @@ export default function AboutScreen() {
 
       {/* ─── SECTION 2: Studio Identity ─── */}
       <View style={styles.section}>
-        <Text style={[styles.studioName, { color: C.text, fontFamily: SERIF_EN }]}>
-          Riwaq Labs
-        </Text>
-        <Text style={[styles.studioArabic, { color: C.tint, fontFamily: Amiri_700Bold }]}>
-          رواق لابز
-        </Text>
+        <Image
+          source={isDark ? riwaqLogoDark : riwaqLogoLight}
+          style={{
+            width: 220,
+            height: 80,
+            resizeMode: 'contain',
+            alignSelf: 'center',
+            marginBottom: 8,
+          }}
+        />
         <Text style={[styles.studioTagline, { color: C.textMuted }]}>
           {tr.about_tagline}
         </Text>
