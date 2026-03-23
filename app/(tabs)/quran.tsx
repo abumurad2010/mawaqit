@@ -2,10 +2,11 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform, Modal, ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -21,24 +22,47 @@ import { useQuery } from '@tanstack/react-query';
 
 type QuranMode = 'mushaf' | 'transliteration';
 
+type QuranFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+const Q_STEP_ORDER: QuranFontSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+const Q_SIZE_LABELS: Record<QuranFontSize, string> = { xs: 'XS', sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
+const Q_FONT_STEPS: Record<QuranFontSize, { arabic: number; english: number; meta: number; num: number; badge: number }> = {
+  xs: { arabic: 14, english: 10, meta: 9,  num: 10, badge: 30 },
+  sm: { arabic: 18, english: 12, meta: 11, num: 12, badge: 36 },
+  md: { arabic: 22, english: 14, meta: 13, num: 14, badge: 42 },
+  lg: { arabic: 26, english: 17, meta: 15, num: 16, badge: 48 },
+  xl: { arabic: 30, english: 20, meta: 17, num: 18, badge: 54 },
+};
+const QURAN_FS_KEY = 'quran_font_size';
+
 export default function QuranScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, fontSize, updateSettings } = useApp();
+  const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, updateSettings } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
   const isAr = lang === 'ar';
-  const fsIdx = fontSize === 'small' ? 0 : fontSize === 'large' ? 2 : fontSize === 'xlarge' ? 3 : fontSize === 'xxlarge' ? 4 : 1;
-  const qFS = {
-    arabic:  [14, 18, 22, 26, 30][fsIdx],
-    english: [10, 12, 14, 17, 20][fsIdx],
-    meta:    [9,  11, 13, 15, 17][fsIdx],
-    num:     [10, 12, 14, 16, 18][fsIdx],
-    badge:   [30, 36, 42, 48, 54][fsIdx],
-  };
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [quranFontSize, setQuranFontSizeState] = useState<QuranFontSize>('sm');
+
+  useEffect(() => {
+    AsyncStorage.getItem(QURAN_FS_KEY).then(val => {
+      if (val && Q_STEP_ORDER.includes(val as QuranFontSize)) {
+        setQuranFontSizeState(val as QuranFontSize);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const setQuranFontSize = (fs: QuranFontSize) => {
+    setQuranFontSizeState(fs);
+    AsyncStorage.setItem(QURAN_FS_KEY, fs).catch(() => {});
+  };
+
+  const fsIdx = Q_STEP_ORDER.indexOf(quranFontSize);
+  const canDecrease = fsIdx > 0;
+  const canIncrease = fsIdx < Q_STEP_ORDER.length - 1;
+  const qFS = Q_FONT_STEPS[quranFontSize];
 
   const { data: surahNamesMap } = useQuery<Record<number, string>>({
     queryKey: ['/surah-names', translitLang],
@@ -124,7 +148,9 @@ export default function QuranScreen() {
 
       {/* Header */}
       <View style={[styles.topHeader, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        <View style={styles.headerTop}>
+
+        {/* Row 1: toggles | logo | actions */}
+        <View style={[styles.headerTop, { marginBottom: 2 }]}>
           <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
             <ThemeToggle />
             <LangToggle />
@@ -146,8 +172,31 @@ export default function QuranScreen() {
           </View>
         </View>
 
+        {/* Font sizer — right below action buttons, right-aligned */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 2 }}>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Pressable
+              onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setQuranFontSize(Q_STEP_ORDER[fsIdx - 1]); } }}
+              disabled={!canDecrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {Q_SIZE_LABELS[quranFontSize]}
+            </Text>
+            <Pressable
+              onPress={() => { if (canIncrease) { Haptics.selectionAsync(); setQuranFontSize(Q_STEP_ORDER[fsIdx + 1]); } }}
+              disabled={!canIncrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
+            </Pressable>
+          </View>
+        </View>
+
         {/* Mode segmented control */}
-        <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+        <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator, marginTop: 10 }]}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setMode('mushaf'); }}
             style={[styles.segmentBtn, mode === 'mushaf' && { backgroundColor: C.tint }]}
@@ -263,7 +312,7 @@ export default function QuranScreen() {
         data={SURAH_META}
         keyExtractor={item => String(item.number)}
         renderItem={renderItem}
-        extraData={surahNamesMap}
+        extraData={[surahNamesMap, quranFontSize]}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
         ListFooterComponent={
           <View style={[styles.duaRow, { paddingBottom: 8 }]}>
@@ -287,9 +336,20 @@ export default function QuranScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   topHeader: { marginBottom: 10 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
   iconBtn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  fontPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fontPillLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   segmentRow: {
     flexDirection: 'row', borderRadius: 12, padding: 3,
     borderWidth: StyleSheet.hairlineWidth, gap: 3,
@@ -347,7 +407,7 @@ const styles = StyleSheet.create({
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4, marginTop: 16 },
   dua: { fontSize: 13, textAlign: 'center' },
   freeApp: { fontSize: 10, textAlign: 'center', opacity: 0.6, letterSpacing: 0.2 },
-  surahArabic: { fontSize: 18, marginBottom: 2 },
-  surahEnglish: { fontSize: 12, marginBottom: 1 },
-  surahMeta: { fontSize: 11 },
+  surahArabic: { marginBottom: 2 },
+  surahEnglish: { marginBottom: 1 },
+  surahMeta: {},
 });
