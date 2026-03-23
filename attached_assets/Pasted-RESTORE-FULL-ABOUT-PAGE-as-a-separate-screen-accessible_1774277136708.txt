@@ -1,0 +1,345 @@
+RESTORE FULL ABOUT PAGE as a separate screen accessible from Settings.
+
+════════════════════════════════════════════════════════
+PART 1 — CREATE ABOUT SCREEN
+════════════════════════════════════════════════════════
+
+Create new file: app/about.tsx
+This is a standalone screen, NOT a tab.
+Route: app/about.tsx (accessible via router.push('/about'))
+
+The screen has:
+- A header with an X button (top-right) that calls 
+  router.back() to return to Settings
+- A ScrollView containing the full About content below
+
+HEADER:
+  Background: C.background
+  Title centered:
+    ar: "عن التطبيق"
+    en: "About"
+    [all 15 languages — existing about_label key]
+  X button top-right:
+    icon: 'close', size: 22, color: C.textMuted
+    onPress: router.back()
+  No back arrow — only the X button
+
+════════════════════════════════════════════════════════
+PART 2 — FULL ABOUT PAGE CONTENT
+════════════════════════════════════════════════════════
+
+Inside the ScrollView, render all sections in order:
+
+──────────────────────────────────────────
+SECTION 1 — App Header
+──────────────────────────────────────────
+
+App icon centered (existing mawaqit icon asset):
+  width: 80, height: 80, borderRadius: 18
+
+App name below icon:
+  "مواقيت · Mawaqit"
+  fontFamily: Amiri_700Bold
+  fontSize: 22, color: C.tint, textAlign: center
+
+App tagline below:
+  i18n key: about_app_tagline
+  ar: "رفيقك اليومي الإسلامي"
+  en: "Your daily Islamic companion"
+  fr: "Votre compagnon islamique quotidien"
+  es: "Tu compañero islámico diario"
+  ru: "Ваш ежедневный исламский спутник"
+  zh: "您的每日伊斯兰伴侣"
+  tr: "Günlük İslami yoldaşınız"
+  ur: "آپ کا روزانہ اسلامی ساتھی"
+  id: "Teman Islam harian Anda"
+  bn: "আপনার দৈনন্দিন ইসলামিক সঙ্গী"
+  fa: "همراه روزانه اسلامی شما"
+  ms: "Teman Islam harian anda"
+  pt: "Seu companheiro islâmico diário"
+  sw: "Mwandani wako wa kila siku wa Kiislamu"
+  ha: "Abokin Musulunci na yau da kullum"
+  fontSize: 14, color: C.textMuted, textAlign: center
+
+Thin separator line (C.separator)
+
+──────────────────────────────────────────
+SECTION 2 — Studio Identity
+──────────────────────────────────────────
+
+"Developed by" label centered:
+  i18n key: developed_by
+  (existing translations)
+  fontSize: 12, color: C.textMuted, textAlign: center
+  marginBottom: 10
+
+Riwaq Labs logo centered:
+  const riwaqLogoDark = require('@/assets/images/riwaq-labs-logo-dark.jpg')
+  const riwaqLogoLight = require('@/assets/images/riwaq-labs-logo.png')
+
+  <Image
+    source={isDark ? riwaqLogoDark : riwaqLogoLight}
+    style={{
+      width: 160,
+      height: 58,
+      resizeMode: 'contain',
+      alignSelf: 'center',
+    }}
+  />
+
+Tagline below logo:
+  i18n key: about_tagline
+  ar: "حيث يجتمع العلم"
+  en: "Where knowledge gathers"
+  (existing translations from previous prompt)
+  fontSize: 13, color: C.textMuted
+  fontStyle: italic, textAlign: center
+  marginTop: 8
+
+──────────────────────────────────────────
+SECTION 3 — Mission Statement
+──────────────────────────────────────────
+
+Section header row:
+  3px C.tint left border accent, 18px tall
+  Label: i18n key: about_mission_title
+  ar: "رسالتنا" / en: "Our Mission"
+  fontSize: 16, fontWeight: bold, color: C.text
+
+Paragraph 1 (i18n key: about_mission_p1):
+  Full text in all 15 languages as written in the 
+  original About prompt — the paragraph beginning 
+  "Riwaq Labs is an independent Islamic technology 
+  studio building free digital tools..."
+  fontSize: 14, color: C.textSecondary, lineHeight: 22
+
+Paragraph 2 (i18n key: about_mission_p2):
+  Full text in all 15 languages as written in the
+  original About prompt — the paragraph beginning
+  "The name 'Riwaq' carries deep history..."
+  fontSize: 14, color: C.textSecondary, lineHeight: 22
+
+──────────────────────────────────────────
+SECTION 4 — Our Promise (3 cards)
+──────────────────────────────────────────
+
+Section header: i18n key: about_promise_title
+  ar: "وعدنا" / en: "Our Promise"
+
+Three cards stacked vertically:
+
+CARD 1 — Free Forever:
+  icon: 'currency-usd-off', color: C.tint, size: 28
+  title i18n key: about_promise_1_title
+    ar: "مجاني للأبد" / en: "Free Forever"
+  body i18n key: about_promise_1_body
+    ar: "كل تطبيقاتنا مجانية تماماً، بلا اشتراكات ولا مستويات مدفوعة — اليوم وغداً وإلى الأبد."
+    en: "All our apps are completely free, with no subscriptions and no paid tiers — today, tomorrow, and forever."
+    fr: "Toutes nos applications sont entièrement gratuites, sans abonnements et sans niveaux payants — aujourd'hui, demain et pour toujours."
+    es: "Todas nuestras aplicaciones son completamente gratuitas, sin suscripciones y sin niveles de pago — hoy, mañana y siempre."
+    ru: "Все наши приложения полностью бесплатны, без подписок и платных уровней — сегодня, завтра и навсегда."
+    zh: "我们所有的应用程序完全免费，没有订阅和付费级别 — 今天、明天和永远。"
+    tr: "Tüm uygulamalarımız abonelik ve ücretli katman olmaksızın tamamen ücretsizdir — bugün, yarın ve sonsuza kadar."
+    ur: "ہماری تمام ایپس بالکل مفت ہیں، کوئی سبسکرپشن نہیں اور کوئی پیڈ ٹیئر نہیں — آج، کل اور ہمیشہ۔"
+    id: "Semua aplikasi kami sepenuhnya gratis, tanpa langganan dan tanpa tingkatan berbayar — hari ini, besok, dan selamanya."
+    bn: "আমাদের সমস্ত অ্যাপ সম্পূর্ণ বিনামূল্যে, কোনো সাবস্ক্রিপশন নেই এবং কোনো পেইড টিয়ার নেই — আজ, আগামীকাল এবং চিরকাল।"
+    fa: "تمام برنامه‌های ما کاملاً رایگان هستند، بدون اشتراک و بدون سطوح پولی — امروز، فردا و برای همیشه."
+    ms: "Semua aplikasi kami percuma sepenuhnya, tanpa langganan dan tanpa peringkat berbayar — hari ini, esok dan selama-lamanya."
+    pt: "Todos os nossos aplicativos são completamente gratuitos, sem assinaturas e sem níveis pagos — hoje, amanhã e para sempre."
+    sw: "Programu zetu zote ni za bure kabisa, bila michango na bila viwango vya malipo — leo, kesho na milele."
+    ha: "Dukkan ayyukanmu kyauta ne gaba ɗaya, ba tare da biyan kuɗi da matakan biya ba — yau, gobe da har abada."
+
+CARD 2 — For the sake of Allah:
+  icon: 'hand-heart-outline', color: C.tint, size: 28
+  title i18n key: about_promise_2_title
+    ar: "لوجه الله تعالى" / en: "For the sake of Allah"
+    (all translations from original About prompt)
+  body i18n key: about_promise_2_body
+    (all translations from original About prompt)
+
+CARD 3 — Privacy:
+  icon: 'shield-lock-outline', color: C.tint, size: 28
+  title i18n key: about_promise_3_title
+    ar: "خصوصيتك مصونة" / en: "Your Privacy is Sacred"
+    (all translations from original About prompt)
+  body i18n key: about_promise_3_body
+    (all translations from original About prompt)
+
+Card style:
+  backgroundColor: C.backgroundCard
+  borderRadius: 12, padding: 16
+  border: 1px C.separator
+  flexDirection: row, gap: 12, alignItems: flex-start
+
+──────────────────────────────────────────
+SECTION 5 — Our Apps
+──────────────────────────────────────────
+
+Section header: i18n key: about_apps_title
+  ar: "تطبيقاتنا" / en: "Our Applications"
+
+Subtitle: i18n key: about_apps_subtitle
+  ar: "مواقيت هو أحد تطبيقات رواق لابز المتخصصة في خدمة المسلم، والمزيد قادم إن شاء الله."
+  en: "Mawaqit is one of Riwaq Labs' family of apps dedicated to serving the Muslim — more are coming, Allah willing."
+  (all translations from original About prompt)
+
+App rows:
+
+ROW 1 — Mawaqit:
+  icon: app's existing mawaqit icon (36×36)
+  name: "Mawaqit | مواقيت"
+  badge: ar:"متوفر الآن" / en:"Available Now"
+  badge backgroundColor: C.tint, color: white
+
+ROW 2 — Al-Quran:
+  icon: 'book-open-variant' (C.tint, size 28)
+  name: "Al-Quran | القرآن الكريم"
+  badge: ar:"قريباً" / en:"Coming Soon"
+  badge backgroundColor: C.backgroundCard, 
+  color: C.textMuted, border: 1px C.separator
+
+ROW 3 — Athkar:
+  icon: 'hands-pray' (C.tint, size 28)
+  name: "Athkar | الأذكار"
+  badge: same as Coming Soon above
+
+ROW 4 — Quit:
+  icon: 'smoking-off' (C.tint, size 28)
+  name: "Quit | أقلع"
+  description: i18n key: about_app_quit_desc
+    ar: "تطبيق الإقلاع عن التدخين"
+    en: "Smoking cessation app"
+    fr: "Application d'arrêt du tabac"
+    es: "Aplicación para dejar de fumar"
+    ru: "Приложение для отказа от курения"
+    zh: "戒烟应用程序"
+    tr: "Sigarayı bırakma uygulaması"
+    ur: "سگریٹ چھوڑنے کی ایپ"
+    id: "Aplikasi berhenti merokok"
+    bn: "ধূমপান ছাড়ার অ্যাপ"
+    fa: "اپلیکیشن ترک سیگار"
+    ms: "Aplikasi berhenti merokok"
+    pt: "Aplicativo para parar de fumar"
+    sw: "Programu ya kuacha kuvuta sigara"
+    ha: "App na barin shan taba"
+  badge: ar:"قيد التطوير" / en:"In Development"
+  badge backgroundColor: #C9A84C20
+  badge color: #C9A84C
+  badge border: 1px #C9A84C
+
+Row style:
+  flexDirection: row, alignItems: center
+  paddingVertical: 12
+  borderBottom: 1px C.separator
+  gap: 12
+
+──────────────────────────────────────────
+SECTION 6 — Closing Dua
+──────────────────────────────────────────
+
+Arabic dua centered in Amiri font:
+  "رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنْتَ السَّمِيعُ الْعَلِيمُ"
+  fontSize: 22, fontFamily: Amiri_700Bold
+  color: C.tint, textAlign: center
+
+Translation below:
+  i18n key: about_closing_dua
+  ar: "ربنا تقبل منا — البقرة 2:127"
+  en: "Our Lord, accept from us — Al-Baqarah 2:127"
+  fr: "Notre Seigneur, accepte de nous — Al-Baqarah 2:127"
+  es: "Nuestro Señor, acepta de nosotros — Al-Baqarah 2:127"
+  ru: "Господь наш, прими от нас — Аль-Бакара 2:127"
+  zh: "我们的主，求您接受我们 — 巴卡拉章 2:127"
+  tr: "Rabbimiz, bizden kabul et — Bakara 2:127"
+  ur: "اے ہمارے رب، ہم سے قبول فرما — البقرة 2:127"
+  id: "Ya Tuhan kami, terimalah dari kami — Al-Baqarah 2:127"
+  bn: "হে আমাদের রব, আমাদের থেকে কবুল করুন — বাকারা 2:127"
+  fa: "پروردگارا از ما بپذیر — بقره 2:127"
+  ms: "Tuhan kami, terimalah daripada kami — Al-Baqarah 2:127"
+  pt: "Nosso Senhor, aceita de nós — Al-Baqarah 2:127"
+  sw: "Mola wetu, pokea kutoka kwetu — Al-Baqarah 2:127"
+  ha: "Ya Ubangijinmu, karɓa daga gare mu — Al-Baqarah 2:127"
+  fontSize: 12, color: C.textMuted, textAlign: center
+
+──────────────────────────────────────────
+SECTION 7 — Footer
+──────────────────────────────────────────
+
+App version centered:
+  "Mawaqit | مواقيت  v{appVersion}"
+  import appJson from '../../app.json'
+  const appVersion = appJson.expo.version
+  fontSize: 11, color: C.textMuted, textAlign: center
+
+Two links side by side centered:
+  Privacy Policy → Linking.openURL('https://mawaqits.com/privacy')
+  " · "
+  Get in touch → Linking.openURL('mailto:contact@riwaqlabs.com')
+  fontSize: 12, color: C.tint
+
+Copyright:
+  "© 2025 Riwaq Labs · رواق لابز"
+  fontSize: 11, color: C.textMuted
+  textAlign: center, marginBottom: 40
+
+════════════════════════════════════════════════════════
+PART 3 — SETTINGS ROW (trigger to open About)
+════════════════════════════════════════════════════════
+
+Replace the current expandable About card in 
+app/settings.tsx with a simple tappable row 
+at the very bottom of the settings ScrollView:
+
+  <Pressable
+    onPress={() => router.push('/about')}
+    style={settingRowStyle}
+  >
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <MaterialCommunityIcons 
+        name="information-outline" 
+        size={20} 
+        color={C.tint} 
+      />
+      <Text style={{ color: C.text, fontSize: 15 }}>
+        {tr.about_label}
+      </Text>
+    </View>
+    <MaterialCommunityIcons 
+      name="chevron-right" 
+      size={20} 
+      color={C.textMuted} 
+    />
+  </Pressable>
+
+Remove ALL the old expandable card code 
+(showAbout state, expanded card, animation, etc.)
+Replace with just this single navigation row.
+
+════════════════════════════════════════════════════════
+PART 4 — NAVIGATION
+════════════════════════════════════════════════════════
+
+In app/about.tsx, import router:
+  import { router } from 'expo-router'
+
+X button calls: router.back()
+
+Make sure app/about.tsx is registered in the 
+Expo Router file system. Since it is in the app/ 
+root (not in app/(tabs)/), it will automatically 
+be a stack screen accessible via router.push('/about').
+
+If a stack navigator wraps it, set these options:
+  headerShown: false  (we handle our own header)
+  presentation: 'modal'  (slides up from bottom, 
+                           feels natural from settings)
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not create a tab for About.
+Do not change any existing tabs or settings rows.
+Add all new i18n keys to i18n.ts in all 15 languages.
+Use Linking from expo-linking for external URLs.
+Do not add new dependencies.
