@@ -503,7 +503,7 @@ export default function PrayerTimesScreen() {
             hitSlop={12}
             style={({ pressed }) => ({ opacity: pressed ? 0.4 : 0.7 })}
           >
-            <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={pageMuted} />
+            <Ionicons name="chevron-back" size={20} color={pageMuted} />
           </Pressable>
           <View style={styles.datesBlock}>
             <Text
@@ -520,7 +520,7 @@ export default function PrayerTimesScreen() {
             hitSlop={12}
             style={({ pressed }) => ({ opacity: pressed ? 0.4 : 0.7 })}
           >
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={20} color={pageMuted} />
+            <Ionicons name="chevron-forward" size={20} color={pageMuted} />
           </Pressable>
         </View>
 
