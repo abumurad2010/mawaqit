@@ -1,0 +1,383 @@
+ADD AN "ABOUT" TAB to the Mawaqit app.
+
+════════════════════════════════════════════════════════
+PART 1 — ADD TAB TO NAVIGATION
+════════════════════════════════════════════════════════
+
+Add a new tab to the bottom navigation bar.
+Tab icon: 'information-outline' (MaterialCommunityIcons)
+Tab label in current app language:
+  ar: "عن التطبيق"
+  en: "About"
+  fr: "À propos"
+  es: "Acerca de"
+  ru: "О нас"
+  zh: "关于"
+  tr: "Hakkında"
+  ur: "معلومات"
+  id: "Tentang"
+  bn: "সম্পর্কে"
+  fa: "درباره"
+  ms: "Tentang"
+  pt: "Sobre"
+  sw: "Kuhusu"
+  ha: "Game da"
+  i18n key: tab_about
+
+Create new file: app/(tabs)/about.tsx
+
+Position: last tab, after Quran.
+
+════════════════════════════════════════════════════════
+PART 2 — ABOUT PAGE CONTENT
+════════════════════════════════════════════════════════
+
+The page has a ScrollView with these sections in order:
+
+──────────────────────────────────────────────────────
+SECTION 1 — App Header
+──────────────────────────────────────────────────────
+
+App icon (existing mawaqit icon asset) centered
+  size: 80×80, borderRadius: 18
+
+App name below icon:
+  "مواقيت · Mawaqit"
+  fontFamily: Amiri_700Bold
+  fontSize: 22
+  color: C.tint
+  textAlign: center
+
+App tagline:
+  ar: "رفيقك اليومي الإسلامي"
+  en: "Your daily Islamic companion"
+  [all 15 languages]
+  i18n key: about_app_tagline
+  fontSize: 14
+  color: C.textMuted
+  textAlign: center
+
+Thin separator line below (C.separator)
+
+──────────────────────────────────────────────────────
+SECTION 2 — Studio Identity
+──────────────────────────────────────────────────────
+
+Studio name, large and centered:
+  "Riwaq Labs"
+  fontSize: 28
+  fontFamily: existing bold serif
+  color: C.text
+
+Arabic name below:
+  "رواق لابز"
+  fontFamily: Amiri_700Bold
+  fontSize: 20
+  color: C.tint
+
+Tagline below:
+  ar: "حيث يجتمع العلم"
+  en: "Where knowledge gathers"
+  fr: "Là où le savoir se rassemble"
+  es: "Donde se reúne el conocimiento"
+  ru: "Там, где собираются знания"
+  zh: "知识汇聚之处"
+  tr: "Bilginin buluştuğu yer"
+  ur: "جہاں علم جمع ہوتا ہے"
+  id: "Tempat ilmu berkumpul"
+  bn: "যেখানে জ্ঞান একত্রিত হয়"
+  fa: "جایی که دانش گرد می‌آید"
+  ms: "Tempat ilmu berhimpun"
+  pt: "Onde o conhecimento se reúne"
+  sw: "Mahali ambapo maarifa hukusanyika"
+  ha: "Inda ilimi ke taro"
+  i18n key: about_tagline
+  fontSize: 13
+  color: C.textMuted
+  fontStyle: italic
+
+──────────────────────────────────────────────────────
+SECTION 3 — Mission Statement
+──────────────────────────────────────────────────────
+
+Section title:
+  ar: "رسالتنا"
+  en: "Our Mission"
+  [all 15 languages]
+  i18n key: about_mission_title
+  fontSize: 16, fontWeight bold, C.text
+
+Body paragraph 1:
+  ar: "رواق لابز استوديو تقني إسلامي مستقل، يبني أدوات رقمية مجانية للمسلمين في كل مكان — لدعم العبادة الفردية والرفاهية الجماعية. لا نساوم على الجودة، ولا نطلب شيئاً في المقابل."
+  en: "Riwaq Labs is an independent Islamic technology studio building free digital tools for Muslims worldwide — supporting individual worship and collective wellbeing. We do not compromise on quality, and we ask nothing in return."
+  fr: "Riwaq Labs est un studio de technologie islamique indépendant qui crée des outils numériques gratuits pour les musulmans du monde entier — soutenant le culte individuel et le bien-être collectif. Nous ne faisons aucun compromis sur la qualité et ne demandons rien en retour."
+  es: "Riwaq Labs es un estudio de tecnología islámica independiente que crea herramientas digitales gratuitas para musulmanes de todo el mundo — apoyando el culto individual y el bienestar colectivo. No comprometemos la calidad y no pedimos nada a cambio."
+  ru: "Riwaq Labs — независимая студия исламских технологий, создающая бесплатные цифровые инструменты для мусульман по всему миру — поддерживая индивидуальное поклонение и коллективное благополучие. Мы не идём на компромисс в вопросах качества и ничего не просим взамен."
+  zh: "Riwaq Labs 是一家独立的伊斯兰技术工作室，为全球穆斯林打造免费数字工具 — 支持个人礼拜和集体福祉。我们在质量上绝不妥协，也不求任何回报。"
+  tr: "Riwaq Labs, dünya genelindeki Müslümanlar için bireysel ibadeti ve kolektif refahı destekleyen ücretsiz dijital araçlar geliştiren bağımsız bir İslami teknoloji stüdyosudur. Kaliteden ödün vermeyiz ve karşılığında hiçbir şey istemeyiz."
+  ur: "رواق لابز ایک آزاد اسلامی ٹیکنالوجی اسٹوڈیو ہے جو دنیا بھر کے مسلمانوں کے لیے مفت ڈیجیٹل ٹولز بناتا ہے — انفرادی عبادت اور اجتماعی بھلائی کی حمایت کرتا ہے۔ ہم معیار پر کوئی سمجھوتہ نہیں کرتے اور بدلے میں کچھ نہیں مانگتے۔"
+  id: "Riwaq Labs adalah studio teknologi Islam independen yang membangun alat digital gratis untuk Muslim di seluruh dunia — mendukung ibadah individu dan kesejahteraan kolektif. Kami tidak berkompromi dengan kualitas, dan tidak meminta imbalan apapun."
+  bn: "রিওয়াক ল্যাবস একটি স্বাধীন ইসলামিক প্রযুক্তি স্টুডিও যা বিশ্বব্যাপী মুসলিমদের জন্য বিনামূল্যে ডিজিটাল সরঞ্জাম তৈরি করে — ব্যক্তিগত ইবাদত এবং সামষ্টিক কল্যাণকে সমর্থন করে। আমরা গুণমানে আপোস করি না এবং বিনিময়ে কিছুই চাই না।"
+  fa: "رواق لابز یک استودیوی مستقل فناوری اسلامی است که ابزارهای دیجیتال رایگان برای مسلمانان سراسر جهان می‌سازد — برای حمایت از عبادت فردی و رفاه جمعی. ما در کیفیت هیچ سازشی نمی‌کنیم و در ازای آن چیزی نمی‌خواهیم."
+  ms: "Riwaq Labs ialah studio teknologi Islam yang bebas, membina alat digital percuma untuk Muslim di seluruh dunia — menyokong ibadat individu dan kesejahteraan kolektif. Kami tidak berkompromi dengan kualiti, dan tidak meminta apa-apa sebagai balasan."
+  pt: "Riwaq Labs é um estúdio de tecnologia islâmica independente que cria ferramentas digitais gratuitas para muçulmanos em todo o mundo — apoiando o culto individual e o bem-estar coletivo. Não comprometemos a qualidade e não pedimos nada em troca."
+  sw: "Riwaq Labs ni studio huru ya teknolojia ya Kiislamu inayojenga zana za kidijitali za bure kwa Waislamu duniani kote — kusaidia ibada ya mtu binafsi na ustawi wa pamoja. Hatuathiri ubora na hatuombi chochote kama malipo."
+  ha: "Riwaq Labs wani ɗakin fasahar Musulunci ne mai zaman kansa wanda ke gina kayan aikin dijital kyauta ga Musulmai a duk duniya — yana goyan bayan ibada ta mutum ɗaya da walwala ta jama'a. Ba ma sassauƙa kan inganci, kuma ba ma neman komai a madadin."
+  i18n key: about_mission_p1
+
+Body paragraph 2:
+  ar: "اسم «رواق» يحمل في طيّاته تاريخاً عريقاً — فالرواق في المساجد والمدارس العلمية كان فضاءً مفتوحاً تُجمع فيه المعرفة وتُحفظ وتُنقل بلا مقابل. نحن نحمل هذه الروح إلى العصر الرقمي."
+  en: "The name 'Riwaq' carries deep history — in mosques and centres of learning, the riwaq was an open arcade where knowledge was gathered, preserved, and shared without condition. We carry that spirit into the digital age."
+  fr: "Le nom «Riwaq» porte une histoire profonde — dans les mosquées et les centres d'apprentissage, le riwaq était une arcade ouverte où le savoir était rassemblé, préservé et partagé sans condition. Nous portons cet esprit à l'ère numérique."
+  es: "El nombre «Riwaq» lleva una historia profunda — en mezquitas y centros de aprendizaje, el riwaq era una arcada abierta donde el conocimiento se reunía, preservaba y compartía sin condiciones. Llevamos ese espíritu a la era digital."
+  ru: "Название «Ривак» несёт в себе глубокую историю — в мечетях и центрах обучения рывак представлял собой открытую аркаду, где знания собирались, сохранялись и передавались безвозмездно. Мы несём этот дух в цифровую эпоху."
+  zh: "«Riwaq» 这个名字承载着深厚的历史 — 在清真寺和学习中心，riwaq 是一个开放的廊道，知识在那里被汇聚、保存和无条件分享。我们将这种精神带入数字时代。"
+  tr: "«Riwaq» adı derin bir tarihi taşır — camilerde ve öğrenme merkezlerinde riwaq, bilginin koşulsuz olarak toplandığı, korunduğu ve paylaşıldığı açık bir revaktı. Biz bu ruhu dijital çağa taşıyoruz."
+  ur: "«رواق» کا نام گہری تاریخ رکھتا ہے — مساجد اور علمی مراکز میں رواق ایک کھلا برآمدہ ہوتا تھا جہاں علم بغیر کسی شرط کے جمع کیا جاتا، محفوظ کیا جاتا اور بانٹا جاتا تھا۔ ہم اس روح کو ڈیجیٹل دور میں لے کر آئے ہیں۔"
+  id: "Nama «Riwaq» membawa sejarah yang dalam — di masjid-masjid dan pusat-pusat pembelajaran, riwaq adalah serambi terbuka tempat ilmu dikumpulkan, dilestarikan, dan dibagikan tanpa syarat. Kami membawa semangat itu ke era digital."
+  bn: "«রিওয়াক» নামটি গভীর ইতিহাস বহন করে — মসজিদ ও শিক্ষা কেন্দ্রগুলিতে রিওয়াক ছিল একটি খোলা বারান্দা যেখানে জ্ঞান বিনা শর্তে সংগৃহীত, সংরক্ষিত ও ভাগ করা হতো। আমরা সেই চেতনাকে ডিজিটাল যুগে নিয়ে আসছি।"
+  fa: "نام «رواق» تاریخ عمیقی دارد — در مساجد و مراکز علمی، رواق ایوانی باز بود که در آن دانش بدون هیچ شرطی جمع‌آوری، حفظ و منتقل می‌شد. ما این روح را به عصر دیجیتال می‌بریم."
+  ms: "Nama «Riwaq» membawa sejarah yang mendalam — di masjid-masjid dan pusat-pusat ilmu, riwaq adalah serambi terbuka tempat ilmu dikumpul, dipelihara dan dikongsi tanpa syarat. Kami membawa semangat itu ke era digital."
+  pt: "O nome «Riwaq» carrega uma história profunda — em mesquitas e centros de aprendizagem, o riwaq era uma arcada aberta onde o conhecimento era reunido, preservado e partilhado sem condições. Levamos esse espírito para a era digital."
+  sw: "Jina «Riwaq» linabeba historia nzito — katika misikiti na vituo vya kujifunza, riwaq ilikuwa ua wazi ambapo maarifa yalikusanywa, yahifadhiwa na kushirikiwa bila masharti. Tunabeba roho hiyo katika enzi ya kidijitali."
+  ha: "Sunan «Riwaq» yana ɗauke da tarihi mai zurfi — a masallatai da cibiyoyin ilimi, riwaq wani farfajiya ne a bayyane inda aka tattara ilimi, kiyaye shi kuma a raba shi ba tare da sharaɗi ba. Muna ɗauke da wannan ruhi zuwa zamanin dijital."
+  i18n key: about_mission_p2
+
+──────────────────────────────────────────────────────
+SECTION 4 — Our Promise (3 pillars in cards)
+──────────────────────────────────────────────────────
+
+Section title:
+  ar: "وعدنا"
+  en: "Our Promise"
+  [all 15 languages]
+  i18n key: about_promise_title
+
+Three horizontal or vertical cards, each with 
+an icon, a title, and a short description:
+
+CARD 1:
+icon: 'currency-usd-off'  (or 'tag-off-outline')
+title:
+  ar: "مجاني للأبد"
+  en: "Free Forever"
+  [all 15 languages]
+  i18n key: about_promise_1_title
+body:
+  ar: "كل تطبيقاتنا مجانية تماماً، بلا اشتراكات ولا مستويات مدفوعة — اليوم وغداً وإلى الأبد."
+  en: "All our apps are completely free, with no subscriptions and no paid tiers — today, tomorrow, and forever."
+  [all 15 languages]
+  i18n key: about_promise_1_body
+
+CARD 2:
+icon: 'hand-heart-outline'
+title:
+  ar: "لوجه الله تعالى"
+  en: "For the sake of Allah"
+  fr: "Pour l'amour d'Allah"
+  es: "Por amor a Allah"
+  ru: "Ради Аллаха"
+  zh: "为了真主的缘故"
+  tr: "Allah rızası için"
+  ur: "لوجہ اللہ تعالیٰ"
+  id: "Karena Allah Ta'ala"
+  bn: "আল্লাহর সন্তুষ্টির জন্য"
+  fa: "لوجه الله تعالی"
+  ms: "Kerana Allah Ta'ala"
+  pt: "Pelo amor de Allah"
+  sw: "Kwa ajili ya Allah"
+  ha: "Don Allah Ta'ala"
+  i18n key: about_promise_2_title
+body:
+  ar: "لا نطلب مقابلاً، ولا نجمع بيانات، ولا نعرض إعلانات. ما نبنيه نبنيه ابتغاءً لمرضاة الله وخدمةً لهذه الأمة."
+  en: "We ask for no payment, collect no data, and show no ads. What we build, we build seeking Allah's pleasure and in service of this Ummah."
+  fr: "Nous ne demandons aucun paiement, ne collectons aucune donnée et n'affichons aucune publicité. Ce que nous construisons, nous le construisons en cherchant la satisfaction d'Allah et au service de cette Oummah."
+  es: "No pedimos pago, no recopilamos datos y no mostramos anuncios. Lo que construimos, lo construimos buscando la complacencia de Allah y al servicio de esta Ummah."
+  ru: "Мы не просим платы, не собираем данные и не показываем рекламу. То, что мы создаём, мы создаём в поисках довольства Аллаха и на службе этой Умме."
+  zh: "我们不收取费用，不收集数据，不展示广告。我们所建造的一切，都是为了寻求真主的喜悦，服务于这个乌玛。"
+  tr: "Ödeme istemiyoruz, veri toplamıyoruz ve reklam göstermiyoruz. İnşa ettiğimiz her şeyi, Allah'ın rızasını ve bu Ümmet'e hizmeti gözeterek yapıyoruz."
+  ur: "ہم کوئی ادائیگی نہیں مانگتے، کوئی ڈیٹا جمع نہیں کرتے اور کوئی اشتہار نہیں دکھاتے۔ جو کچھ ہم بناتے ہیں، اللہ کی رضا کی تلاش میں اور اس امت کی خدمت میں بناتے ہیں۔"
+  id: "Kami tidak meminta pembayaran, tidak mengumpulkan data, dan tidak menampilkan iklan. Apa yang kami bangun, kami bangun dengan mengharap ridha Allah dan untuk melayani Umat ini."
+  bn: "আমরা কোনো পেমেন্ট চাই না, কোনো ডেটা সংগ্রহ করি না এবং কোনো বিজ্ঞাপন দেখাই না। আমরা যা তৈরি করি আল্লাহর সন্তুষ্টি ও এই উম্মার সেবায় তৈরি করি।"
+  fa: "ما هیچ پرداختی نمی‌خواهیم، داده‌ای جمع نمی‌کنیم و تبلیغاتی نمایش نمی‌دهیم. آنچه می‌سازیم، برای رضای خدا و در خدمت این امت می‌سازیم."
+  ms: "Kami tidak meminta bayaran, tidak mengumpul data, dan tidak memaparkan iklan. Apa yang kami bina, kami bina dengan mengharapkan keredaan Allah dan dalam berkhidmat kepada Ummah ini."
+  pt: "Não pedimos pagamento, não coletamos dados e não exibimos anúncios. O que construímos, construímos buscando a complacência de Allah e em serviço desta Ummah."
+  sw: "Hatuombi malipo, haikusanyi data, na hatuonyeshi matangazo. Tunachojenga, tunajenga tukitafuta radhi ya Allah na katika huduma ya Ummah huu."
+  ha: "Ba mu neman kuɗi, ba mu tattara bayanai, kuma ba mu nuna talla. Abin da muke gina, muna ginawa don neman yardar Allah da hidima ga wannan Ummah."
+  i18n key: about_promise_2_body
+
+CARD 3:
+icon: 'shield-lock-outline'
+title:
+  ar: "خصوصيتك مصونة"
+  en: "Your Privacy is Sacred"
+  [all 15 languages]
+  i18n key: about_promise_3_title
+body:
+  ar: "لا نعرف من أنت ولا أين أنت. كل شيء يعمل على جهازك. بياناتك ملكك وحدك."
+  en: "We do not know who you are or where you are. Everything runs on your device. Your data belongs to you alone."
+  fr: "Nous ne savons pas qui vous êtes ni où vous êtes. Tout fonctionne sur votre appareil. Vos données vous appartiennent."
+  es: "No sabemos quién eres ni dónde estás. Todo funciona en tu dispositivo. Tus datos son solo tuyos."
+  ru: "Мы не знаем, кто вы и где вы. Всё работает на вашем устройстве. Ваши данные принадлежат только вам."
+  zh: "我们不知道您是谁，也不知道您在哪里。一切都在您的设备上运行。您的数据只属于您。"
+  tr: "Kim olduğunuzu veya nerede olduğunuzu bilmiyoruz. Her şey cihazınızda çalışıyor. Verileriniz yalnızca size aittir."
+  ur: "ہمیں نہیں معلوم آپ کون ہیں یا کہاں ہیں۔ سب کچھ آپ کے ڈیوائس پر چلتا ہے۔ آپ کا ڈیٹا صرف آپ کا ہے۔"
+  id: "Kami tidak tahu siapa Anda atau di mana Anda berada. Semua berjalan di perangkat Anda. Data Anda hanya milik Anda."
+  bn: "আমরা জানি না আপনি কে বা কোথায় আছেন। সব কিছু আপনার ডিভাইসে চলে। আপনার ডেটা শুধুমাত্র আপনার।"
+  fa: "ما نمی‌دانیم شما کی هستید یا کجا هستید. همه چیز روی دستگاه شما اجرا می‌شود. داده‌های شما تنها به خودتان تعلق دارد."
+  ms: "Kami tidak tahu siapa anda atau di mana anda berada. Semua berjalan pada peranti anda. Data anda milik anda sahaja."
+  pt: "Não sabemos quem você é ou onde você está. Tudo funciona no seu dispositivo. Seus dados pertencem apenas a você."
+  sw: "Hatujui wewe ni nani au uko wapi. Kila kitu kinafanya kazi kwenye kifaa chako. Data yako ni yako peke yako."
+  ha: "Ba mu san ko kai ne ko ina kake ba. Komai yana aiki a na'urarka. Bayananka naka kaɗai ne."
+  i18n key: about_promise_3_body
+
+──────────────────────────────────────────────────────
+SECTION 5 — Our Apps
+──────────────────────────────────────────────────────
+
+Section title:
+  ar: "تطبيقاتنا"
+  en: "Our Applications"
+  [all 15 languages]
+  i18n key: about_apps_title
+
+Subtitle:
+  ar: "مواقيت هو أحد تطبيقات رواق لابز المتخصصة في خدمة المسلم، والمزيد قادم إن شاء الله."
+  en: "Mawaqit is one of Riwaq Labs' family of apps dedicated to serving the Muslim — more are coming, Allah willing."
+  fr: "Mawaqit est l'une des applications de la famille Riwaq Labs dédiées au service du musulman — d'autres arrivent, inch'Allah."
+  es: "Mawaqit es una de las aplicaciones de la familia Riwaq Labs dedicadas a servir al musulmán — más están llegando, insha'Allah."
+  ru: "Mawaqit — одно из приложений семейства Riwaq Labs, посвящённых служению мусульманину — больше придёт, ин ша'Аллах."
+  zh: "Mawaqit 是 Riwaq Labs 应用家族中专门为穆斯林服务的应用之一 — 更多即将推出，إن شاء الله。"
+  tr: "Mawaqit, Riwaq Labs'ın Müslümanlara hizmet etmeye adanmış uygulama ailesinden biridir — daha fazlası geliyor, inşallah."
+  ur: "مواقيت رواق لابز کی ان ایپس میں سے ایک ہے جو مسلمانوں کی خدمت کے لیے وقف ہیں — مزید آ رہی ہیں، ان شاء اللہ۔"
+  id: "Mawaqit adalah salah satu dari keluarga aplikasi Riwaq Labs yang didedikasikan untuk melayani Muslim — lebih banyak akan hadir, insya Allah."
+  bn: "মাওয়াকিত রিওয়াক ল্যাবসের মুসলিম সেবায় নিবেদিত অ্যাপ পরিবারের একটি — আরও আসছে, ইনশাআল্লাহ।"
+  fa: "مواقیت یکی از خانواده اپ‌های رواق لابز است که به خدمت مسلمانان اختصاص دارد — بیشتر در راه است، إن شاء الله."
+  ms: "Mawaqit adalah salah satu daripada keluarga aplikasi Riwaq Labs yang berdedikasi untuk berkhidmat kepada Muslim — lebih banyak akan hadir, insya-Allah."
+  pt: "Mawaqit é um dos aplicativos da família Riwaq Labs dedicados ao serviço do muçulmano — mais estão chegando, insha'Allah."
+  sw: "Mawaqit ni mojawapo ya familia ya programu za Riwaq Labs zilizowekwa wakfu kwa huduma ya Mwislamu — zaidi zinakuja, إن شاء الله."
+  ha: "Mawaqit ɗaya ce daga cikin iyalin apps na Riwaq Labs da aka keɓe don hidimar Musulmi — ƙari na zuwa, إن شاء الله."
+  i18n key: about_apps_subtitle
+
+App list — simple rows, each with icon and name:
+
+Row 1:
+  icon: app's existing mawaqit icon (small, 36×36)
+  name: "Mawaqit | مواقيت"
+  badge: "Available Now" / "متوفر الآن"
+  badge color: C.tint
+
+Row 2:
+  icon: 'book-open-variant' (C.tint)
+  name: "Al-Quran | القرآن الكريم"
+  badge: "Coming Soon" / "قريباً"
+  badge color: C.textMuted
+
+Row 3:
+  icon: 'hands-pray' (C.tint)
+  name: "Athkar | الأذكار"
+  badge: "Coming Soon" / "قريباً"
+  badge color: C.textMuted
+
+Row 4:
+  icon: 'smoking-off' (C.tint)
+  name: "Quit | أقلع"
+  description in current language:
+    ar: "تطبيق الإقلاع عن التدخين"
+    en: "Smoking cessation app"
+    [all 15 languages]
+    i18n key: about_app_quit_desc
+  badge: "In Development" / "قيد التطوير"
+  badge color: amber (#C9A84C)
+
+──────────────────────────────────────────────────────
+SECTION 6 — Closing dua / statement
+──────────────────────────────────────────────────────
+
+Centered, large Arabic text in Amiri font:
+  "رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنْتَ السَّمِيعُ الْعَلِيمُ"
+  fontSize: 22
+  fontFamily: Amiri_700Bold
+  color: C.tint
+  textAlign: center
+
+Translation below in current language:
+  ar: "ربنا تقبل منا — البقرة 2:127"
+  en: "Our Lord, accept from us — Al-Baqarah 2:127"
+  [all 15 languages]
+  i18n key: about_closing_dua
+  fontSize: 12
+  color: C.textMuted
+  textAlign: center
+
+──────────────────────────────────────────────────────
+SECTION 7 — Footer links
+──────────────────────────────────────────────────────
+
+Two tappable links centered:
+
+1. Privacy Policy → opens in-app browser to https://mawaqits.com/privacy
+   label:
+     ar: "سياسة الخصوصية"
+     en: "Privacy Policy"
+     [all 15 languages]
+     i18n key: about_privacy_link
+
+2. Contact → opens mailto:contact@riwaqlabs.com
+   label:
+     ar: "تواصل معنا"
+     en: "Get in touch"
+     [all 15 languages]
+     i18n key: about_contact_link
+
+App version below links:
+  "v{appVersion}" — read from app.json version field
+  fontSize: 11
+  color: C.textMuted
+  textAlign: center
+
+Copyright line:
+  "© 2025 Riwaq Labs · رواق لابز"
+  fontSize: 11
+  color: C.textMuted
+  textAlign: center
+
+════════════════════════════════════════════════════════
+PART 3 — STYLING
+════════════════════════════════════════════════════════
+
+Background: C.background (follows dark/light mode)
+All section titles: C.text, fontSize 16, fontWeight bold,
+  with a short C.tint left-border accent (3px wide, 18px tall)
+All body text: C.textSecondary, fontSize 14, lineHeight 22
+Section padding: 20px horizontal, 24px vertical between sections
+Cards (promise section): C.backgroundCard, borderRadius 12,
+  padding 16, border 1px C.separator
+  icon: C.tint, size 28
+  title: C.text, fontSize 15, fontWeight 600
+  body: C.textMuted, fontSize 13
+
+RTL: When app language is Arabic, Urdu, Persian, or Hausa,
+  flip layout direction appropriately.
+  Arabic text always uses Amiri_700Bold.
+
+════════════════════════════════════════════════════════
+PART 4 — OPEN LINKS
+════════════════════════════════════════════════════════
+
+For the Privacy Policy link, use:
+  import * as Linking from 'expo-linking'
+  Linking.openURL('https://mawaqits.com/privacy')
+
+For the contact link:
+  Linking.openURL('mailto:contact@riwaqlabs.com')
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any existing tab.
+Do not change any existing content or logic.
+Do not add new dependencies beyond expo-linking 
+  (which is already installed in Expo projects).
+Add all i18n keys to i18n.ts in all 15 languages.

@@ -34,6 +34,10 @@ function NativeTabLayout() {
       <Icon sf={{ default: 'book', selected: 'book.fill' }} />
       <Label>{tr.quran}</Label>
     </NativeTabs.Trigger>,
+    <NativeTabs.Trigger key="about" name="about">
+      <Icon sf={{ default: 'info.circle', selected: 'info.circle.fill' }} />
+      <Label>{tr.tab_about}</Label>
+    </NativeTabs.Trigger>,
   ];
 
   return (
@@ -96,6 +100,16 @@ function ClassicTabLayout() {
         title: tr.quran,
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="book-open-page-variant-outline" size={size} color={color} />
+        ),
+      }}
+    />,
+    <Tabs.Screen
+      key="about"
+      name="about"
+      options={{
+        title: tr.tab_about,
+        tabBarIcon: ({ color, size }) => (
+          <MaterialCommunityIcons name="information-outline" size={size} color={color} />
         ),
       }}
     />,
