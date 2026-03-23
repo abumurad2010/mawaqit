@@ -74,9 +74,7 @@ export default function CalendarScreen() {
   });
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesType | null>(null);
   const [showMoonDetail, setShowMoonDetail] = useState(false);
-  const [showMoonPhaseHelp, setShowMoonPhaseHelp] = useState(false);
   const [showNewMoonLookup, setShowNewMoonLookup] = useState(false);
-  const [showCrescentHelp, setShowCrescentHelp] = useState(false);
   const [lookupYear, setLookupYear] = useState(today.getFullYear());
   const [lookupMonth, setLookupMonth] = useState(today.getMonth() + 1);
 
@@ -160,7 +158,6 @@ export default function CalendarScreen() {
     sw: 'Zana hii ni kwa ajili ya kutazama hilali ya Kiislamu (ruʾyat al-hilāl), si kwa madhumuni ya astronomia.\n\n"Mwezi mpya wa kimaumbile" (muunganiko) hutokea mwezi unapokuwa haionekani. Hilali kwa kawaida huonekana jioni inayofuata.\n\nDirisha la kuonekana linaonyesha muda baada ya jua kutua ambapo hilali inaweza kuonekana.',
     ha: 'Wannan kayan aiki ne don ganin watan Islama (ruʾyat al-hilāl), ba don dalilan ilimin taurari ba.\n\n"Sabon wata na taurari" (haɗuwa) yana faruwa lokacin da wata bai bayyane ba. Hilal yawanci yana bayyana yammacin ranar da ta biyo baya.\n\nTaga kallo tana nuna lokacin bayan faɗuwar rana da za a iya ganin hilal.',
   };
-  const crescentHelpText = CRESCENT_HELP[lang] ?? CRESCENT_HELP['en'];
 
   const MOON_PHASE_HELP: Record<string, string> = {
     ar: 'يُظهر طور القمر مقدار إضاءة القمر وشكله في التاريخ المحدد.\n\nتستغرق الدورة القمرية نحو 29.5 يومًا، وهي أساس التقويم الهجري الإسلامي. يبدأ كل شهر هجري بالمحاق (🌑) ويكون القمر بدرًا (🌕) حول اليوم الخامس عشر.\n\nتُشير نسبة الإضاءة إلى المقدار المضاء من وجه القمر.',
@@ -179,8 +176,6 @@ export default function CalendarScreen() {
     sw: 'Inaonyesha mwanga na awamu ya mwezi kwa tarehe yoyote iliyochaguliwa.\n\nMzunguko wa siku 29.5 wa mwezi ndio msingi wa kalenda ya Kiislamu ya Hijri — kila mwezi huanza wakati wa Mwezi Mpya (🌑) na Mwezi Kamili (🌕) huangukia karibu na siku ya 15 ya mwezi wa Hijri.\n\nAsilimia ya mwanga inaonyesha kiasi gani cha uso wa mwezi kinachong\'aa.',
     ha: 'Yana nuna haske da matakin wata ga kowace kwanan da aka zaɓa.\n\nDawowar yini 29.5 na wata ita ce tushen kalandar Hijri ta Musulunci — kowane wata yana farawa da Sabon Wata (🌑) kuma Cikakken Wata (🌕) yana faɗuwa kusan ranar 15 ta wata na Hijri.\n\nKashi na haske yana nuna yawan fuskar wata da ke haskakawa.',
   };
-  const moonPhaseHelpText = MOON_PHASE_HELP[lang] ?? MOON_PHASE_HELP['en'];
-
   // If the selected date is a conjunction day, find the exact UTC moment (for showing time in popup)
   const selectedDateNewMoon = useMemo(() => {
     const nms = getNewMoonsForMonth(selectedDate.y, selectedDate.m);
@@ -379,13 +374,6 @@ export default function CalendarScreen() {
               </Text>
               <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
             </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowMoonPhaseHelp(true); }}
-              style={[styles.crescentHelpBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.crescentHelpBtnText, { color: C.tint }]}>?</Text>
-            </Pressable>
           </View>
 
           {/* Row 2: Crescent Sighting */}
@@ -399,13 +387,6 @@ export default function CalendarScreen() {
                 {isAr ? 'رصد الهلال' : 'Crescent Sighting'}
               </Text>
               <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
-            </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowCrescentHelp(true); }}
-              style={[styles.crescentHelpBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.crescentHelpBtnText, { color: C.tint }]}>?</Text>
             </Pressable>
           </View>
         </View>
@@ -636,42 +617,6 @@ export default function CalendarScreen() {
         </Pressable>
       </Modal>
 
-      {/* Moon Phase Help Popup */}
-      <Modal visible={showMoonPhaseHelp} transparent animationType="fade">
-        <Pressable style={[styles.modalOverlay, { justifyContent: 'center' }]} onPress={() => setShowMoonPhaseHelp(false)}>
-          <Pressable style={[styles.crescentHelpSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
-            <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: 16, marginBottom: 12 }]}>
-              {isAr ? '🌙 طور القمر' : '🌙 Moon Phase'}
-            </Text>
-            <Text style={[styles.crescentHelpBody, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, textAlign: isAr ? 'right' : 'left' }]}>
-              {moonPhaseHelpText}
-            </Text>
-            <Pressable onPress={() => setShowMoonPhaseHelp(false)} style={[styles.modalClose, { backgroundColor: C.tint, marginTop: 16 }]}>
-              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'حسنًا' : 'OK'}</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Crescent Help Popup */}
-      <Modal visible={showCrescentHelp} transparent animationType="fade">
-        <Pressable style={[styles.modalOverlay, { justifyContent: 'center' }]} onPress={() => setShowCrescentHelp(false)}>
-          <Pressable style={[styles.crescentHelpSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
-            <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: 16, marginBottom: 12 }]}>
-              {isAr ? '🌒 رصد الهلال' : '🌒 Crescent Sighting'}
-            </Text>
-            <Text style={[styles.crescentHelpBody, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, textAlign: isAr ? 'right' : 'left' }]}>
-              {crescentHelpText}
-            </Text>
-            <Pressable onPress={() => setShowCrescentHelp(false)} style={[styles.modalClose, { backgroundColor: C.tint, marginTop: 16 }]}>
-              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'حسنًا' : 'OK'}</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
       {/* Dua — fixed footer */}
       <View style={[styles.duaRow, { paddingBottom: bottomInset + 62 }]}>
         <Text style={[styles.dua, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]}>
@@ -825,19 +770,4 @@ const styles = StyleSheet.create({
   },
   nmConjLabel: { fontSize: 12, flex: 1, fontVariant: ['tabular-nums'] },
 
-  // Crescent help button (? circle next to lookup row)
-  crescentHelpBtn: {
-    width: 30, height: 30, borderRadius: 15,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  crescentHelpBtnText: { fontSize: 15, fontWeight: '700' },
-
-  // Crescent help popup sheet
-  crescentHelpSheet: {
-    margin: 24, borderRadius: 20,
-    paddingTop: 12, paddingHorizontal: 20, paddingBottom: 28,
-  },
-  crescentHelpBody: {
-    fontSize: 14, lineHeight: 22,
-  },
 });

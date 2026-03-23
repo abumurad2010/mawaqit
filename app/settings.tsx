@@ -72,7 +72,6 @@ export default function SettingsScreen() {
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
-  const [helpContent, setHelpContent] = useState<string | null>(null);
 
   // ── Eid proximity — visibility window for the Eid Prayer row ────────────────
   //
@@ -347,31 +346,6 @@ export default function SettingsScreen() {
     },
   };
 
-  const getHelp = (key: HelpKey): string => {
-    const langHelp = HELP[lang] ?? HELP.en;
-    return langHelp[key] ?? HELP.en[key];
-  };
-
-  const showHelp = (key: HelpKey) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHelpContent(getHelp(key));
-  };
-
-  const HelpBtn = ({ helpKey }: { helpKey: HelpKey }) => (
-    <Pressable
-      onPress={() => showHelp(helpKey)}
-      hitSlop={12}
-      style={({ pressed }) => ({
-        width: 18, height: 18, borderRadius: 9,
-        borderWidth: 1.5, borderColor: C.tint,
-        alignItems: 'center', justifyContent: 'center',
-        opacity: pressed ? 0.4 : 1,
-      })}
-    >
-      <Text style={{ fontSize: 10, fontWeight: '800', color: C.tint, lineHeight: 13 }}>?</Text>
-    </Pressable>
-  );
-
   const recommendedMethod = getMethodForCountry(countryCode);
 
   const handlePreview = async (key: string) => {
@@ -464,8 +438,8 @@ export default function SettingsScreen() {
 
 
   const Row = ({
-    label, right, noBorder, helpKey,
-  }: { label: string; right: React.ReactNode; noBorder?: boolean; helpKey?: HelpKey }) => (
+    label, right, noBorder,
+  }: { label: string; right: React.ReactNode; noBorder?: boolean }) => (
     <View style={[
       styles.settingRow,
       { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' }
@@ -475,7 +449,6 @@ export default function SettingsScreen() {
       </Text>
       <View style={[styles.rightSide, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
         {right}
-        {helpKey && <HelpBtn helpKey={helpKey} />}
       </View>
     </View>
   );
@@ -535,7 +508,6 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'إمكانية الوصول' : 'Accessibility'}
           </Text>
-          <HelpBtn helpKey="accessibility" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', padding: 10, gap: 8 }}>
@@ -591,7 +563,6 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
           </Text>
-          <HelpBtn helpKey="hijri" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
@@ -651,7 +622,6 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <HelpBtn helpKey="calcMethod" />
               <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
             </View>
           </Pressable>
@@ -731,7 +701,6 @@ export default function SettingsScreen() {
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                 {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
               </Text>
-              <HelpBtn helpKey="maghrib" />
             </View>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               {/* Recommended badge */}
@@ -783,7 +752,6 @@ export default function SettingsScreen() {
               {tr.firstAdhanSetting}
             </Text>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
-              <HelpBtn helpKey="firstAdhan" />
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setShowFirstAdhanPicker(true); }}
                 style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
@@ -804,7 +772,6 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {tr.iqamaSettings}
           </Text>
-          <HelpBtn helpKey="iqama" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const).map((prayer, idx, arr) => (
@@ -839,7 +806,6 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam'}
           </Text>
-          <HelpBtn helpKey="dhuha" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
 
@@ -891,7 +857,6 @@ export default function SettingsScreen() {
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
                 {isAr ? 'صلاة العيد' : 'Eid Prayer'}
               </Text>
-              <HelpBtn helpKey="eid" />
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setTempEidPrayerTime(draftEidPrayerTime); setShowEidRoller(true); }}
                 style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
@@ -1043,7 +1008,6 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'الإشعارات' : 'Notifications'}
           </Text>
-          <HelpBtn helpKey="notifications" />
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {NOTIF_PRAYERS.map((prayer, idx) => {
@@ -1165,32 +1129,6 @@ export default function SettingsScreen() {
         </Text>
 
       </ScrollView>
-
-      {/* ── Help overlay ───────────────────────────────────────── */}
-      <Modal
-        visible={!!helpContent}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => setHelpContent(null)}
-      >
-        <Pressable style={styles.helpBackdrop} onPress={() => setHelpContent(null)}>
-          <Pressable style={[styles.helpCard, { backgroundColor: isDark ? '#0e2b1a' : '#ffffff', borderColor: C.tint }]} onPress={() => {}}>
-            <View style={[styles.helpBar, { backgroundColor: C.tint }]} />
-            <Text style={[styles.helpText, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-              {helpContent ?? ''}
-            </Text>
-            <Pressable
-              onPress={() => setHelpContent(null)}
-              style={({ pressed }) => [styles.helpDismiss, { backgroundColor: C.tint, opacity: pressed ? 0.7 : 1 }]}
-            >
-              <Text style={[styles.helpDismissText, { color: C.tintText }]}>
-                {isAr ? 'حسناً' : lang === 'ur' || lang === 'fa' ? 'ٹھیک ہے' : 'Got it'}
-              </Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
     </View>
   );

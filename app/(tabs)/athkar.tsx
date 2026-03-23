@@ -35,29 +35,6 @@ const FONT_STEPS: Record<AthkarFontSize, { tile: number; arabic: number; transli
   xl: { tile: 18, arabic: 32, translit: 19, translation: 19 },
 };
 
-const DHIKR_HELP_KEYS = new Set([
-  'athkar_sleep_ikhlas', 'athkar_sleep_falaq', 'athkar_sleep_nas',
-  'athkar_sleep_aslamt', 'athkar_sleep_janb',
-  'athkar_sick_3', 'athkar_sick_4',
-  'athkar_istikhara_1', 'athkar_friday_3', 'athkar_ruqyah_1',
-]);
-
-function AthkarHelpBtn({ onPress, C }: { onPress: () => void; C: any }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      hitSlop={12}
-      style={({ pressed }) => ({
-        width: 18, height: 18, borderRadius: 9,
-        borderWidth: 1.5, borderColor: C.tint,
-        alignItems: 'center', justifyContent: 'center',
-        opacity: pressed ? 0.4 : 1,
-      })}
-    >
-      <Text style={{ fontSize: 10, fontWeight: '800', color: C.tint, lineHeight: 13 }}>?</Text>
-    </Pressable>
-  );
-}
 
 function getKey(catId: string, idx: number) {
   return `${catId}_${idx}`;
@@ -78,7 +55,6 @@ export default function AthkarScreen() {
     (!lang || lang === 'ar') ? 'arabic' : 'full'
   );
   const [favourites, setFavourites] = useState<string[]>([]);
-  const [helpContent, setHelpContent] = useState<string | null>(null);
   const [favHintSeen, setFavHintSeen] = useState(false);
   const [athkarLang, setAthkarLang] = useState<Lang>((lang as Lang) || 'ar');
   const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('md');
@@ -201,19 +177,10 @@ export default function AthkarScreen() {
     return (counts[getKey(catId, idx)] ?? 0) >= required;
   }, [counts]);
 
-  const showHelp = useCallback((text: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setHelpContent(text);
-  }, []);
-
   const dismissFavHint = useCallback(() => {
     setFavHintSeen(true);
     AsyncStorage.setItem(FAV_HINT_KEY, 'true').catch(() => {});
   }, []);
-
-  const dismissHelp = useCallback(() => setHelpContent(null), []);
-
-  const gotItLabel = lang === 'ar' ? 'حسناً' : (lang === 'ur' || lang === 'fa') ? 'ٹھیک ہے' : 'Got it';
 
   return (
     <View style={{ flex: 1 }}>
@@ -234,7 +201,6 @@ export default function AthkarScreen() {
           onBack={closeCategory}
           onReset={resetCounts}
           displayMode={displayMode}
-          showHelp={showHelp}
           athkarLang={athkarLang}
           athkarFontSize={athkarFontSize}
         />
@@ -252,7 +218,6 @@ export default function AthkarScreen() {
           favourites={favourites}
           onLongPress={toggleFavourite}
           sortedCategories={sortedCategories}
-          showHelp={showHelp}
           favHintSeen={favHintSeen}
           onFavHintDismiss={dismissFavHint}
           athkarLang={athkarLang}
@@ -262,31 +227,6 @@ export default function AthkarScreen() {
         />
       )}
 
-      <Modal
-        visible={!!helpContent}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={dismissHelp}
-      >
-        <Pressable style={styles.helpBackdrop} onPress={dismissHelp}>
-          <Pressable
-            style={[styles.helpCard, { backgroundColor: isDark ? '#0e2b1a' : '#ffffff', borderColor: C.tint }]}
-            onPress={() => {}}
-          >
-            <View style={[styles.helpBar, { backgroundColor: C.tint }]} />
-            <Text style={[styles.helpText, { color: C.text, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
-              {helpContent ?? ''}
-            </Text>
-            <Pressable
-              onPress={dismissHelp}
-              style={({ pressed }) => [styles.helpDismiss, { backgroundColor: C.tint, opacity: pressed ? 0.7 : 1 }]}
-            >
-              <Text style={[styles.helpDismissText, { color: C.tintText }]}>{gotItLabel}</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
@@ -304,7 +244,6 @@ interface GridProps {
   favourites: string[];
   onLongPress: (cat: AthkarCategory) => void;
   sortedCategories: AthkarCategory[];
-  showHelp: (text: string) => void;
   favHintSeen: boolean;
   onFavHintDismiss: () => void;
   athkarLang: Lang;
@@ -313,7 +252,7 @@ interface GridProps {
   setAthkarFontSize: (fs: AthkarFontSize) => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, showHelp, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -417,7 +356,6 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
             </Pressable>
           </View>
-          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
         </View>
       </View>
 
@@ -865,7 +803,6 @@ interface ReaderProps {
   onBack: () => void;
   onReset: () => void;
   displayMode: 'arabic' | 'full';
-  showHelp: (text: string) => void;
   athkarLang: Lang;
   athkarFontSize: AthkarFontSize;
 }
@@ -874,7 +811,7 @@ function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
-  displayMode, showHelp, athkarLang, athkarFontSize,
+  displayMode, athkarLang, athkarFontSize,
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
@@ -1004,7 +941,6 @@ function ReaderScreen({
           {catName}
         </Text>
         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_language ?? '')} C={C} />
           <LangToggle />
           <Pressable
             onPress={onReset}
@@ -1012,7 +948,6 @@ function ReaderScreen({
           >
             <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
           </Pressable>
-          <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_counter ?? '')} C={C} />
         </View>
       </View>
 
@@ -1050,7 +985,6 @@ function ReaderScreen({
               onTap={() => onTap(category, dhikr, index)}
               onCopy={() => handleCopy(dhikr, translation, index)}
               highlighted={copyHighlightIdx === index}
-              showHelp={showHelp}
               arabicFontSize={cardFS.arabic}
               translitFontSize={cardFS.translit}
               translationFontSize={cardFS.translation}
@@ -1082,14 +1016,12 @@ interface CardProps {
   onTap: () => void;
   onCopy: () => void;
   highlighted: boolean;
-  showHelp: (text: string) => void;
   arabicFontSize: number;
   translitFontSize: number;
   translationFontSize: number;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, showHelp, arabicFontSize, translitFontSize, translationFontSize }: CardProps) {
-  const hasHelpNote = DHIKR_HELP_KEYS.has(dhikr.translationKey);
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize }: CardProps) {
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
@@ -1122,9 +1054,6 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
             <Animated.View entering={ZoomIn.duration(200)}>
               <Ionicons name="checkmark-circle" size={20} color={C.tint} style={{ marginLeft: 4 }} />
             </Animated.View>
-          )}
-          {hasHelpNote && !!translation && (
-            <AthkarHelpBtn onPress={() => showHelp(translation)} C={C} />
           )}
         </View>
 
