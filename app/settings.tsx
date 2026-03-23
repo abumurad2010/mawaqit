@@ -71,7 +71,6 @@ export default function SettingsScreen() {
   const [showTahajjudRoller, setShowTahajjudRoller] = useState(false);
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
-  const [showLangModal, setShowLangModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [helpContent, setHelpContent] = useState<string | null>(null);
 
@@ -530,87 +529,6 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
-
-        {/* Language */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {tr.language}
-          </Text>
-          <HelpBtn helpKey="language" />
-        </View>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <Pressable
-            onPress={() => setShowLangModal(true)}
-            style={({ pressed }) => [
-              styles.settingRow,
-              { borderBottomColor: C.separator, borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row', opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'العربية' : tr.arabic} ↔ {draftSecondLang === 'auto'
-                  ? `${tr.auto} · ${LANG_META[resolvedSecondLang].native}`
-                  : LANG_META[draftSecondLang].native}
-              </Text>
-            </View>
-            <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
-          </Pressable>
-        </View>
-
-        {/* Language picker modal */}
-        <Modal
-          visible={showLangModal}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setShowLangModal(false)}
-        >
-          <View style={{ flex: 1, backgroundColor: C.background }}>
-            <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
-                {tr.language}
-              </Text>
-              <Pressable
-                onPress={() => setShowLangModal(false)}
-                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-              >
-                <Ionicons name="close" size={24} color={C.textMuted} />
-              </Pressable>
-            </View>
-            <ScrollView>
-              {/* Auto option */}
-              {[{ value: 'auto' as SecondLang, native: tr.auto, label: `${LANG_META[resolvedSecondLang].native} (${tr.auto.toLowerCase()})` },
-                ...(['en','fr','es','ru','zh','tr','ur','id','bn','fa','ms','pt','sw','ha'] as const).map(l => ({
-                  value: l as SecondLang,
-                  native: LANG_META[l].native,
-                  label: LANG_META[l].label,
-                }))
-              ].map((item, idx, arr) => {
-                const isLast = idx === arr.length - 1;
-                const isSelected = draftSecondLang === item.value;
-                return (
-                  <Pressable
-                    key={item.value}
-                    onPress={() => { Haptics.selectionAsync(); setDraftSecondLang(item.value); setShowLangModal(false); }}
-                    style={({ pressed }) => [
-                      styles.settingRow,
-                      { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row', paddingHorizontal: 20, opacity: pressed ? 0.7 : 1 },
-                    ]}
-                  >
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={{ fontSize: 16, color: C.text, fontWeight: '500', textAlign: isRtl ? 'right' : 'left' }}>
-                        {item.native}
-                      </Text>
-                      <Text style={{ fontSize: 13, color: C.textSecond, textAlign: isRtl ? 'right' : 'left' }}>
-                        {item.label}
-                      </Text>
-                    </View>
-                    {isSelected && <Ionicons name="checkmark" size={20} color={C.tint} />}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </Modal>
 
         {/* Accessibility */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
