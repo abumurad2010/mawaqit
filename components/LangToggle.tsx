@@ -27,9 +27,8 @@ export default function LangToggle() {
         style={({ pressed }) => [styles.btn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
         testID="lang-toggle-btn"
       >
-        <Text style={[styles.btnLabel, { color: C.tint }]}>
-          {LANG_META[lang].code}
-        </Text>
+        <Text style={styles.btnFlag}>{LANG_FLAG[lang]}</Text>
+        <Text style={[styles.btnLabel, { color: C.tint }]}>{LANG_META[lang].code}</Text>
       </Pressable>
 
       <Modal
@@ -85,8 +84,9 @@ export default function LangToggle() {
 }
 
 const styles = StyleSheet.create({
-  btn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnLabel: { fontSize: 13, fontWeight: '700' },
+  btn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 36, paddingHorizontal: 10, borderRadius: 12 },
+  btnFlag: { fontSize: 18, lineHeight: 22 },
+  btnLabel: { fontSize: 12, fontWeight: '700' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
     position: 'absolute',

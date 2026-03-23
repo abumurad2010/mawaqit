@@ -182,8 +182,8 @@ export default function QuranScreen() {
               },
             ]}
           >
-            <Ionicons name="language-outline" size={15} color={C.tint} />
-            <Text style={[styles.langDropdownText, { color: C.text, fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }]}>
+            <Text style={styles.langDropdownFlag}>{LANG_FLAG[translitLang] ?? ''}</Text>
+            <Text style={[styles.langDropdownText, { color: C.text, fontFamily: SERIF_EN, textAlign: 'left' }]}>
               {LANG_META[translitLang]?.native ?? translitLang}
             </Text>
             <Text style={[styles.langDropdownLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
@@ -304,6 +304,7 @@ const styles = StyleSheet.create({
     marginTop: 10, paddingHorizontal: 12, paddingVertical: 9,
     borderRadius: 12, borderWidth: StyleSheet.hairlineWidth,
   },
+  langDropdownFlag: { fontSize: 20, lineHeight: 24 },
   langDropdownText: { fontSize: 14, fontWeight: '600' },
   langDropdownLabel: { fontSize: 12, opacity: 0.6 },
   pickerBackdrop: {

@@ -503,8 +503,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1, marginTop: 8 },
             ]}
           >
-            <Ionicons name="language-outline" size={15} color={C.tint} />
-            <Text style={[styles.athkarLangDropdownText, { color: C.text, fontFamily: athkarRtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }]}>
+            <Text style={styles.athkarLangDropdownFlag}>{LANG_FLAG[athkarLang] ?? ''}</Text>
+            <Text style={[styles.athkarLangDropdownText, { color: C.text, fontFamily: 'Inter_600SemiBold', textAlign: 'left' }]}>
               {LANG_META[athkarLang]?.native ?? athkarLang}
             </Text>
             <Text style={[styles.athkarLangDropdownLabel, { color: C.textMuted }]}>
@@ -1381,6 +1381,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 9,
     borderRadius: 12, borderWidth: StyleSheet.hairlineWidth,
   },
+  athkarLangDropdownFlag: { fontSize: 20, lineHeight: 24 },
   athkarLangDropdownText: { fontSize: 14, fontWeight: '600' },
   athkarLangDropdownLabel: { fontSize: 12, opacity: 0.6 },
   pickerBackdrop: {
