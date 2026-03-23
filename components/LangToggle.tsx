@@ -4,16 +4,33 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/contexts/AppContext';
-import { LANG_META, isRtlLang } from '@/constants/i18n';
+import { LANG_META } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 
 const ALL_LANGS: Lang[] = ['ar','en','fr','es','ru','zh','tr','ur','id','bn','fa','ms','pt','sw','ha'];
+
+const LANG_FLAG: Record<Lang, string> = {
+  ar: '🇸🇦',
+  en: '🇬🇧',
+  fr: '🇫🇷',
+  es: '🇪🇸',
+  ru: '🇷🇺',
+  zh: '🇨🇳',
+  tr: '🇹🇷',
+  ur: '🇵🇰',
+  id: '🇮🇩',
+  bn: '🇧🇩',
+  fa: '🇮🇷',
+  ms: '🇲🇾',
+  pt: '🇵🇹',
+  sw: '🇰🇪',
+  ha: '🇳🇬',
+};
 
 export default function LangToggle() {
   const { lang, colors: C, updateSettings } = useApp();
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const isRtl = isRtlLang(lang);
 
   const select = (l: Lang) => {
     Haptics.selectionAsync();
@@ -28,7 +45,7 @@ export default function LangToggle() {
         style={({ pressed }) => [styles.btn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
         testID="lang-toggle-btn"
       >
-        <Text style={[styles.label, { color: C.tint }]}>
+        <Text style={[styles.btnLabel, { color: C.tint }]}>
           {LANG_META[lang].code}
         </Text>
       </Pressable>
@@ -52,7 +69,6 @@ export default function LangToggle() {
             {ALL_LANGS.map((l, idx) => {
               const isSelected = lang === l;
               const isLast = idx === ALL_LANGS.length - 1;
-              const rtlItem = isRtlLang(l);
               return (
                 <Pressable
                   key={l}
@@ -62,16 +78,16 @@ export default function LangToggle() {
                     {
                       borderBottomColor: C.separator,
                       borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
-                      flexDirection: isRtl ? 'row-reverse' : 'row',
                       opacity: pressed ? 0.6 : 1,
                     },
                   ]}
                 >
+                  <Text style={styles.flag}>{LANG_FLAG[l]}</Text>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={[styles.native, { color: C.text, textAlign: rtlItem ? 'right' : 'left' }]}>
+                    <Text style={[styles.native, { color: C.text }]}>
                       {LANG_META[l].native}
                     </Text>
-                    <Text style={[styles.label2, { color: C.textSecond, textAlign: rtlItem ? 'right' : 'left' }]}>
+                    <Text style={[styles.sub, { color: C.textSecond }]}>
                       {LANG_META[l].label}
                     </Text>
                   </View>
@@ -88,7 +104,7 @@ export default function LangToggle() {
 
 const styles = StyleSheet.create({
   btn: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 13, fontWeight: '700' },
+  btnLabel: { fontSize: 13, fontWeight: '700' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
     position: 'absolute',
@@ -96,7 +112,7 @@ const styles = StyleSheet.create({
     right: 12,
     borderRadius: 16,
     overflow: 'hidden',
-    maxHeight: 420,
+    maxHeight: 440,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
@@ -107,9 +123,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 11,
+    gap: 14,
   },
-  native: { fontSize: 16, fontWeight: '500' },
-  label2: { fontSize: 13 },
+  flag: { fontSize: 22, lineHeight: 28 },
+  native: { fontSize: 16, fontWeight: '500', textAlign: 'left' },
+  sub: { fontSize: 13, textAlign: 'left' },
 });
