@@ -361,10 +361,11 @@ export default function PrayerTimesScreen() {
     : null;
 
   // next / passed only meaningful when viewing today
-  const isNext = (key: keyof PrayerTimesType) => dateOffset === 0 && nextPrayer?.name === key;
+  const isNext = (key: keyof PrayerTimesType) => key !== 'sunrise' && dateOffset === 0 && nextPrayer?.name === key;
   const isPassed = (key: keyof PrayerTimesType) => {
-    if (dateOffset < 0) return true;   // past day — all prayers passed
-    if (dateOffset > 0) return false;  // future day — none passed yet
+    if (key === 'sunrise') return false;  // sunrise is informational — never greyed out
+    if (dateOffset < 0) return true;      // past day — all prayers passed
+    if (dateOffset > 0) return false;     // future day — none passed yet
     return times ? times[key] < now : false;
   };
 

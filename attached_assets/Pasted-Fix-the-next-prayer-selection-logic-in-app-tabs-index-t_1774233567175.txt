@@ -1,0 +1,127 @@
+Fix the next-prayer selection logic in app/(tabs)/index.tsx.
+
+════════════════════════════════════════════════════════
+PROBLEM
+════════════════════════════════════════════════════════
+
+Sunrise (Shurooq/شروق) is appearing as "Next Prayer"
+in the countdown banner. Sunrise is not a prayer —
+it is a time marker. It must never appear as the 
+next prayer regardless of any circumstance.
+
+════════════════════════════════════════════════════════
+RULE
+════════════════════════════════════════════════════════
+
+The "Next Prayer" banner must only show prayers that 
+are currently VISIBLE in the prayer list below it.
+
+The sequence for next-prayer selection is:
+
+ALWAYS in the sequence (always visible):
+  Fajr, Dhuhr, Asr, Maghrib, Isha
+
+NEVER in the sequence (not a prayer):
+  Sunrise / Shurooq / شروق
+  Remove it from the next-prayer candidate list entirely
+  regardless of settings, language, or any condition
+
+CONDITIONALLY in the sequence:
+  Dhuha — ONLY if showDhuha is true in settings
+  Qiyam al-Layl — ONLY if showQiyam is true in settings
+  Jumaa — ONLY on Fridays AND if it is currently visible
+  Eid Prayer — ONLY if it is currently visible
+
+════════════════════════════════════════════════════════
+IMPLEMENTATION
+════════════════════════════════════════════════════════
+
+Find the getNextPrayer function or the next-prayer 
+selection logic. It likely iterates over a list like:
+  ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']
+
+STEP 1 — Remove 'sunrise' from the candidate list:
+
+  BEFORE:
+    const PRAYER_SEQUENCE = [
+      'fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'
+    ]
+
+  AFTER:
+    const PRAYER_SEQUENCE = [
+      'fajr', 'dhuhr', 'asr', 'maghrib', 'isha'
+    ]
+
+STEP 2 — Build the sequence dynamically based on 
+what is currently visible in the prayer list:
+
+  const buildPrayerSequence = () => {
+    const sequence = ['fajr']
+    
+    // Add Dhuha only if visible
+    if (showDhuha && dhuhaTime) sequence.push('dhuha')
+    
+    // Add Jumaa only on Fridays if visible
+    const today = new Date()
+    if (today.getDay() === 5 && showJumaa) sequence.push('jumaa')
+    
+    // Always add core prayers
+    sequence.push('dhuhr', 'asr', 'maghrib', 'isha')
+    
+    // Add Qiyam only if visible
+    if (showQiyam && qiyamTime) sequence.push('qiyam')
+    
+    // NEVER add 'sunrise' to this sequence
+    
+    return sequence
+  }
+
+STEP 3 — Use this dynamic sequence in getNextPrayer:
+
+  const sequence = buildPrayerSequence()
+  const now = Date.now()
+
+  for (const key of sequence) {
+    const prayerTime = getPrayerTimestamp(key, times)
+    if (prayerTime && prayerTime > now) {
+      return { name: key, time: new Date(prayerTime) }
+    }
+  }
+
+  // All passed — return tomorrow's Fajr
+  // (existing logic, unchanged)
+
+STEP 4 — Also fix the isPassed() function used to 
+grey out prayer rows:
+
+Sunrise should always appear in the prayer list
+with its own visual style (not greyed out, not
+highlighted as next) — it is purely informational.
+Its row should never be highlighted as "next"
+and never greyed out as "passed" — it should remain
+in a neutral state always.
+
+Find where isPassed is calculated and add:
+  const isPassed = (key) => {
+    if (key === 'sunrise') return false  // never grey it out
+    return times ? times[key] < now : false
+  }
+
+And where isNext is calculated:
+  const isNext = (key) => {
+    if (key === 'sunrise') return false  // never highlight it
+    return nextPrayer?.name === key
+  }
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Sunrise must remain VISIBLE in the prayer list.
+It is just never selected as "next prayer".
+It is never greyed out and never highlighted green.
+It always shows its time normally in the list.
+
+Do not change any other prayer time logic.
+Do not change the countdown calculation.
+Do not add new dependencies.

@@ -247,7 +247,7 @@ export function getNextPrayer(
   times: PrayerTimes,
   now: Date,
 ): { name: keyof PrayerTimes; time: Date } | null {
-  const order: (keyof PrayerTimes)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  const order: (keyof PrayerTimes)[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
   // ── Diagnostic log — fires every second via the 1-second setInterval in the component ──
   // nowMod should be 924 at exactly 3:24 PM (15 × 60 + 24 = 924).
