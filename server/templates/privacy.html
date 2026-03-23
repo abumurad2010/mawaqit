@@ -59,24 +59,19 @@
       .back-link svg { width: 14px; height: 14px; }
 
       .header-brand {
-        display: flex;
-        align-items: center;
-        gap: 14px;
+        display: inline-block;
+        background: #0d1b2a;
+        border-radius: 14px;
+        padding: 10px 20px;
+        line-height: 0;
       }
       .header-brand img {
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
+        height: 44px;
+        width: auto;
+        display: block;
       }
-      .header-brand-text h1 {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--text);
-        line-height: 1.2;
-      }
-      .header-brand-text span {
-        font-size: 13px;
-        color: var(--text-muted);
+      @media (min-width: 480px) {
+        .header-brand img { height: 52px; }
       }
 
       /* ── Content ── */
@@ -223,10 +218,7 @@
         riwaqlabs.com
       </a>
       <div class="header-brand">
-        <div class="header-brand-text">
-          <h1>Mawaqit | مواقيت</h1>
-          <span>by Riwaq Labs · رواق لابز</span>
-        </div>
+        <img src="/riwaq-labs-logo.png" alt="Riwaq Labs" />
       </div>
     </header>
 
