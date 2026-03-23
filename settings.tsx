@@ -303,7 +303,7 @@ export default function SettingsScreen() {
 
         {/* Accessibility */}
         <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SERIF_EN, textAlign: isRtl ? 'right' : 'left', marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }]}>
-          {isAr ? 'إمكانية الوصول' : 'Accessibility'}
+          {isAr ? 'المساعدة البصرية' : 'Accessibility'}
         </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <Text style={[styles.explain, { color: C.textMuted, paddingTop: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SERIF_EN, textAlign: isRtl ? 'right' : 'left' }]}>

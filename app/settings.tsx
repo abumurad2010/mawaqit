@@ -506,7 +506,7 @@ export default function SettingsScreen() {
         {/* Accessibility */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'إمكانية الوصول' : 'Accessibility'}
+            {isAr ? 'المساعدة البصرية' : 'Accessibility'}
           </Text>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
