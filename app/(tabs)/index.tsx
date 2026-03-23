@@ -488,6 +488,7 @@ export default function PrayerTimesScreen() {
   const fw = C.fontWeightNormal;
 
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge'] as const;
+  const SIZE_LABELS: Record<typeof FONT_STEPS[number], string> = { small: 'S', medium: 'M', large: 'L', xlarge: 'XL' };
   const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
   const pFS = [12, 15, 18, 22][fsIdx] ?? 15;
   const pLH = pFS + 6;
@@ -515,7 +516,7 @@ export default function PrayerTimesScreen() {
       {/* ── Header ── */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
         {/* Row 1: spacer | centered logo | buttons */}
-        <View style={styles.header}>
+        <View style={[styles.header, { marginBottom: 2 }]}>
           <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
             <ThemeToggle />
             <LangToggle />
@@ -533,6 +534,29 @@ export default function PrayerTimesScreen() {
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
             >
               <Ionicons name="settings-outline" size={19} color={C.textSecond} />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Font sizer row */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 2, marginBottom: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Pressable
+              onPress={decreaseFont}
+              disabled={!canDecrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {SIZE_LABELS[fontSize as typeof FONT_STEPS[number]] ?? 'M'}
+            </Text>
+            <Pressable
+              onPress={increaseFont}
+              disabled={!canIncrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
             </Pressable>
           </View>
         </View>
@@ -580,27 +604,6 @@ export default function PrayerTimesScreen() {
 
       {/* ── Animated slide container — everything below the header slides on day change ── */}
       <Animated.View style={[{ flex: 1, overflow: 'hidden' }, slideStyle]}>
-
-      {/* ── Font size controls ── */}
-      <View style={styles.fontControlRow}>
-        <Pressable
-          onPress={decreaseFont}
-          style={({ pressed }) => [styles.fontPill, { backgroundColor: C.backgroundCard, opacity: (!canDecrease || pressed) ? 0.3 : 1 }]}
-          disabled={!canDecrease}
-        >
-          <Text style={[styles.fontPillLabel, { color: C.textSecond, fontSize: 11 }]}>A−</Text>
-        </Pressable>
-        {FONT_STEPS.map((_, i) => (
-          <View key={i} style={[styles.fontDot, { backgroundColor: i === fsIdx ? C.tint : C.separator }]} />
-        ))}
-        <Pressable
-          onPress={increaseFont}
-          style={({ pressed }) => [styles.fontPill, { backgroundColor: C.backgroundCard, opacity: (!canIncrease || pressed) ? 0.3 : 1 }]}
-          disabled={!canIncrease}
-        >
-          <Text style={[styles.fontPillLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
-        </Pressable>
-      </View>
 
       {/* ── Next prayer hero strip — only shown when viewing today ── */}
       {dateOffset === 0 && (
@@ -965,13 +968,8 @@ const styles = StyleSheet.create({
   naflRow: { opacity: 0.9 },
   naflBadge: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4, marginLeft: 4 },
   naflBadgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
-  fontControlRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end',
-    paddingHorizontal: 16, gap: 6, marginBottom: 2,
-  },
-  fontPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, minWidth: 32, alignItems: 'center' },
-  fontPillLabel: { fontWeight: '600', letterSpacing: 0.2 },
-  fontDot: { width: 5, height: 5, borderRadius: 3 },
+  fontPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignItems: 'center' },
+  fontPillLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.2 },
 
   /* Dua */
   duaRow: { alignItems: 'center', paddingHorizontal: 24, gap: 4 },

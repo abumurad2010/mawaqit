@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Magnetometer } from 'expo-sensors';
 import * as Location from 'expo-location';
@@ -26,6 +27,18 @@ const CENTER = COMPASS_SIZE / 2;
 const DIRECTIONS_AR = ['ش', 'شرق', 'ج', 'غرب'];
 const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
 
+type QiblaFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+const Q_STEP_ORDER: QiblaFontSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+const Q_SIZE_LABELS: Record<QiblaFontSize, string> = { xs: 'XS', sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
+const Q_FONT_STEPS: Record<QiblaFontSize, { instr: number; value: number; label: number; calib: number }> = {
+  xs: { instr: 12, value: 9,  label: 7,  calib: 11 },
+  sm: { instr: 15, value: 11, label: 8,  calib: 13 },
+  md: { instr: 17, value: 13, label: 9,  calib: 15 },
+  lg: { instr: 19, value: 15, label: 10, calib: 17 },
+  xl: { instr: 21, value: 17, label: 11, calib: 19 },
+};
+const QIBLA_FS_KEY = 'qibla_font_size';
+
 export default function QiblaScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, location } = useApp();
@@ -41,6 +54,23 @@ export default function QiblaScreen() {
   const [isAlignedState, setIsAlignedState] = useState(false);
   const [isNearlyAligned, setIsNearlyAligned] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const [qiblaFontSize, setQiblaFontSizeState] = useState<QiblaFontSize>('sm');
+
+  useEffect(() => {
+    AsyncStorage.getItem(QIBLA_FS_KEY).then(val => {
+      if (val && Q_STEP_ORDER.includes(val as QiblaFontSize)) setQiblaFontSizeState(val as QiblaFontSize);
+    }).catch(() => {});
+  }, []);
+
+  const setQiblaFontSize = (fs: QiblaFontSize) => {
+    setQiblaFontSizeState(fs);
+    AsyncStorage.setItem(QIBLA_FS_KEY, fs).catch(() => {});
+  };
+
+  const qFsIdx = Q_STEP_ORDER.indexOf(qiblaFontSize);
+  const qCanDecrease = qFsIdx > 0;
+  const qCanIncrease = qFsIdx < Q_STEP_ORDER.length - 1;
+  const qFS = Q_FONT_STEPS[qiblaFontSize];
 
   const rotation = useSharedValue(0);
   const qiblaRotation = useSharedValue(0);
@@ -200,13 +230,31 @@ export default function QiblaScreen() {
 
       {/* Header */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
-        <View style={styles.header}>
+        <View style={[styles.header, { marginBottom: 2 }]}>
           <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
             <ThemeToggle />
             <LangToggle />
           </View>
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={{ flex: 1 }} />
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
+            <Pressable
+              onPress={() => { if (qCanDecrease) { Haptics.selectionAsync(); setQiblaFontSize(Q_STEP_ORDER[qFsIdx - 1]); } }}
+              disabled={!qCanDecrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: qCanDecrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {Q_SIZE_LABELS[qiblaFontSize]}
+            </Text>
+            <Pressable
+              onPress={() => { if (qCanIncrease) { Haptics.selectionAsync(); setQiblaFontSize(Q_STEP_ORDER[qFsIdx + 1]); } }}
+              disabled={!qCanIncrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: qCanIncrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -216,12 +264,12 @@ export default function QiblaScreen() {
         {/* Instruction — just above compass */}
         <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
           {isAlignedState ? (
-            <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+            <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, fontSize: qFS.instr }]}>
               {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
             </Text>
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+              <Text style={[styles.instrText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : undefined, fontSize: qFS.instr }]}>
                 {magnetometerAvailable ? tr.pointToMecca : tr.compassNotAvailable}
               </Text>
               {/* Help button */}
@@ -302,23 +350,23 @@ export default function QiblaScreen() {
                 {/* Row 1: Kaaba latitude | longitude (static, full precision) */}
                 <View style={styles.mecRow}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LAT}°N</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
+                    <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{KAABA_LAT}°N</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
                   </View>
                   <View style={styles.mecCell}>
-                    <Text style={[styles.mecValue, { color: col }]}>{KAABA_LNG}°E</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
+                    <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{KAABA_LNG}°E</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
                   </View>
                 </View>
                 {/* Row 2: fixed Qibla bearing | distance */}
                 <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
-                    <Text style={[styles.mecValue, { color: col }]}>{heading.toFixed(1)}°</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
+                    <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{heading.toFixed(1)}°</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
                   </View>
                   <View style={styles.mecCell}>
-                    <Text style={[styles.mecValue, { color: col }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
-                    <Text style={[styles.mecLabel, { color: col }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
+                    <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
                   </View>
                 </View>
               </>
@@ -332,13 +380,13 @@ export default function QiblaScreen() {
             onPress={() => { Haptics.selectionAsync(); setResetKey(k => k + 1); }}
             style={[styles.calibrateBtn, { borderColor: C.tint + '50', backgroundColor: C.tint + '12' }]}
           >
-            <Text style={[styles.calibrateBtnText, { color: C.tint }]}>
+            <Text style={[styles.calibrateBtnText, { color: C.tint, fontSize: qFS.calib }]}>
               {isAr ? '⟳  معايرة البوصلة' : '⟳  ' + tr.calibrateBtn}
             </Text>
           </Pressable>
         )}
         {magnetometerAvailable && (
-          <Text style={[styles.calibrateHintText, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+          <Text style={[styles.calibrateHintText, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : undefined, fontSize: qFS.calib }]}>
             {tr.calibrateHint}
           </Text>
         )}
@@ -366,6 +414,8 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   headerWrap: { gap: 4, paddingBottom: 4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  fontPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignItems: 'center' },
+  fontPillLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.2 },
   contentGroup: {
     alignItems: 'center',
     paddingTop: 12,

@@ -4,6 +4,7 @@ import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
 import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Platform, Modal,
 } from 'react-native';
@@ -56,6 +57,18 @@ function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 }
 
+type CalFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+const CAL_STEP_ORDER: CalFontSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
+const CAL_SIZE_LABELS: Record<CalFontSize, string> = { xs: 'XS', sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
+const CAL_FONT_STEPS: Record<CalFontSize, { cell: number; hijri: number; month: number; prayer: number }> = {
+  xs: { cell: 11, hijri: 7,  month: 14, prayer: 12 },
+  sm: { cell: 14, hijri: 9,  month: 18, prayer: 14 },
+  md: { cell: 16, hijri: 10, month: 21, prayer: 16 },
+  lg: { cell: 18, hijri: 11, month: 24, prayer: 18 },
+  xl: { cell: 20, hijri: 12, month: 27, prayer: 20 },
+};
+const CAL_FS_KEY = 'calendar_font_size';
+
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors } = useApp();
@@ -77,6 +90,23 @@ export default function CalendarScreen() {
   const [showNewMoonLookup, setShowNewMoonLookup] = useState(false);
   const [lookupYear, setLookupYear] = useState(today.getFullYear());
   const [lookupMonth, setLookupMonth] = useState(today.getMonth() + 1);
+  const [calFontSize, setCalFontSizeState] = useState<CalFontSize>('sm');
+
+  useEffect(() => {
+    AsyncStorage.getItem(CAL_FS_KEY).then(val => {
+      if (val && CAL_STEP_ORDER.includes(val as CalFontSize)) setCalFontSizeState(val as CalFontSize);
+    }).catch(() => {});
+  }, []);
+
+  const setCalFontSize = (fs: CalFontSize) => {
+    setCalFontSizeState(fs);
+    AsyncStorage.setItem(CAL_FS_KEY, fs).catch(() => {});
+  };
+
+  const calFsIdx = CAL_STEP_ORDER.indexOf(calFontSize);
+  const calCanDecrease = calFsIdx > 0;
+  const calCanIncrease = calFsIdx < CAL_STEP_ORDER.length - 1;
+  const cFS = CAL_FONT_STEPS[calFontSize];
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -254,21 +284,46 @@ export default function CalendarScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={[styles.header, { paddingHorizontal: 20 }]}>
-          <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
-            <ThemeToggle />
-            <LangToggle />
+        <View style={{ paddingHorizontal: 20, marginBottom: 16 }}>
+          <View style={[styles.header, { marginBottom: 2 }]}>
+            <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+              <ThemeToggle />
+              <LangToggle />
+            </View>
+            <AppLogo tintColor={C.tint} lang={lang} />
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+              <Pressable
+                onPress={goToToday}
+                style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}
+              >
+                <Text style={[styles.todayBtnText, { color: C.tint }]}>
+                  {isAr ? 'اليوم' : 'Today'}
+                </Text>
+              </Pressable>
+            </View>
           </View>
-          <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-            <Pressable
-              onPress={goToToday}
-              style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}
-            >
-              <Text style={[styles.todayBtnText, { color: C.tint }]}>
-                {isAr ? 'اليوم' : 'Today'}
+
+          {/* Font sizer row */}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+              <Pressable
+                onPress={() => { if (calCanDecrease) { Haptics.selectionAsync(); setCalFontSize(CAL_STEP_ORDER[calFsIdx - 1]); } }}
+                disabled={!calCanDecrease}
+                style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: calCanDecrease ? 1 : 0.3 }]}
+              >
+                <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+              </Pressable>
+              <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+                {CAL_SIZE_LABELS[calFontSize]}
               </Text>
-            </Pressable>
+              <Pressable
+                onPress={() => { if (calCanIncrease) { Haptics.selectionAsync(); setCalFontSize(CAL_STEP_ORDER[calFsIdx + 1]); } }}
+                disabled={!calCanIncrease}
+                style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: calCanIncrease ? 1 : 0.3 }]}
+              >
+                <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -278,7 +333,7 @@ export default function CalendarScreen() {
             <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
           </Pressable>
           <View style={styles.monthCenter}>
-            <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+            <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: cFS.month }]}>
               {monthName} {isAr ? toArabicIndic(viewYear) : viewYear}
             </Text>
             <Text style={[styles.hijriMonthLabel, { color: C.tint }]}>
@@ -343,6 +398,7 @@ export default function CalendarScreen() {
                 <Text style={[styles.cellDay, {
                   color: sel ? C.tintText : tod ? C.tint : isFriday ? C.tint : C.text,
                   fontWeight: sel || tod ? '700' : fw,
+                  fontSize: cFS.cell,
                 }]}>
                   {isAr ? toArabicIndic(cell.day) : cell.day}
                 </Text>
@@ -350,6 +406,7 @@ export default function CalendarScreen() {
                   <Text style={[styles.cellHijri, {
                     color: sel ? 'rgba(255,255,255,0.8)' : C.textMuted,
                     fontWeight: fw,
+                    fontSize: cFS.hijri,
                   }]}>
                     {isAr ? toArabicIndic(cell.hijri.d) : cell.hijri.d}
                   </Text>
@@ -415,12 +472,12 @@ export default function CalendarScreen() {
                           color: C.text,
                           fontWeight: fw,
                           fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
-                          fontSize: isAr ? 16 : 14,
+                          fontSize: isAr ? cFS.prayer + 2 : cFS.prayer,
                         }]}>
                           {prayerLabels[key]}
                         </Text>
                       </View>
-                      <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw }]}>
+                      <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw, fontSize: cFS.prayer }]}>
                         {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
                       </Text>
                     </View>
@@ -637,6 +694,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 16,
   },
+  fontPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignItems: 'center' },
+  fontPillLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.2 },
   appNameSmall: { fontSize: 11, fontWeight: '700', letterSpacing: 2.5, marginBottom: 3 },
   screenTitle: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5 },
   todayBtn: {
