@@ -47,6 +47,8 @@ const PRAYER_ICONS: Record<string, string> = {
   asr: 'weather-partly-cloudy',
   maghrib: 'weather-sunset-down',
   isha: 'weather-night-partly-cloudy',
+  dhuha: 'white-balance-sunny',
+  qiyam: 'weather-night',
 };
 
 export default function PrayerTimesScreen() {
@@ -228,7 +230,43 @@ export default function PrayerTimesScreen() {
   // and never wrong because the user is browsing a different day.
   // CRITICAL: pass `now` state so this uses the SAME timestamp as `iqamaStatus` —
   // both must agree within one render cycle to avoid the iqama-transition race.
-  const nextPrayer = todayTimes ? getNextPrayer(todayTimes, now) : null;
+  // Also merges conditional prayers (Dhuha, Qiyam) into the candidate list so they
+  // can appear as "next prayer" when they are visible and their time hasn't passed.
+  const nextPrayer = useMemo<{ name: string; time: Date } | null>(() => {
+    if (!todayTimes) return null;
+    const nowSecs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+    // Fixed sequence (fajr, dhuhr, asr, maghrib, isha) — sunrise never included.
+    const base = getNextPrayer(todayTimes, now);
+    const candidates: { name: string; secs: number; time: Date }[] = [];
+    if (base) {
+      candidates.push({
+        name: base.name,
+        time: base.time,
+        secs: base.time.getHours() * 3600 + base.time.getMinutes() * 60,
+      });
+    }
+
+    // Dhuha — visible only when showDhuha is on; sits between Fajr and Dhuhr.
+    if (showDhuha && dhuhaTimeSetting) {
+      const d = parseHHMM(dhuhaTimeSetting);
+      const secs = d.getHours() * 3600 + d.getMinutes() * 60;
+      if (secs > nowSecs) candidates.push({ name: 'dhuha', time: d, secs });
+    }
+
+    // Qiyam al-Layl — visible only when showQiyam is on; sits after Isha.
+    if (showQiyam && tahajjudTimeSetting) {
+      const d = parseHHMM(tahajjudTimeSetting);
+      const secs = d.getHours() * 3600 + d.getMinutes() * 60;
+      if (secs > nowSecs) candidates.push({ name: 'qiyam', time: d, secs });
+    }
+
+    if (candidates.length === 0) return null;
+    // Pick the earliest future candidate by seconds-of-day.
+    candidates.sort((a, b) => a.secs - b.secs);
+    return { name: candidates[0].name, time: candidates[0].time };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayTimes, now, showDhuha, dhuhaTimeSetting, showQiyam, tahajjudTimeSetting]);
 
   // ── tomorrowFajr: split into two steps to avoid stale-nowMs bug ──────────────
   //
@@ -342,16 +380,18 @@ export default function PrayerTimesScreen() {
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-  const prayerLabel = (key: keyof PrayerTimesType) => {
-    const map: Record<keyof PrayerTimesType, string> = {
+  const prayerLabel = (key: string) => {
+    const map: Record<string, string> = {
       fajr: tr.fajr,
       sunrise: tr.sunrise,
       dhuhr: tr.dhuhr,
       asr: tr.asr,
       maghrib: tr.maghrib,
       isha: tr.isha,
+      dhuha: (tr as any).dhuha ?? 'Dhuha',
+      qiyam: (tr as any).tahajjud ?? 'Qiyam al-Layl',
     };
-    return map[key];
+    return map[key] ?? key;
   };
 
   // Nafl prayer times — user-set exact daily alarms

@@ -1,0 +1,134 @@
+Fix the next-prayer sequence to correctly include 
+Dhuha when it is visible and its time has not yet passed.
+
+════════════════════════════════════════════════════════
+PROBLEM
+════════════════════════════════════════════════════════
+
+Current time: 5:41 AM
+Dhuha time:   7:30 AM  ← visible, not yet passed
+Dhuhr time:   12:43 PM
+
+The app is showing Dhuhr as next prayer, skipping 
+Dhuha entirely even though:
+  1. Dhuha is visible in the prayer list
+  2. Dhuha's time (7:30 AM) has not yet passed
+  3. Dhuha comes before Dhuhr chronologically
+
+════════════════════════════════════════════════════════
+ROOT CAUSE
+════════════════════════════════════════════════════════
+
+The buildPrayerSequence function either:
+  a) Is not reading showDhuha correctly from context/settings
+  b) Is inserting Dhuha after Dhuhr instead of before it
+  c) Is not converting Dhuha's time to a comparable 
+     timestamp correctly (decimal hours vs milliseconds bug)
+
+════════════════════════════════════════════════════════
+FIX
+════════════════════════════════════════════════════════
+
+STEP 1 — Verify Dhuha time is being read correctly.
+Log to console:
+  console.log('showDhuha:', showDhuha)
+  console.log('dhuhaTime:', dhuhaTime)
+  console.log('dhuha timestamp:', getDhuhaTimestamp())
+  console.log('now:', Date.now())
+  console.log('dhuha in future?', getDhuhaTimestamp() > Date.now())
+
+STEP 2 — Fix the sequence order.
+Dhuha must be inserted between Fajr and Dhuhr,
+NOT after Dhuhr. The correct chronological sequence is:
+
+  const buildPrayerSequence = () => {
+    const sequence = []
+
+    // 1. Fajr — always first
+    sequence.push({ key: 'fajr', time: getFajrTimestamp() })
+
+    // 2. Dhuha — if visible, insert BEFORE Dhuhr
+    if (showDhuha && dhuhaTime) {
+      sequence.push({ key: 'dhuha', time: getDhuhaTimestamp() })
+    }
+
+    // 3. Jumaa — on Fridays only, between Dhuha and Dhuhr
+    const today = new Date()
+    if (today.getDay() === 5 && showJumaa && jumaaTime) {
+      sequence.push({ key: 'jumaa', time: getJumaaTimestamp() })
+    }
+
+    // 4. Dhuhr
+    sequence.push({ key: 'dhuhr', time: getDhuhrTimestamp() })
+
+    // 5. Asr
+    sequence.push({ key: 'asr', time: getAsrTimestamp() })
+
+    // 6. Maghrib
+    sequence.push({ key: 'maghrib', time: getMaghribTimestamp() })
+
+    // 7. Isha
+    sequence.push({ key: 'isha', time: getIshaTimestamp() })
+
+    // 8. Qiyam — if visible, after Isha (next day technically)
+    if (showQiyam && qiyamTime) {
+      sequence.push({ key: 'qiyam', time: getQiyamTimestamp() })
+    }
+
+    // NEVER include 'sunrise'
+
+    return sequence
+  }
+
+STEP 3 — Fix timestamp conversion for Dhuha.
+Dhuha time is stored as a user-configured HH:MM string
+or as a decimal hour — it must be converted to a 
+millisecond timestamp using TODAY's date:
+
+  const getDhuhaTimestamp = () => {
+    // If dhuhaTime is stored as "HH:MM" string:
+    const [hours, minutes] = dhuhaTime.split(':').map(Number)
+    const today = new Date()
+    today.setHours(hours, minutes, 0, 0)
+    return today.getTime()
+  }
+
+  // Similarly for qiyamTime if stored as "HH:MM"
+
+STEP 4 — Sort the sequence by timestamp before 
+iterating, to handle any edge cases where times 
+might be out of order due to user configuration:
+
+  sequence.sort((a, b) => a.time - b.time)
+
+STEP 5 — Find next prayer from sorted sequence:
+
+  const now = Date.now()
+  for (const prayer of sequence) {
+    if (prayer.time > now) {
+      return { name: prayer.key, time: new Date(prayer.time) }
+    }
+  }
+
+  // All passed — calculate tomorrow's Fajr
+  // (existing logic, unchanged)
+
+════════════════════════════════════════════════════════
+VERIFY AFTER FIX
+════════════════════════════════════════════════════════
+
+At 5:41 AM with Dhuha at 7:30 AM and Dhuhr at 12:43 PM:
+  → Next prayer must be: Dhuha at 7:30 AM
+  → Countdown must show: ~1h 48m remaining
+
+At 8:00 AM (after Dhuha has passed):
+  → Next prayer must be: Dhuhr at 12:43 PM
+
+Log the full sequence after building it:
+  console.log('Prayer sequence:', sequence.map(p => 
+    `${p.key}: ${new Date(p.time).toLocaleTimeString()}`
+  ))
+
+Do not change any prayer time calculation logic.
+Do not change the Iqama banner.
+Do not add new dependencies.
