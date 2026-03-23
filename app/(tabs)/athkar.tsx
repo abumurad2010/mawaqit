@@ -445,35 +445,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomInset + 80 }}>
       <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={[styles.segmentRow, { flex: 1, backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
-              style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
-            >
-              <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
-              <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
-                {tr.athkar_mode_arabic}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                onDisplayMode('full');
-                if (athkarLang === 'ar') {
-                  setAthkarLang(
-                    (lang && lang !== 'ar') ? (lang as Lang) : 'en'
-                  );
-                }
-              }}
-              style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
-            >
-              <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
-              <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
-                {tr.athkar_mode_transliterated}
-              </Text>
-            </Pressable>
-          </View>
+        {/* Row 1: font sizer + help right-aligned, above the segment row */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
             <Pressable
               onPress={() => { if (canDecrease) { Haptics.selectionAsync(); setAthkarFontSize(STEP_ORDER[fsIdx - 1]); } }}
@@ -495,12 +468,44 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           </View>
           <AthkarHelpBtn onPress={() => showHelp((tr as any).help_athkar_toggle ?? '')} C={C} />
         </View>
+
+        {/* Row 2: Arabic / Transliterated segment — full width */}
+        <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); onDisplayMode('arabic'); }}
+            style={[styles.segmentBtn, displayMode === 'arabic' && { backgroundColor: C.tint }]}
+          >
+            <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
+              {tr.athkar_mode_arabic}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              onDisplayMode('full');
+              if (athkarLang === 'ar') {
+                setAthkarLang(
+                  (lang && lang !== 'ar') ? (lang as Lang) : 'en'
+                );
+              }
+            }}
+            style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
+          >
+            <Ionicons name="language" size={13} color={displayMode === 'full' ? C.tintText : C.textMuted} />
+            <Text style={[styles.segmentLabel, { color: displayMode === 'full' ? C.tintText : C.textMuted }]}>
+              {tr.athkar_mode_transliterated}
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Row 3: language dropdown — full width, only in transliterated mode */}
         {displayMode === 'full' && (
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
             style={({ pressed }) => [
               styles.athkarLangDropdown,
-              { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1, marginTop: 8 },
+              { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1, marginTop: 10 },
             ]}
           >
             <Text style={styles.athkarLangDropdownFlag}>{LANG_FLAG[athkarLang] ?? ''}</Text>
@@ -1377,7 +1382,6 @@ const styles = StyleSheet.create({
   helpDismissText: { fontSize: 14, fontWeight: '700' },
   athkarLangDropdown: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginHorizontal: 16, marginBottom: 6,
     paddingHorizontal: 12, paddingVertical: 9,
     borderRadius: 12, borderWidth: StyleSheet.hairlineWidth,
   },
