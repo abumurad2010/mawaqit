@@ -1179,7 +1179,7 @@ export default function SettingsScreen() {
             </Text>
             <Image
               source={isDark ? riwaqLogoDark : riwaqLogoLight}
-              style={{ width: 180, height: 65, resizeMode: 'contain', alignSelf: 'center' }}
+              style={{ width: 130, height: 48, resizeMode: 'contain', alignSelf: 'center' }}
             />
 
             {/* Block 2: Tagline */}
