@@ -177,7 +177,7 @@ function configureExpoAndLanding(app: express.Application) {
       return next();
     }
 
-    if (req.path !== "/" && req.path !== "/manifest") {
+    if (req.path !== "/" && req.path !== "/manifest" && req.path !== "/privacy") {
       return next();
     }
 
@@ -199,6 +199,18 @@ function configureExpoAndLanding(app: express.Application) {
         landingPageTemplate,
         appName,
       });
+    }
+
+    if (req.path === "/privacy") {
+      const privacyPath = path.resolve(
+        process.cwd(),
+        "server",
+        "templates",
+        "privacy.html",
+      );
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return res.sendFile(privacyPath);
     }
 
     next();

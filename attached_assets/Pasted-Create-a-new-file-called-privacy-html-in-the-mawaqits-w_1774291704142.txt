@@ -1,0 +1,82 @@
+Create a new file called privacy.html in the 
+mawaqits-website folder (or wherever the Netlify 
+site files are stored).
+
+The page should match the existing site design 
+(same fonts, colors, header/footer as the main 
+riwaqlabs.com site).
+
+Content of the privacy policy:
+
+Title: Privacy Policy — Mawaqit | مواقيت
+
+Last updated: March 2026
+
+Sections:
+
+1. Introduction
+Mawaqit is developed by Riwaq Labs. This Privacy 
+Policy explains how the app handles your information. 
+We are committed to protecting your privacy.
+
+2. Information We Collect
+Location Data: The app requests access to your device 
+location solely to calculate accurate prayer times and 
+Qibla direction for your city. Location data is 
+processed entirely on your device and is never 
+transmitted to our servers or any third party.
+
+User Preferences: Settings such as your chosen prayer 
+calculation method, language, theme, and notification 
+preferences are stored locally on your device. This 
+data never leaves your device.
+
+No Account Required: The app does not require you to 
+create an account or provide any personal information 
+such as name, email address, or phone number.
+
+3. Information We Do NOT Collect
+We do not collect, store, or transmit:
+- Personal identification information
+- Device identifiers or advertising IDs
+- Usage analytics or behavioral data
+- Location data to external servers
+- Any data to external servers whatsoever
+
+4. Permissions
+Location (optional): Used only to auto-detect your 
+city for prayer time calculation. You may manually 
+enter your city and deny this permission entirely.
+
+Notifications (optional): Used to deliver Adhan and 
+Athkar reminders at times you configure. You may 
+disable notifications at any time in your device 
+settings.
+
+5. Third-Party Services
+The app does not integrate any third-party advertising 
+networks, analytics services, or social media SDKs.
+
+The app uses the Nominatim geocoding service 
+(openstreetmap.org) only when you perform a manual 
+city search. No personal data is sent — only the 
+city name you type.
+
+6. Children's Privacy
+The app is suitable for all ages. We do not knowingly 
+collect any information from children under the age 
+of 13.
+
+7. Changes to This Policy
+We may update this Privacy Policy from time to time. 
+Any changes will be reflected with an updated date 
+at the top of this page. Continued use of the app 
+after changes constitutes acceptance of the updated 
+policy.
+
+8. Contact
+If you have any questions about this Privacy Policy, 
+please contact us at: contact@riwaqlabs.com
+
+Developer: Riwaq Labs
+Website: https://riwaqlabs.com
