@@ -380,18 +380,18 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
-              onPress={() => { Haptics.selectionAsync(); pageListRef.current?.scrollToEnd({ animated: true }); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-              testID="athkar-favs-btn"
-            >
-              <Ionicons name="star" size={17} color={GOLD} />
-            </Pressable>
-            <Pressable
               onPress={() => { Haptics.selectionAsync(); setSearchQuery(''); setShowSearch(true); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
               testID="athkar-search-btn"
             >
               <Ionicons name="search" size={18} color={C.tint} />
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); pageListRef.current?.scrollToEnd({ animated: true }); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+              testID="athkar-favs-btn"
+            >
+              <Ionicons name="star" size={17} color={GOLD} />
             </Pressable>
           </View>
         </View>
