@@ -378,17 +378,17 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             <LangToggle />
           </View>
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+          <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); pageListRef.current?.scrollToEnd({ animated: true }); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
               testID="athkar-favs-btn"
             >
               <Ionicons name="star" size={17} color={GOLD} />
             </Pressable>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); setSearchQuery(''); setShowSearch(true); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
               testID="athkar-search-btn"
             >
               <Ionicons name="search" size={18} color={C.tint} />
@@ -1181,10 +1181,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  headerActions: { flexDirection: 'row', gap: 8, marginTop: 2 },
   iconBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
