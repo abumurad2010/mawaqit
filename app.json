@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mawaqit | مواقيت",
     "slug": "mawaqit",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction for your city.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction for your city.",
