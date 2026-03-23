@@ -570,16 +570,16 @@ export default function PrayerTimesScreen() {
               entering={FadeIn.duration(500)}
               style={[styles.heroCard, styles.iqamaBanner, { backgroundColor: '#14301c' }]}
             >
-              <Text style={[styles.iqamaPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+              <Text style={[styles.iqamaPrayerName, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: [13, 16, 18, 22][fsIdx] ?? 16 }]}>
                 {prayerLabel(iqamaStatus.name)}
               </Text>
               <View style={styles.iqamaRow}>
                 <View style={styles.iqamaLeft}>
-                  <Text style={[styles.iqamaInLabel, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
+                  <Text style={[styles.iqamaInLabel, { fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: [16, 20, 24, 28][fsIdx] ?? 20 }]}>
                     {(tr as any).iqama_in ?? 'Iqama in'}
                   </Text>
                 </View>
-                <Text style={styles.iqamaCountdown}>{countdown}</Text>
+                <Text style={[styles.iqamaCountdown, { fontSize: [20, 28, 34, 42][fsIdx] ?? 28 }]}>{countdown}</Text>
               </View>
             </Animated.View>
           ) : (
@@ -866,7 +866,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 16,
     color: '#FFFFFF',
     letterSpacing: 0.06,
   },
@@ -880,12 +879,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iqamaInLabel: {
-    fontSize: 20,
     fontWeight: '600',
     color: '#C9A84C',
   },
   iqamaCountdown: {
-    fontSize: 28,
     fontWeight: 'bold',
     color: '#C9A84C',
     fontVariant: ['tabular-nums'] as any,
