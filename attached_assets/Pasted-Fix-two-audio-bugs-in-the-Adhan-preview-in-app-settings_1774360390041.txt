@@ -1,0 +1,130 @@
+Fix two audio bugs in the Adhan preview in app/settings.tsx 
+and lib/notifications.ts (or wherever audio playback is handled):
+
+════════════════════════════════════════════════════════
+BUG 1 — Adhan preview produces no audio on iOS production build
+════════════════════════════════════════════════════════
+
+CAUSE: expo-av or expo-audio requires explicit audio session 
+configuration on iOS. In Expo Go this is handled automatically,
+but in a production build it must be set manually.
+
+FIX: Before playing any audio, set the audio mode:
+
+import { Audio } from 'expo-av'
+// or: import { setAudioModeAsync } from 'expo-audio'
+
+const configureAudioSession = async () => {
+  await Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    staysActiveInBackground: false,
+    playsInSilentModeIOS: true,  // ← CRITICAL for iOS
+    shouldDuckAndroid: true,
+    playThroughEarpieceAndroid: false,
+  })
+}
+
+Call configureAudioSession() BEFORE calling sound.playAsync()
+or any audio playback function.
+
+playsInSilentModeIOS: true is the critical flag — without it,
+audio is silent when the iPhone is on silent/vibrate mode,
+and in production builds it defaults to false unlike Expo Go.
+
+════════════════════════════════════════════════════════
+BUG 2 — Switching adhan type mid-preview causes audio loop 
+         and app becomes unresponsive
+════════════════════════════════════════════════════════
+
+CAUSE: When the user taps a different adhan type mid-preview:
+1. The current sound object is not properly stopped/unloaded
+2. A new sound starts playing
+3. The old sound's onPlaybackStatusUpdate callback keeps firing
+4. This creates an infinite loop of state updates → UI freezes
+
+FIX: Implement a proper stop-then-play pattern with cleanup:
+
+// Add a ref to track current sound object
+const currentSoundRef = useRef(null)
+const isPlayingRef = useRef(false)
+
+const stopPreview = async () => {
+  isPlayingRef.current = false
+  if (currentSoundRef.current) {
+    try {
+      await currentSoundRef.current.stopAsync()
+      await currentSoundRef.current.unloadAsync()
+    } catch (e) {
+      // ignore errors during cleanup
+    }
+    currentSoundRef.current = null
+  }
+}
+
+const playPreview = async (adhanType) => {
+  // Step 1: Always stop existing audio first
+  await stopPreview()
+  
+  // Step 2: Small delay to ensure cleanup is complete
+  await new Promise(resolve => setTimeout(resolve, 100))
+  
+  // Step 3: Check if still intended to play 
+  // (user may have tapped stop during the delay)
+  if (!isPlayingRef.current) return
+  
+  // Step 4: Configure audio session
+  await Audio.setAudioModeAsync({
+    allowsRecordingIOS: false,
+    staysActiveInBackground: false,
+    playsInSilentModeIOS: true,
+    shouldDuckAndroid: true,
+    playThroughEarpieceAndroid: false,
+  })
+  
+  // Step 5: Load and play new sound
+  const { sound } = await Audio.Sound.createAsync(
+    getAdhanAudioFile(adhanType),
+    { shouldPlay: true }
+  )
+  currentSoundRef.current = sound
+  
+  // Step 6: Set up completion callback
+  sound.setOnPlaybackStatusUpdate((status) => {
+    if (status.didJustFinish) {
+      stopPreview()
+      setIsPreviewPlaying(false)
+    }
+  })
+}
+
+// When user taps a different adhan type mid-preview:
+const handleAdhanTypeChange = async (newType) => {
+  await stopPreview()
+  setSelectedAdhanType(newType)
+  // Only auto-play if preview was active
+  if (isPreviewPlaying) {
+    isPlayingRef.current = true
+    await playPreview(newType)
+  }
+}
+
+// When component unmounts, always clean up:
+useEffect(() => {
+  return () => {
+    stopPreview()
+  }
+}, [])
+
+ALSO: The preview stop button must call stopPreview() 
+not just set a state variable — state updates are async
+and the sound keeps playing until actually stopped.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any notification scheduling logic.
+Do not change the adhan audio files or their names.
+Do not add new dependencies — use existing expo-av 
+or expo-audio that is already installed.
+Do not change Android audio behaviour.

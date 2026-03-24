@@ -50,7 +50,13 @@ export async function playAthan(
   onStopCb = onStop ?? null;
 
   try {
-    await setAudioModeAsync({ playsInSilentMode: true });
+    await setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+      playsInSilentMode: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
   } catch {}
 
   function isCurrentSession() {

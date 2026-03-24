@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Switch,
   Alert, Linking,
@@ -71,6 +71,15 @@ export default function SettingsScreen() {
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
+  const previewKeyRef = useRef<string | null>(null);
+
+  // BUG 2 FIX — stop audio cleanly when settings screen is dismissed
+  useEffect(() => {
+    return () => {
+      previewKeyRef.current = null;
+      stopAthan();
+    };
+  }, []);
 
   // ── Eid proximity — visibility window for the Eid Prayer row ────────────────
   //
@@ -350,13 +359,20 @@ export default function SettingsScreen() {
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (previewing === key) {
+      // Stop current preview
+      previewKeyRef.current = null;
       await stopAthan();
       setPreviewing(null);
     } else {
+      // Stop any existing preview first, then start the new one
+      previewKeyRef.current = key;
       if (previewing) await stopAthan();
       setPreviewing(key);
       const athanType = (draftNotifications[key]?.athan === 'abbreviated') ? 'abbreviated' : 'full';
-      playAthan(athanType, () => setPreviewing(null));
+      await playAthan(athanType, () => {
+        previewKeyRef.current = null;
+        setPreviewing(null);
+      });
     }
   };
 
@@ -470,6 +486,24 @@ export default function SettingsScreen() {
       ...prev,
       [key]: { ...(prev[key] ?? EMPTY_CFG), athan },
     }));
+
+    // BUG 2 FIX — if this prayer is actively being previewed, stop and restart
+    // with the new athan type so the audio doesn't keep playing the old type
+    if (previewKeyRef.current === key) {
+      await stopAthan();
+      if (athan === 'none') {
+        previewKeyRef.current = null;
+        setPreviewing(null);
+        return;
+      }
+      // Small delay to ensure old player is fully released before starting new one
+      await new Promise<void>(resolve => setTimeout(resolve, 100));
+      if (previewKeyRef.current !== key) return; // user stopped preview during delay
+      await playAthan(athan === 'abbreviated' ? 'abbreviated' : 'full', () => {
+        previewKeyRef.current = null;
+        setPreviewing(null);
+      });
+    }
   };
 
 
