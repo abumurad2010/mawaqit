@@ -1,0 +1,117 @@
+Fix iOS notification permission handling in the app.
+
+There are two bugs on iOS:
+1. After granting notification permission in iOS Settings, 
+   the app doesn't detect the new permission state and 
+   notification toggles remain unresponsive
+2. Tapping notification toggles does nothing on iOS
+
+════════════════════════════════════════════════════════
+FIX 1 — Re-check permissions when app returns to foreground
+════════════════════════════════════════════════════════
+
+In app/_layout.tsx or wherever notifications are initialized,
+add an AppState listener that re-checks permission status
+every time the app comes back to foreground:
+
+import { AppState } from 'react-native'
+import * as Notifications from 'expo-notifications'
+
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', 
+    async (nextState) => {
+      if (nextState === 'active') {
+        const { status } = await Notifications.getPermissionsAsync()
+        // Update your permission state in context/store
+        setNotificationPermission(status === 'granted')
+      }
+    }
+  )
+  return () => subscription.remove()
+}, [])
+
+════════════════════════════════════════════════════════
+FIX 2 — Fix notification toggle handler for iOS
+════════════════════════════════════════════════════════
+
+In app/settings.tsx (or wherever notification toggles are),
+find the toggle handler and fix it for iOS:
+
+const handleNotificationToggle = async (prayerKey, type) => {
+  // Step 1: Check current permission
+  const { status: existingStatus } = 
+    await Notifications.getPermissionsAsync()
+  
+  let finalStatus = existingStatus
+
+  // Step 2: If not granted, request it
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      }
+    })
+    finalStatus = status
+  }
+
+  // Step 3: If still not granted, open Settings
+  if (finalStatus !== 'granted') {
+    Alert.alert(
+      'Notifications Disabled',
+      'Please enable notifications for Mawaqit in your iPhone Settings.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Open Settings', 
+          onPress: () => Linking.openURL('app-settings:')
+        }
+      ]
+    )
+    return
+  }
+
+  // Step 4: Permission is granted — proceed with toggling
+  // ... existing toggle logic here
+}
+
+════════════════════════════════════════════════════════
+FIX 3 — iOS notification handler setup
+════════════════════════════════════════════════════════
+
+Make sure this is set at the TOP LEVEL of the app 
+(in app/_layout.tsx, before any component renders)
+and is not inside a Platform.OS === 'web' guard:
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
+
+This must run on iOS — if it's wrapped in a web check 
+it will never execute on the device.
+
+════════════════════════════════════════════════════════
+FIX 4 — Add iOS-specific permission request options
+════════════════════════════════════════════════════════
+
+Find the initial permission request (likely in settings 
+or on first launch) and make sure it includes iOS options:
+
+await Notifications.requestPermissionsAsync({
+  ios: {
+    allowAlert: true,
+    allowBadge: true,
+    allowSound: true,
+    allowCriticalAlerts: false,
+    provideAppNotificationSettings: false,
+  },
+})
+
+Do not change any notification scheduling logic.
+Do not change Android notification behaviour.
+Do not add new dependencies.

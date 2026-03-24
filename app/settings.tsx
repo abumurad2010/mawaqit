@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Switch,
+  Alert, Linking,
 } from 'react-native';
 import { gregorianToHijri } from '@/lib/hijri';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -412,8 +413,45 @@ export default function SettingsScreen() {
 
   const requestNotifPermission = async (): Promise<boolean> => {
     if (Platform.OS === 'web') return true;
-    const { status } = await Notifications.requestPermissionsAsync();
-    return status === 'granted';
+
+    // FIX 2 + FIX 4 — proper iOS permission flow
+    // Step 1: Check current status without prompting
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    // Step 2: Only request if not yet determined (first time)
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+          allowCriticalAlerts: false,
+          provideAppNotificationSettings: false,
+        },
+      });
+      finalStatus = status;
+    }
+
+    // Step 3: If still not granted (user denied), guide them to Settings
+    if (finalStatus !== 'granted') {
+      Alert.alert(
+        isAr ? 'الإشعارات معطلة' : 'Notifications Disabled',
+        isAr
+          ? 'يرجى تفعيل الإشعارات لتطبيق مواقيت من إعدادات جهازك.'
+          : 'Please enable notifications for Mawaqit in your iPhone Settings.',
+        [
+          { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+          {
+            text: isAr ? 'فتح الإعدادات' : 'Open Settings',
+            onPress: () => Linking.openURL('app-settings:'),
+          },
+        ],
+      );
+      return false;
+    }
+
+    return true;
   };
 
   const setPrayerBanner = async (key: string, on: boolean) => {
