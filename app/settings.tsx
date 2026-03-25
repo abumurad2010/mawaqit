@@ -17,7 +17,8 @@ import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
-import { playAthan, stopAthan } from '@/lib/audio';
+import { Audio } from 'expo-av';
+import { getApiUrl } from '@/lib/query-client';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import type { SecondLang } from '@/contexts/AppContext';
@@ -71,13 +72,43 @@ export default function SettingsScreen() {
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
-  const previewKeyRef = useRef<string | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const isMountedRef = useRef(true);
 
-  // BUG 2 FIX — stop audio cleanly when settings screen is dismissed
+  // Stop and fully unload the current preview sound.
+  // The ref is nulled SYNCHRONOUSLY before any async work so that
+  // re-entrant calls (tapping again while a previous cleanup is mid-flight)
+  // never touch the same Sound instance twice.
+  const stopAndUnloadSound = async () => {
+    const sound = soundRef.current;
+    soundRef.current = null; // null FIRST — prevents re-entry
+    if (sound) {
+      try {
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded) {
+          await sound.stopAsync();
+          await sound.unloadAsync();
+        }
+      } catch { /* already unloaded or never loaded */ }
+    }
+    if (isMountedRef.current) {
+      setPreviewing(null);
+    }
+  };
+
+  // Configure audio session once on mount and guarantee cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    }).catch(() => {});
     return () => {
-      previewKeyRef.current = null;
-      stopAthan();
+      isMountedRef.current = false;
+      stopAndUnloadSound();
     };
   }, []);
 
@@ -356,23 +387,64 @@ export default function SettingsScreen() {
 
   const recommendedMethod = getMethodForCountry(countryCode);
 
+  // Play an adhan preview using expo-av's Sound (proper load/stop/unload lifecycle).
+  // Always calls stopAndUnloadSound() first so there is never more than one
+  // Sound instance alive at a time — this is the key fix for the crash/loop.
+  const playAdhanPreview = async (key: string, type: 'full' | 'abbreviated') => {
+    // 1. Tear down any existing sound (synchronous ref-nil + async unload)
+    await stopAndUnloadSound();
+    // 2. 150 ms gap — iOS needs this between unload and load or it reuses
+    //    the same buffer and produces the looping artifact
+    await new Promise<void>(resolve => setTimeout(resolve, 150));
+    if (!isMountedRef.current) return;
+
+    try {
+      // Re-apply audio session before each play (required for iOS silent mode)
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      const adhanPath = type === 'abbreviated' ? '/api/adhan/abbreviated' : '/api/adhan';
+      const uri = new URL(adhanPath, getApiUrl()).toString();
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true, volume: 1.0, isLooping: false },
+      );
+
+      // If we were unmounted (or another tap fired) during the async load, clean up
+      if (!isMountedRef.current || soundRef.current !== null) {
+        try { await sound.unloadAsync(); } catch {}
+        return;
+      }
+
+      soundRef.current = sound;
+      setPreviewing(key);
+
+      // Stop and unload naturally when playback finishes
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isLoaded) return;
+        if ((status as any).didJustFinish) {
+          stopAndUnloadSound();
+        }
+      });
+    } catch {
+      soundRef.current = null;
+      if (isMountedRef.current) setPreviewing(null);
+    }
+  };
+
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (previewing === key) {
-      // Stop current preview
-      previewKeyRef.current = null;
-      await stopAthan();
-      setPreviewing(null);
+      await stopAndUnloadSound();
     } else {
-      // Stop any existing preview first, then start the new one
-      previewKeyRef.current = key;
-      if (previewing) await stopAthan();
-      setPreviewing(key);
-      const athanType = (draftNotifications[key]?.athan === 'abbreviated') ? 'abbreviated' : 'full';
-      await playAthan(athanType, () => {
-        previewKeyRef.current = null;
-        setPreviewing(null);
-      });
+      const type = draftNotifications[key]?.athan === 'abbreviated' ? 'abbreviated' : 'full';
+      await playAdhanPreview(key, type);
     }
   };
 
@@ -487,22 +559,14 @@ export default function SettingsScreen() {
       [key]: { ...(prev[key] ?? EMPTY_CFG), athan },
     }));
 
-    // BUG 2 FIX — if this prayer is actively being previewed, stop and restart
-    // with the new athan type so the audio doesn't keep playing the old type
-    if (previewKeyRef.current === key) {
-      await stopAthan();
+    // If this prayer is actively being previewed, restart with the new type
+    // so the audio doesn't keep playing the old adhan while the UI shows the new selection.
+    if (previewing === key) {
       if (athan === 'none') {
-        previewKeyRef.current = null;
-        setPreviewing(null);
-        return;
+        await stopAndUnloadSound();
+      } else {
+        await playAdhanPreview(key, athan === 'abbreviated' ? 'abbreviated' : 'full');
       }
-      // Small delay to ensure old player is fully released before starting new one
-      await new Promise<void>(resolve => setTimeout(resolve, 100));
-      if (previewKeyRef.current !== key) return; // user stopped preview during delay
-      await playAthan(athan === 'abbreviated' ? 'abbreviated' : 'full', () => {
-        previewKeyRef.current = null;
-        setPreviewing(null);
-      });
     }
   };
 

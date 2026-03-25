@@ -1,0 +1,199 @@
+Fix critical audio crash in the Adhan preview in app/settings.tsx.
+
+SYMPTOMS:
+- Tapping anything while adhan preview is playing causes 
+  audio to loop a <0.5 second segment repeatedly
+- App becomes unresponsive / crashes
+- Audio continues playing after app is force-closed
+
+ROOT CAUSE:
+The Sound object from expo-av is not being stopped and 
+unloaded before a new action is taken. Multiple sound 
+instances accumulate, fighting each other, causing the 
+loop and crash. The sound object also has no reference 
+kept, so it cannot be cleaned up.
+
+════════════════════════════════════════════════════════
+COMPLETE REWRITE OF AUDIO PREVIEW LOGIC
+════════════════════════════════════════════════════════
+
+Find all adhan preview related code in app/settings.tsx
+and replace with this complete implementation:
+
+── STEP 1: Add these refs at the top of the component ──
+
+  const soundRef = useRef<Audio.Sound | null>(null)
+  const isMountedRef = useRef(true)
+
+── STEP 2: Add this cleanup on mount/unmount ──
+
+  useEffect(() => {
+    isMountedRef.current = true
+    
+    // Configure audio session once on mount
+    Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: false,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    })
+
+    return () => {
+      // CRITICAL: cleanup on unmount
+      isMountedRef.current = false
+      stopAndUnloadSound()
+    }
+  }, [])
+
+── STEP 3: The stop function — call this EVERYWHERE ──
+
+  const stopAndUnloadSound = async () => {
+    const sound = soundRef.current
+    soundRef.current = null  // clear ref FIRST to prevent 
+                              // re-entry
+    if (sound) {
+      try {
+        const status = await sound.getStatusAsync()
+        if (status.isLoaded) {
+          await sound.stopAsync()
+          await sound.unloadAsync()
+        }
+      } catch (e) {
+        // Silently ignore — sound may already be unloaded
+      }
+    }
+    if (isMountedRef.current) {
+      setIsPreviewPlaying(false)
+      setPreviewingAdhan(null)  // or whatever state 
+                                 // tracks which is playing
+    }
+  }
+
+── STEP 4: The play function ──
+
+  const playAdhanPreview = async (adhanType: string) => {
+    // Always stop existing sound first — no exceptions
+    await stopAndUnloadSound()
+
+    // Small buffer to ensure previous sound is released
+    await new Promise(resolve => setTimeout(resolve, 150))
+
+    // Don't proceed if component unmounted during wait
+    if (!isMountedRef.current) return
+
+    try {
+      // Re-configure audio session before each play
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      })
+
+      const audioFile = getAdhanAudioFile(adhanType)
+      // getAdhanAudioFile returns the require() for the 
+      // correct audio file based on adhanType
+
+      const { sound } = await Audio.Sound.createAsync(
+        audioFile,
+        { 
+          shouldPlay: true,
+          volume: 1.0,
+          isLooping: false,
+        }
+      )
+
+      // Store ref immediately
+      soundRef.current = sound
+
+      // Update UI state
+      if (isMountedRef.current) {
+        setIsPreviewPlaying(true)
+        setPreviewingAdhan(adhanType)
+      }
+
+      // Handle natural completion
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isLoaded) return
+        if (status.didJustFinish) {
+          stopAndUnloadSound()
+        }
+      })
+
+    } catch (e) {
+      console.error('Audio play error:', e)
+      soundRef.current = null
+      if (isMountedRef.current) {
+        setIsPreviewPlaying(false)
+        setPreviewingAdhan(null)
+      }
+    }
+  }
+
+── STEP 5: Preview button handler ──
+
+  const handlePreviewPress = async (adhanType: string) => {
+    // If this adhan is already playing → stop it
+    if (previewingAdhan === adhanType && isPreviewPlaying) {
+      await stopAndUnloadSound()
+      return
+    }
+    // Otherwise play it (stopAndUnloadSound is called 
+    // inside playAdhanPreview before playing)
+    await playAdhanPreview(adhanType)
+  }
+
+── STEP 6: Any other button that changes settings ──
+
+  // ANY button or toggle in the settings screen that the
+  // user might tap while audio is playing MUST call
+  // stopAndUnloadSound() first if isPreviewPlaying is true.
+  
+  // Wrap any such handler like this:
+  const handleAnySettingChange = async (...args) => {
+    if (isPreviewPlaying) {
+      await stopAndUnloadSound()
+    }
+    // ... rest of the handler
+  }
+
+── STEP 7: Navigation away from settings ──
+
+  // If the user navigates away while audio is playing,
+  // make sure the sound is stopped.
+  // Add this to the screen's focus/blur listener:
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      stopAndUnloadSound()
+    })
+    return unsubscribe
+  }, [navigation])
+
+════════════════════════════════════════════════════════
+IMPORTANT NOTES FOR REPLIT
+════════════════════════════════════════════════════════
+
+1. The soundRef.current = null assignment MUST happen 
+   BEFORE the async stop/unload calls — this prevents
+   re-entrant calls from creating a second cleanup attempt
+   on the same object.
+
+2. DO NOT use useState to store the sound object —
+   state updates are async and cause race conditions.
+   useRef is synchronous and is the correct approach.
+
+3. The 150ms delay in playAdhanPreview is intentional —
+   iOS needs a small gap between unload and load of 
+   audio resources or it reuses the same buffer and 
+   creates the looping artifact.
+
+4. playsInSilentModeIOS: true must be set — without it
+   audio is silent on iOS production builds when the 
+   phone is on silent mode.
+
+5. Do not change any notification scheduling logic.
+   Do not change any adhan audio files.
+   Do not add new dependencies.
