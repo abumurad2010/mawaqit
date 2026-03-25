@@ -26,7 +26,7 @@ export const LANG_META: Record<Lang, { native: string; label: string; code: stri
 };
 
 export const LANG_FLAG: Record<Lang, string> = {
-  ar: '🇸🇦', en: '🇬🇧', fr: '🇫🇷', es: '🇪🇸', ru: '🇷🇺',
+  ar: '🇸🇦', en: '🌐', fr: '🇫🇷', es: '🇪🇸', ru: '🇷🇺',
   zh: '🇨🇳', tr: '🇹🇷', ur: '🇵🇰', id: '🇮🇩', bn: '🇧🇩',
   fa: '🇮🇷', ms: '🇲🇾', pt: '🇵🇹', sw: '🇰🇪', ha: '🇳🇬',
 };
