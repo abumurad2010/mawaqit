@@ -1,60 +1,48 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Lang } from '@/constants/i18n';
-import { getApiUrl } from '@/lib/query-client';
 
 type SurahIndex = Record<string, string[]>;
 
 const TRANSLIT_DATA = require('../assets/quran-translit.json') as SurahIndex;
-const BUNDLED_TRANSLATIONS = require('../assets/quran-translations.json') as Record<string, SurahIndex>;
 const SURAH_NAMES_DATA = require('../assets/quran-surah-names.json') as Record<string, Record<string, string>>;
 
-export const BUNDLED_LANGS: Lang[] = ['en', 'fr', 'es', 'ur', 'ru'];
+// Bundled translations — all 14 languages, fully offline, zero network calls.
+const _bundledMulti = require('../assets/quran-translations.json') as Record<string, SurahIndex>;
+const _zh = require('../assets/quran-zh.json') as SurahIndex;
+const _tr = require('../assets/quran-tr.json') as SurahIndex;
+const _id = require('../assets/quran-id.json') as SurahIndex;
+const _bn = require('../assets/quran-bn.json') as SurahIndex;
+const _fa = require('../assets/quran-fa.json') as SurahIndex;
+const _ms = require('../assets/quran-ms.json') as SurahIndex;
+const _pt = require('../assets/quran-pt.json') as SurahIndex;
+const _sw = require('../assets/quran-sw.json') as SurahIndex;
+const _ha = require('../assets/quran-ha.json') as SurahIndex;
 
-export const DOWNLOADABLE_LANGS: Lang[] = ['zh', 'tr', 'id', 'bn', 'fa', 'ms', 'pt', 'sw', 'ha'];
+const ALL_TRANSLATIONS: Record<string, SurahIndex> = {
+  en: _bundledMulti['en'] ?? {},
+  fr: _bundledMulti['fr'] ?? {},
+  es: _bundledMulti['es'] ?? {},
+  ur: _bundledMulti['ur'] ?? {},
+  ru: _bundledMulti['ru'] ?? {},
+  zh: _zh,
+  tr: _tr,
+  id: _id,
+  bn: _bn,
+  fa: _fa,
+  ms: _ms,
+  pt: _pt,
+  sw: _sw,
+  ha: _ha,
+};
 
-export const SUPPORTED_TRANSLIT_LANGS: Lang[] = [...BUNDLED_LANGS, ...DOWNLOADABLE_LANGS];
+// All languages are now fully bundled — no network calls, no downloads.
+export const BUNDLED_LANGS: Lang[] = ['en', 'fr', 'es', 'ur', 'ru', 'zh', 'tr', 'id', 'bn', 'fa', 'ms', 'pt', 'sw', 'ha'];
+export const DOWNLOADABLE_LANGS: Lang[] = [];
+export const SUPPORTED_TRANSLIT_LANGS: Lang[] = [...BUNDLED_LANGS];
 
 export interface TranslitAyah {
   number: number;
   transliteration: string;
   translation: string;
-}
-
-const memCache: Record<string, SurahIndex> = {};
-
-async function getTranslationData(lang: Lang): Promise<SurahIndex> {
-  if (BUNDLED_LANGS.includes(lang)) {
-    return BUNDLED_TRANSLATIONS[lang] ?? BUNDLED_TRANSLATIONS['en'] ?? {};
-  }
-
-  if (memCache[lang]) return memCache[lang];
-
-  const cacheKey = `@translit_cache_${lang}`;
-  try {
-    const cached = await AsyncStorage.getItem(cacheKey);
-    if (cached) {
-      const parsed = JSON.parse(cached) as SurahIndex;
-      memCache[lang] = parsed;
-      return parsed;
-    }
-  } catch {}
-
-  try {
-    const base = getApiUrl();
-    const url = new URL(`/api/translations/${lang}`, base).toString();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch translation for ${lang}: ${res.status}`);
-    const data = await res.json() as SurahIndex;
-    memCache[lang] = data;
-    try {
-      await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch {}
-    return data;
-  } catch {
-    // Network unavailable or server error — return empty so transliteration
-    // (which is always bundled) can still be displayed offline.
-    return {};
-  }
 }
 
 export async function fetchSurahTransliteration(
@@ -63,8 +51,8 @@ export async function fetchSurahTransliteration(
 ): Promise<TranslitAyah[]> {
   const key = String(surahNum);
   const translitAyahs = TRANSLIT_DATA[key] ?? [];
-  const translationLang = await getTranslationData(lang);
-  const translationAyahs = translationLang[key] ?? [];
+  const translationData = ALL_TRANSLATIONS[lang] ?? ALL_TRANSLATIONS['en'] ?? {};
+  const translationAyahs = translationData[key] ?? [];
 
   return translitAyahs.map((text, i) => ({
     number: i + 1,
@@ -83,22 +71,15 @@ export async function fetchSurahNamesByLang(lang: Lang): Promise<Record<number, 
   return result;
 }
 
-export function isLangBundled(lang: Lang): boolean {
-  return BUNDLED_LANGS.includes(lang);
-}
-
-export async function clearTranslationCache(lang: Lang): Promise<void> {
-  delete memCache[lang];
-  try {
-    await AsyncStorage.removeItem(`@translit_cache_${lang}`);
-  } catch {}
+export function isLangBundled(_lang: Lang): boolean {
+  return true;
 }
 
 export function getTranslationEdition(lang: Lang): string {
   const EDITION_MAP: Partial<Record<Lang, string>> = {
     en: 'en.sahih', fr: 'fr.hamidullah', es: 'es.cortes', ru: 'ru.kuliev',
-    zh: 'zh.jian', tr: 'tr.yazir', ur: 'ur.ahmedali', id: 'id.indonesian',
-    bn: 'bn.bengali', fa: 'fa.ghomshei', ms: 'ms.basmeih', pt: 'pt.elhayek',
+    zh: 'zh.jian', tr: 'tr.diyanet', ur: 'ur.junagarhi', id: 'id.indonesian',
+    bn: 'bn.bengali', fa: 'fa.makarem', ms: 'ms.basmeih', pt: 'pt.nasr',
     sw: 'sw.barwani', ha: 'ha.gumi',
   };
   return EDITION_MAP[lang] ?? 'en.sahih';

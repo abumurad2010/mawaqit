@@ -17,7 +17,7 @@ import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, LANG_FLAG, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
-import { SUPPORTED_TRANSLIT_LANGS, fetchSurahNamesByLang, isLangBundled } from '@/lib/quran-transliteration';
+import { SUPPORTED_TRANSLIT_LANGS, fetchSurahNamesByLang } from '@/lib/quran-transliteration';
 import { useQuery } from '@tanstack/react-query';
 
 type QuranMode = 'mushaf' | 'transliteration';
@@ -281,9 +281,6 @@ export default function QuranScreen() {
                         </Text>
                       </View>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        {!isLangBundled(l) && !active && (
-                          <Ionicons name="cloud-download-outline" size={14} color={C.textMuted} />
-                        )}
                         {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
                       </View>
                     </Pressable>

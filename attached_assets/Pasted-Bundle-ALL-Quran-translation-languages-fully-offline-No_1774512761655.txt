@@ -1,0 +1,228 @@
+Bundle ALL Quran translation languages fully offline.
+No network calls for any Quran data whatsoever.
+
+════════════════════════════════════════════════════════
+STEP 1 — AUDIT CURRENT STATE
+════════════════════════════════════════════════════════
+
+First, report exactly what is currently bundled vs fetched:
+
+grep -rn "fetch\|axios\|http\|api\|url\|URL" \
+  lib/quran-api.ts app/(tabs)/quran.tsx \
+  --include="*.tsx" --include="*.ts"
+
+Also check what translation files already exist locally:
+find . -name "*.json" -path "*/quran*" -not -path "*/node_modules/*" -exec ls -lh {} \;
+find . -name "*.json" -path "*/translit*" -not -path "*/node_modules/*" -exec ls -lh {} \;
+
+Report all findings before proceeding.
+
+════════════════════════════════════════════════════════
+STEP 2 — DOWNLOAD ALL TRANSLATION DATA
+════════════════════════════════════════════════════════
+
+In the Replit shell, run these commands to download 
+all 15 language translations from alquran.cloud API
+and save them as local JSON files:
+
+mkdir -p constants/quran-translations
+
+# English (Sahih International)
+curl -s "https://api.alquran.cloud/v1/quran/en.sahih" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/en.json',JSON.stringify(verses))})" 
+
+# French (Hamidullah)
+curl -s "https://api.alquran.cloud/v1/quran/fr.hamidullah" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/fr.json',JSON.stringify(verses))})"
+
+# Spanish (Cortes)
+curl -s "https://api.alquran.cloud/v1/quran/es.cortes" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/es.json',JSON.stringify(verses))})"
+
+# Russian (Kuliev)
+curl -s "https://api.alquran.cloud/v1/quran/ru.kuliev" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/ru.json',JSON.stringify(verses))})"
+
+# Chinese (Jian)
+curl -s "https://api.alquran.cloud/v1/quran/zh.jian" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/zh.json',JSON.stringify(verses))})"
+
+# Turkish (Diyanet)
+curl -s "https://api.alquran.cloud/v1/quran/tr.diyanet" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/tr.json',JSON.stringify(verses))})"
+
+# Urdu (Junagarhi)
+curl -s "https://api.alquran.cloud/v1/quran/ur.junagarhi" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/ur.json',JSON.stringify(verses))})"
+
+# Indonesian (Bahasa)
+curl -s "https://api.alquran.cloud/v1/quran/id.indonesian" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/id.json',JSON.stringify(verses))})"
+
+# Bengali (Jobaer)
+curl -s "https://api.alquran.cloud/v1/quran/bn.bengali" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/bn.json',JSON.stringify(verses))})"
+
+# Persian (Makarem Shirazi)
+curl -s "https://api.alquran.cloud/v1/quran/fa.makarem" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/fa.json',JSON.stringify(verses))})"
+
+# Malay (Basmeih)
+curl -s "https://api.alquran.cloud/v1/quran/ms.basmeih" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/ms.json',JSON.stringify(verses))})"
+
+# Portuguese (Nasr)
+curl -s "https://api.alquran.cloud/v1/quran/pt.nasr" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/pt.json',JSON.stringify(verses))})"
+
+# Swahili (Al-Barwani)
+curl -s "https://api.alquran.cloud/v1/quran/sw.barwani" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/sw.json',JSON.stringify(verses))})"
+
+# Hausa (Gumi)
+curl -s "https://api.alquran.cloud/v1/quran/ha.gumi" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/ha.json',JSON.stringify(verses))})"
+
+# Transliteration (International)
+curl -s "https://api.alquran.cloud/v1/quran/en.transliteration" \
+  | node -e "const d=require('fs');let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const j=JSON.parse(b);const verses={};j.data.surahs.forEach(s=>s.ayahs.forEach(a=>{verses[s.number+'_'+a.numberInSurah]=a.text}));d.writeFileSync('constants/quran-translations/translit.json',JSON.stringify(verses))})"
+
+After all downloads complete, report file sizes:
+ls -lh constants/quran-translations/
+
+════════════════════════════════════════════════════════
+STEP 3 — CREATE UNIFIED TRANSLATION LOADER
+════════════════════════════════════════════════════════
+
+Create file: lib/quran-translations.ts
+
+import en from '../constants/quran-translations/en.json'
+import fr from '../constants/quran-translations/fr.json'
+import es from '../constants/quran-translations/es.json'
+import ru from '../constants/quran-translations/ru.json'
+import zh from '../constants/quran-translations/zh.json'
+import tr from '../constants/quran-translations/tr.json'
+import ur from '../constants/quran-translations/ur.json'
+import id from '../constants/quran-translations/id.json'
+import bn from '../constants/quran-translations/bn.json'
+import fa from '../constants/quran-translations/fa.json'
+import ms from '../constants/quran-translations/ms.json'
+import pt from '../constants/quran-translations/pt.json'
+import sw from '../constants/quran-translations/sw.json'
+import ha from '../constants/quran-translations/ha.json'
+import translit from '../constants/quran-translations/translit.json'
+
+const TRANSLATIONS: Record<string, Record<string, string>> = {
+  en, fr, es, ru, zh, tr, ur, id, bn, fa, ms, pt, sw, ha
+}
+
+export const getTranslation = (
+  lang: string,
+  surahNumber: number,
+  ayahNumber: number
+): string => {
+  const key = `${surahNumber}_${ayahNumber}`
+  const langData = TRANSLATIONS[lang] || TRANSLATIONS['en']
+  return langData[key] || TRANSLATIONS['en'][key] || ''
+}
+
+export const getTransliteration = (
+  surahNumber: number,
+  ayahNumber: number
+): string => {
+  const key = `${surahNumber}_${ayahNumber}`
+  return (translit as Record<string, string>)[key] || ''
+}
+
+export const isOffline = true
+export const translationsAvailable = Object.keys(TRANSLATIONS)
+
+════════════════════════════════════════════════════════
+STEP 4 — UPDATE QURAN TAB
+════════════════════════════════════════════════════════
+
+In app/(tabs)/quran.tsx:
+
+1. Remove ALL fetch() calls related to translations
+   or transliterations
+
+2. Remove ALL useEffect hooks that load translation
+   data from network
+
+3. Replace any API call for translation with:
+   import { getTranslation, getTransliteration } 
+     from '../../lib/quran-translations'
+
+4. When rendering each ayah in transliteration mode:
+   
+   // Translation in selected language:
+   const translation = getTranslation(
+     selectedLang,    // e.g. 'en', 'ar', 'fr'
+     surahNumber,     // e.g. 2
+     ayahNumber       // e.g. 1
+   )
+   
+   // Transliteration (same for all languages):
+   const translitText = getTransliteration(
+     surahNumber,
+     ayahNumber
+   )
+
+5. Remove any loading states specific to 
+   translation fetching — data is instant and local
+
+6. Remove any error states for translation 
+   network failures
+
+════════════════════════════════════════════════════════
+STEP 5 — UPDATE app.json
+════════════════════════════════════════════════════════
+
+Make sure all JSON files are included in the 
+iOS and Android bundle:
+
+In app.json, ensure this exists:
+"expo": {
+  "assetBundlePatterns": [
+    "**/*",
+    "constants/**/*",
+    "assets/**/*"
+  ]
+}
+
+════════════════════════════════════════════════════════
+STEP 6 — VERIFY ARABIC (no change needed)
+════════════════════════════════════════════════════════
+
+The Arabic Uthmani text is already bundled — confirm 
+it is loaded from a local source and NOT fetched:
+
+grep -n "fetch\|http\|api" lib/quran-api.ts
+
+If any fetch calls remain for Arabic text, 
+bundle that too using the same pattern.
+
+════════════════════════════════════════════════════════
+STEP 7 — REMOVE OLD API INFRASTRUCTURE
+════════════════════════════════════════════════════════
+
+After confirming everything works from local files:
+
+1. If lib/quran-api.ts ONLY contained fetch calls 
+   that are now replaced, delete it entirely
+2. Remove any translation loading from AppContext
+3. Remove any network permission requirements 
+   specific to Quran translations
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+- Zero network calls for any Quran content
+- All 6,236 ayahs × 14 languages × transliteration 
+  must be available instantly with no loading state
+- Arabic Uthmani text must also be fully local
+- Do not change the Mushaf (page-by-page) mode
+- Do not change search functionality  
+- Do not change bookmarks
+- Do not add new dependencies beyond the JSON files

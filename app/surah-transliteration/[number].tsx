@@ -12,7 +12,7 @@ import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, getSurah } from '@/lib/quran-api';
-import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS, isLangBundled, clearTranslationCache } from '@/lib/quran-transliteration';
+import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
 
@@ -57,21 +57,11 @@ export default function SurahTransliterationScreen() {
     currentPage * AYAHS_PER_PAGE,
   );
 
-  const { data: translitData, isLoading, refetch } = useQuery({
+  const { data: translitData, isLoading } = useQuery({
     queryKey: ['/translit', surahNum, translitLang],
     queryFn: () => fetchSurahTransliteration(surahNum, translitLang),
-    retry: 2,
+    staleTime: Infinity,
   });
-
-  // True when the selected language is downloadable AND the first ayah has no translation.
-  // This means the network fetch failed silently — transliteration still shows, but
-  // we surface a retry banner so the user can attempt downloading the translation.
-  const translationMissing =
-    !isLangBundled(translitLang) &&
-    !isLoading &&
-    !!translitData &&
-    translitData.length > 0 &&
-    translitData[0].translation === '';
 
   const goPage = useCallback((p: number) => {
     Haptics.selectionAsync();
@@ -208,9 +198,6 @@ export default function SurahTransliterationScreen() {
                       </Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      {!isLangBundled(l) && !active && (
-                        <Ionicons name="cloud-download-outline" size={14} color={C.textMuted} />
-                      )}
                       {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
                     </View>
                   </Pressable>
@@ -239,22 +226,6 @@ export default function SurahTransliterationScreen() {
           </View>
         )}
 
-        {/* Translation unavailable (network failed for downloadable lang — transliteration still shows) */}
-        {translationMissing && (
-          <Pressable
-            onPress={async () => {
-              await clearTranslationCache(translitLang);
-              refetch();
-            }}
-            style={[styles.errorBanner, { backgroundColor: C.tintLight, borderColor: C.tint }]}
-          >
-            <Ionicons name="cloud-download-outline" size={16} color={C.tint} />
-            <Text style={{ color: C.tint, fontSize: 13, fontWeight: '600', flex: 1, fontFamily: SERIF_EN }}>
-              {isAr ? 'الترجمة غير متاحة. اضغط للتحميل' : 'Translation unavailable. Tap to download.'}
-            </Text>
-            <Ionicons name="refresh-outline" size={16} color={C.tint} />
-          </Pressable>
-        )}
 
         {/* Ayah cards for this page */}
         {pageAyahs.map((item, idx) => {
@@ -453,10 +424,6 @@ const styles = StyleSheet.create({
   },
   bismillahArabic: { fontSize: 22, textAlign: 'center' },
   bismillahTranslit: { fontSize: 12, textAlign: 'center', fontStyle: 'italic' },
-  errorBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 10,
-  },
   ayahCard: {
     padding: 14, borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth, marginBottom: 8,
