@@ -42,6 +42,10 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
+    "assetBundlePatterns": [
+      "**/*",
+      "assets/**/*"
+    ],
     "web": {
       "bundler": "metro",
       "output": "static",

@@ -12,7 +12,7 @@ import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, getSurah } from '@/lib/quran-api';
-import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS, isLangBundled } from '@/lib/quran-transliteration';
+import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS, isLangBundled, clearTranslationCache } from '@/lib/quran-transliteration';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
 
@@ -57,11 +57,21 @@ export default function SurahTransliterationScreen() {
     currentPage * AYAHS_PER_PAGE,
   );
 
-  const { data: translitData, isLoading, error, refetch } = useQuery({
+  const { data: translitData, isLoading, refetch } = useQuery({
     queryKey: ['/translit', surahNum, translitLang],
     queryFn: () => fetchSurahTransliteration(surahNum, translitLang),
     retry: 2,
   });
+
+  // True when the selected language is downloadable AND the first ayah has no translation.
+  // This means the network fetch failed silently — transliteration still shows, but
+  // we surface a retry banner so the user can attempt downloading the translation.
+  const translationMissing =
+    !isLangBundled(translitLang) &&
+    !isLoading &&
+    !!translitData &&
+    translitData.length > 0 &&
+    translitData[0].translation === '';
 
   const goPage = useCallback((p: number) => {
     Haptics.selectionAsync();
@@ -229,17 +239,20 @@ export default function SurahTransliterationScreen() {
           </View>
         )}
 
-        {/* Network error */}
-        {error && (
+        {/* Translation unavailable (network failed for downloadable lang — transliteration still shows) */}
+        {translationMissing && (
           <Pressable
-            onPress={() => refetch()}
-            style={[styles.errorBanner, { backgroundColor: '#FF3B3020', borderColor: '#FF3B30' }]}
+            onPress={async () => {
+              await clearTranslationCache(translitLang);
+              refetch();
+            }}
+            style={[styles.errorBanner, { backgroundColor: C.tintLight, borderColor: C.tint }]}
           >
-            <Ionicons name="wifi-outline" size={16} color="#FF3B30" />
-            <Text style={{ color: '#FF3B30', fontSize: 13, fontWeight: '600', flex: 1, fontFamily: SERIF_EN }}>
-              {isAr ? 'تعذّر التحميل. اضغط للمحاولة' : 'Failed to load. Tap to retry.'}
+            <Ionicons name="cloud-download-outline" size={16} color={C.tint} />
+            <Text style={{ color: C.tint, fontSize: 13, fontWeight: '600', flex: 1, fontFamily: SERIF_EN }}>
+              {isAr ? 'الترجمة غير متاحة. اضغط للتحميل' : 'Translation unavailable. Tap to download.'}
             </Text>
-            <Ionicons name="refresh-outline" size={16} color="#FF3B30" />
+            <Ionicons name="refresh-outline" size={16} color={C.tint} />
           </Pressable>
         )}
 

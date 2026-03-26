@@ -24,7 +24,7 @@ const memCache: Record<string, SurahIndex> = {};
 
 async function getTranslationData(lang: Lang): Promise<SurahIndex> {
   if (BUNDLED_LANGS.includes(lang)) {
-    return BUNDLED_TRANSLATIONS[lang] ?? BUNDLED_TRANSLATIONS['en'];
+    return BUNDLED_TRANSLATIONS[lang] ?? BUNDLED_TRANSLATIONS['en'] ?? {};
   }
 
   if (memCache[lang]) return memCache[lang];
@@ -39,18 +39,22 @@ async function getTranslationData(lang: Lang): Promise<SurahIndex> {
     }
   } catch {}
 
-  const base = getApiUrl();
-  const url = new URL(`/api/translations/${lang}`, base).toString();
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch translation for ${lang}: ${res.status}`);
-  const data = await res.json() as SurahIndex;
-
-  memCache[lang] = data;
   try {
-    await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
-  } catch {}
-
-  return data;
+    const base = getApiUrl();
+    const url = new URL(`/api/translations/${lang}`, base).toString();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to fetch translation for ${lang}: ${res.status}`);
+    const data = await res.json() as SurahIndex;
+    memCache[lang] = data;
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+    } catch {}
+    return data;
+  } catch {
+    // Network unavailable or server error — return empty so transliteration
+    // (which is always bundled) can still be displayed offline.
+    return {};
+  }
 }
 
 export async function fetchSurahTransliteration(
@@ -81,6 +85,13 @@ export async function fetchSurahNamesByLang(lang: Lang): Promise<Record<number, 
 
 export function isLangBundled(lang: Lang): boolean {
   return BUNDLED_LANGS.includes(lang);
+}
+
+export async function clearTranslationCache(lang: Lang): Promise<void> {
+  delete memCache[lang];
+  try {
+    await AsyncStorage.removeItem(`@translit_cache_${lang}`);
+  } catch {}
 }
 
 export function getTranslationEdition(lang: Lang): string {

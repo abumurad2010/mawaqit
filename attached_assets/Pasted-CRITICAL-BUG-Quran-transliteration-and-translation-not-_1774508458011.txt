@@ -1,0 +1,89 @@
+CRITICAL BUG: Quran transliteration and translation not 
+loading in iOS production build (works fine in Expo Go).
+
+DIAGNOSIS NEEDED FIRST:
+Run this search to find where transliteration and 
+translation data is loaded in the Quran tab:
+
+grep -rn "transliteration\|translation\|quran-api\|quranApi\|fetchTranslit\|loadTranslit" \
+  app/ lib/ constants/ \
+  --include="*.tsx" --include="*.ts" --include="*.js"
+
+Also check:
+grep -rn "require\|import.*quran\|import.*translit" \
+  lib/quran-api.ts app/(tabs)/quran.tsx \
+  --include="*.tsx" --include="*.ts"
+
+════════════════════════════════════════════════════════
+LIKELY CAUSES AND FIXES
+════════════════════════════════════════════════════════
+
+CAUSE A — Data is fetched from an API URL (not bundled):
+If transliteration or translation is fetched from 
+alquran.cloud, api.quran.com, or any external URL,
+it WILL fail in production without internet.
+
+FIX A: Check lib/quran-api.ts for any fetch() calls.
+If found, the data must be bundled locally instead.
+Download all transliteration data and embed it as 
+a JSON constant in constants/ folder.
+
+CAUSE B — Large JSON files not included in iOS bundle:
+If transliteration/translation data is stored in 
+.json files in assets/ or constants/, they may not 
+be included in the iOS production bundle.
+
+FIX B: In app.json, make sure all data files are 
+explicitly included:
+
+"expo": {
+  "assetBundlePatterns": [
+    "**/*",
+    "assets/**/*",
+    "constants/**/*.json"
+  ]
+}
+
+CAUSE C — Dynamic require() not resolved in production:
+If the code uses dynamic requires like:
+  const data = require(`../constants/${lang}-quran.json`)
+These work in Expo Go but fail in production builds.
+
+FIX C: Replace all dynamic requires with static imports:
+  import enData from '../constants/en-quran.json'
+  import frData from '../constants/fr-quran.json'
+  // etc.
+  const translations = { en: enData, fr: frData, ... }
+
+CAUSE D — File too large for metro bundler:
+Files over ~50MB may be silently excluded from 
+production builds.
+
+FIX D: Check file sizes:
+  find constants/ assets/ -name "*.json" -exec ls -lh {} \;
+
+If any single file is over 30MB, split it by language.
+
+════════════════════════════════════════════════════════
+VERIFICATION STEPS
+════════════════════════════════════════════════════════
+
+1. First report exactly HOW the transliteration and 
+   translation data is loaded — is it:
+   a) Fetched from an external API?
+   b) Loaded from a local JSON file?
+   c) Bundled directly as a JavaScript constant?
+
+2. Check if there are any console errors in the 
+   iOS build related to the Quran tab.
+   Add this temporarily to quran.tsx:
+   
+   useEffect(() => {
+     console.log('Translit data available:', 
+       typeof transliterationData !== 'undefined' && 
+       transliterationData !== null)
+   }, [transliterationData])
+
+3. Report findings before making any changes.
+
+Do not change anything until the root cause is confirmed.
