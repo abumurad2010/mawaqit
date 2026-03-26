@@ -1,0 +1,611 @@
+Bundle ALL Quran translation languages and transliteration 
+fully offline using verified scholarly sources only.
+Zero network calls for any Quran content whatsoever.
+
+════════════════════════════════════════════════════════
+STEP 1 — AUDIT CURRENT STATE FIRST
+════════════════════════════════════════════════════════
+
+Before making any changes, report:
+
+grep -rn "fetch\|axios\|http\|api\|url\|URL" \
+  lib/quran-api.ts app/(tabs)/quran.tsx \
+  --include="*.tsx" --include="*.ts" 2>/dev/null
+
+find . -name "*.json" -path "*/quran*" \
+  -not -path "*/node_modules/*" -exec ls -lh {} \;
+
+Report findings before proceeding.
+
+════════════════════════════════════════════════════════
+STEP 2 — DOWNLOAD ALL DATA FROM SCHOLARLY SOURCES
+════════════════════════════════════════════════════════
+
+Create directory:
+mkdir -p constants/quran-translations
+
+Run each download command one at a time.
+After each one, confirm the file was created 
+and is not empty before moving to the next.
+
+The node pipe after each curl extracts just the 
+verse text keyed as "surahNumber_ayahNumber":
+e.g. { "2_255": "Allah - there is no deity except Him..." }
+
+──────────────────────────────────────────
+TRANSLITERATION
+Source: Tanzil.net via alquran.cloud
+Identifier: en.transliteration
+Note: Most consistent scholarly transliteration
+available in machine-readable format, used by 
+Tanzil.net — the gold standard for digital Quran
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/en.transliteration" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/translit.json',
+    JSON.stringify(v)
+  );
+  console.log('translit done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+ENGLISH — Saheeh International (1997)
+Most widely accepted scholarly English translation.
+Endorsed by major Islamic institutions worldwide.
+Literal style, suitable for study.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/en.sahih" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/en.json',
+    JSON.stringify(v)
+  );
+  console.log('en done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+FRENCH — Muhammad Hamidullah
+Standard scholarly French reference.
+Widely used in French-speaking Muslim communities.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/fr.hamidullah" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/fr.json',
+    JSON.stringify(v)
+  );
+  console.log('fr done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+SPANISH — Julio Cortes
+Most academically respected Spanish translation.
+Standard reference in Spanish-speaking scholarship.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/es.cortes" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/es.json',
+    JSON.stringify(v)
+  );
+  console.log('es done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+RUSSIAN — Elmir Kuliev
+Standard Sunni scholarly reference for Russian.
+Most widely used in Russian-speaking Muslim communities.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/ru.kuliev" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/ru.json',
+    JSON.stringify(v)
+  );
+  console.log('ru done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+CHINESE — Ma Jian
+Most respected Chinese Quran translation.
+Academic standard for Chinese-speaking Muslims.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/zh.jian" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/zh.json',
+    JSON.stringify(v)
+  );
+  console.log('zh done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+TURKISH — Diyanet İşleri Başkanlığı
+Official translation by Turkey's Directorate 
+of Religious Affairs. Government-endorsed,
+most authoritative Turkish source.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/tr.diyanet" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/tr.json',
+    JSON.stringify(v)
+  );
+  console.log('tr done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+URDU — Muhammad Junagarhi
+Official translation endorsed by Saudi Arabia.
+Most widely distributed Urdu translation worldwide.
+Used in Pakistani and Indian Muslim communities.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/ur.junagarhi" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/ur.json',
+    JSON.stringify(v)
+  );
+  console.log('ur done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+INDONESIAN — Kementerian Agama RI
+Official translation by Indonesia's Ministry 
+of Religious Affairs. The authoritative
+state-endorsed Indonesian translation.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/id.indonesian" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/id.json',
+    JSON.stringify(v)
+  );
+  console.log('id done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+BENGALI — Muhiuddin Khan
+Most widely accepted Bengali translation.
+Standard reference for Bangladeshi Muslims.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/bn.bengali" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/bn.json',
+    JSON.stringify(v)
+  );
+  console.log('bn done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+PERSIAN — Makarem Shirazi
+Most widely accepted Persian/Farsi translation.
+Standard reference across Iranian Muslim communities.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/fa.makarem" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/fa.json',
+    JSON.stringify(v)
+  );
+  console.log('fa done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+MALAY — Abdullah Muhammad Basmeih
+Official translation by Malaysia's Department 
+of Islamic Development (JAKIM).
+State-endorsed authoritative Malay translation.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/ms.basmeih" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/ms.json',
+    JSON.stringify(v)
+  );
+  console.log('ms done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+PORTUGUESE — Samir El-Hayek / Helmi Nasr
+Most respected Portuguese translation.
+Standard reference for Brazilian and 
+Portuguese-speaking Muslim communities.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/pt.nasr" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/pt.json',
+    JSON.stringify(v)
+  );
+  console.log('pt done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+SWAHILI — Al-Barwani
+Standard Swahili translation used across 
+East Africa. Most widely accepted source
+for Swahili-speaking Muslim communities.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/sw.barwani" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/sw.json',
+    JSON.stringify(v)
+  );
+  console.log('sw done:', Object.keys(v).length, 'verses')
+})"
+
+──────────────────────────────────────────
+HAUSA — Abubakar Gumi
+Standard Hausa translation by Sheikh Gumi.
+Most widely accepted source for Hausa-speaking
+Muslim communities in West Africa.
+──────────────────────────────────────────
+
+curl -s "https://api.alquran.cloud/v1/quran/ha.gumi" \
+  | node -e "
+const d=require('fs');
+let b='';
+process.stdin.on('data',c=>b+=c);
+process.stdin.on('end',()=>{
+  const j=JSON.parse(b);
+  const v={};
+  j.data.surahs.forEach(s=>
+    s.ayahs.forEach(a=>{
+      v[s.number+'_'+a.numberInSurah]=a.text
+    })
+  );
+  d.writeFileSync(
+    'constants/quran-translations/ha.json',
+    JSON.stringify(v)
+  );
+  console.log('ha done:', Object.keys(v).length, 'verses')
+})"
+
+After all downloads, verify all files exist:
+ls -lh constants/quran-translations/
+
+Expected output: 15 files (translit + 14 languages)
+Each file should be between 500KB and 2MB.
+Each should have exactly 6236 verses.
+
+════════════════════════════════════════════════════════
+STEP 3 — CREATE TRANSLATION LOADER
+════════════════════════════════════════════════════════
+
+Create file: lib/quran-translations.ts
+
+All imports are STATIC (not dynamic) to ensure 
+Metro bundler includes them in the iOS production build:
+
+import en from '../constants/quran-translations/en.json'
+import fr from '../constants/quran-translations/fr.json'
+import es from '../constants/quran-translations/es.json'
+import ru from '../constants/quran-translations/ru.json'
+import zh from '../constants/quran-translations/zh.json'
+import tr from '../constants/quran-translations/tr.json'
+import ur from '../constants/quran-translations/ur.json'
+import id_trans from '../constants/quran-translations/id.json'
+import bn from '../constants/quran-translations/bn.json'
+import fa from '../constants/quran-translations/fa.json'
+import ms from '../constants/quran-translations/ms.json'
+import pt from '../constants/quran-translations/pt.json'
+import sw from '../constants/quran-translations/sw.json'
+import ha from '../constants/quran-translations/ha.json'
+import translit from '../constants/quran-translations/translit.json'
+
+// Translation sources for attribution display
+export const TRANSLATION_SOURCES: Record<string, string> = {
+  en: 'Saheeh International',
+  fr: 'Muhammad Hamidullah',
+  es: 'Julio Cortes',
+  ru: 'Elmir Kuliev',
+  zh: 'Ma Jian',
+  tr: 'Diyanet İşleri Başkanlığı',
+  ur: 'Muhammad Junagarhi',
+  id: 'Kementerian Agama RI',
+  bn: 'Muhiuddin Khan',
+  fa: 'Makarem Shirazi',
+  ms: 'Abdullah Basmeih / JAKIM',
+  pt: 'Helmi Nasr',
+  sw: 'Al-Barwani',
+  ha: 'Abubakar Gumi',
+}
+
+const TRANSLATIONS: Record<string, Record<string, string>> = {
+  en: en as Record<string, string>,
+  fr: fr as Record<string, string>,
+  es: es as Record<string, string>,
+  ru: ru as Record<string, string>,
+  zh: zh as Record<string, string>,
+  tr: tr as Record<string, string>,
+  ur: ur as Record<string, string>,
+  id: id_trans as Record<string, string>,
+  bn: bn as Record<string, string>,
+  fa: fa as Record<string, string>,
+  ms: ms as Record<string, string>,
+  pt: pt as Record<string, string>,
+  sw: sw as Record<string, string>,
+  ha: ha as Record<string, string>,
+}
+
+const TRANSLIT = translit as Record<string, string>
+
+export const getTranslation = (
+  lang: string,
+  surahNumber: number,
+  ayahNumber: number
+): string => {
+  const key = `${surahNumber}_${ayahNumber}`
+  const data = TRANSLATIONS[lang] ?? TRANSLATIONS['en']
+  return data[key] ?? TRANSLATIONS['en'][key] ?? ''
+}
+
+export const getTransliteration = (
+  surahNumber: number,
+  ayahNumber: number
+): string => {
+  const key = `${surahNumber}_${ayahNumber}`
+  return TRANSLIT[key] ?? ''
+}
+
+export const getTranslationSource = (lang: string): string => {
+  return TRANSLATION_SOURCES[lang] ?? 'Saheeh International'
+}
+
+// Confirm all data is local — no network needed
+export const isFullyOffline = true
+
+════════════════════════════════════════════════════════
+STEP 4 — ATTRIBUTION IN UI
+════════════════════════════════════════════════════════
+
+In app/(tabs)/quran.tsx, when showing translation,
+display the translator name in small muted text 
+below or above the translation:
+
+import { getTranslationSource } from '../../lib/quran-translations'
+
+// Show under each surah header or in settings:
+<Text style={{ fontSize: 11, color: C.textMuted }}>
+  {getTranslationSource(selectedLang)}
+</Text>
+
+This is important — scholarly translations require 
+attribution and it also reassures users the source
+is verified and trustworthy.
+
+════════════════════════════════════════════════════════
+STEP 5 — REPLACE ALL FETCH CALLS
+════════════════════════════════════════════════════════
+
+In app/(tabs)/quran.tsx:
+
+1. Remove ALL fetch() or API calls for translations
+2. Remove ALL loading states for translation fetching
+3. Remove ALL error states for translation failures
+4. Replace with direct calls to getTranslation() 
+   and getTransliteration() from lib/quran-translations
+
+The data is instant — no async, no loading spinner,
+no try/catch needed for data access.
+
+════════════════════════════════════════════════════════
+STEP 6 — UPDATE app.json
+════════════════════════════════════════════════════════
+
+Ensure all JSON files are included in production builds:
+
+"expo": {
+  "assetBundlePatterns": [
+    "**/*",
+    "constants/**/*",
+    "assets/**/*"
+  ]
+}
+
+Also add to metro.config.js to ensure JSON is resolved:
+If metro.config.js exists, confirm it does not 
+exclude .json files from the resolver.
+
+════════════════════════════════════════════════════════
+STEP 7 — VERIFY
+════════════════════════════════════════════════════════
+
+After implementation, add this temporary debug check 
+to quran.tsx to confirm offline bundling works:
+
+useEffect(() => {
+  const testKey = '1_1'  // Al-Fatiha verse 1
+  const enTest = getTranslation('en', 1, 1)
+  const translitTest = getTransliteration(1, 1)
+  console.log('=== QURAN OFFLINE CHECK ===')
+  console.log('EN translation loaded:', enTest.length > 0)
+  console.log('Transliteration loaded:', translitTest.length > 0)
+  console.log('EN verse 1:', enTest.substring(0, 50))
+  console.log('Translit verse 1:', translitTest.substring(0, 50))
+}, [])
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+- Zero network calls for any Quran content
+- All imports must be STATIC not dynamic
+- Arabic Uthmani text must also remain fully local
+- Do not change Mushaf page-by-page mode
+- Do not change search functionality
+- Do not change bookmarks
+- Do not add new dependencies
+- Translation source attribution must be displayed

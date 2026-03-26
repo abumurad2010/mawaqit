@@ -1,18 +1,18 @@
 import React, { useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform, Modal,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, getSurah } from '@/lib/quran-api';
-import { fetchSurahTransliteration, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
+import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
+import { getTranslation, getTransliteration } from '@/lib/quran-translations';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
 
@@ -57,11 +57,7 @@ export default function SurahTransliterationScreen() {
     currentPage * AYAHS_PER_PAGE,
   );
 
-  const { data: translitData, isLoading } = useQuery({
-    queryKey: ['/translit', surahNum, translitLang],
-    queryFn: () => fetchSurahTransliteration(surahNum, translitLang),
-    staleTime: Infinity,
-  });
+  // All translation and transliteration data is bundled offline — no async needed.
 
   const goPage = useCallback((p: number) => {
     Haptics.selectionAsync();
@@ -228,11 +224,11 @@ export default function SurahTransliterationScreen() {
 
 
         {/* Ayah cards for this page */}
-        {pageAyahs.map((item, idx) => {
-          const globalIdx = (currentPage - 1) * AYAHS_PER_PAGE + idx;
-          const tlit = translitData?.[globalIdx];
+        {pageAyahs.map((item) => {
           const ayahNum = item.numberInSurah;
           const bookmarked = isBookmarked(surahNum, ayahNum);
+          const translitText = getTransliteration(surahNum, ayahNum);
+          const translationText = getTranslation(translitLang, surahNum, ayahNum);
 
           return (
             <View
@@ -266,27 +262,22 @@ export default function SurahTransliterationScreen() {
                   {item.text}
                 </Text>
 
-                {/* Transliteration + translation */}
-                {isLoading ? (
-                  <View style={styles.shimmer}>
-                    <View style={[styles.shimmerLine, { backgroundColor: C.separator, width: '90%' }]} />
-                    <View style={[styles.shimmerLine, { backgroundColor: C.separator, width: '60%' }]} />
-                  </View>
-                ) : tlit ? (
-                  <>
-                    <Text style={[styles.translitText, { color: C.tint, fontFamily: SERIF_EN, fontSize: 14 * fontScale, lineHeight: 22 * fontScale }]}>
-                      {tlit.transliteration}
-                    </Text>
-                    {tlit.translation.length > 0 && (
-                      <Text style={[
-                        styles.translationText,
-                        { color: C.textSecond, fontWeight: fw, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : SERIF_EN, fontSize: 13 * fontScale, lineHeight: 21 * fontScale }
-                      ]}>
-                        {tlit.translation}
-                      </Text>
-                    )}
-                  </>
-                ) : null}
+                {/* Transliteration — always available offline */}
+                {translitText.length > 0 && (
+                  <Text style={[styles.translitText, { color: C.tint, fontFamily: SERIF_EN, fontSize: 14 * fontScale, lineHeight: 22 * fontScale }]}>
+                    {translitText}
+                  </Text>
+                )}
+
+                {/* Translation — always available offline */}
+                {translationText.length > 0 && (
+                  <Text style={[
+                    styles.translationText,
+                    { color: C.textSecond, fontWeight: fw, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : SERIF_EN, fontSize: 13 * fontScale, lineHeight: 21 * fontScale }
+                  ]}>
+                    {translationText}
+                  </Text>
+                )}
               </View>
             </View>
           );
@@ -438,8 +429,6 @@ const styles = StyleSheet.create({
   numText: { fontSize: 11, fontWeight: '700' },
   ayahContent: { gap: 6 },
   arabicText: { fontSize: 19, lineHeight: 32, textAlign: 'right' },
-  shimmer: { gap: 6, marginTop: 4 },
-  shimmerLine: { height: 10, borderRadius: 5 },
   translitText: { fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   translationText: { fontSize: 13, lineHeight: 20, opacity: 0.85 },
 

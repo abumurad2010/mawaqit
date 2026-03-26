@@ -40,8 +40,9 @@ A full-featured, free Islamic app with GPS-based prayer times, Qibla compass, fu
 - Long-press an ayah number to bookmark/unbookmark it
 
 ### Quran Transliteration & Translation
-- Romanised Arabic phonetics (transliteration) for every ayah — fully offline, bundled in `assets/quran-translit.json`
-- Translation in 14 languages — fully offline, bundled in `assets/quran-translations.json`
+- Romanised Arabic phonetics (transliteration) for every ayah — fully offline, bundled in `constants/quran-translations/translit.json`
+- Translation in 14 languages — fully offline, one file per language in `constants/quran-translations/{en,fr,es,ru,zh,tr,ur,id,bn,fa,ms,pt,sw,ha}.json`
+- Flat-key format: `"surahNumber_ayahNumber"` → instant synchronous lookup, zero async or loading states
 - Segmented tab switcher: Mushaf / Transliteration views
 - Per-surah view with phonetics and translation side by side
 - Surah names in 14 languages from `assets/quran-surah-names.json`
@@ -103,10 +104,12 @@ Auto-detected from GPS country code on first launch.
 - **Frontend**: Expo Router + React Native (Expo Go compatible, also runs on web)
 - **Backend**: Express.js — serves API, Expo landing page, static build, and public PWA assets
 - **State**: `contexts/AppContext.tsx` with AsyncStorage persistence
-- **Quran Data**: Fully bundled; no API calls at runtime
-  - `assets/quran-translit.json` — transliteration (633 KB)
-  - `assets/quran-translations.json` — 14-language translations (16 MB)
-  - `assets/quran-surah-names.json` — surah names in 14 languages (36 KB)
+- **Quran Data**: Fully bundled; zero network calls at runtime
+  - `assets/quran.json` — Arabic Uthmani text (1.5 MB)
+  - `assets/quran-surah-names.json` — surah names in 14 languages (34 KB)
+  - `constants/quran-translations/translit.json` — Roman transliteration, flat keys (680 KB)
+  - `constants/quran-translations/{en,fr,es,ru,zh,tr,ur,id,bn,fa,ms,pt,sw,ha}.json` — 14 translations, flat keys (~17 MB total)
+  - All data accessed via `lib/quran-translations.ts` with synchronous `getTranslation(lang, surah, ayah)` and `getTransliteration(surah, ayah)` — no React Query, no loading state
 - **PWA**: `public/sw.js`, `public/manifest.json`, `public/icon-192.png`, `public/icon-512.png`, `public/apple-touch-icon.png`
 
 ## Key Files
@@ -127,7 +130,8 @@ Auto-detected from GPS country code on first launch.
 | `lib/qibla.ts` | Great-circle bearing to Mecca |
 | `lib/hijri.ts` | Gregorian ↔ Hijri calendar conversion |
 | `lib/quran-api.ts` | Bundled Quran text loader + page index |
-| `lib/quran-transliteration.ts` | Offline transliteration + translation loader |
+| `lib/quran-translations.ts` | Synchronous offline translation + transliteration — `getTranslation(lang, s, a)` / `getTransliteration(s, a)` |
+| `lib/quran-transliteration.ts` | Surah-names helper + lang constants (`fetchSurahNamesByLang`, `SUPPORTED_TRANSLIT_LANGS`) |
 | `lib/audio.ts` | Adhan audio playback |
 | `contexts/AppContext.tsx` | Global settings, bookmarks, location state |
 | `constants/colors.ts` | 7-theme colour palette system |
