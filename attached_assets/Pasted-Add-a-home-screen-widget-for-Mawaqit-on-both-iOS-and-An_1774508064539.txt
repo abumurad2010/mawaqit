@@ -1,0 +1,237 @@
+Add a home screen widget for Mawaqit on both iOS and Android.
+Use the newly released expo-widgets library.
+
+════════════════════════════════════════════════════════
+PART 1 — INSTALL
+════════════════════════════════════════════════════════
+
+Run in the Replit shell:
+  npx expo install expo-widgets @expo/ui
+
+════════════════════════════════════════════════════════
+PART 2 — Configure app.json
+════════════════════════════════════════════════════════
+
+Add the expo-widgets plugin to app.json:
+
+"plugins": [
+  [
+    "expo-widgets",
+    {
+      "widgets": [
+        {
+          "name": "MawaqitWidget",
+          "displayName": "Mawaqit Prayer Times",
+          "description": "Next prayer time and countdown",
+          "supportedFamilies": [
+            "systemSmall",
+            "systemMedium"
+          ]
+        }
+      ]
+    }
+  ]
+]
+
+════════════════════════════════════════════════════════
+PART 3 — CREATE WIDGET FILE
+════════════════════════════════════════════════════════
+
+Create file: widgets/MawaqitWidget.tsx
+
+The widget receives prayer time data via shared storage
+and displays:
+
+SMALL SIZE (systemSmall):
+  • App icon (small, top left)
+  • Next prayer name (large, center)
+  • Time of next prayer (medium, center)  
+  • Countdown "in Xh Xm" (small, bottom)
+  • Colors: dark green background (#0a1f0f), 
+    gold text (#c9a84c) for prayer name,
+    white for time, muted for countdown
+
+MEDIUM SIZE (systemMedium):
+  • Left column: same as small
+  • Right column: list of next 3 prayers with times
+  • Each row: prayer name + time
+
+WIDGET COMPONENT:
+
+import { Text, VStack, HStack, Image } from '@expo/ui/swift-ui'
+import { font, foregroundStyle, padding, background } 
+  from '@expo/ui/swift-ui/modifiers'
+import { createWidget } from 'expo-widgets'
+
+interface MawaqitWidgetProps {
+  nextPrayerName: string
+  nextPrayerTime: string
+  countdown: string
+  upcomingPrayers: Array<{ name: string; time: string }>
+  family: 'systemSmall' | 'systemMedium'
+}
+
+const MawaqitWidget = createWidget<MawaqitWidgetProps>(
+  ({ nextPrayerName, nextPrayerTime, countdown, 
+     upcomingPrayers, family }) => {
+    
+    if (family === 'systemSmall') {
+      return (
+        <VStack>
+          <Text modifiers={[
+            font({ size: 11 }),
+            foregroundStyle({ color: '#8a7a60' })
+          ]}>
+            مواقيت
+          </Text>
+          <Text modifiers={[
+            font({ size: 20, weight: 'bold' }),
+            foregroundStyle({ color: '#c9a84c' })
+          ]}>
+            {nextPrayerName}
+          </Text>
+          <Text modifiers={[
+            font({ size: 28, weight: 'bold' }),
+            foregroundStyle({ color: '#ffffff' })
+          ]}>
+            {nextPrayerTime}
+          </Text>
+          <Text modifiers={[
+            font({ size: 12 }),
+            foregroundStyle({ color: '#8a7a60' })
+          ]}>
+            {countdown}
+          </Text>
+        </VStack>
+      )
+    }
+
+    // Medium size
+    return (
+      <HStack>
+        <VStack>
+          <Text modifiers={[
+            font({ size: 11 }),
+            foregroundStyle({ color: '#8a7a60' })
+          ]}>
+            مواقيت · Next
+          </Text>
+          <Text modifiers={[
+            font({ size: 22, weight: 'bold' }),
+            foregroundStyle({ color: '#c9a84c' })
+          ]}>
+            {nextPrayerName}
+          </Text>
+          <Text modifiers={[
+            font({ size: 26, weight: 'bold' }),
+            foregroundStyle({ color: '#ffffff' })
+          ]}>
+            {nextPrayerTime}
+          </Text>
+          <Text modifiers={[
+            font({ size: 11 }),
+            foregroundStyle({ color: '#8a7a60' })
+          ]}>
+            {countdown}
+          </Text>
+        </VStack>
+        <VStack>
+          {upcomingPrayers.map((prayer, i) => (
+            <HStack key={i}>
+              <Text modifiers={[
+                font({ size: 13 }),
+                foregroundStyle({ color: '#c8bca8' })
+              ]}>
+                {prayer.name}
+              </Text>
+              <Text modifiers={[
+                font({ size: 13, weight: 'medium' }),
+                foregroundStyle({ color: '#ffffff' })
+              ]}>
+                {prayer.time}
+              </Text>
+            </HStack>
+          ))}
+        </VStack>
+      </HStack>
+    )
+  }
+)
+
+export default MawaqitWidget
+
+════════════════════════════════════════════════════════
+PART 4 — FEED DATA TO WIDGET
+════════════════════════════════════════════════════════
+
+In app/(tabs)/index.tsx (the prayer times screen),
+after calculating prayer times, save the widget data
+to shared storage so the widget can read it:
+
+import { updateWidget } from 'expo-widgets'
+
+// After prayer times are calculated and nextPrayer is known:
+const updateWidgetData = async () => {
+  if (!times || !nextPrayer) return
+  
+  try {
+    await updateWidget('MawaqitWidget', {
+      nextPrayerName: prayerLabel(nextPrayer.name),
+      nextPrayerTime: formatTime(times[nextPrayer.name]),
+      countdown: countdown,
+      upcomingPrayers: getUpcoming3Prayers(times, nextPrayer)
+    })
+  } catch (e) {
+    // Widget update is non-critical, silently ignore
+    console.log('Widget update skipped:', e)
+  }
+}
+
+// Call updateWidgetData whenever:
+// 1. Prayer times are first calculated
+// 2. The countdown ticks to a new minute
+// 3. The next prayer changes
+
+// Helper to get next 3 prayers after current:
+const getUpcoming3Prayers = (times, nextPrayer) => {
+  const ORDER = ['fajr','dhuhr','asr','maghrib','isha']
+  const idx = ORDER.indexOf(nextPrayer.name)
+  return ORDER
+    .slice(idx + 1, idx + 4)
+    .filter(key => times[key])
+    .map(key => ({
+      name: prayerLabel(key),
+      time: formatTime(times[key])
+    }))
+}
+
+════════════════════════════════════════════════════════
+PART 5 — ANDROID WIDGET
+════════════════════════════════════════════════════════
+
+expo-widgets handles Android automatically through 
+the same createWidget API. No separate Android code needed.
+
+However, add this to app.json under the existing 
+expo-widgets plugin config:
+
+"android": {
+  "widgets": [
+    {
+      "name": "MawaqitWidget",
+      "minWidth": "180dp",
+      "minHeight": "110dp",
+      "updatePeriodMillis": 1800000
+    }
+  ]
+}
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any prayer time calculation logic.
+Do not change any existing UI.
+Widget update failures must be silently caught —
+  never crash the app if widget update fails.
+Do not add any other new dependencies.
