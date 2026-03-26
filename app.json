@@ -50,6 +50,22 @@
     "plugins": [
       "expo-router",
       [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "MawaqitWidget",
+              "displayName": "Mawaqit Prayer Times",
+              "description": "Next prayer time and countdown",
+              "supportedFamilies": [
+                "systemSmall",
+                "systemMedium"
+              ]
+            }
+          ]
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
@@ -63,7 +79,8 @@
           "locationAlwaysAndWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction.",
           "locationWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction."
         }
-      ]
+      ],
+      "expo-widgets"
     ],
     "experiments": {
       "typedRoutes": true

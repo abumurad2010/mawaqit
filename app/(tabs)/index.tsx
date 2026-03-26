@@ -25,6 +25,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
+import { mawaqitWidget } from '@/widgets/MawaqitWidget';
 
 /**
  * Parse "HH:MM" → Date on today (or tomorrow) at that local time.
@@ -92,6 +93,8 @@ export default function PrayerTimesScreen() {
 
   // Track previous offset so useEffect knows which direction to animate the entry
   const prevOffsetRef = useRef(0);
+  // Widget update throttle — only push data to the widget once per minute
+  const prevWidgetMinuteRef = useRef(-1);
   useEffect(() => {
     const delta = dateOffset - prevOffsetRef.current;
     prevOffsetRef.current = dateOffset;
@@ -393,6 +396,37 @@ export default function PrayerTimesScreen() {
     };
     return map[key] ?? key;
   };
+
+  // Push live prayer data to the home-screen widget once per minute.
+  // Throttled via prevWidgetMinuteRef so it doesn't fire every second.
+  // All failures are caught silently — a widget update must never crash the app.
+  useEffect(() => {
+    if (!mawaqitWidget || !nextPrayer || !todayTimes || Platform.OS === 'web') return;
+    const currentMinute = now.getHours() * 60 + now.getMinutes();
+    if (currentMinute === prevWidgetMinuteRef.current) return;
+    prevWidgetMinuteRef.current = currentMinute;
+
+    try {
+      const FARDH_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+      const idx = FARDH_ORDER.indexOf(nextPrayer.name as typeof FARDH_ORDER[number]);
+      const upcomingPrayers = FARDH_ORDER
+        .slice(Math.max(idx + 1, 0), idx + 4)
+        .filter(key => todayTimes[key])
+        .map(key => ({
+          name: prayerLabel(key),
+          time: formatTime(todayTimes[key] as Date),
+        }));
+
+      mawaqitWidget.updateSnapshot({
+        nextPrayerName: prayerLabel(nextPrayer.name),
+        nextPrayerTime: formatTime(nextPrayer.time),
+        countdown,
+        upcomingPrayers,
+      });
+    } catch {
+      // Widget update is non-critical — silently ignore
+    }
+  }, [now, nextPrayer, todayTimes, countdown, prayerLabel]);
 
   // Nafl prayer times — user-set exact daily alarms
   const dhuhaTime = times ? parseHHMM(dhuhaTimeSetting ?? '07:30') : null;
