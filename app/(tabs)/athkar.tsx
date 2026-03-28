@@ -40,6 +40,19 @@ function getKey(catId: string, idx: number) {
   return `${catId}_${idx}`;
 }
 
+// Must mirror stripArabicDiacritics in quran-api.ts — same regex for consistent search/highlight.
+const ATHKAR_DIACRITIC_RE = /[\u064B-\u065F\u0670\u0610-\u061A]/;
+
+function normalizeForAthkarSearch(s: string): string {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ATHKAR_DIACRITIC_RE.test(ch)) continue;
+    out += /[أإآٱ]/.test(ch) ? 'ا' : ch.toLowerCase();
+  }
+  return out;
+}
+
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
   const { lang, colors: C, isDark } = useApp();
@@ -288,20 +301,22 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = searchQuery.trim();
     if (!q) return [];
+    const normQ = normalizeForAthkarSearch(q);
+    const plainQ = q.toLowerCase();
     return sortedCategories.filter(cat => {
-      const nameAr = ((i18n['ar'] as any)[cat.nameKey] ?? '').toLowerCase();
+      const nameAr = normalizeForAthkarSearch((i18n['ar'] as any)[cat.nameKey] ?? '');
       const nameTr = ((i18n[athkarLang] as any)?.[cat.nameKey] ?? '').toLowerCase();
       const nameFallback = ((i18n['en'] as any)?.[cat.nameKey] ?? '').toLowerCase();
-      if (nameAr.includes(q) || nameTr.includes(q) || nameFallback.includes(q)) return true;
+      if (nameAr.includes(normQ) || nameTr.includes(plainQ) || nameFallback.includes(plainQ)) return true;
       return cat.adhkar.some(d => {
-        const ar = d.arabic.toLowerCase();
+        const ar = normalizeForAthkarSearch(d.arabic);
         const tl = d.transliteration.toLowerCase();
         const tKey = d.translationKey as any;
         const tEn = ((i18n['en'] as any)[tKey] ?? '').toLowerCase();
         const tLang = ((i18n[athkarLang] as any)?.[tKey] ?? '').toLowerCase();
-        return ar.includes(q) || tl.includes(q) || tEn.includes(q) || tLang.includes(q);
+        return ar.includes(normQ) || tl.includes(plainQ) || tEn.includes(plainQ) || tLang.includes(plainQ);
       });
     });
   }, [searchQuery, sortedCategories, athkarLang]);
@@ -703,20 +718,22 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                 <Pressable
                   onPress={() => {
                     setShowSearch(false);
-                    const q = searchQuery.trim().toLowerCase();
+                    const rawQ = searchQuery.trim();
+                    const normQ = normalizeForAthkarSearch(rawQ);
+                    const plainQ = rawQ.toLowerCase();
                     let hlIdx = -1;
-                    if (q) {
+                    if (rawQ) {
                       hlIdx = cat.adhkar.findIndex(d => {
                         const tKey = d.translationKey as any;
                         const tText = ((i18n[athkarLang] as any)?.[tKey] ?? '').toLowerCase();
                         const tEn = ((i18n['en'] as any)?.[tKey] ?? '').toLowerCase();
-                        return d.arabic.toLowerCase().includes(q)
-                          || d.transliteration.toLowerCase().includes(q)
-                          || tText.includes(q)
-                          || tEn.includes(q);
+                        return normalizeForAthkarSearch(d.arabic).includes(normQ)
+                          || d.transliteration.toLowerCase().includes(plainQ)
+                          || tText.includes(plainQ)
+                          || tEn.includes(plainQ);
                       });
                     }
-                    onSelect(cat, hlIdx >= 0 ? hlIdx : undefined, hlIdx >= 0 ? searchQuery.trim() : undefined);
+                    onSelect(cat, hlIdx >= 0 ? hlIdx : undefined, hlIdx >= 0 ? rawQ : undefined);
                   }}
                   style={({ pressed }) => [styles.searchResultRow, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1 }]}
                 >
@@ -1049,23 +1066,41 @@ interface CardProps {
 
 function inlineHighlight(text: string, query: string, tintColor: string): React.ReactNode[] {
   if (!query || !text) return [text];
-  const q = query.toLowerCase();
-  const tl = text.toLowerCase();
-  if (!tl.includes(q)) return [text];
+  const normQuery = normalizeForAthkarSearch(query);
+  if (!normQuery) return [text];
+
+  // Build normStr + position map (skip diacritics, normalize Alef variants)
+  const normToOrig: number[] = [];
+  let normStr = '';
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (/[\u064B-\u065F\u0670\u0610-\u061A]/.test(ch)) continue;
+    normStr += /[أإآٱ]/.test(ch) ? 'ا' : ch.toLowerCase();
+    normToOrig.push(i);
+  }
+
+  if (!normStr.includes(normQuery)) return [text];
+
   const parts: React.ReactNode[] = [];
-  let idx = 0;
-  while (idx < text.length) {
-    const mi = tl.indexOf(q, idx);
+  let normIdx = 0;
+  let lastOrigIdx = 0;
+
+  while (normIdx <= normStr.length - normQuery.length) {
+    const mi = normStr.indexOf(normQuery, normIdx);
     if (mi === -1) break;
-    if (mi > idx) parts.push(text.slice(idx, mi));
+    const origStart = normToOrig[mi];
+    const normEnd = mi + normQuery.length;
+    const origEnd = normEnd < normToOrig.length ? normToOrig[normEnd] : text.length;
+    if (origStart > lastOrigIdx) parts.push(text.slice(lastOrigIdx, origStart));
     parts.push(
       <Text key={`hl-${mi}`} style={{ backgroundColor: tintColor + '33', color: tintColor }}>
-        {text.slice(mi, mi + query.length)}
+        {text.slice(origStart, origEnd)}
       </Text>
     );
-    idx = mi + query.length;
+    lastOrigIdx = origEnd;
+    normIdx = normEnd || normIdx + 1;
   }
-  if (idx < text.length) parts.push(text.slice(idx));
+  if (lastOrigIdx < text.length) parts.push(text.slice(lastOrigIdx));
   return parts;
 }
 

@@ -1,0 +1,288 @@
+DEBUG AND FIX: Search term highlighting not working
+when navigating from search results to ayah view.
+
+════════════════════════════════════════════════════════
+STEP 1 — DIAGNOSE FIRST
+════════════════════════════════════════════════════════
+
+Add these console logs and report the output:
+
+In the search results screen, where the user taps 
+a result, add:
+
+  console.log('=== SEARCH TAP ===')
+  console.log('query:', searchQuery)
+  console.log('navigating with highlight:', searchQuery)
+  console.log('params being passed:', {
+    surah: result.surah,
+    ayah: result.ayah,
+    highlight: searchQuery,
+  })
+
+In the ayah/mushaf view, at the top of the component:
+
+  const params = useLocalSearchParams()
+  console.log('=== AYAH VIEW PARAMS ===')
+  console.log('all params:', JSON.stringify(params))
+  console.log('highlight param:', params.highlight)
+  console.log('highlight type:', typeof params.highlight)
+
+Report exactly what these logs show before 
+making any other changes.
+
+════════════════════════════════════════════════════════
+LIKELY CAUSES BASED ON COMMON PATTERNS
+════════════════════════════════════════════════════════
+
+CAUSE A — highlight param not being passed:
+The navigation call may not be passing the 
+highlight param at all. Verify the router.push 
+call includes highlight:
+
+  // WRONG — missing highlight:
+  router.push(`/quran/${surah}/${ayah}`)
+  
+  // CORRECT:
+  router.push({
+    pathname: `/quran/${surah}/${ayah}`,
+    params: { highlight: searchQuery }
+  })
+
+CAUSE B — param received but not used:
+The ayah view receives the param but the 
+highlightText function is never called.
+Check if highlightText() is actually being 
+called in the render:
+
+  // Add this check:
+  console.log('rendering ayah, highlight:', highlight)
+  console.log('arabic text:', arabicText?.substring(0, 30))
+  console.log('highlight result:', 
+    highlightText(arabicText, highlight))
+
+CAUSE C — highlightText returns plain Text not array:
+The function may be returning a single Text component
+instead of an array of Text components with highlights.
+The parent Text must accept mixed children:
+
+  // WRONG — can't nest Text with different styles this way:
+  <Text style={style}>
+    {highlightText(text, term)}
+  </Text>
+
+  // CORRECT — use a wrapping Text that accepts children:
+  <Text>
+    {highlightText(text, term)}
+  </Text>
+
+  // AND the highlightText function must return 
+  // an array of <Text> elements, not a single <Text>
+
+CAUSE D — Arabic diacritic stripping too aggressive:
+The normalize function may be stripping too much,
+causing the match to succeed in search but fail 
+in the highlight function.
+
+  // Fix: use the same normalize function in BOTH
+  // the search AND the highlight:
+  const normalize = (s: string) => 
+    s.replace(/[\u0610-\u061A\u064B-\u065F\u0670]/g, '')
+     .trim()
+     .toLowerCase()
+
+CAUSE E — Mushaf shows pages not individual ayahs:
+If the Quran tab uses a PAGE-BASED mushaf view,
+the highlight needs to be applied to the specific
+ayah within the page, not the whole page.
+The page renders multiple ayahs — find the matching
+one and apply highlight only to that ayah's text.
+
+════════════════════════════════════════════════════════
+COMPLETE HIGHLIGHT IMPLEMENTATION
+════════════════════════════════════════════════════════
+
+Replace the existing highlightText function with 
+this complete, tested implementation:
+
+const HighlightedText = ({ 
+  text, 
+  highlight, 
+  style,
+  normalize = false 
+}: {
+  text: string
+  highlight: string
+  style: TextStyle
+  normalize?: boolean
+}) => {
+  if (!highlight || !text || highlight.trim() === '') {
+    return <Text style={style}>{text}</Text>
+  }
+
+  // Normalize function for Arabic diacritics
+  const strip = (s: string) => normalize 
+    ? s.replace(/[\u0610-\u061A\u064B-\u065F\u0670]/g, '')
+         .toLowerCase()
+    : s.toLowerCase()
+
+  const strippedText = strip(text)
+  const strippedHighlight = strip(highlight.trim())
+
+  if (!strippedHighlight || 
+      !strippedText.includes(strippedHighlight)) {
+    return <Text style={style}>{text}</Text>
+  }
+
+  const parts: React.ReactNode[] = []
+  let lastIndex = 0
+  let searchFrom = 0
+
+  while (searchFrom <= strippedText.length) {
+    const matchIndex = strippedText.indexOf(
+      strippedHighlight, 
+      searchFrom
+    )
+    if (matchIndex === -1) break
+
+    // Text before match
+    if (matchIndex > lastIndex) {
+      parts.push(
+        <Text key={`pre-${lastIndex}`} style={style}>
+          {text.slice(lastIndex, matchIndex)}
+        </Text>
+      )
+    }
+
+    // Highlighted match
+    const matchEnd = matchIndex + strippedHighlight.length
+    parts.push(
+      <Text 
+        key={`match-${matchIndex}`}
+        style={[
+          style,
+          {
+            backgroundColor: '#c9a84c30',
+            color: '#c9a84c',
+          }
+        ]}
+      >
+        {text.slice(matchIndex, matchEnd)}
+      </Text>
+    )
+
+    lastIndex = matchEnd
+    searchFrom = matchEnd
+    if (searchFrom >= strippedText.length) break
+  }
+
+  // Remaining text after last match
+  if (lastIndex < text.length) {
+    parts.push(
+      <Text key={`post-${lastIndex}`} style={style}>
+        {text.slice(lastIndex)}
+      </Text>
+    )
+  }
+
+  return <Text>{parts}</Text>
+}
+
+USAGE in the ayah view:
+
+  const { highlight } = useLocalSearchParams<{ 
+    highlight?: string 
+  }>()
+
+  // For Arabic text (normalize diacritics):
+  <HighlightedText
+    text={ayah.arabic}
+    highlight={highlight ?? ''}
+    style={arabicTextStyle}
+    normalize={true}
+  />
+
+  // For transliteration (no normalization needed):
+  <HighlightedText
+    text={ayah.translit}
+    highlight={highlight ?? ''}
+    style={translitTextStyle}
+    normalize={false}
+  />
+
+  // For translation (no normalization needed):
+  <HighlightedText
+    text={ayah.translation}
+    highlight={highlight ?? ''}
+    style={translationTextStyle}
+    normalize={false}
+  />
+
+════════════════════════════════════════════════════════
+SCROLL TO HIGHLIGHTED AYAH
+════════════════════════════════════════════════════════
+
+If the view shows multiple ayahs (e.g. a full surah
+or a Mushaf page), scroll to the highlighted one:
+
+  const highlightedAyahRef = useRef<View>(null)
+  const scrollViewRef = useRef<ScrollView>(null)
+
+  useEffect(() => {
+    if (highlight && highlightedAyahRef.current) {
+      // Small delay to let layout settle
+      setTimeout(() => {
+        highlightedAyahRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ 
+              y: y - 100, 
+              animated: true 
+            })
+          },
+          () => {}
+        )
+      }, 300)
+    }
+  }, [highlight])
+
+  // On the highlighted ayah's container View:
+  <View 
+    ref={isHighlightedAyah ? highlightedAyahRef : null}
+  >
+    ...ayah content...
+  </View>
+
+════════════════════════════════════════════════════════
+SAME FIX FOR ATHKAR
+════════════════════════════════════════════════════════
+
+Apply identical HighlightedText component to the 
+dhikr reader screen.
+
+When navigating from athkar search to dhikr reader,
+pass highlight param:
+
+  router.push({
+    pathname: '/athkar/reader',
+    params: {
+      category: categoryId,
+      dhikrIndex: matchedIndex,
+      highlight: searchQuery,
+    }
+  })
+
+In the dhikr reader, apply HighlightedText to:
+  - Arabic text of matched dhikr
+  - Transliteration text of matched dhikr
+  - Translation text of matched dhikr
+
+Auto-scroll to the matched dhikr card.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Run the diagnostic logs FIRST and report output.
+Do not change search functionality.
+Do not change Mushaf page layout.
+Do not add new dependencies.

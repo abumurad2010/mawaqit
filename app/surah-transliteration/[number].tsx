@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Animated,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -24,7 +24,6 @@ function highlightLatinInline(
   text: string,
   term: string,
   tintColor: string,
-  opacity: Animated.Value,
 ): React.ReactNode[] {
   if (!term || !text) return [text];
   const q = term.toLowerCase();
@@ -37,12 +36,12 @@ function highlightLatinInline(
     if (mi === -1) break;
     if (mi > idx) parts.push(text.slice(idx, mi));
     parts.push(
-      <Animated.Text
+      <Text
         key={`hl-${mi}`}
-        style={{ backgroundColor: tintColor + '33', color: tintColor, opacity, borderRadius: 2 }}
+        style={{ backgroundColor: tintColor + '33', color: tintColor, borderRadius: 2 }}
       >
         {text.slice(mi, mi + term.length)}
-      </Animated.Text>
+      </Text>
     );
     idx = mi + term.length;
   }
@@ -88,18 +87,12 @@ export default function SurahTransliterationScreen() {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Fade-out animation for search highlight (3 seconds)
-  const highlightOpacity = useRef(new Animated.Value(1)).current;
+  // Show highlight for 3 seconds then clear
+  const [showHighlight, setShowHighlight] = useState(highlightTerm.length > 0);
   useEffect(() => {
     if (!highlightTerm) return;
-    highlightOpacity.setValue(1);
-    const timer = setTimeout(() => {
-      Animated.timing(highlightOpacity, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-    }, 2200);
+    setShowHighlight(true);
+    const timer = setTimeout(() => setShowHighlight(false), 3000);
     return () => clearTimeout(timer);
   }, [highlightTerm]);
 
@@ -280,13 +273,13 @@ export default function SurahTransliterationScreen() {
           const bookmarked = isBookmarked(surahNum, ayahNum);
           const translitText = getTransliteration(surahNum, ayahNum);
           const translationText = getTranslation(translitLang, surahNum, ayahNum);
-          const isTarget = highlightTerm.length > 0 && ayahNum === startAyahNum;
+          const isTarget = showHighlight && highlightTerm.length > 0 && ayahNum === startAyahNum;
 
           const translitContent = isTarget
-            ? highlightLatinInline(translitText, highlightTerm, C.tint, highlightOpacity)
+            ? highlightLatinInline(translitText, highlightTerm, C.tint)
             : [translitText];
           const translationContent = isTarget
-            ? highlightLatinInline(translationText, highlightTerm, C.tint, highlightOpacity)
+            ? highlightLatinInline(translationText, highlightTerm, C.tint)
             : [translationText];
 
           return (

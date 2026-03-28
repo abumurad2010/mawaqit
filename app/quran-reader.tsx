@@ -98,8 +98,20 @@ const banner = StyleSheet.create({
   ornLine: { width: 1, height: 20 },
 });
 
-const DIACRITICS_RE_G = /[\u0610-\u061A\u064B-\u065F]/g;
-const DIACRITICS_RE_SINGLE = /[\u0610-\u061A\u064B-\u065F]/;
+// Must mirror stripArabicDiacritics + normalizeForSearch from lib/quran-api.ts exactly.
+// Diacritics range includes \u0670 (Arabic superscript Alef, common in Quran text).
+const ARABIC_DIACRITIC_RE = /[\u064B-\u065F\u0670\u0610-\u061A]/;
+
+function normalizeArabic(s: string): string {
+  // Apply char-by-char: same logic as normalizeForSearch so matches are consistent
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ARABIC_DIACRITIC_RE.test(ch)) continue;        // skip diacritics
+    out += /[أإآٱ]/.test(ch) ? 'ا' : ch.toLowerCase(); // normalize Alef + lowercase
+  }
+  return out;
+}
 
 function highlightArabicInline(
   text: string,
@@ -107,16 +119,20 @@ function highlightArabicInline(
   tintColor: string,
 ): React.ReactNode[] {
   if (!term || !text) return [text];
-  // Build position map: normPos → origPos (skipping diacritics)
+
+  const normTerm = normalizeArabic(term);
+  if (!normTerm) return [text];
+
+  // Build position map: normPos → origPos (skip diacritics, Alef is 1:1 mapped)
   const normToOrig: number[] = [];
   let normStr = '';
   for (let i = 0; i < text.length; i++) {
-    if (!DIACRITICS_RE_SINGLE.test(text[i])) {
-      normStr += text[i].toLowerCase();
-      normToOrig.push(i);
-    }
+    const ch = text[i];
+    if (ARABIC_DIACRITIC_RE.test(ch)) continue;
+    normStr += /[أإآٱ]/.test(ch) ? 'ا' : ch.toLowerCase();
+    normToOrig.push(i);
   }
-  const normTerm = term.replace(DIACRITICS_RE_G, '').toLowerCase();
+
   if (!normStr.includes(normTerm)) return [text];
 
   const parts: React.ReactNode[] = [];
