@@ -161,14 +161,6 @@ export default function SettingsScreen() {
     (todayHijri.month === 12 && todayHijri.day >= 8 && todayHijri.day <= 10) // 8–10 Dhul Hijjah
   );
 
-  // ── Debug log — remove after testing ──────────────────────────────────────
-  console.log('[Eid Debug]', {
-    rawGregorian:   new Date().toISOString().slice(0, 10),
-    draftHijriAdj:  draftHijri,
-    adjustedHijri:  `${todayHijri.year}/${String(todayHijri.month).padStart(2,'0')}/${String(todayHijri.day).padStart(2,'0')}`,
-    isNearEid,
-  });
-  // ──────────────────────────────────────────────────────────────────────────
 
   // ── Help texts (all 15 languages) ───────────────────────────────
   type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid' | 'iqama';

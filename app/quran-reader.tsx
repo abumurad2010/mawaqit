@@ -98,11 +98,61 @@ const banner = StyleSheet.create({
   ornLine: { width: 1, height: 20 },
 });
 
+const DIACRITICS_RE_G = /[\u0610-\u061A\u064B-\u065F]/g;
+const DIACRITICS_RE_SINGLE = /[\u0610-\u061A\u064B-\u065F]/;
+
+function highlightArabicInline(
+  text: string,
+  term: string,
+  tintColor: string,
+): React.ReactNode[] {
+  if (!term || !text) return [text];
+  // Build position map: normPos → origPos (skipping diacritics)
+  const normToOrig: number[] = [];
+  let normStr = '';
+  for (let i = 0; i < text.length; i++) {
+    if (!DIACRITICS_RE_SINGLE.test(text[i])) {
+      normStr += text[i].toLowerCase();
+      normToOrig.push(i);
+    }
+  }
+  const normTerm = term.replace(DIACRITICS_RE_G, '').toLowerCase();
+  if (!normStr.includes(normTerm)) return [text];
+
+  const parts: React.ReactNode[] = [];
+  let normIdx = 0;
+  let lastOrigIdx = 0;
+
+  while (normIdx <= normStr.length - normTerm.length) {
+    const mi = normStr.indexOf(normTerm, normIdx);
+    if (mi === -1) break;
+    const origStart = normToOrig[mi];
+    const normEnd = mi + normTerm.length;
+    const origEnd = normEnd < normToOrig.length ? normToOrig[normEnd] : text.length;
+    if (origStart > lastOrigIdx) {
+      parts.push(text.slice(lastOrigIdx, origStart));
+    }
+    parts.push(
+      <Text
+        key={`hl-${mi}`}
+        style={{ backgroundColor: tintColor + '33', color: tintColor, borderRadius: 2 }}
+      >
+        {text.slice(origStart, origEnd)}
+      </Text>
+    );
+    lastOrigIdx = origEnd;
+    normIdx = normEnd || normIdx + 1;
+  }
+  if (lastOrigIdx < text.length) parts.push(text.slice(lastOrigIdx));
+  return parts;
+}
+
 export default function QuranReaderScreen() {
-  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string }>();
+  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; highlight?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
   const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
   const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
+  const highlightTerm = params.highlight ?? '';
 
   const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -341,9 +391,12 @@ export default function QuranReaderScreen() {
                       }
                       const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
                       const isHighlighted = highlightTarget?.surah === ayah.surahNum && highlightTarget?.ayah === ayah.ayahNum;
+                      const ayahContent = (isHighlighted && highlightTerm)
+                        ? highlightArabicInline(text, highlightTerm, C.tint)
+                        : [text];
                       return (
                         <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
-                          {text}
+                          {ayahContent}
                           <Text
                             suppressHighlighting
                             onLongPress={() => handleLongPressAyah(ayah)}

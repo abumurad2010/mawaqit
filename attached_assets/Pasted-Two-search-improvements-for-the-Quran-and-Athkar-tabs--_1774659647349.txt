@@ -1,0 +1,220 @@
+Two search improvements for the Quran and Athkar tabs:
+
+════════════════════════════════════════════════════════
+FIX 1 — HIGHLIGHT SEARCH TERM IN MUSHAF/AYAH VIEW
+════════════════════════════════════════════════════════
+
+PROBLEM:
+When user taps a search result in the Quran tab,
+they are taken to the ayah in the Mushaf but the 
+searched term is not highlighted. Same issue in 
+Athkar — tapping a search result shows the dhikr 
+but the matched text is not highlighted.
+
+FIX — QURAN TAB:
+
+When navigating to an ayah from search results,
+pass the search query along with the navigation:
+
+  router.push({
+    pathname: '/quran/ayah',
+    params: { 
+      surah: surahNumber, 
+      ayah: ayahNumber,
+      highlight: searchQuery  // ← pass the search term
+    }
+  })
+
+In the ayah/mushaf view, read the highlight param
+and highlight the matching text in the Arabic and
+transliteration:
+
+  const { highlight } = useLocalSearchParams()
+
+  // Highlight function using a split+map approach:
+  const highlightText = (text: string, term: string) => {
+    if (!term || !text) return (
+      <Text style={arabicStyle}>{text}</Text>
+    )
+    
+    // Normalize both for comparison
+    // Strip diacritics for matching but show original
+    const normalize = (s: string) => 
+      s.replace(/[\u0610-\u061A\u064B-\u065F]/g, '')
+        .toLowerCase()
+    
+    const normalizedText = normalize(text)
+    const normalizedTerm = normalize(term)
+    
+    if (!normalizedText.includes(normalizedTerm)) {
+      return <Text style={arabicStyle}>{text}</Text>
+    }
+    
+    // Split original text at match positions
+    const parts: React.ReactNode[] = []
+    let lastIndex = 0
+    let searchIndex = 0
+    
+    while (searchIndex < normalizedText.length) {
+      const matchIndex = normalizedText.indexOf(
+        normalizedTerm, 
+        searchIndex
+      )
+      if (matchIndex === -1) break
+      
+      // Text before match
+      if (matchIndex > lastIndex) {
+        parts.push(
+          <Text key={lastIndex} style={arabicStyle}>
+            {text.slice(lastIndex, matchIndex)}
+          </Text>
+        )
+      }
+      
+      // Highlighted match
+      parts.push(
+        <Text 
+          key={matchIndex} 
+          style={[arabicStyle, { 
+            backgroundColor: '#c9a84c33',
+            color: '#c9a84c',
+            borderRadius: 3,
+          }]}
+        >
+          {text.slice(matchIndex, matchIndex + term.length)}
+        </Text>
+      )
+      
+      lastIndex = matchIndex + term.length
+      searchIndex = matchIndex + term.length
+    }
+    
+    // Remaining text
+    if (lastIndex < text.length) {
+      parts.push(
+        <Text key={lastIndex} style={arabicStyle}>
+          {text.slice(lastIndex)}
+        </Text>
+      )
+    }
+    
+    return <Text>{parts}</Text>
+  }
+
+  // Apply to Arabic ayah text:
+  {highlightText(ayah.arabic, highlight)}
+  
+  // Apply to translation text:
+  {highlightText(ayah.translation, highlight)}
+
+HIGHLIGHT STYLE:
+  backgroundColor: C.tint at 20% opacity (#c9a84c33)
+  color: C.tint (#c9a84c)
+  The highlight fades out after 3 seconds using
+  Animated.timing on opacity from 1 → 0
+  so the user sees it then it softly disappears
+
+SCROLL TO HIGHLIGHTED AYAH:
+  Ensure the view automatically scrolls to the 
+  matched ayah so it is visible without manual 
+  scrolling. Use scrollToIndex or scrollTo with
+  the ayah's measured position.
+
+FIX — ATHKAR TAB:
+Same highlighting logic applies when navigating
+from athkar search results to the dhikr reader.
+
+Pass the search term to the reader screen:
+  router.push({
+    pathname: '/athkar/reader',
+    params: {
+      category: categoryId,
+      dhikrIndex: index,
+      highlight: searchQuery
+    }
+  })
+
+In the dhikr reader, apply highlightText() to:
+  - Arabic text of the matching dhikr
+  - Transliteration text of the matching dhikr
+  - Translation text of the matching dhikr
+
+Auto-scroll to the highlighted dhikr card.
+
+════════════════════════════════════════════════════════
+FIX 2 — SEPARATE TRANSLITERATION SEARCH
+════════════════════════════════════════════════════════
+
+PROBLEM:
+When the user is in transliteration mode and taps 
+the search icon, the search currently searches the 
+Arabic Mushaf text — not the transliteration or 
+translation. This is wrong and confusing.
+
+FIX:
+The search behaviour must change based on which 
+mode the user is currently in:
+
+  const searchMode = isTransliterationMode 
+    ? 'transliteration' 
+    : 'arabic'
+
+ARABIC MODE SEARCH (existing behaviour, unchanged):
+  - Searches Arabic text of all 6,236 ayahs
+  - Strips diacritics before matching
+  - Shows surah name + ayah number + Arabic snippet
+
+TRANSLITERATION MODE SEARCH (new):
+  - Searches BOTH transliteration AND translation text
+  - Uses getTransliteration() and getTranslation() 
+    from lib/quran-translations (already bundled)
+  - Case-insensitive Latin text matching
+  - No diacritic stripping needed (Latin text)
+  - Shows: transliteration snippet + translation snippet
+    + surah name + ayah number
+
+SEARCH INPUT PLACEHOLDER changes by mode:
+  Arabic mode:
+    ar: "ابحث في القرآن..."
+    en: "Search Quran in Arabic..."
+    i18n key: search_quran_arabic
+
+  Transliteration mode:
+    ar: "ابحث في النقل الحرفي..."
+    en: "Search transliteration..."
+    i18n key: search_quran_translit
+
+SEARCH RESULT CARD in transliteration mode:
+  Line 1: Surah name + ayah number (small, muted)
+  Line 2: Transliteration snippet with match highlighted
+  Line 3: Translation snippet with match highlighted
+  
+  // Snippet: show 40 chars before and after match
+  const getSnippet = (text: string, term: string) => {
+    const idx = text.toLowerCase().indexOf(term.toLowerCase())
+    if (idx === -1) return text.substring(0, 80) + '...'
+    const start = Math.max(0, idx - 40)
+    const end = Math.min(text.length, idx + term.length + 40)
+    return (start > 0 ? '...' : '') + 
+           text.substring(start, end) + 
+           (end < text.length ? '...' : '')
+  }
+
+WHEN USER TAPS TRANSLITERATION SEARCH RESULT:
+  Navigate to the ayah in transliteration mode
+  with the search term highlighted in both
+  transliteration and translation text.
+  The app must stay in transliteration mode —
+  do not switch back to Arabic mode.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change Arabic mode search behaviour.
+Do not change the Mushaf page layout.
+Do not change bookmarks.
+Do not add new dependencies.
+Highlight colour: C.tint at 20% opacity for background,
+  C.tint for text — consistent across both tabs.
+All new i18n keys must be added to all 15 languages.

@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
+  View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Animated,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -20,9 +20,41 @@ const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَ
 const BISMILLAH_TRANSLIT = 'Bismi Allāhi l-raḥmāni l-raḥīm';
 const AYAHS_PER_PAGE = 5;
 
+function highlightLatinInline(
+  text: string,
+  term: string,
+  tintColor: string,
+  opacity: Animated.Value,
+): React.ReactNode[] {
+  if (!term || !text) return [text];
+  const q = term.toLowerCase();
+  const tl = text.toLowerCase();
+  if (!tl.includes(q)) return [text];
+  const parts: React.ReactNode[] = [];
+  let idx = 0;
+  while (idx < text.length) {
+    const mi = tl.indexOf(q, idx);
+    if (mi === -1) break;
+    if (mi > idx) parts.push(text.slice(idx, mi));
+    parts.push(
+      <Animated.Text
+        key={`hl-${mi}`}
+        style={{ backgroundColor: tintColor + '33', color: tintColor, opacity, borderRadius: 2 }}
+      >
+        {text.slice(mi, mi + term.length)}
+      </Animated.Text>
+    );
+    idx = mi + term.length;
+  }
+  if (idx < text.length) parts.push(text.slice(idx));
+  return parts;
+}
+
 export default function SurahTransliterationScreen() {
-  const { number } = useLocalSearchParams<{ number: string }>();
+  const { number, startAyah, highlight } = useLocalSearchParams<{ number: string; startAyah?: string; highlight?: string }>();
   const surahNum = Number(number ?? '1');
+  const startAyahNum = Number(startAyah ?? '0');
+  const highlightTerm = highlight ?? '';
   const insets = useSafeAreaInsets();
   const { isDark, lang, translitLang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings } = useApp();
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
@@ -48,9 +80,28 @@ export default function SurahTransliterationScreen() {
   const totalAyahs = arabicData.ayahs.length;
   const totalPages = Math.max(1, Math.ceil(totalAyahs / AYAHS_PER_PAGE));
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const initialPage = startAyahNum > 0
+    ? Math.min(totalPages, Math.ceil(startAyahNum / AYAHS_PER_PAGE))
+    : 1;
+
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  // Fade-out animation for search highlight (3 seconds)
+  const highlightOpacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!highlightTerm) return;
+    highlightOpacity.setValue(1);
+    const timer = setTimeout(() => {
+      Animated.timing(highlightOpacity, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, [highlightTerm]);
 
   const pageAyahs = arabicData.ayahs.slice(
     (currentPage - 1) * AYAHS_PER_PAGE,
@@ -229,13 +280,23 @@ export default function SurahTransliterationScreen() {
           const bookmarked = isBookmarked(surahNum, ayahNum);
           const translitText = getTransliteration(surahNum, ayahNum);
           const translationText = getTranslation(translitLang, surahNum, ayahNum);
+          const isTarget = highlightTerm.length > 0 && ayahNum === startAyahNum;
+
+          const translitContent = isTarget
+            ? highlightLatinInline(translitText, highlightTerm, C.tint, highlightOpacity)
+            : [translitText];
+          const translationContent = isTarget
+            ? highlightLatinInline(translationText, highlightTerm, C.tint, highlightOpacity)
+            : [translationText];
 
           return (
             <View
               key={ayahNum}
               style={[styles.ayahCard, {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-                borderColor: C.separator,
+                backgroundColor: isTarget
+                  ? (isDark ? 'rgba(201,168,76,0.08)' : 'rgba(201,168,76,0.06)')
+                  : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
+                borderColor: isTarget ? C.tint + '55' : C.separator,
               }]}
             >
               {/* Top row: badge + bookmark */}
@@ -265,7 +326,7 @@ export default function SurahTransliterationScreen() {
                 {/* Transliteration — always available offline */}
                 {translitText.length > 0 && (
                   <Text style={[styles.translitText, { color: C.tint, fontFamily: SERIF_EN, fontSize: 14 * fontScale, lineHeight: 22 * fontScale }]}>
-                    {translitText}
+                    {translitContent}
                   </Text>
                 )}
 
@@ -275,7 +336,7 @@ export default function SurahTransliterationScreen() {
                     styles.translationText,
                     { color: C.textSecond, fontWeight: fw, textAlign: isRtlTranslation ? 'right' : 'left', fontFamily: isRtlTranslation ? 'Amiri_400Regular' : SERIF_EN, fontSize: 13 * fontScale, lineHeight: 21 * fontScale }
                   ]}>
-                    {translationText}
+                    {translationContent}
                   </Text>
                 )}
               </View>

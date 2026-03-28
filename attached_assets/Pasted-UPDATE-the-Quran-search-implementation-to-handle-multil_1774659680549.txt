@@ -1,0 +1,273 @@
+UPDATE the Quran search implementation to handle 
+multilingual search correctly.
+
+This replaces and completes the previous search prompt.
+Apply all changes from the previous prompt PLUS these:
+
+════════════════════════════════════════════════════════
+SEARCH BEHAVIOUR BY MODE
+════════════════════════════════════════════════════════
+
+ARABIC MODE:
+  Search target: Arabic Uthmani text only
+  Matching: diacritic-insensitive Arabic
+  Results show: Arabic snippet with highlight
+
+TRANSLITERATION MODE:
+  Search target: BOTH of the following simultaneously:
+    1. Transliteration text (Latin script, always English)
+    2. Translation in the CURRENTLY SELECTED language
+       (e.g. if user selected French, search French text)
+  
+  A result appears if the term matches in EITHER source.
+  
+  Results show ALL THREE for every matched ayah:
+    Line 1: Surah name + ayah number (small, muted)
+    Line 2: Arabic text (small, right-aligned, Amiri font)
+    Line 3: Transliteration snippet (highlighted if matched)
+    Line 4: Translation snippet in selected lang (highlighted 
+             if matched)
+
+  The selectedLang comes from the same athkarLang or 
+  quranLang state already used in the Quran tab.
+
+════════════════════════════════════════════════════════
+SEARCH FUNCTION FOR TRANSLITERATION MODE
+════════════════════════════════════════════════════════
+
+const searchTransliteration = (
+  query: string,
+  selectedLang: string
+): SearchResult[] => {
+
+  if (!query || query.length < 2) return []
+
+  const normalizedQuery = query.toLowerCase().trim()
+  const results: SearchResult[] = []
+
+  // Iterate all 6236 ayahs
+  for (let surah = 1; surah <= 114; surah++) {
+    const ayahCount = SURAH_AYAH_COUNTS[surah]
+    for (let ayah = 1; ayah <= ayahCount; ayah++) {
+
+      const translitText = getTransliteration(surah, ayah)
+      const translationText = getTranslation(selectedLang, surah, ayah)
+      const arabicText = getArabicText(surah, ayah)
+
+      const matchesTranslit = translitText
+        .toLowerCase()
+        .includes(normalizedQuery)
+      
+      const matchesTranslation = translationText
+        .toLowerCase()
+        .includes(normalizedQuery)
+
+      if (matchesTranslit || matchesTranslation) {
+        results.push({
+          surah,
+          ayah,
+          arabic: arabicText,
+          translit: translitText,
+          translation: translationText,
+          matchedIn: matchesTranslit ? 'translit' : 'translation',
+          query: query,
+        })
+      }
+
+      // Cap at 50 results for performance
+      if (results.length >= 50) return results
+    }
+  }
+
+  return results
+}
+
+════════════════════════════════════════════════════════
+SEARCH RESULT CARD — TRANSLITERATION MODE
+════════════════════════════════════════════════════════
+
+Each result card shows:
+
+┌─────────────────────────────────────────┐
+│ Surah Al-Baqarah • 2:255          [muted]│
+│                                          │
+│ ٱللَّهُ لَآ إِلَـٰهَ إِلَّا هُوَ       │
+│ [Arabic, small, right-aligned, Amiri]    │
+│                                          │
+│ Allahu la ilaha illa huwa...             │
+│ [Translit, highlighted if matched]       │
+│                                          │
+│ Allah — there is no deity except Him...  │
+│ [Translation in selectedLang, highlighted│
+│  if matched]                             │
+└─────────────────────────────────────────┘
+
+Card style:
+  backgroundColor: C.backgroundCard
+  borderRadius: 10
+  padding: 12
+  marginBottom: 8
+  border: 1px C.separator
+
+Surah + ayah header:
+  fontSize: 12, color: C.textMuted
+
+Arabic text:
+  fontFamily: Amiri_400Regular
+  fontSize: 16
+  textAlign: 'right'
+  color: C.text
+  marginTop: 6
+
+Transliteration:
+  fontSize: 13
+  color: C.textSecondary
+  marginTop: 4
+  fontStyle: 'italic'
+
+Translation:
+  fontSize: 13
+  color: C.textSecondary
+  marginTop: 2
+
+Highlighted portions (in both translit and translation):
+  backgroundColor: C.tint + '33'  (20% opacity gold)
+  color: C.tint
+  borderRadius: 2
+
+════════════════════════════════════════════════════════
+SNIPPET HELPER (reuse for both translit and translation)
+════════════════════════════════════════════════════════
+
+const getSnippet = (
+  text: string, 
+  term: string,
+  contextChars: number = 50
+): string => {
+  if (!text) return ''
+  const idx = text.toLowerCase().indexOf(term.toLowerCase())
+  if (idx === -1) return text.substring(0, contextChars * 2)
+  const start = Math.max(0, idx - contextChars)
+  const end = Math.min(
+    text.length, 
+    idx + term.length + contextChars
+  )
+  return (start > 0 ? '...' : '') + 
+         text.substring(start, end) + 
+         (end < text.length ? '...' : '')
+}
+
+════════════════════════════════════════════════════════
+WHEN USER TAPS A RESULT
+════════════════════════════════════════════════════════
+
+Navigate to the ayah passing all highlight info:
+
+  router.push({
+    pathname: '/quran/ayah',  // or mushaf page
+    params: {
+      surah: result.surah,
+      ayah: result.ayah,
+      highlight: query,
+      highlightTranslit: 'true',
+      highlightTranslation: 'true',
+      lang: selectedLang,
+      // Stay in transliteration mode:
+      mode: 'transliteration',
+    }
+  })
+
+In the ayah view:
+  - Show Arabic + transliteration + translation
+  - Highlight query term in whichever fields it appears
+  - Auto-scroll so the ayah is visible
+  - Highlight fades after 3 seconds
+
+════════════════════════════════════════════════════════
+SEARCH PLACEHOLDER TEXT (all 15 languages)
+════════════════════════════════════════════════════════
+
+ARABIC MODE placeholder:
+  i18n key: search_quran_arabic
+  ar: "ابحث في القرآن بالعربية..."
+  en: "Search Quran in Arabic..."
+  fr: "Rechercher dans le Coran en arabe..."
+  es: "Buscar en el Corán en árabe..."
+  ru: "Поиск в Коране на арабском..."
+  zh: "用阿拉伯语搜索古兰经..."
+  tr: "Kuran'da Arapça ara..."
+  ur: "قرآن میں عربی میں تلاش کریں..."
+  id: "Cari dalam Quran bahasa Arab..."
+  bn: "আরবিতে কুরআন অনুসন্ধান করুন..."
+  fa: "جستجو در قرآن به عربی..."
+  ms: "Cari dalam Quran bahasa Arab..."
+  pt: "Pesquisar no Alcorão em árabe..."
+  sw: "Tafuta katika Quran kwa Kiarabu..."
+  ha: "Bincika Alkur'ani da Larabci..."
+
+TRANSLITERATION MODE placeholder:
+  i18n key: search_quran_translit
+  ar: "ابحث في النقل الحرفي أو الترجمة..."
+  en: "Search transliteration or translation..."
+  fr: "Rechercher dans la translittération ou traduction..."
+  es: "Buscar en transliteración o traducción..."
+  ru: "Поиск в транслитерации или переводе..."
+  zh: "搜索音译或翻译..."
+  tr: "Transliterasyon veya çeviride ara..."
+  ur: "نقل حرفی یا ترجمے میں تلاش کریں..."
+  id: "Cari transliterasi atau terjemahan..."
+  bn: "প্রতিলিপি বা অনুবাদে অনুসন্ধান করুন..."
+  fa: "جستجو در نقل حروف یا ترجمه..."
+  ms: "Cari transliterasi atau terjemahan..."
+  pt: "Pesquisar transliteração ou tradução..."
+  sw: "Tafuta transliterasi au tafsiri..."
+  ha: "Bincika fassarar haruffa ko fassarar..."
+
+════════════════════════════════════════════════════════
+NO RESULTS MESSAGE (all 15 languages)
+════════════════════════════════════════════════════════
+
+i18n key: search_no_results
+  ar: "لا توجد نتائج لـ «{query}»"
+  en: "No results for \"{query}\""
+  fr: "Aucun résultat pour «{query}»"
+  es: "Sin resultados para «{query}»"
+  ru: "Нет результатов для «{query}»"
+  zh: "未找到"{query}"的结果"
+  tr: "«{query}» için sonuç bulunamadı"
+  ur: "«{query}» کے لیے کوئی نتیجہ نہیں"
+  id: "Tidak ada hasil untuk \"{query}\""
+  bn: "«{query}» এর জন্য কোনো ফলাফল নেই"
+  fa: "نتیجه‌ای برای «{query}» یافت نشد"
+  ms: "Tiada hasil untuk \"{query}\""
+  pt: "Nenhum resultado para «{query}»"
+  sw: "Hakuna matokeo kwa \"{query}\""
+  ha: "Babu sakamakon «{query}»"
+
+════════════════════════════════════════════════════════
+PERFORMANCE NOTE
+════════════════════════════════════════════════════════
+
+Searching 6,236 ayahs × 2 text fields is fast since
+all data is local JSON — no network calls.
+However run the search inside a useMemo or debounce 
+with 300ms delay so it does not fire on every keystroke:
+
+  const results = useMemo(() => {
+    if (searchMode === 'arabic') {
+      return searchArabic(query)
+    } else {
+      return searchTransliteration(query, selectedLang)
+    }
+  }, [query, searchMode, selectedLang])
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change Arabic mode search behaviour.
+Do not change the Mushaf page layout.
+Do not change bookmarks.
+Do not add new dependencies.
+All i18n keys must be added to all 15 languages
+in i18n.ts.

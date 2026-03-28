@@ -158,7 +158,7 @@ export default function QuranScreen() {
           <AppLogo tintColor={C.tint} lang={lang} />
           <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
             <Pressable
-              onPress={() => { Haptics.selectionAsync(); router.push('/search'); }}
+              onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/search', params: { mode, translitLang } }); }}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
             >
               <Ionicons name="search" size={18} color={C.tint} />

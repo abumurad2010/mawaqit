@@ -50,6 +50,8 @@ export default function AthkarScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [selectedCategory, setSelectedCategory] = useState<AthkarCategory | null>(null);
+  const [highlightDhikrIdx, setHighlightDhikrIdx] = useState<number>(-1);
+  const [highlightQuery, setHighlightQuery] = useState<string>('');
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
     (!lang || lang === 'ar') ? 'arabic' : 'full'
@@ -82,14 +84,6 @@ export default function AthkarScreen() {
     }).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    ATHKAR_CATEGORIES.forEach(cat =>
-      console.log(
-        cat.id, '→', cat.icon,
-        (MaterialCommunityIcons as any).glyphMap?.[cat.icon] ? 'FOUND' : 'MISSING — FALLBACK NEEDED',
-      )
-    );
-  }, []);
 
   useEffect(() => {
     if (!lang || lang === 'ar') {
@@ -126,8 +120,10 @@ export default function AthkarScreen() {
     });
   }, [tr]);
 
-  const openCategory = useCallback((cat: AthkarCategory) => {
+  const openCategory = useCallback((cat: AthkarCategory, hlIdx?: number, hlQuery?: string) => {
     Haptics.selectionAsync();
+    setHighlightDhikrIdx(hlIdx ?? -1);
+    setHighlightQuery(hlQuery ?? '');
     setSelectedCategory(cat);
     setCounts({});
   }, []);
@@ -203,6 +199,8 @@ export default function AthkarScreen() {
           displayMode={displayMode}
           athkarLang={athkarLang}
           athkarFontSize={athkarFontSize}
+          highlightIdx={highlightDhikrIdx}
+          highlightQuery={highlightQuery}
         />
       ) : (
         <GridScreen
@@ -240,7 +238,7 @@ interface GridProps {
   bottomInset: number;
   displayMode: 'arabic' | 'full';
   onDisplayMode: (m: 'arabic' | 'full') => void;
-  onSelect: (cat: AthkarCategory) => void;
+  onSelect: (cat: AthkarCategory, hlIdx?: number, hlQuery?: string) => void;
   favourites: string[];
   onLongPress: (cat: AthkarCategory) => void;
   sortedCategories: AthkarCategory[];
@@ -703,7 +701,23 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               const cellRtl = displayMode === 'arabic' || isRtlLang(athkarLang);
               return (
                 <Pressable
-                  onPress={() => { setShowSearch(false); onSelect(cat); }}
+                  onPress={() => {
+                    setShowSearch(false);
+                    const q = searchQuery.trim().toLowerCase();
+                    let hlIdx = -1;
+                    if (q) {
+                      hlIdx = cat.adhkar.findIndex(d => {
+                        const tKey = d.translationKey as any;
+                        const tText = ((i18n[athkarLang] as any)?.[tKey] ?? '').toLowerCase();
+                        const tEn = ((i18n['en'] as any)?.[tKey] ?? '').toLowerCase();
+                        return d.arabic.toLowerCase().includes(q)
+                          || d.transliteration.toLowerCase().includes(q)
+                          || tText.includes(q)
+                          || tEn.includes(q);
+                      });
+                    }
+                    onSelect(cat, hlIdx >= 0 ? hlIdx : undefined, hlIdx >= 0 ? searchQuery.trim() : undefined);
+                  }}
                   style={({ pressed }) => [styles.searchResultRow, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.75 : 1 }]}
                 >
                   <MaterialCommunityIcons name={cat.icon as any} size={24} color={favourites.includes(cat.id) ? GOLD : C.tint} />
@@ -805,6 +819,8 @@ interface ReaderProps {
   displayMode: 'arabic' | 'full';
   athkarLang: Lang;
   athkarFontSize: AthkarFontSize;
+  highlightIdx?: number;
+  highlightQuery?: string;
 }
 
 function ReaderScreen({
@@ -812,14 +828,20 @@ function ReaderScreen({
   topInset, bottomInset, readerRef,
   counts, getCount, isDone, onTap, onBack, onReset,
   displayMode, athkarLang, athkarFontSize,
+  highlightIdx = -1, highlightQuery = '',
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
 
+  // Auto-scroll to highlighted dhikr on mount
   useEffect(() => {
-    console.log('Athkar lang selector mounted:', athkarLang);
-    console.log('Available languages:', Object.keys(i18n));
-  }, [athkarLang]);
+    if (highlightIdx >= 0 && highlightIdx < category.adhkar.length) {
+      const timer = setTimeout(() => {
+        readerRef.current?.scrollToIndex({ index: highlightIdx, animated: true, viewPosition: 0.15 });
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightIdx, category.adhkar.length]);
 
   const nameKey = category.nameKey as any;
   const catName = displayMode === 'arabic'
@@ -962,7 +984,7 @@ function ReaderScreen({
         ref={readerRef}
         data={category.adhkar}
         keyExtractor={(_, i) => String(i)}
-        extraData={[athkarLang, copyHighlightIdx]}
+        extraData={[athkarLang, copyHighlightIdx, highlightQuery]}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={() => {}}
@@ -988,6 +1010,8 @@ function ReaderScreen({
               arabicFontSize={cardFS.arabic}
               translitFontSize={cardFS.translit}
               translationFontSize={cardFS.translation}
+              searchHighlight={highlightQuery.length > 0 && index === highlightIdx}
+              searchQuery={highlightQuery}
             />
           );
         }}
@@ -1019,9 +1043,33 @@ interface CardProps {
   arabicFontSize: number;
   translitFontSize: number;
   translationFontSize: number;
+  searchHighlight?: boolean;
+  searchQuery?: string;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize }: CardProps) {
+function inlineHighlight(text: string, query: string, tintColor: string): React.ReactNode[] {
+  if (!query || !text) return [text];
+  const q = query.toLowerCase();
+  const tl = text.toLowerCase();
+  if (!tl.includes(q)) return [text];
+  const parts: React.ReactNode[] = [];
+  let idx = 0;
+  while (idx < text.length) {
+    const mi = tl.indexOf(q, idx);
+    if (mi === -1) break;
+    if (mi > idx) parts.push(text.slice(idx, mi));
+    parts.push(
+      <Text key={`hl-${mi}`} style={{ backgroundColor: tintColor + '33', color: tintColor }}>
+        {text.slice(mi, mi + query.length)}
+      </Text>
+    );
+    idx = mi + query.length;
+  }
+  if (idx < text.length) parts.push(text.slice(idx));
+  return parts;
+}
+
+function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
@@ -1031,8 +1079,11 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
         style={({ pressed }) => [
           styles.card,
           {
-            backgroundColor: done ? C.tint + '18' : C.backgroundCard,
-            borderColor: highlighted ? C.tint + '66' : done ? C.tint + '55' : C.separator,
+            backgroundColor: searchHighlight
+              ? C.tint + '12'
+              : done ? C.tint + '18' : C.backgroundCard,
+            borderColor: searchHighlight ? C.tint + '88'
+              : highlighted ? C.tint + '66' : done ? C.tint + '55' : C.separator,
             opacity: pressed && !done ? 0.88 : 1,
           },
         ]}
@@ -1058,12 +1109,12 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
         </View>
 
         <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.75, color: done ? C.tint : C.text }]}>
-          {dhikr.arabic}
+          {searchHighlight ? inlineHighlight(dhikr.arabic, searchQuery, C.tint) : dhikr.arabic}
         </Text>
 
         {displayMode === 'full' && (
           <Text style={[styles.translitText, { fontSize: translitFontSize, lineHeight: translitFontSize * 1.5, color: C.textMuted }]}>
-            {dhikr.transliteration}
+            {searchHighlight ? inlineHighlight(dhikr.transliteration, searchQuery, C.tint) : dhikr.transliteration}
           </Text>
         )}
 
@@ -1079,7 +1130,7 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
               fontFamily: translationRtl ? 'Amiri_400Regular' : 'Inter_400Regular',
             },
           ]}>
-            {translation}
+            {searchHighlight ? inlineHighlight(translation, searchQuery, C.tint) : translation}
           </Text>
         )}
       </Pressable>
