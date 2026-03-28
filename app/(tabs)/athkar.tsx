@@ -849,6 +849,7 @@ function ReaderScreen({
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
+  const [activeHighlight, setActiveHighlight] = useState(highlightQuery.length > 0);
 
   // Auto-scroll to highlighted dhikr on mount
   useEffect(() => {
@@ -1001,10 +1002,11 @@ function ReaderScreen({
         ref={readerRef}
         data={category.adhkar}
         keyExtractor={(_, i) => String(i)}
-        extraData={[athkarLang, copyHighlightIdx, highlightQuery]}
+        extraData={[athkarLang, copyHighlightIdx, highlightQuery, activeHighlight]}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={() => {}}
+        onScrollBeginDrag={() => activeHighlight && setActiveHighlight(false)}
         renderItem={({ item: dhikr, index }) => {
           const done = isDone(category.id, index, dhikr.count);
           const cur = getCount(category.id, index);
@@ -1027,7 +1029,7 @@ function ReaderScreen({
               arabicFontSize={cardFS.arabic}
               translitFontSize={cardFS.translit}
               translationFontSize={cardFS.translation}
-              searchHighlight={highlightQuery.length > 0 && index === highlightIdx}
+              searchHighlight={activeHighlight && highlightQuery.length > 0 && index === highlightIdx}
               searchQuery={highlightQuery}
             />
           );

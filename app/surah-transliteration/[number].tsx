@@ -87,14 +87,7 @@ export default function SurahTransliterationScreen() {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Show highlight for 3 seconds then clear
   const [showHighlight, setShowHighlight] = useState(highlightTerm.length > 0);
-  useEffect(() => {
-    if (!highlightTerm) return;
-    setShowHighlight(true);
-    const timer = setTimeout(() => setShowHighlight(false), 3000);
-    return () => clearTimeout(timer);
-  }, [highlightTerm]);
 
   const pageAyahs = arabicData.ayahs.slice(
     (currentPage - 1) * AYAHS_PER_PAGE,
@@ -106,6 +99,7 @@ export default function SurahTransliterationScreen() {
   const goPage = useCallback((p: number) => {
     Haptics.selectionAsync();
     setCurrentPage(p);
+    setShowHighlight(false);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, []);
 
@@ -253,6 +247,7 @@ export default function SurahTransliterationScreen() {
         ref={scrollRef}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 16, paddingTop: 12 }}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => showHighlight && setShowHighlight(false)}
       >
         {/* Bismillah */}
         {meta?.hasBismillah && surahNum !== 9 && currentPage === 1 && (

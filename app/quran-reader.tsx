@@ -188,12 +188,6 @@ export default function QuranReaderScreen() {
       : null
   );
 
-  // Auto-clear highlight after 2.5 s
-  useEffect(() => {
-    if (!highlightTarget) return;
-    const t = setTimeout(() => setHighlightTarget(null), 2500);
-    return () => clearTimeout(t);
-  }, [highlightTarget]);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -222,6 +216,7 @@ export default function QuranReaderScreen() {
     const toX = direction === 'next' ? -W : W;
     Animated.timing(slideAnim, { toValue: toX, duration: 180, useNativeDriver: true }).start(() => {
       setPageNum(newPage);
+      setHighlightTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       slideAnim.setValue(-toX);
       Animated.timing(slideAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
@@ -357,6 +352,7 @@ export default function QuranReaderScreen() {
           contentContainerStyle={[styles.pageContent, { paddingBottom: bottomInset + 90 }]}
           showsVerticalScrollIndicator={false}
           scrollEnabled
+          onScrollBeginDrag={() => highlightTarget && setHighlightTarget(null)}
         >
           {pageAyahs.length === 0 ? (
             <Text style={{ color: C.textMuted, textAlign: 'center', marginTop: 60, fontFamily: 'Amiri_400Regular', fontSize: 18 }}>

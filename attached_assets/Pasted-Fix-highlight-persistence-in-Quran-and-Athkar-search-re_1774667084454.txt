@@ -1,0 +1,120 @@
+Fix highlight persistence in Quran and Athkar search results.
+
+PROBLEM:
+The highlight disappears after 1-2 seconds due to an 
+Animated.timing fade-out. It should instead persist 
+until the user touches the screen.
+
+════════════════════════════════════════════════════════
+FIX — REMOVE FADE TIMER, ADD TOUCH TO DISMISS
+════════════════════════════════════════════════════════
+
+In the ayah view AND the athkar dhikr reader:
+
+STEP 1 — Remove the fade-out animation entirely.
+Find and delete any code like this:
+
+  // DELETE THIS — fade out timer:
+  Animated.timing(highlightOpacity, {
+    toValue: 0,
+    duration: ...,
+    delay: ...,
+    useNativeDriver: true,
+  }).start()
+
+  // DELETE THIS — any setTimeout that clears highlight:
+  setTimeout(() => {
+    setHighlight(null)
+    // or: setHighlight('')
+    // or: highlightOpacity.setValue(0)
+  }, 1000)  // or any duration
+
+  // DELETE THIS — any useEffect that auto-clears:
+  useEffect(() => {
+    if (highlight) {
+      const timer = setTimeout(() => setHighlight(null), ...)
+      return () => clearTimeout(timer)
+    }
+  }, [highlight])
+
+STEP 2 — Store highlight in local state:
+
+  const { highlight: highlightParam } = 
+    useLocalSearchParams<{ highlight?: string }>()
+  
+  const [activeHighlight, setActiveHighlight] = 
+    useState<string>(highlightParam ?? '')
+
+  // Sync with param on mount only:
+  useEffect(() => {
+    if (highlightParam) {
+      setActiveHighlight(highlightParam)
+    }
+  }, [])  // empty deps — only on mount
+
+STEP 3 — Wrap the entire screen content in a 
+TouchableWithoutFeedback that clears the highlight 
+when the user touches anywhere:
+
+  import { TouchableWithoutFeedback } from 'react-native'
+
+  <TouchableWithoutFeedback 
+    onPress={() => setActiveHighlight('')}
+  >
+    <View style={{ flex: 1 }}>
+      {/* all screen content */}
+    </View>
+  </TouchableWithoutFeedback>
+
+STEP 4 — Pass activeHighlight (not the param directly)
+to the HighlightedText component:
+
+  <HighlightedText
+    text={ayah.arabic}
+    highlight={activeHighlight}
+    style={arabicTextStyle}
+    normalize={true}
+  />
+
+  <HighlightedText
+    text={ayah.translit}
+    highlight={activeHighlight}
+    style={translitTextStyle}
+    normalize={false}
+  />
+
+  <HighlightedText
+    text={ayah.translation}
+    highlight={activeHighlight}
+    style={translationTextStyle}
+    normalize={false}
+  />
+
+STEP 5 — Remove Animated wrapper from HighlightedText.
+The highlight style should be static, not animated:
+
+  // REMOVE any Animated.Value for opacity
+  // REMOVE any animated style on the highlight span
+
+  // The highlighted Text style is simply:
+  style={[
+    style,
+    {
+      backgroundColor: '#c9a84c30',
+      color: '#c9a84c',
+    }
+  ]}
+
+  // No animation. No opacity. Static gold highlight
+  // that stays until the user taps.
+
+Apply the same fix to the Athkar dhikr reader screen.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change search functionality.
+Do not change navigation behaviour.
+Do not change the HighlightedText matching logic.
+Do not add new dependencies.
