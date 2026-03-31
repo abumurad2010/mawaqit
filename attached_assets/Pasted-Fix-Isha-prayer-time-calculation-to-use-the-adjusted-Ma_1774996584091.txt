@@ -1,0 +1,126 @@
+Fix Isha prayer time calculation to use the adjusted 
+Maghrib time as its base, not raw astronomical sunset.
+
+════════════════════════════════════════════════════════
+PROBLEM
+════════════════════════════════════════════════════════
+
+Isha is calculated as:
+  sunset + twilight angle duration = Isha
+
+But sunset is the astronomical moment the sun dips 
+below the horizon. Maghrib is already offset from 
+sunset by a user-configurable safety margin 
+(e.g. +5 minutes).
+
+This means Isha is being calculated ~5-6 minutes 
+too early — it ignores the Maghrib offset entirely.
+
+The correct calculation is:
+  Maghrib (adjusted) + twilight duration = Isha
+
+Because Isha is defined as when twilight ends, 
+measured from when Maghrib begins — and Maghrib 
+for this app begins at the adjusted time, not 
+at raw sunset.
+
+════════════════════════════════════════════════════════
+FIX
+════════════════════════════════════════════════════════
+
+Find the prayer time calculation file — likely:
+  lib/prayer-times.ts
+  or lib/calculations.ts
+  or utils/prayerTimes.ts
+
+Search for where Isha is calculated:
+  grep -rn "isha\|Isha" lib/ utils/ constants/ \
+    --include="*.ts" --include="*.tsx" --include="*.js"
+
+The current Isha calculation looks something like:
+
+  // CURRENT (WRONG):
+  const ishaTime = sunset + ishaTwilightDuration
+  // where ishaTwilightDuration is based on the 
+  // Isha angle and the time between sunset and 
+  // astronomical twilight
+
+  // CORRECT:
+  const maghribAdjusted = sunset + maghribOffset
+  // maghribOffset is the user's safety margin in minutes
+  // e.g. 0, 3, 5, 7, or 10 minutes
+
+  const ishaTime = maghribAdjusted + ishaTwilightDuration
+  // Isha is calculated from adjusted Maghrib,
+  // not from raw sunset
+
+WHERE TO FIND maghribOffset:
+It is the user's configurable Maghrib safety margin
+stored in settings/context. It is already used to 
+calculate the displayed Maghrib time. Use the same
+value when calculating Isha.
+
+IMPLEMENTATION:
+
+  // Step 1: Get the raw sunset time (already calculated)
+  const sunsetRaw = calculateSunset(date, lat, lng)
+
+  // Step 2: Get Maghrib offset from user settings
+  const maghribOffset = settings.maghribOffset ?? 0
+  // in minutes
+
+  // Step 3: Calculate adjusted Maghrib
+  const maghribTime = sunsetRaw + (maghribOffset * 60 * 1000)
+  // convert minutes to milliseconds
+
+  // Step 4: Calculate Isha from adjusted Maghrib
+  // The twilight duration between Maghrib and Isha
+  // remains the same — only the base time changes
+  const ishaDuration = calculateIshaDuration(
+    date, lat, lng, ishaAngle
+  )
+  // ishaDuration = time in ms from sunset to Isha
+  // based on the Isha angle (e.g. 17° or 18°)
+
+  const ishaTime = maghribTime + ishaDuration
+  // Isha = adjusted Maghrib + twilight duration
+
+════════════════════════════════════════════════════════
+VERIFICATION
+════════════════════════════════════════════════════════
+
+After the fix, add this console log temporarily:
+
+  console.log('=== ISHA CALCULATION DEBUG ===')
+  console.log('sunset raw:', new Date(sunsetRaw).toLocaleTimeString())
+  console.log('maghrib offset (min):', maghribOffset)
+  console.log('maghrib adjusted:', new Date(maghribTime).toLocaleTimeString())
+  console.log('isha duration (min):', ishaDuration / 60000)
+  console.log('isha final:', new Date(ishaTime).toLocaleTimeString())
+
+The difference between old and new Isha time should 
+equal exactly the user's Maghrib offset setting.
+If the user has a 5-minute Maghrib offset, Isha 
+should now appear 5 minutes later than before.
+
+════════════════════════════════════════════════════════
+ALSO CHECK QIYAM AL-LAYL
+════════════════════════════════════════════════════════
+
+Qiyam al-Layl (night prayer) is typically calculated 
+as the midpoint between Isha and Fajr. If Isha was 
+wrong, Qiyam will also be slightly off.
+
+After fixing Isha, verify that Qiyam recalculates 
+correctly using the new Isha time as its base.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change the Maghrib offset UI or settings.
+Do not change how Maghrib time is displayed.
+Do not change any other prayer time calculations.
+Do not change the Isha angle or calculation method.
+The fix is only to use adjusted Maghrib (not raw 
+sunset) as the starting point for Isha calculation.

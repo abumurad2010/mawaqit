@@ -188,12 +188,30 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
   const maghribUTC = sunsetUTC + maghribOffset / 60;
 
   // Isha
+  // For angle-based methods: Isha = adjusted Maghrib + twilight duration.
+  // twilightDuration = time between astronomical sunset and Isha angle (ishaHA − ha).
+  // Using maghribUTC (sunset + offset) as the base ensures the Maghrib safety
+  // margin is respected — Isha is always measured from when Maghrib actually begins.
   let ishaUTC: number;
   if (m.ishaMins !== undefined) {
+    // Fixed-minutes methods (Makkah, Qatar): already relative to Maghrib
     ishaUTC = maghribUTC + m.ishaMins / 60;
   } else {
     const ishaHA = hourAngle(-(m.ishaAngle ?? 17), lat, declination);
-    ishaUTC = transit + ishaHA;
+    const twilightDuration = ishaHA - ha; // decimal hours from sunset to Isha
+    ishaUTC = maghribUTC + twilightDuration;
+  }
+
+  if (__DEV__) {
+    const sunsetMs  = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) + sunsetUTC  * 3600 * 1000;
+    const maghribMs = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) + maghribUTC * 3600 * 1000;
+    const ishaMs    = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) + ishaUTC    * 3600 * 1000;
+    console.log('=== ISHA CALCULATION DEBUG ===');
+    console.log('sunset raw:        ', new Date(sunsetMs).toLocaleTimeString());
+    console.log('maghrib offset (min):', maghribOffset);
+    console.log('maghrib adjusted:  ', new Date(maghribMs).toLocaleTimeString());
+    console.log('isha duration (min):', m.ishaMins !== undefined ? m.ishaMins : ((ishaUTC - sunsetUTC) * 60).toFixed(1));
+    console.log('isha final:        ', new Date(ishaMs).toLocaleTimeString());
   }
 
   return {
