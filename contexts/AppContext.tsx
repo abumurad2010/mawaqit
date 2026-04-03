@@ -258,29 +258,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
 
     const rescheduleAll = async () => {
-      if (hasAny) {
-        await schedulePrayerNotifications({
-          location,
-          calcMethod,
-          asrMethod,
-          maghribOffset,
-          prayerNotifications,
-          lang,
-          firstAdhanOffset: settings.firstAdhanOffset ?? 0,
-          countryCode: effectiveCountryCode,
-          locationUtcOffset,
-          dhuhaTime: settings.dhuhaTime ?? '07:30',
-          tahajjudTime: settings.tahajjudTime ?? '03:00',
-        });
-      } else {
-        await cancelAllPrayerNotifications();
-      }
-      if (thikrRemindersEnabled) {
-        await scheduleThikrNotifications({ lang });
-      }
+      try {
+        if (hasAny) {
+          await schedulePrayerNotifications({
+            location,
+            calcMethod,
+            asrMethod,
+            maghribOffset,
+            prayerNotifications,
+            lang,
+            firstAdhanOffset: settings.firstAdhanOffset ?? 0,
+            countryCode: effectiveCountryCode,
+            locationUtcOffset,
+            dhuhaTime: settings.dhuhaTime ?? '07:30',
+            tahajjudTime: settings.tahajjudTime ?? '03:00',
+          });
+        } else {
+          await cancelAllPrayerNotifications();
+        }
+        if (thikrRemindersEnabled) {
+          await scheduleThikrNotifications({ lang });
+        }
+      } catch { /* notifications unavailable on this platform */ }
     };
 
-    rescheduleAll().catch(() => { /* notifications unavailable on web */ });
+    rescheduleAll();
   }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
