@@ -1,0 +1,138 @@
+Prepare and publish a new Android build for Google 
+Play Store closed testing.
+
+════════════════════════════════════════════════════════
+STEP 1 — BUMP VERSION
+════════════════════════════════════════════════════════
+
+In app.json, update the following:
+
+  "version": bump to next version 
+    (e.g. 1.0.2 → 1.0.3 or whatever current is + 0.0.1)
+  
+  "android": {
+    "versionCode": increment by 1
+    (e.g. 7 → 8, or whatever current value + 1)
+  }
+
+Report the old and new values before proceeding.
+
+════════════════════════════════════════════════════════
+STEP 2 — COMMIT AND PUSH TO GITHUB
+════════════════════════════════════════════════════════
+
+Run in the Replit shell:
+
+  git add -A
+  git commit -m "Update to vX.X.X — thikr reminders, 
+    default tab setting, Isha time fix, audio fix, 
+    Quran offline bundle, widget support"
+  git push origin main
+
+Report success or any errors.
+
+════════════════════════════════════════════════════════
+STEP 3 — BUILD INSTRUCTIONS FOR JAMAL
+════════════════════════════════════════════════════════
+
+After pushing, print these exact instructions 
+for Jamal to run on his Mac Terminal:
+
+---
+Run these commands on your Mac:
+
+  cd mawaqit
+  git pull origin main
+  eas build --platform android --profile production
+
+When the build completes (10-15 minutes), 
+download the .aab file from the URL provided 
+or run:
+
+  eas submit --platform android --profile production
+
+Then go to Google Play Console:
+  → Mawaqit → Testing → Closed testing
+  → Create new release
+  → Upload the new .aab file
+  → Add release notes (see below)
+  → Review and publish
+---
+
+════════════════════════════════════════════════════════
+STEP 4 — RELEASE NOTES
+════════════════════════════════════════════════════════
+
+Provide release notes in these languages for 
+Google Play Console. Keep each under 500 chars.
+
+ENGLISH:
+  Bug fixes and new features:
+  • Thikr reminders — 5 silent daily notifications 
+    reminding you to remember Allah, in your app language
+  • Choose your default tab on launch
+  • Fixed Isha prayer time calculation
+  • Fixed Adhan audio preview crashes
+  • Quran translations bundled offline in 14 languages
+    using verified scholarly sources
+  • Home screen widget for prayer times (iOS & Android)
+
+ARABIC:
+  إصلاحات وميزات جديدة:
+  • تذكير بالذكر — 5 إشعارات صامتة يومياً تذكّرك 
+    بذكر الله بلغة التطبيق المختارة
+  • اختر التبويب الافتراضي عند فتح التطبيق
+  • إصلاح حساب وقت صلاة العشاء
+  • إصلاح تعطّل معاينة الأذان الصوتية
+  • ترجمات القرآن مضمّنة بدون إنترنت بـ14 لغة
+    من مصادر علمية موثوقة
+  • ودجت الشاشة الرئيسية لأوقات الصلاة
+
+FRENCH:
+  Corrections et nouvelles fonctionnalités :
+  • Rappels de thikr — 5 notifications silencieuses 
+    quotidiennes dans la langue de l'application
+  • Choisissez l'onglet par défaut au lancement
+  • Correction du calcul de l'heure de Isha
+  • Correction des plantages de l'aperçu de l'adhan
+  • Traductions du Coran hors ligne en 14 langues
+  • Widget d'écran d'accueil pour les horaires de prière
+
+TURKISH:
+  Hata düzeltmeleri ve yeni özellikler:
+  • Zikir hatırlatıcıları — uygulama dilinde günlük 
+    5 sessiz bildirim
+  • Başlangıçta varsayılan sekme seçimi
+  • Yatsı namaz vakti hesaplaması düzeltildi
+  • Ezan önizleme çökmesi düzeltildi
+  • 14 dilde çevrimdışı Kuran çevirileri
+  • Ana ekran widget'ı
+
+INDONESIAN:
+  Perbaikan bug dan fitur baru:
+  • Pengingat thikr — 5 notifikasi senyap harian 
+    dalam bahasa aplikasi yang dipilih
+  • Pilih tab default saat peluncuran
+  • Perbaikan perhitungan waktu Isya
+  • Perbaikan crash pratinjau audio Adzan
+  • Terjemahan Al-Quran offline dalam 14 bahasa
+  • Widget layar beranda untuk waktu shalat
+
+URDU:
+  بگ فکس اور نئی خصوصیات:
+  • ذکر کی یاددہانی — منتخب زبان میں روزانہ 
+    5 خاموش اطلاعات
+  • لانچ پر ڈیفالٹ ٹیب منتخب کریں
+  • عشاء کے وقت کے حساب کی اصلاح
+  • اذان آڈیو پیش نظارہ کریش کی اصلاح
+  • 14 زبانوں میں آفلائن قرآن ترجمے
+  • ہوم اسکرین ودجٹ
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any feature code in this step.
+Only bump version numbers and push to GitHub.
+Report the exact version and versionCode values 
+used so Jamal can reference them.
