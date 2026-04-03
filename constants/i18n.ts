@@ -867,10 +867,10 @@ const translations: Record<Lang, PartialT> = {
     thikr_reminders_label: 'تذكيرات الأذكار اليومية',
     thikr_reminders_subtitle: '٥ تذكيرات لطيفة على مدار اليوم',
     thikr_reminders_activated: 'تم تفعيل تذكيرات الأذكار',
-    default_tab_label: 'التبويب الافتراضي',
+    default_tab_label: 'شاشة البداية',
     thikr_reminders_help_title: 'تذكير بالذكر',
     thikr_reminders_help_body: 'عند التفعيل، سيرسل التطبيق 5 إشعارات صامتة يومياً في أوقات عشوائية بين الفجر والعشاء، تذكّرك بذكر الله. كل إشعار يعرض ذكراً مختلفاً باللغة العربية ولغة التطبيق المختارة. لا صوت ولا شارة.',
-    default_tab_help_title: 'التبويب الافتراضي',
+    default_tab_help_title: 'شاشة البداية',
     default_tab_help_body: 'اختر التبويب الذي يفتح عليه التطبيق عند التشغيل. لا يؤثر هذا الإعداد على التنقل أثناء استخدام التطبيق.',
   },
 

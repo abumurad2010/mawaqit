@@ -1,0 +1,137 @@
+Fix two crashes — one in Replit preview, one in Expo Go:
+
+════════════════════════════════════════════════════════
+CRASH 1 — Replit preview (web)
+Two issues on the same screen:
+════════════════════════════════════════════════════════
+
+ISSUE A — Notifications still crashing on web
+The Platform.OS web guard was not applied correctly.
+The crash still shows:
+"Notifications.cancelAllScheduledNotificationsAsync 
+is not available on web"
+
+Find EVERY file that imports or uses expo-notifications
+for thikr reminders and add this guard at the very
+top of each function that calls Notifications:
+
+  if (Platform.OS === 'web') return
+
+Also add this at the module level to prevent the 
+import itself from causing issues on web:
+
+  // In any file that uses Notifications for thikr:
+  import { Platform } from 'react-native'
+  import * as Notifications from 'expo-notifications'
+
+  // Wrap the entire module execution:
+  const isNative = Platform.OS !== 'web'
+
+  export const scheduleThikrReminders = async () => {
+    if (!isNative) return
+    // ... rest of function
+  }
+
+  export const cancelThikrReminders = async () => {
+    if (!isNative) return
+    await Notifications.cancelAllScheduledNotificationsAsync()
+  }
+
+ISSUE B — athkar.tsx line 789 borderColor crash
+The fallback fix didn't work. The real issue is that
+C.separator is undefined at render time.
+
+Replace the entire borderColor line with a hardcoded
+safe fallback that never uses C.separator directly
+in a ternary inside a Pressable style function:
+
+  // REMOVE:
+  borderColor: isFavourite ? (GOLD ?? '#c9a84c') : (C.separator ?? '#2a2416'),
+
+  // REPLACE WITH:
+  borderColor: isFavourite ? '#c9a84c' : '#2a2416',
+
+This removes the dependency on C.separator entirely
+for the border color and uses hardcoded values
+that are safe in both dark and light modes.
+
+════════════════════════════════════════════════════════
+CRASH 2 — Expo Go
+"Cannot find native module 'ExpoWidgets'"
+Source: MawaqitWidget.native.tsx line 2
+════════════════════════════════════════════════════════
+
+CAUSE:
+expo-widgets requires a custom native build.
+It does NOT work in Expo Go because Expo Go cannot
+load custom native modules.
+
+The widget file MawaqitWidget.native.tsx is being
+imported at app startup even in Expo Go, crashing
+the whole app.
+
+FIX — Guard the widget import completely:
+
+STEP 1: In index.tsx or wherever updateWidget()
+is called, wrap the entire widget import and 
+usage in a try-catch:
+
+  // Replace direct import with dynamic try-catch:
+  const updateMawaqitWidget = async (data: any) => {
+    try {
+      const { updateWidget } = await import('expo-widgets')
+      await updateWidget('MawaqitWidget', data)
+    } catch (e) {
+      // expo-widgets not available in Expo Go
+      // or on web — silently ignore
+      console.log('Widget update skipped:', e)
+    }
+  }
+
+STEP 2: In MawaqitWidget.native.tsx, add a 
+try-catch around the expo-widgets import:
+
+  // Replace:
+  import { Widget } from 'expo-widgets'
+
+  // With:
+  let Widget: any = null
+  try {
+    Widget = require('expo-widgets').Widget
+  } catch (e) {
+    // Not available in Expo Go
+  }
+
+  // Then guard the createWidget call:
+  export default Widget 
+    ? createWidget(...)
+    : null
+
+STEP 3: Anywhere in the app that imports from
+MawaqitWidget.native.tsx, wrap with try-catch:
+
+  let MawaqitWidget = null
+  try {
+    MawaqitWidget = require('../../widgets/MawaqitWidget.native').default
+  } catch (e) {
+    // Not available in Expo Go
+  }
+
+IMPORTANT NOTE FOR JAMAL:
+Widgets will NOT work in Expo Go under any 
+circumstance — this is a fundamental limitation.
+Widgets only work in production builds (EAS Build).
+The fix above makes the app LOAD in Expo Go 
+without crashing, but the widget itself will 
+only function in the actual built app.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not remove expo-widgets from the project.
+Do not change widget content or configuration.
+Do not change notification scheduling logic.
+Do not add new dependencies.
+After fixes, verify Replit preview loads without
+crashing and Expo Go loads without crashing.

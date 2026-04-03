@@ -786,7 +786,7 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
           width: tileSize,
           height: tileHeight,
           backgroundColor: isFavourite ? GOLD + '1A' : C.backgroundCard,
-          borderColor: isFavourite ? (GOLD ?? '#C9A84C') : (C.separator ?? '#2a2416'),
+          borderColor: isFavourite ? '#C9A84C' : '#2a2416',
           opacity: pressed ? 0.75 : 1,
         },
       ]}

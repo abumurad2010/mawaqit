@@ -7,6 +7,8 @@ import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { THIKR_ITEMS, THIKR_TIMES, getThikrText } from '@/constants/thikr-reminders';
 
+const isNative = Platform.OS !== 'web';
+
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
   return {
@@ -27,20 +29,20 @@ function parseExactTime(hhmm: string, baseDate: Date): Date {
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
+  if (!isNative) return false;
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
 
 export async function cancelAllPrayerNotifications() {
-  if (Platform.OS === 'web') return;
+  if (!isNative) return;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch { /* ignore on web/unavailable */ }
 }
 
 export async function cancelThikrNotifications() {
-  if (Platform.OS === 'web') return;
+  if (!isNative) return;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const thikrIds = scheduled
@@ -54,7 +56,7 @@ export async function scheduleThikrNotifications(params: {
   lang: Lang;
   daysAhead?: number;
 }) {
-  if (Platform.OS === 'web') return;
+  if (!isNative) return;
   const { lang } = params;
   const daysAhead = params.daysAhead ?? 7;
   const tr = t(lang);
@@ -112,7 +114,7 @@ export async function schedulePrayerNotifications(params: {
   tahajjudTime?: string;  // "HH:MM" exact local time
 }) {
   await cancelAllPrayerNotifications();
-  if (Platform.OS === 'web') return;
+  if (!isNative) return;
 
   const { prayerNotifications, lang } = params;
   const labels = getPrayerLabels(lang);

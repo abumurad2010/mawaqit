@@ -1,7 +1,24 @@
 import React from 'react';
-import { Widget } from 'expo-widgets';
-import { Text, HStack, VStack } from '@expo/ui/swift-ui';
-import { font, foregroundStyle } from '@expo/ui/swift-ui/modifiers';
+
+let Widget: any = null;
+let Text: any = null;
+let HStack: any = null;
+let VStack: any = null;
+let font: any = null;
+let foregroundStyle: any = null;
+
+try {
+  Widget = require('expo-widgets').Widget;
+  const swiftUi = require('@expo/ui/swift-ui');
+  Text = swiftUi.Text;
+  HStack = swiftUi.HStack;
+  VStack = swiftUi.VStack;
+  const modifiers = require('@expo/ui/swift-ui/modifiers');
+  font = modifiers.font;
+  foregroundStyle = modifiers.foregroundStyle;
+} catch {
+  // expo-widgets and @expo/ui not available in Expo Go — widgets work only in production builds
+}
 
 export interface MawaqitWidgetProps {
   nextPrayerName: string;
@@ -65,11 +82,13 @@ function WidgetLayout(
   );
 }
 
-let mawaqitWidget: Widget<MawaqitWidgetProps> | null = null;
-try {
-  mawaqitWidget = new Widget<MawaqitWidgetProps>('MawaqitWidget', WidgetLayout);
-} catch {
-  // expo-widgets not available on this platform (web, unsupported OS)
+let mawaqitWidget: any = null;
+if (Widget) {
+  try {
+    mawaqitWidget = new Widget<MawaqitWidgetProps>('MawaqitWidget', WidgetLayout);
+  } catch {
+    // Widget instantiation failed — silently ignore
+  }
 }
 
 export { mawaqitWidget };
