@@ -1,0 +1,484 @@
+FIX 1 — RENAME "التبويب الافتراضي"
+
+Find the i18n key: default_tab_label
+Replace the Arabic value:
+  BEFORE: "التبويب الافتراضي"
+  AFTER:  "شاشة البداية"
+
+Also update the help title key default_tab_help_title:
+  BEFORE: "التبويب الافتراضي"
+  AFTER:  "شاشة البداية"
+
+Do not change any other language — only Arabic.
+
+════════════════════════════════════════════════════════
+FIX 2 — RESTORE AND POPULATE ALL HELP BUTTONS
+════════════════════════════════════════════════════════
+
+PROBLEM: Help buttons have disappeared from settings
+and the new ones are empty. Restore ALL help buttons
+across the entire settings screen and populate every
+single one with proper content.
+
+Find all help button instances in app/settings.tsx
+and any related settings components. Ensure every
+settings row that previously had or should have a
+help button has one, and that every help button
+shows an Alert with a proper title and body.
+
+The help button pattern (already established in app):
+  <Pressable onPress={() => Alert.alert(title, body)}>
+    <MaterialCommunityIcons
+      name="help-circle-outline"
+      size={18}
+      color={C.textMuted}
+    />
+  </Pressable>
+
+════════════════════════════════════════════════════════
+SETTINGS HELP BUTTONS — COMPLETE LIST WITH CONTENT
+════════════════════════════════════════════════════════
+
+Add/restore ALL of the following help buttons.
+Each has a title and body in all 15 languages.
+Add all new i18n keys to i18n.ts.
+
+──────────────────────────────────────────
+HELP 1 — CALCULATION METHOD
+i18n key: help_calculation_method
+──────────────────────────────────────────
+
+Title:
+  ar: "طريقة الحساب"
+  en: "Calculation Method"
+  fr: "Méthode de calcul"
+  es: "Método de cálculo"
+  ru: "Метод расчёта"
+  zh: "计算方法"
+  tr: "Hesaplama Yöntemi"
+  ur: "حساب کا طریقہ"
+  id: "Metode Perhitungan"
+  bn: "গণনার পদ্ধতি"
+  fa: "روش محاسبه"
+  ms: "Kaedah Pengiraan"
+  pt: "Método de cálculo"
+  sw: "Njia ya Kukokotoa"
+  ha: "Hanyar Lissafi"
+
+Body:
+  ar: "تحدد طريقة الحساب كيفية احتساب أوقات الصلاة بناءً على زاوية الشمس تحت الأفق.\n\nالفجر: يُحسب عندما تكون الشمس على زاوية معينة تحت الأفق قبل الشروق. تختلف هذه الزاوية بحسب الطريقة:\n• رابطة العالم الإسلامي: 18°\n• أم القرى: 18.5° (و90 دقيقة في رمضان)\n• الهيئة المصرية: 19.5°\n• وزارة الأوقاف الأردنية: 18°\n• إسنا: 15°\n• كراتشي: 18°\n\nيُنصح باختيار الطريقة الرسمية لبلدك أو أقرب بلد مسلم."
+  en: "The calculation method determines how prayer times are calculated based on the sun's angle below the horizon.\n\nFajr: calculated when the sun reaches a specific angle below the horizon before sunrise. Each method uses a different angle:\n• Muslim World League: 18°\n• Umm al-Qura: 18.5° (90 min in Ramadan)\n• Egyptian Authority: 19.5°\n• Jordan Ministry of Awqaf: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nChoose the official method for your country or the nearest Muslim country."
+  fr: "La méthode de calcul détermine comment les horaires de prière sont calculés en fonction de l'angle du soleil sous l'horizon.\n\nFajr : calculé lorsque le soleil atteint un angle spécifique sous l'horizon avant le lever du soleil. Chaque méthode utilise un angle différent :\n• Ligue Islamique Mondiale : 18°\n• Oumm Al-Qura : 18.5°\n• Autorité égyptienne : 19.5°\n• Ministère jordanien des Awqaf : 18°\n• ISNA : 15°\n• Karachi : 18°\n\nChoisissez la méthode officielle de votre pays."
+  es: "El método de cálculo determina cómo se calculan los horarios de oración según el ángulo del sol bajo el horizonte.\n\nFajr: se calcula cuando el sol alcanza un ángulo específico bajo el horizonte antes del amanecer. Cada método usa un ángulo diferente:\n• Liga Mundial Islámica: 18°\n• Umm al-Qura: 18.5°\n• Autoridad Egipcia: 19.5°\n• Ministerio Jordano de Awqaf: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nElige el método oficial de tu país."
+  ru: "Метод расчёта определяет, как рассчитываются времена молитв на основе угла солнца ниже горизонта.\n\nФаджр: рассчитывается, когда солнце достигает определённого угла ниже горизонта до восхода. Каждый метод использует разный угол:\n• Исламская лига: 18°\n• Умм аль-Кура: 18.5°\n• Египетская организация: 19.5°\n• Минрелигий Иордании: 18°\n• ISNA: 15°\n• Карачи: 18°\n\nВыберите официальный метод для вашей страны."
+  zh: "计算方法根据太阳在地平线以下的角度确定礼拜时间。\n\n晨礼：当太阳在日出前达到地平线以下特定角度时计算。每种方法使用不同角度：\n• 伊斯兰世界联盟：18°\n• 乌姆阿尔库拉：18.5°\n• 埃及机构：19.5°\n• 约旦宗教事务部：18°\n• ISNA：15°\n• 卡拉奇：18°\n\n请选择您所在国家的官方方法。"
+  tr: "Hesaplama yöntemi, namaz vakitlerinin güneşin ufkun altındaki açısına göre nasıl hesaplandığını belirler.\n\nFajr: Güneş doğmadan önce ufkun altında belirli bir açıya ulaştığında hesaplanır. Her yöntem farklı bir açı kullanır:\n• İslam Dünya Birliği: 18°\n• Ümmü'l-Kurâ: 18.5°\n• Mısır Otoritesi: 19.5°\n• Ürdün Diyanet: 18°\n• ISNA: 15°\n• Karaçi: 18°\n\nÜlkenizin resmi yöntemini seçin."
+  ur: "حساب کا طریقہ یہ طے کرتا ہے کہ سورج کے افق سے نیچے کے زاویے کی بنیاد پر نماز کے اوقات کیسے نکالے جائیں۔\n\nفجر: طلوع آفتاب سے پہلے سورج افق سے نیچے ایک مخصوص زاویے پر پہنچنے پر حساب ہوتا ہے۔ ہر طریقے میں مختلف زاویہ:\n• رابطہ عالم اسلامی: 18°\n• ام القری: 18.5°\n• مصری اتھارٹی: 19.5°\n• اردن وزارت اوقاف: 18°\n• ISNA: 15°\n• کراچی: 18°\n\nاپنے ملک کا سرکاری طریقہ منتخب کریں۔"
+  id: "Metode perhitungan menentukan bagaimana waktu shalat dihitung berdasarkan sudut matahari di bawah cakrawala.\n\nFajr: dihitung ketika matahari mencapai sudut tertentu di bawah cakrawala sebelum matahari terbit. Setiap metode menggunakan sudut berbeda:\n• Liga Muslim Dunia: 18°\n• Umm al-Qura: 18.5°\n• Otoritas Mesir: 19.5°\n• Kemenag Yordania: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nPilih metode resmi untuk negara Anda."
+  bn: "গণনার পদ্ধতি নির্ধারণ করে কিভাবে সূর্যের দিগন্তের নিচের কোণের উপর ভিত্তি করে নামাজের সময় গণনা করা হয়।\n\nফজর: সূর্যোদয়ের আগে সূর্য দিগন্তের নিচে নির্দিষ্ট কোণে পৌঁছলে গণনা করা হয়। প্রতিটি পদ্ধতি ভিন্ন কোণ ব্যবহার করে:\n• মুসলিম ওয়ার্ল্ড লিগ: 18°\n• উম্মুল কুরা: 18.5°\n• মিশরীয় কর্তৃপক্ষ: 19.5°\n• জর্ডান ধর্ম মন্ত্রণালয়: 18°\n• ISNA: 15°\n• করাচি: 18°\n\nআপনার দেশের সরকারি পদ্ধতি বেছে নিন।"
+  fa: "روش محاسبه تعیین می‌کند که اوقات نماز بر اساس زاویه خورشید زیر افق چگونه محاسبه شود.\n\nفجر: زمانی محاسبه می‌شود که خورشید قبل از طلوع به زاویه خاصی زیر افق برسد. هر روش زاویه متفاوتی دارد:\n• رابطة العالم الإسلامي: 18°\n• ام القری: 18.5°\n• مرجع مصر: 19.5°\n• وزارت اوقاف اردن: 18°\n• ISNA: 15°\n• کراچی: 18°\n\nروش رسمی کشور خود را انتخاب کنید."
+  ms: "Kaedah pengiraan menentukan bagaimana waktu solat dikira berdasarkan sudut matahari di bawah ufuk.\n\nFajr: dikira apabila matahari mencapai sudut tertentu di bawah ufuk sebelum matahari terbit. Setiap kaedah menggunakan sudut berbeza:\n• Liga Muslim Sedunia: 18°\n• Umm al-Qura: 18.5°\n• Pihak Berkuasa Mesir: 19.5°\n• Kementerian Awqaf Jordan: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nPilih kaedah rasmi untuk negara anda."
+  pt: "O método de cálculo determina como os horários de oração são calculados com base no ângulo do sol abaixo do horizonte.\n\nFajr: calculado quando o sol atinge um ângulo específico abaixo do horizonte antes do nascer do sol. Cada método usa um ângulo diferente:\n• Liga Mundial Islâmica: 18°\n• Umm al-Qura: 18.5°\n• Autoridade Egípcia: 19.5°\n• Ministério Jordaniano: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nEscolha o método oficial do seu país."
+  sw: "Njia ya kukokotoa inaelezea jinsi nyakati za sala zinavyokokotolewa kulingana na pembe ya jua chini ya upeo wa macho.\n\nFajr: inakokotolewa wakati jua linafikia pembe maalum chini ya upeo wa macho kabla ya machweo. Kila njia inatumia pembe tofauti:\n• Liga ya Kiislamu ya Dunia: 18°\n• Umm al-Qura: 18.5°\n• Mamlaka ya Misri: 19.5°\n• Wizara ya Jordan: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nChagua njia rasmi ya nchi yako."
+  ha: "Hanyar lissafi tana ƙayyade yadda ake ƙididdige lokutan sallah bisa ga kusurwar rana ƙarƙashin iyaka.\n\nFajr: ana ƙididdiga shi lokacin da rana ta kai kusurwa ta musamman ƙarƙashin iyaka kafin faduwar rana. Kowane hanya tana amfani da kusurwa daban:\n• Ƙungiyar Muslunci ta Duniya: 18°\n• Umm al-Qura: 18.5°\n• Hukumar Masar: 19.5°\n• Gwamnatin Jordan: 18°\n• ISNA: 15°\n• Karachi: 18°\n\nZaɓi hanyar hukuma ta ƙasarka."
+
+──────────────────────────────────────────
+HELP 2 — MAGHRIB OFFSET
+i18n key: help_maghrib_offset
+──────────────────────────────────────────
+
+Title:
+  ar: "هامش المغرب الاحتياطي"
+  en: "Maghrib Safety Margin"
+  fr: "Marge de sécurité du Maghrib"
+  es: "Margen de seguridad del Magrib"
+  ru: "Запас времени Магриба"
+  zh: "马格里布安全边距"
+  tr: "Akşam Güvenlik Marjı"
+  ur: "مغرب کا حفاظتی وقفہ"
+  id: "Toleransi Waktu Maghrib"
+  bn: "মাগরিবের নিরাপত্তা ব্যবধান"
+  fa: "حاشیه امنیتی مغرب"
+  ms: "Margin Keselamatan Maghrib"
+  pt: "Margem de segurança do Maghrib"
+  sw: "Muda wa Usalama wa Maghrib"
+  ha: "Lokacin Aminci na Magariba"
+
+Body:
+  ar: "غروب الشمس الفلكي هو اللحظة التي يختفي فيها قرص الشمس تحت الأفق. لكن كثيراً من المساجد والهيئات الدينية تضيف دقائق احتياطية للتأكد من اكتمال الغروب.\n\nمثال: إذا حددت 5 دقائق، فإن أذان المغرب سيكون بعد 5 دقائق من الغروب الفلكي.\n\nيؤثر هذا الإعداد أيضاً على حساب وقت العشاء لأن العشاء يُحسب من وقت المغرب المعدّل لا من الغروب الفلكي."
+  en: "Astronomical sunset is the moment the sun's disc fully disappears below the horizon. However many mosques and religious authorities add extra minutes to ensure sunset is complete.\n\nExample: if you set 5 minutes, Maghrib Adhan will be 5 minutes after astronomical sunset.\n\nThis setting also affects Isha calculation because Isha is calculated from the adjusted Maghrib time, not from raw astronomical sunset."
+  fr: "Le coucher astronomique du soleil est le moment où le disque solaire disparaît complètement sous l'horizon. Cependant, de nombreuses mosquées ajoutent des minutes supplémentaires pour s'assurer que le coucher est complet.\n\nExemple : si vous définissez 5 minutes, l'adhan du Maghrib sera 5 minutes après le coucher astronomique.\n\nCe paramètre affecte également le calcul de Isha car Isha est calculé à partir de l'heure du Maghrib ajustée."
+  es: "El ocaso astronómico es el momento en que el disco solar desaparece completamente bajo el horizonte. Sin embargo, muchas mezquitas añaden minutos extra para asegurarse de que el ocaso sea completo.\n\nEjemplo: si estableces 5 minutos, el Adhan del Magrib será 5 minutos después del ocaso astronómico.\n\nEsta configuración también afecta el cálculo de Isha porque Isha se calcula desde la hora del Magrib ajustada."
+  ru: "Астрономический закат — момент, когда солнечный диск полностью скрывается за горизонтом. Однако многие мечети добавляют дополнительные минуты для уверенности.\n\nПример: если установить 5 минут, азан Магриба прозвучит через 5 минут после астрономического заката.\n\nЭта настройка также влияет на расчёт Иша, поскольку Иша рассчитывается от скорректированного времени Магриба."
+  zh: "天文日落是太阳圆盘完全消失在地平线以下的时刻。然而许多清真寺会额外添加几分钟以确保日落完全。\n\n示例：如果设置5分钟，马格里布阿赞将在天文日落后5分钟。\n\n此设置也影响宵礼计算，因为宵礼是从调整后的马格里布时间计算的。"
+  tr: "Astronomik gün batımı, güneş diskinin ufkun altında tamamen kaybolduğu andır. Ancak birçok cami, gün batımının tamamlandığından emin olmak için ek dakikalar ekler.\n\nÖrnek: 5 dakika ayarlarsanız, Akşam ezanı astronomik gün batımından 5 dakika sonra okunur.\n\nBu ayar aynı zamanda Yatsı hesaplamasını da etkiler çünkü Yatsı, ham gün batımından değil ayarlanmış Akşam vaktinden hesaplanır."
+  ur: "فلکیاتی غروب وہ لمحہ ہے جب سورج کا گول حصہ افق سے مکمل طور پر غائب ہو جاتا ہے۔ تاہم بہت سی مساجد اضافی دقیقے شامل کرتی ہیں۔\n\nمثال: اگر 5 دقیقے مقرر کریں تو مغرب کی اذان فلکیاتی غروب کے 5 دقیقے بعد ہوگی۔\n\nیہ ترتیب عشاء کے حساب پر بھی اثر ڈالتی ہے کیونکہ عشاء خام غروب سے نہیں بلکہ معدّل مغرب کے وقت سے نکالا جاتا ہے۔"
+  id: "Matahari terbenam secara astronomis adalah saat piringan matahari sepenuhnya menghilang di bawah cakrawala. Namun banyak masjid menambahkan menit ekstra untuk memastikan matahari benar-benar terbenam.\n\nContoh: jika Anda menetapkan 5 menit, Adzan Maghrib akan dikumandangkan 5 menit setelah matahari terbenam secara astronomis.\n\nPengaturan ini juga memengaruhi perhitungan Isya karena Isya dihitung dari waktu Maghrib yang disesuaikan."
+  bn: "জ্যোতির্বিজ্ঞানীয় সূর্যাস্ত হল সেই মুহূর্ত যখন সূর্যের চাকতি দিগন্তের নিচে সম্পূর্ণ অদৃশ্য হয়। তবে অনেক মসজিদ নিশ্চিত হতে অতিরিক্ত মিনিট যোগ করে।\n\nউদাহরণ: ৫ মিনিট সেট করলে মাগরিবের আযান জ্যোতির্বিজ্ঞানীয় সূর্যাস্তের ৫ মিনিট পরে হবে।\n\nএই সেটিং এশার গণনাকেও প্রভাবিত করে কারণ এশা সামঞ্জস্যকৃত মাগরিব সময় থেকে গণনা করা হয়।"
+  fa: "غروب نجومی لحظه‌ای است که قرص خورشید کاملاً در زیر افق ناپدید می‌شود. اما بسیاری از مساجد دقایق اضافه‌ای اضافه می‌کنند.\n\nمثال: اگر ۵ دقیقه تنظیم کنید، اذان مغرب ۵ دقیقه بعد از غروب نجومی خواهد بود.\n\nاین تنظیم بر محاسبه عشاء نیز تأثیر می‌گذارد زیرا عشاء از زمان تعدیل‌شده مغرب محاسبه می‌شود."
+  ms: "Matahari terbenam secara astronomi ialah saat cakera matahari hilang sepenuhnya di bawah ufuk. Namun banyak masjid menambah minit tambahan untuk memastikan matahari benar-benar terbenam.\n\nContoh: jika anda menetapkan 5 minit, Azan Maghrib akan dikumandangkan 5 minit selepas matahari terbenam secara astronomi.\n\nTetapan ini juga mempengaruhi pengiraan Isyak kerana Isyak dikira dari masa Maghrib yang diselaraskan."
+  pt: "O pôr do sol astronômico é o momento em que o disco solar desaparece completamente abaixo do horizonte. No entanto, muitas mesquitas adicionam minutos extras para garantir que o pôr do sol seja completo.\n\nExemplo: se definir 5 minutos, o Adhan do Maghrib será 5 minutos após o pôr do sol astronômico.\n\nEsta configuração também afeta o cálculo de Isha porque Isha é calculado a partir do horário ajustado do Maghrib."
+  sw: "Machweo ya astronomia ni wakati ambapo diski ya jua inatoweka kabisa chini ya upeo wa macho. Hata hivyo misikiti mingi huongeza dakika za ziada kuhakikisha machweo yamekamilika.\n\nMfano: ukiweka dakika 5, Adhana ya Maghrib itapigwa dakika 5 baada ya machweo ya astronomia.\n\nMipangilio hii pia inaathiri ukokotoaji wa Isha kwa sababu Isha inakokotolewa kutoka wakati wa Maghrib uliobadilishwa."
+  ha: "Faɗuwar rana ta astronomical ita ce lokacin da faifan rana ya ɓace gaba ɗaya ƙarƙashin iyaka. Amma masallatai da yawa suna ƙara mintoci ƙarin don tabbatar da cikakkiyar faɗuwa.\n\nMisali: idan ka saita minti 5, kiran Magariba zai kasance minti 5 bayan faɗuwar rana ta astronomical.\n\nWannan saitin kuma yana shafar lissafin Isha saboda ana ƙididdiga Isha daga lokacin Magariba da aka daidaita."
+
+──────────────────────────────────────────
+HELP 3 — HIJRI DATE ADJUSTMENT
+i18n key: help_hijri_adjustment
+──────────────────────────────────────────
+
+Title:
+  ar: "تعديل التاريخ الهجري"
+  en: "Hijri Date Adjustment"
+  fr: "Ajustement de la date Hijri"
+  es: "Ajuste de la fecha Hijri"
+  ru: "Корректировка даты Хиджри"
+  zh: "伊斯兰历日期调整"
+  tr: "Hicri Tarih Ayarı"
+  ur: "ہجری تاریخ کی تبدیلی"
+  id: "Penyesuaian Tanggal Hijriah"
+  bn: "হিজরি তারিখ সমন্বয়"
+  fa: "تنظیم تاریخ هجری"
+  ms: "Pelarasan Tarikh Hijri"
+  pt: "Ajuste da data Hijri"
+  sw: "Marekebisho ya Tarehe ya Hijri"
+  ha: "Daidaita Ranar Hijri"
+
+Body:
+  ar: "يُحسب التقويم الهجري فلكياً، لكن بدء الأشهر القمرية يعتمد على رؤية الهلال التي تختلف بين الدول.\n\nمثال: قد يُعلن المغرب عن بداية شهر رمضان قبل يوم من المملكة العربية السعودية.\n\nاستخدم هذا الإعداد لمطابقة التقويم الهجري مع إعلان بلدك الرسمي:\n• صفر: الحساب الفلكي\n• +1 أو +2: تأخير بداية الشهر\n• -1 أو -2: تقديم بداية الشهر"
+  en: "The Hijri calendar is calculated astronomically, but the start of lunar months depends on moon sighting which differs between countries.\n\nExample: Morocco may announce Ramadan one day before Saudi Arabia.\n\nUse this setting to match your country's official Hijri declaration:\n• Zero: pure astronomical calculation\n• +1 or +2: delay the start of the month\n• -1 or -2: advance the start of the month"
+  fr: "Le calendrier Hijri est calculé astronomiquement, mais le début des mois lunaires dépend de l'observation du croissant qui diffère selon les pays.\n\nExemple : le Maroc peut annoncer le Ramadan un jour avant l'Arabie Saoudite.\n\nUtilisez ce paramètre pour correspondre à la déclaration officielle de votre pays :\n• Zéro : calcul purement astronomique\n• +1 ou +2 : retarder le début du mois\n• -1 ou -2 : avancer le début du mois"
+  es: "El calendario Hijri se calcula astronómicamente, pero el inicio de los meses lunares depende del avistamiento de la luna que difiere entre países.\n\nEjemplo: Marruecos puede anunciar el Ramadán un día antes que Arabia Saudita.\n\nUsa esta configuración para coincidir con la declaración oficial de tu país:\n• Cero: cálculo puramente astronómico\n• +1 o +2: retrasar el inicio del mes\n• -1 o -2: adelantar el inicio del mes"
+  ru: "Календарь Хиджри рассчитывается астрономически, но начало лунных месяцев зависит от наблюдения луны, которое различается в разных странах.\n\nПример: Марокко может объявить Рамадан на день раньше Саудовской Аравии.\n\nИспользуйте этот параметр для соответствия официальному объявлению вашей страны:\n• Ноль: чистый астрономический расчёт\n• +1 или +2: задержка начала месяца\n• -1 или -2: опережение начала месяца"
+  zh: "伊斯兰历通过天文方法计算，但农历月份的开始取决于各国不同的月亮观测。\n\n例如：摩洛哥可能比沙特阿拉伯提前一天宣布斋月。\n\n使用此设置与您国家的官方伊斯兰历声明匹配：\n• 零：纯天文计算\n• +1或+2：延迟月份开始\n• -1或-2：提前月份开始"
+  tr: "Hicri takvim astronomik olarak hesaplanır, ancak ay aylarının başlangıcı ülkeden ülkeye farklılık gösteren hilal gözlemine bağlıdır.\n\nÖrnek: Fas, Ramazan'ı Suudi Arabistan'dan bir gün önce ilan edebilir.\n\nÜlkenizin resmi Hicri bildirimiyle eşleştirmek için bu ayarı kullanın:\n• Sıfır: saf astronomik hesaplama\n• +1 veya +2: ayın başlangıcını geciktir\n• -1 veya -2: ayın başlangıcını öne al"
+  ur: "ہجری تقویم فلکیاتی طور پر حساب کیا جاتا ہے، لیکن قمری مہینوں کا آغاز ہلال کی رویت پر منحصر ہے جو ممالک میں مختلف ہوتی ہے۔\n\nمثال: مراکش سعودی عرب سے ایک دن پہلے رمضان کا اعلان کر سکتا ہے۔\n\nاپنے ملک کے سرکاری اعلان سے ملانے کے لیے یہ ترتیب استعمال کریں:\n• صفر: خالص فلکیاتی حساب\n• +1 یا +2: مہینے کا آغاز دیر سے\n• -1 یا -2: مہینے کا آغاز جلد"
+  id: "Kalender Hijriah dihitung secara astronomis, tetapi awal bulan lunar bergantung pada rukyat hilal yang berbeda antar negara.\n\nContoh: Maroko mungkin mengumumkan Ramadan sehari sebelum Arab Saudi.\n\nGunakan pengaturan ini untuk menyesuaikan dengan deklarasi resmi negara Anda:\n• Nol: perhitungan astronomis murni\n• +1 atau +2: tunda awal bulan\n• -1 atau -2: percepat awal bulan"
+  bn: "হিজরি ক্যালেন্ডার জ্যোতির্বিজ্ঞানিকভাবে গণনা করা হয়, কিন্তু চন্দ্র মাসের শুরু চাঁদ দেখার উপর নির্ভর করে যা দেশে দেশে আলাদা।\n\nউদাহরণ: মরক্কো সৌদি আরবের এক দিন আগে রমজান ঘোষণা করতে পারে।\n\nআপনার দেশের সরকারি ঘোষণার সাথে মেলাতে এই সেটিং ব্যবহার করুন:\n• শূন্য: বিশুদ্ধ জ্যোতির্বিজ্ঞান গণনা\n• +1 বা +2: মাসের শুরু বিলম্বিত করুন\n• -1 বা -2: মাসের শুরু এগিয়ে আনুন"
+  fa: "تقویم هجری به صورت نجومی محاسبه می‌شود، اما آغاز ماه‌های قمری به رؤیت هلال بستگی دارد که در کشورهای مختلف متفاوت است.\n\nمثال: مراکش ممکن است یک روز زودتر از عربستان ماه رمضان را اعلام کند.\n\nاز این تنظیم برای تطبیق با اعلام رسمی کشورتان استفاده کنید:\n• صفر: محاسبه خالص نجومی\n• +1 یا +2: تأخیر در شروع ماه\n• -1 یا -2: جلو انداختن شروع ماه"
+  ms: "Kalendar Hijri dikira secara astronomi, tetapi permulaan bulan lunar bergantung pada rukyah anak bulan yang berbeza antara negara.\n\nContoh: Maghribi mungkin mengumumkan Ramadan sehari sebelum Arab Saudi.\n\nGunakan tetapan ini untuk menyesuaikan dengan pengumuman rasmi negara anda:\n• Sifar: pengiraan astronomi tulen\n• +1 atau +2: tangguhkan permulaan bulan\n• -1 atau -2: majukan permulaan bulan"
+  pt: "O calendário Hijri é calculado astronomicamente, mas o início dos meses lunares depende da observação da lua que difere entre países.\n\nExemplo: o Marrocos pode anunciar o Ramadã um dia antes da Arábia Saudita.\n\nUse esta configuração para corresponder à declaração oficial do seu país:\n• Zero: cálculo puramente astronômico\n• +1 ou +2: atrasar o início do mês\n• -1 ou -2: adiantar o início do mês"
+  sw: "Kalenda ya Hijri inakokotolewa kiangalizi, lakini mwanzo wa miezi ya mwezi unategemea kuona hilali ambayo inatofautiana kati ya nchi.\n\nMfano: Moroko inaweza kutangaza Ramadhan siku moja kabla ya Saudi Arabia.\n\nTumia mipangilio hii kulingana na tangazo rasmi la nchi yako:\n• Sifuri: ukokotoaji wa kiangalizi safi\n• +1 au +2: chelewa mwanzo wa mwezi\n• -1 au -2: ongeza mwanzo wa mwezi"
+  ha: "Ana ƙididdiga kalandar Hijri ta hanyar taurari, amma farkon watannin wata ya dogara ga ganin sabon wata wanda ya bambanta tsakanin ƙasashe.\n\nMisali: Maroko na iya sanar da Ramadan kwana ɗaya kafin Saudiyya.\n\nYi amfani da wannan saitin don daidaitawa da sanarwar hukuma ta ƙasarka:\n• Sifili: lissafin taurari kawai\n• +1 ko +2: jinkirta farkon watan\n• -1 ko -2: gaggauta farkon watan"
+
+──────────────────────────────────────────
+HELP 4 — ASR METHOD
+i18n key: help_asr_method
+──────────────────────────────────────────
+
+Title:
+  ar: "طريقة حساب العصر"
+  en: "Asr Calculation Method"
+  fr: "Méthode de calcul de Asr"
+  es: "Método de cálculo del Asr"
+  ru: "Метод расчёта Аср"
+  zh: "晡礼计算方法"
+  tr: "İkindi Hesaplama Yöntemi"
+  ur: "عصر کے حساب کا طریقہ"
+  id: "Metode Perhitungan Ashar"
+  bn: "আসরের গণনার পদ্ধতি"
+  fa: "روش محاسبه عصر"
+  ms: "Kaedah Pengiraan Asar"
+  pt: "Método de cálculo do Asr"
+  sw: "Njia ya Kukokotoa Asr"
+  ha: "Hanyar Lissafin La'asar"
+
+Body:
+  ar: "يختلف وقت العصر بين المذاهب الفقهية:\n\n• الشافعي والمالكي والحنبلي: يبدأ العصر عندما يساوي ظل الشيء طوله مضافاً إليه ظل وقت الزوال.\n\n• الحنفي: يبدأ العصر عندما يصبح ظل الشيء ضعف طوله مضافاً إليه ظل وقت الزوال.\n\nالفرق بين الطريقتين عادةً من 30 إلى 60 دقيقة. اختر المذهب الذي تتبعه."
+  en: "Asr time differs between Islamic schools of law:\n\n• Shafi'i, Maliki, Hanbali: Asr begins when the shadow of an object equals its length plus the shadow at noon.\n\n• Hanafi: Asr begins when the shadow of an object equals twice its length plus the shadow at noon.\n\nThe difference between the two methods is typically 30 to 60 minutes. Choose the school you follow."
+  fr: "L'heure de Asr diffère selon les écoles juridiques islamiques :\n\n• Chafi'i, Maliki, Hanbali : Asr commence lorsque l'ombre d'un objet égale sa longueur plus l'ombre à midi.\n\n• Hanafi : Asr commence lorsque l'ombre d'un objet est le double de sa longueur plus l'ombre à midi.\n\nLa différence entre les deux méthodes est généralement de 30 à 60 minutes. Choisissez l'école que vous suivez."
+  es: "El horario del Asr difiere entre las escuelas jurídicas islámicas:\n\n• Shafi'i, Maliki, Hanbali: el Asr comienza cuando la sombra de un objeto iguala su longitud más la sombra al mediodía.\n\n• Hanafi: el Asr comienza cuando la sombra de un objeto es el doble de su longitud más la sombra al mediodía.\n\nLa diferencia entre los dos métodos es típicamente de 30 a 60 minutos. Elige la escuela que sigues."
+  ru: "Время Аср различается в зависимости от исламской правовой школы:\n\n• Шафии, Малики, Ханбали: Аср начинается, когда тень предмета равна его длине плюс тень в полдень.\n\n• Ханафи: Аср начинается, когда тень предмета вдвое больше его длины плюс тень в полдень.\n\nРазница между двумя методами обычно составляет 30–60 минут. Выберите мазхаб, которому вы следуете."
+  zh: "晡礼时间在伊斯兰法学学派之间有所不同：\n\n• 沙菲仪、马立基、罕百里：当物体的影子等于其长度加上正午的影子时，晡礼开始。\n\n• 哈纳菲：当物体的影子是其长度的两倍加上正午的影子时，晡礼开始。\n\n两种方法之间的差异通常为30至60分钟。选择您所遵循的学派。"
+  tr: "İkindi vakti İslam hukuk ekollerine göre farklılık gösterir:\n\n• Şafii, Maliki, Hanbeli: İkindi, bir nesnenin gölgesi uzunluğuna öğle gölgesi eklenince başlar.\n\n• Hanefi: İkindi, bir nesnenin gölgesi uzunluğunun iki katına öğle gölgesi eklenince başlar.\n\nİki yöntem arasındaki fark genellikle 30 ila 60 dakikadır. Takip ettiğiniz mezhebi seçin."
+  ur: "عصر کا وقت اسلامی فقہی مسالک کے درمیان مختلف ہے:\n\n• شافعی، مالکی، حنبلی: عصر اس وقت شروع ہوتا ہے جب کسی چیز کا سایہ اس کی لمبائی کے برابر ہو جائے جس میں زوال کے وقت کا سایہ شامل ہو۔\n\n• حنفی: عصر اس وقت شروع ہوتا ہے جب سایہ چیز کی لمبائی سے دوگنا ہو جائے جس میں زوال کا سایہ شامل ہو۔\n\nدونوں طریقوں میں عام طور پر 30 سے 60 منٹ کا فرق ہوتا ہے۔ اپنا مذہب منتخب کریں۔"
+  id: "Waktu Ashar berbeda di antara mazhab hukum Islam:\n\n• Syafi'i, Maliki, Hanbali: Ashar dimulai ketika bayangan suatu benda sama dengan panjangnya ditambah bayangan saat tengah hari.\n\n• Hanafi: Ashar dimulai ketika bayangan suatu benda dua kali panjangnya ditambah bayangan saat tengah hari.\n\nPerbedaan antara dua metode biasanya 30 hingga 60 menit. Pilih mazhab yang Anda ikuti."
+  bn: "আসরের সময় ইসলামী আইন স্কুলগুলির মধ্যে আলাদা:\n\n• শাফেয়ী, মালেকী, হানবালী: কোনো বস্তুর ছায়া তার দৈর্ঘ্যের সমান হলে যোগ করে মধ্যাহ্নের ছায়া, তখন আসর শুরু।\n\n• হানাফী: ছায়া তার দৈর্ঘ্যের দ্বিগুণ হলে যোগ করে মধ্যাহ্নের ছায়া, তখন আসর শুরু।\n\nদুটি পদ্ধতির মধ্যে পার্থক্য সাধারণত ৩০ থেকে ৬০ মিনিট। আপনার অনুসরণ করা মাযহাব বেছে নিন।"
+  fa: "وقت عصر بین مذاهب فقهی اسلامی متفاوت است:\n\n• شافعی، مالکی، حنبلی: عصر زمانی شروع می‌شود که سایه شیء برابر طول آن به علاوه سایه ظهر باشد.\n\n• حنفی: عصر زمانی شروع می‌شود که سایه شیء دو برابر طول آن به علاوه سایه ظهر باشد.\n\nتفاوت بین دو روش معمولاً ۳۰ تا ۶۰ دقیقه است. مذهبی را که پیروی می‌کنید انتخاب کنید."
+  ms: "Waktu Asar berbeza antara mazhab undang-undang Islam:\n\n• Syafi'i, Maliki, Hanbali: Asar bermula apabila bayangan sesuatu objek sama dengan panjangnya ditambah bayangan waktu tengah hari.\n\n• Hanafi: Asar bermula apabila bayangan objek dua kali panjangnya ditambah bayangan tengah hari.\n\nPerbezaan antara dua kaedah biasanya 30 hingga 60 minit. Pilih mazhab yang anda ikuti."
+  pt: "O horário do Asr difere entre as escolas jurídicas islâmicas:\n\n• Shafi'i, Maliki, Hanbali: Asr começa quando a sombra de um objeto iguala seu comprimento mais a sombra ao meio-dia.\n\n• Hanafi: Asr começa quando a sombra de um objeto é o dobro de seu comprimento mais a sombra ao meio-dia.\n\nA diferença entre os dois métodos é tipicamente de 30 a 60 minutos. Escolha a escola que você segue."
+  sw: "Wakati wa Asr hutofautiana kati ya shule za sheria za Kiislamu:\n\n• Shafi'i, Maliki, Hanbali: Asr huanza wakati kivuli cha kitu kinalingana na urefu wake pamoja na kivuli wakati wa adhuhuri.\n\n• Hanafi: Asr huanza wakati kivuli cha kitu ni mara mbili ya urefu wake pamoja na kivuli wakati wa adhuhuri.\n\nTofauti kati ya njia mbili ni dakika 30 hadi 60 kawaida. Chagua shule unayoifuata."
+  ha: "Lokacin La'asar ya bambanta tsakanin makarantun shari'ar Musulunci:\n\n• Shafi'i, Maliki, Hanbali: La'asar tana farawa lokacin da inuwar abu ta zama daidai da tsayinsa da ake ƙarawa inuwar lokacin rana ta tsakiya.\n\n• Hanafi: La'asar tana farawa lokacin da inuwar abu ta zama sau biyu na tsayinsa da ake ƙarawa inuwar lokacin rana ta tsakiya.\n\nBanbancin tsakanin hanyoyin biyu yawanci daga minti 30 zuwa 60. Zaɓi mazhabin da kake bi."
+
+──────────────────────────────────────────
+HELP 5 — FIRST ADHAN (Fajr early Adhan)
+i18n key: help_first_adhan
+──────────────────────────────────────────
+
+Title:
+  ar: "الأذان الأول للفجر"
+  en: "First Adhan (Early Fajr)"
+  fr: "Premier Adhan (Fajr anticipé)"
+  es: "Primer Adhan (Fajr temprano)"
+  ru: "Первый азан (ранний Фаджр)"
+  zh: "第一次晨礼宣礼（提前晨礼）"
+  tr: "Birinci Ezan (Erken Sabah)"
+  ur: "پہلی اذان (ابتدائی فجر)"
+  id: "Adzan Pertama (Fajr Awal)"
+  bn: "প্রথম আযান (প্রারম্ভিক ফজর)"
+  fa: "اذان اول (فجر زود)"
+  ms: "Azan Pertama (Fajr Awal)"
+  pt: "Primeiro Adhan (Fajr antecipado)"
+  sw: "Adhana ya Kwanza (Fajr ya Mapema)"
+  ha: "Kiran Sallah na Farko (Fajr na Farko)"
+
+Body:
+  ar: "الأذان الأول للفجر (أذان التهجد أو أذان السحور) يُؤذَّن قبل الفجر الصادق بوقت معين لإيقاظ المصلين للسحور في رمضان والتهجد.\n\nهذا الإعداد يضيف أذاناً إضافياً قبل أذان الفجر الرسمي بعدد الدقائق التي تحددها.\n\nالقيمة الشائعة: من 20 إلى 30 دقيقة قبل الفجر."
+  en: "The first Fajr Adhan (Adhan al-Tahajjud or Suhoor Adhan) is called before true Fajr to wake worshippers for Suhoor in Ramadan and for Tahajjud prayer.\n\nThis setting adds an additional Adhan before the official Fajr Adhan by the number of minutes you specify.\n\nCommon value: 20 to 30 minutes before Fajr."
+  fr: "Le premier adhan du Fajr (adhan al-Tahajjud ou adhan du Suhoor) est appelé avant le vrai Fajr pour réveiller les fidèles pour le Suhoor pendant le Ramadan et pour la prière de Tahajjud.\n\nCe paramètre ajoute un adhan supplémentaire avant l'adhan officiel du Fajr avec le nombre de minutes que vous spécifiez.\n\nValeur courante : 20 à 30 minutes avant le Fajr."
+  es: "El primer Adhan del Fajr (Adhan al-Tahajjud o Adhan del Suhoor) se llama antes del verdadero Fajr para despertar a los fieles para el Suhoor en Ramadán y para la oración del Tahajjud.\n\nEsta configuración añade un Adhan adicional antes del Adhan oficial del Fajr con el número de minutos que especifiques.\n\nValor común: 20 a 30 minutos antes del Fajr."
+  ru: "Первый азан Фаджра (азан ат-Тахаджуд или азан Сухура) читается до истинного Фаджра, чтобы разбудить верующих для Сухура в Рамадан и для молитвы Тахаджуд.\n\nЭта настройка добавляет дополнительный азан перед официальным азаном Фаджра на указанное количество минут.\n\nОбычное значение: от 20 до 30 минут до Фаджра."
+  zh: "第一次晨礼宣礼（塔哈居德宣礼或苏胡尔宣礼）在真正的晨礼之前召唤，唤醒斋戒月期间封斋前饮食（苏胡尔）和塔哈居德礼拜的信徒。\n\n此设置在官方晨礼宣礼之前添加一个额外的宣礼，提前您指定的分钟数。\n\n常用值：晨礼前20至30分钟。"
+  tr: "Birinci Sabah Ezanı (Teheccüd Ezanı veya Sahur Ezanı), Ramazan'da sahur için ve Teheccüd namazı için müminleri uyandırmak amacıyla gerçek Fecir'den önce okunur.\n\nBu ayar, resmi Sabah Ezanından önce belirlediğiniz dakika sayısı kadar ek bir ezan ekler.\n\nYaygın değer: Fecir'den 20 ila 30 dakika önce."
+  ur: "فجر کی پہلی اذان (اذان تہجد یا سحری کی اذان) رمضان میں سحری کے لیے اور تہجد کی نماز کے لیے نمازیوں کو جگانے کے لیے فجر صادق سے پہلے دی جاتی ہے۔\n\nیہ ترتیب آپ کی مقررہ دقیقوں کی تعداد سے پہلے سرکاری فجر کی اذان سے قبل ایک اضافی اذان شامل کرتی ہے۔\n\nعام قیمت: فجر سے 20 سے 30 دقیقے پہلے۔"
+  id: "Adzan Fajr pertama (Adzan Tahajjud atau Adzan Sahur) dikumandangkan sebelum Fajr sejati untuk membangunkan jamaah untuk Sahur di bulan Ramadan dan shalat Tahajjud.\n\nPengaturan ini menambahkan Adzan tambahan sebelum Adzan Fajr resmi dengan jumlah menit yang Anda tentukan.\n\nNilai umum: 20 hingga 30 menit sebelum Fajr."
+  bn: "প্রথম ফজরের আযান (তাহাজ্জুদের আযান বা সাহরীর আযান) সত্যিকারের ফজরের আগে ডাকা হয় রমজানে সাহরীর জন্য এবং তাহাজ্জুদের নামাজের জন্য মুসল্লিদের জাগাতে।\n\nএই সেটিং আপনার নির্দিষ্ট মিনিট সংখ্যার আগে অফিসিয়াল ফজরের আযানের আগে একটি অতিরিক্ত আযান যোগ করে।\n\nসাধারণ মান: ফজরের ২০ থেকে ৩০ মিনিট আগে।"
+  fa: "اذان اول فجر (اذان تهجد یا اذان سحر) قبل از فجر حقیقی برای بیدار کردن نمازگزاران برای سحری در ماه رمضان و نماز تهجد خوانده می‌شود.\n\nاین تنظیم یک اذان اضافی قبل از اذان رسمی فجر به تعداد دقایق مشخص‌شده اضافه می‌کند.\n\nمقدار رایج: ۲۰ تا ۳۰ دقیقه قبل از فجر."
+  ms: "Azan Fajr pertama (Azan Tahajjud atau Azan Sahur) dilaungkan sebelum Fajr sebenar untuk membangunkan jemaah untuk Sahur di bulan Ramadan dan solat Tahajjud.\n\nTetapan ini menambah Azan tambahan sebelum Azan Fajr rasmi dengan bilangan minit yang anda tentukan.\n\nNilai lazim: 20 hingga 30 minit sebelum Fajr."
+  pt: "O primeiro Adhan do Fajr (Adhan al-Tahajjud ou Adhan do Suhoor) é chamado antes do verdadeiro Fajr para acordar os fiéis para o Suhoor no Ramadã e para a oração do Tahajjud.\n\nEsta configuração adiciona um Adhan adicional antes do Adhan oficial do Fajr pelo número de minutos que você especificar.\n\nValor comum: 20 a 30 minutos antes do Fajr."
+  sw: "Adhana ya kwanza ya Fajr (Adhana ya Tahajjud au Adhana ya Suhoor) inaitwa kabla ya Fajr ya kweli ili kuamsha waumini kwa Suhoor katika Ramadan na sala ya Tahajjud.\n\nMipangilio hii huongeza Adhana ya ziada kabla ya Adhana rasmi ya Fajr kwa idadi ya dakika unazobainisha.\n\nThamani ya kawaida: dakika 20 hadi 30 kabla ya Fajr."
+  ha: "Kiran Sallah na farko na Fajr (Kiran Tahajjud ko Kiran Suhoor) ana kiransa kafin Fajr na gaskiya don fitar da masu sallah don Suhoor a watan Ramadan da sallah ta Tahajjud.\n\nWannan saitin yana ƙara kiran sallah ƙarin kafin kiran Fajr na hukuma da adadin mintoci da ka ƙayyade.\n\nƙimar gama-gari: mintoci 20 zuwa 30 kafin Fajr."
+
+──────────────────────────────────────────
+HELP 6 — IQAMA TIME
+i18n key: help_iqama_time
+──────────────────────────────────────────
+
+Title:
+  ar: "وقت الإقامة"
+  en: "Iqama Time"
+  fr: "Temps de l'Iqama"
+  es: "Tiempo de la Iqama"
+  ru: "Время икамы"
+  zh: "立礼时间"
+  tr: "Kamet Vakti"
+  ur: "اقامت کا وقت"
+  id: "Waktu Iqamah"
+  bn: "ইকামতের সময়"
+  fa: "زمان اقامه"
+  ms: "Masa Iqamat"
+  pt: "Tempo do Iqama"
+  sw: "Wakati wa Iqama"
+  ha: "Lokacin Iqama"
+
+Body:
+  ar: "الإقامة هي النداء الذي يُقام داخل المسجد مباشرة قبل بدء الصلاة الجماعية.\n\nهذا الإعداد يحدد عدد الدقائق بين أذان الصلاة وإقامتها. يُعرض عداد تنازلي للإقامة على شاشة أوقات الصلاة.\n\nالقيم الشائعة:\n• الفجر: 20-30 دقيقة\n• بقية الصلوات: 10-15 دقيقة"
+  en: "The Iqama is the second call to prayer made inside the mosque just before the congregational prayer begins.\n\nThis setting specifies the number of minutes between the Adhan and the Iqama. A countdown banner is shown on the prayer times screen.\n\nCommon values:\n• Fajr: 20-30 minutes\n• Other prayers: 10-15 minutes"
+  fr: "L'Iqama est le deuxième appel à la prière fait à l'intérieur de la mosquée juste avant le début de la prière en congrégation.\n\nCe paramètre spécifie le nombre de minutes entre l'adhan et l'iqama. Une bannière de compte à rebours est affichée sur l'écran des horaires de prière.\n\nValeurs courantes :\n• Fajr : 20-30 minutes\n• Autres prières : 10-15 minutes"
+  es: "El Iqama es la segunda llamada a la oración hecha dentro de la mezquita justo antes de que comience la oración congregacional.\n\nEsta configuración especifica el número de minutos entre el Adhan y el Iqama. Se muestra una pancarta de cuenta regresiva en la pantalla de horarios de oración.\n\nValores comunes:\n• Fajr: 20-30 minutos\n• Otras oraciones: 10-15 minutos"
+  ru: "Икама — это второй призыв к молитве внутри мечети перед началом коллективной молитвы.\n\nЭта настройка определяет количество минут между азаном и икамой. На экране времён молитв отображается обратный отсчёт.\n\nОбычные значения:\n• Фаджр: 20-30 минут\n• Другие молитвы: 10-15 минут"
+  zh: "立礼是在集体礼拜开始前在清真寺内发出的第二次礼拜呼唤。\n\n此设置指定宣礼到立礼之间的分钟数。祈祷时间屏幕上会显示倒计时横幅。\n\n常用值：\n• 晨礼：20-30分钟\n• 其他礼拜：10-15分钟"
+  tr: "Kamet, cemaat namazı başlamadan hemen önce caminin içinde yapılan ikinci ezandır.\n\nBu ayar, ezan ile kamet arasındaki dakika sayısını belirtir. Namaz vakitleri ekranında geri sayım bandı gösterilir.\n\nYaygın değerler:\n• Sabah: 20-30 dakika\n• Diğer namazlar: 10-15 dakika"
+  ur: "اقامت وہ دوسری اذان ہے جو جماعت کی نماز شروع ہونے سے پہلے مسجد کے اندر دی جاتی ہے۔\n\nیہ ترتیب اذان اور اقامت کے درمیان دقیقوں کی تعداد بتاتی ہے۔ اوقات نماز کی اسکرین پر گنتی کا بینر دکھایا جاتا ہے۔\n\nعام قیمتیں:\n• فجر: 20-30 دقیقے\n• دیگر نمازیں: 10-15 دقیقے"
+  id: "Iqamah adalah panggilan kedua untuk shalat yang dilakukan di dalam masjid tepat sebelum shalat berjamaah dimulai.\n\nPengaturan ini menentukan jumlah menit antara Adzan dan Iqamah. Banner hitung mundur ditampilkan di layar waktu shalat.\n\nNilai umum:\n• Fajr: 20-30 menit\n• Shalat lainnya: 10-15 menit"
+  bn: "ইকামত হল দ্বিতীয় নামাজের আহ্বান যা জামাতের নামাজ শুরুর ঠিক আগে মসজিদের ভেতরে দেওয়া হয়।\n\nএই সেটিং আযান এবং ইকামতের মধ্যে মিনিটের সংখ্যা নির্দিষ্ট করে। নামাজের সময় স্ক্রিনে কাউন্টডাউন ব্যানার দেখানো হয়।\n\nসাধারণ মান:\n• ফজর: ২০-৩০ মিনিট\n• অন্যান্য নামাজ: ১০-১৫ মিনিট"
+  fa: "اقامه دومین فراخوان نماز است که درست قبل از شروع نماز جماعت در داخل مسجد خوانده می‌شود.\n\nاین تنظیم تعداد دقایق بین اذان و اقامه را مشخص می‌کند. یک بنر شمارش معکوس در صفحه اوقات نماز نمایش داده می‌شود.\n\nمقادیر رایج:\n• فجر: ۲۰-۳۰ دقیقه\n• سایر نمازها: ۱۰-۱۵ دقیقه"
+  ms: "Iqamat ialah seruan kedua untuk solat yang dibuat di dalam masjid sejurus sebelum solat berjemaah bermula.\n\nTetapan ini menentukan bilangan minit antara Azan dan Iqamat. Sepanduk kiraan detik ditunjukkan pada skrin waktu solat.\n\nNilai lazim:\n• Fajr: 20-30 minit\n• Solat lain: 10-15 minit"
+  pt: "O Iqama é a segunda chamada à oração feita dentro da mesquita pouco antes do início da oração congregacional.\n\nEsta configuração especifica o número de minutos entre o Adhan e o Iqama. Um banner de contagem regressiva é mostrado na tela de horários de oração.\n\nValores comuns:\n• Fajr: 20-30 minutos\n• Outras orações: 10-15 minutos"
+  sw: "Iqama ni wito wa pili wa sala unaofanywa ndani ya msikiti kabla ya sala ya jamaa kuanza.\n\nMipangilio hii inabainisha idadi ya dakika kati ya Adhana na Iqama. Bango la kuhesabu nyuma linaonyeshwa kwenye skrini ya nyakati za sala.\n\nThamani za kawaida:\n• Fajr: dakika 20-30\n• Sala nyingine: dakika 10-15"
+  ha: "Iqama shine kiran sallah na biyu da ake yi a cikin masallaci kafin a fara sallah ta jama'a.\n\nWannan saitin yana ƙayyade adadin mintoci tsakanin kiran sallah da iqama. Ana nuna filin kididdigar a allon lokutan sallah.\n\nƙimomin gama-gari:\n• Fajr: minti 20-30\n• Sauran salloli: minti 10-15"
+
+──────────────────────────────────────────
+HELP 7 — DHUHA PRAYER
+i18n key: help_dhuha
+──────────────────────────────────────────
+
+Title:
+  ar: "صلاة الضحى"
+  en: "Dhuha Prayer"
+  fr: "Prière Dhuha"
+  es: "Oración Dhuha"
+  ru: "Молитва Духа"
+  zh: "杜哈礼拜"
+  tr: "Kuşluk Namazı"
+  ur: "چاشت کی نماز"
+  id: "Shalat Dhuha"
+  bn: "দুহার নামাজ"
+  fa: "نماز ضحی"
+  ms: "Solat Dhuha"
+  pt: "Oração Dhuha"
+  sw: "Sala ya Dhuha"
+  ha: "Sallah ta Dhuha"
+
+Body:
+  ar: "صلاة الضحى سنة مؤكدة تُصلى بعد ارتفاع الشمس قيد رمح وقبل الزوال.\n\nيبدأ وقتها نحو 15-20 دقيقة بعد الشروق، وينتهي قبل أذان الظهر بنحو 15 دقيقة.\n\nقال النبي ﷺ: من صلى الضحى ركعتين لم يُكتب من الغافلين.\n\nعند التفعيل تظهر في قائمة أوقات الصلاة وتدخل في تسلسل الصلاة التالية."
+  en: "Dhuha is a confirmed Sunnah prayer performed after the sun has risen above the horizon and before midday.\n\nIts time begins approximately 15-20 minutes after sunrise and ends about 15 minutes before Dhuhr.\n\nThe Prophet ﷺ said: whoever prays Dhuha two rak'ahs will not be written among the heedless.\n\nWhen enabled it appears in the prayer times list and is included in the next prayer sequence."
+  fr: "Dhuha est une prière sunnah confirmée effectuée après que le soleil s'est levé au-dessus de l'horizon et avant midi.\n\nSon temps commence environ 15 à 20 minutes après le lever du soleil et se termine environ 15 minutes avant Dhuhr.\n\nLe Prophète ﷺ a dit : quiconque prie Dhuha deux rak'at ne sera pas compté parmi les insouciants.\n\nLorsqu'il est activé, il apparaît dans la liste des horaires de prière."
+  es: "Dhuha es una oración sunnah confirmada realizada después de que el sol haya salido sobre el horizonte y antes del mediodía.\n\nSu tiempo comienza aproximadamente 15-20 minutos después del amanecer y termina unos 15 minutos antes del Dhuhr.\n\nEl Profeta ﷺ dijo: quien rece Dhuha dos rak'ahs no será contado entre los descuidados.\n\nCuando está activado aparece en la lista de horarios de oración."
+  ru: "Духа — это подтверждённая сунна-молитва, выполняемая после восхода солнца и до полудня.\n\nВремя начинается примерно через 15-20 минут после восхода и заканчивается за 15 минут до Зухра.\n\nПророк ﷺ сказал: кто совершит Духа два ракаата, не будет записан среди беспечных.\n\nПри включении отображается в списке времён молитв."
+  zh: "杜哈是一种被确认的逊奈礼拜，在太阳升起地平线后到正午前进行。\n\n其时间在日出后约15-20分钟开始，在晌礼前约15分钟结束。\n\n先知ﷺ说：凡礼杜哈两拜者，不会被列入疏忽者之中。\n\n启用后会出现在礼拜时间列表中。"
+  tr: "Kuşluk namazı, güneş doğduktan sonra ve öğleden önce kılınan onaylanmış sünnet namazıdır.\n\nVakti, güneş doğduktan yaklaşık 15-20 dakika sonra başlar ve Öğleden yaklaşık 15 dakika önce biter.\n\nHz. Peygamber ﷺ şöyle buyurdu: Her kim kuşluk namazını iki rekat kılarsa, gafiller arasına yazılmaz.\n\nEtkinleştirildiğinde namaz vakitleri listesinde görünür."
+  ur: "چاشت کی نماز ایک مؤکدہ سنت نماز ہے جو سورج کے طلوع کے بعد اور ظہر سے پہلے پڑھی جاتی ہے۔\n\nاس کا وقت طلوع آفتاب کے تقریباً 15-20 دقیقے بعد شروع ہوتا ہے اور ظہر سے 15 دقیقے پہلے ختم ہوتا ہے۔\n\nنبی ﷺ نے فرمایا: جو شخص چاشت کی دو رکعت پڑھے وہ غافلوں میں نہیں لکھا جائے گا۔\n\nفعال ہونے پر اوقات نماز کی فہرست میں ظاہر ہوتا ہے۔"
+  id: "Dhuha adalah shalat sunnah muakkad yang dilakukan setelah matahari terbit di atas cakrawala dan sebelum tengah hari.\n\nWaktunya dimulai sekitar 15-20 menit setelah matahari terbit dan berakhir sekitar 15 menit sebelum Dzuhur.\n\nNabi ﷺ bersabda: barang siapa shalat Dhuha dua rakaat maka tidak akan ditulis di antara orang-orang yang lalai.\n\nSaat diaktifkan muncul dalam daftar waktu shalat."
+  bn: "দুহা হল একটি নিশ্চিত সুন্নাহ নামাজ যা সূর্য দিগন্তের উপরে উঠার পরে এবং দুপুরের আগে পড়া হয়।\n\nএর সময় সূর্যোদয়ের প্রায় ১৫-২০ মিনিট পরে শুরু হয় এবং যোহরের প্রায় ১৫ মিনিট আগে শেষ হয়।\n\nনবী ﷺ বলেছেন: যে ব্যক্তি দুহার দুই রাকাত নামাজ পড়ে সে গাফেলদের মধ্যে লেখা হবে না।\n\nসক্রিয় হলে নামাজের সময় তালিকায় দেখা যায়।"
+  fa: "ضحی نماز سنت مؤکده‌ای است که بعد از طلوع آفتاب بالای افق و قبل از ظهر خوانده می‌شود.\n\nوقت آن حدود ۱۵-۲۰ دقیقه بعد از طلوع شروع می‌شود و حدود ۱۵ دقیقه قبل از ظهر پایان می‌یابد.\n\nپیامبر ﷺ فرمود: هر کس دو رکعت نماز ضحی بخواند در میان غافلان نوشته نمی‌شود.\n\nهنگام فعال‌سازی در فهرست اوقات نماز نمایش داده می‌شود."
+  ms: "Dhuha ialah solat sunat muakkad yang dilakukan selepas matahari terbit di atas ufuk dan sebelum tengah hari.\n\nWaktunya bermula kira-kira 15-20 minit selepas matahari terbit dan berakhir kira-kira 15 minit sebelum Zohor.\n\nNabi ﷺ bersabda: sesiapa yang solat Dhuha dua rakaat tidak akan ditulis dalam kalangan orang yang lalai.\n\nApabila diaktifkan ia muncul dalam senarai waktu solat."
+  pt: "Dhuha é uma oração sunnah confirmada realizada após o sol ter nascido acima do horizonte e antes do meio-dia.\n\nSeu tempo começa aproximadamente 15-20 minutos após o nascer do sol e termina cerca de 15 minutos antes do Dhuhr.\n\nO Profeta ﷺ disse: quem rezar Dhuha dois rak'ahs não será contado entre os descuidados.\n\nQuando ativado aparece na lista de horários de oração."
+  sw: "Dhuha ni sala ya sunnah iliyothibitishwa inayofanywa baada ya jua kuinuka juu ya upeo wa macho na kabla ya adhuhuri.\n\nWakati wake huanza takriban dakika 15-20 baada ya machweo na kuisha takriban dakika 15 kabla ya Dhuhr.\n\nNabii ﷺ alisema: yeyote anayeswali Dhuha rakaa mbili hataorodheshwa miongoni mwa wasio makini.\n\nInapowashwa inaonekana katika orodha ya nyakati za sala."
+  ha: "Dhuha wata sallah ce ta Sunnah mai tabbaci da ake yi bayan rana ta fito sama da iyaka kuma kafin tsakar rana.\n\nLokacinsa yana farawa mintoci 15-20 bayan faduwar rana kuma yana ƙarewa mintoci 15 kafin Dhuhr.\n\nAnnabin ﷺ ya ce: duk wanda ya yi sallah ta Dhuha raka'o'i biyu ba za a rubuta shi a cikin masu sakaci ba.\n\nAna nuna shi a jerin lokutan sallah idan an kunna shi."
+
+──────────────────────────────────────────
+HELP 8 — QIYAM AL-LAYL
+i18n key: help_qiyam
+──────────────────────────────────────────
+
+Title:
+  ar: "قيام الليل"
+  en: "Qiyam al-Layl"
+  fr: "Qiyam al-Layl"
+  es: "Qiyam al-Layl"
+  ru: "Кыям аль-Лайл"
+  zh: "夜礼"
+  tr: "Gece Namazı (Kıyamu'l-Leyl)"
+  ur: "قیام اللیل"
+  id: "Qiyamul Lail"
+  bn: "কিয়ামুল লাইল"
+  fa: "قیام الیل"
+  ms: "Qiyamullail"
+  pt: "Qiyam al-Layl"
+  sw: "Qiyam al-Layl"
+  ha: "Qiyamul Lail"
+
+Body:
+  ar: "قيام الليل (التهجد) من أفضل النوافل وأعظمها أجراً. وقته من بعد العشاء حتى طلوع الفجر، وأفضله في الثلث الأخير من الليل.\n\nيُحسب وقته في التطبيق كالتالي:\n• وقت القيام = منتصف الليل الشرعي بين المغرب والفجر\n\nعند التفعيل يظهر في قائمة أوقات الصلاة ويدخل في تسلسل الصلاة التالية."
+  en: "Qiyam al-Layl (Tahajjud) is among the best and most rewarded voluntary prayers. Its time extends from after Isha until Fajr, with the last third of the night being the most virtuous.\n\nIn the app its time is calculated as:\n• Qiyam time = midpoint of the Islamic night between Maghrib and Fajr\n\nWhen enabled it appears in the prayer times list and is included in the next prayer sequence."
+  fr: "Le Qiyam al-Layl (Tahajjud) est parmi les meilleures prières surérogatoires. Son temps s'étend de après Isha jusqu'au Fajr, le dernier tiers de la nuit étant le plus vertueux.\n\nDans l'application, son heure est calculée comme :\n• Heure du Qiyam = point médian de la nuit islamique entre le Maghrib et le Fajr\n\nLorsqu'il est activé, il apparaît dans la liste des horaires de prière."
+  es: "El Qiyam al-Layl (Tahajjud) es una de las mejores oraciones voluntarias. Su tiempo se extiende desde después de Isha hasta Fajr, siendo el último tercio de la noche el más virtuoso.\n\nEn la aplicación su tiempo se calcula como:\n• Tiempo de Qiyam = punto medio de la noche islámica entre Maghrib y Fajr\n\nCuando está activado aparece en la lista de horarios de oración."
+  ru: "Кыям аль-Лайл (Тахаджуд) — одна из лучших добровольных молитв. Её время — от Иша до Фаджра, причём последняя треть ночи наиболее добродетельна.\n\nВ приложении время рассчитывается как:\n• Время Кыяма = середина исламской ночи между Магрибом и Фаджром\n\nПри включении отображается в списке времён молитв."
+  zh: "夜礼（塔哈居德）是最好和最有回报的自愿礼拜之一。其时间从宵礼后延伸到晨礼，夜晚的最后三分之一最为高尚。\n\n在应用中其时间计算为：\n• 夜礼时间 = 马格里布和晨礼之间伊斯兰夜晚的中点\n\n启用后出现在礼拜时间列表中。"
+  tr: "Kıyamu'l-Leyl (Teheccüd), en iyi ve en çok sevap kazandıran nafile namazlardan biridir. Vakti Yatsıdan sonra Sabaha kadar uzanır, gecenin son üçte biri en faziletli zamandır.\n\nUygulamada vakti şöyle hesaplanır:\n• Kıyam vakti = Akşam ile Sabah arasındaki İslami gecenin orta noktası\n\nEtkinleştirildiğinde namaz vakitleri listesinde görünür."
+  ur: "قیام اللیل (تہجد) بہترین نفل نمازوں میں سے ہے۔ اس کا وقت عشاء کے بعد سے فجر تک ہے، رات کا آخری تہائی حصہ سب سے افضل ہے۔\n\nایپ میں اس کا وقت اس طرح حساب کیا جاتا ہے:\n• قیام کا وقت = مغرب اور فجر کے درمیان اسلامی رات کا درمیانی نقطہ\n\nفعال ہونے پر اوقات نماز کی فہرست میں ظاہر ہوتا ہے۔"
+  id: "Qiyamul Lail (Tahajjud) adalah salah satu shalat sunnah terbaik dan paling berpahala. Waktunya dari setelah Isya hingga Fajr, dengan sepertiga malam terakhir paling utama.\n\nDalam aplikasi waktunya dihitung sebagai:\n• Waktu Qiyam = titik tengah malam Islam antara Maghrib dan Fajr\n\nSaat diaktifkan muncul dalam daftar waktu shalat."
+  bn: "কিয়ামুল লাইল (তাহাজ্জুদ) সর্বোত্তম ও সবচেয়ে পুরস্কৃত নফল নামাজের মধ্যে অন্যতম। এর সময় এশার পরে থেকে ফজর পর্যন্ত, রাতের শেষ তৃতীয়াংশ সবচেয়ে পুণ্যময়।\n\nঅ্যাপে এর সময় গণনা করা হয়:\n• কিয়ামের সময় = মাগরিব এবং ফজরের মধ্যে ইসলামিক রাতের মধ্যবিন্দু\n\nসক্রিয় হলে নামাজের সময় তালিকায় দেখা যায়।"
+  fa: "قیام الیل (تهجد) از بهترین و پرثواب‌ترین نمازهای نافله است. وقت آن از بعد از عشاء تا فجر است و ثلث آخر شب برترین است.\n\nدر برنامه وقت آن به این صورت محاسبه می‌شود:\n• وقت قیام = نقطه میانی شب اسلامی بین مغرب و فجر\n\nهنگام فعال‌سازی در فهرست اوقات نماز نمایش داده می‌شود."
+  ms: "Qiyamullail (Tahajjud) adalah antara solat sunat yang terbaik dan paling berpahala. Waktunya dari selepas Isyak hingga Fajr, dengan sepertiga malam terakhir paling utama.\n\nDalam aplikasi waktunya dikira sebagai:\n• Waktu Qiyam = titik tengah malam Islam antara Maghrib dan Fajr\n\nApabila diaktifkan ia muncul dalam senarai waktu solat."
+  pt: "O Qiyam al-Layl (Tahajjud) é uma das melhores e mais recompensadas orações voluntárias. Seu tempo se estende de após Isha até Fajr, sendo o último terço da noite o mais virtuoso.\n\nNo aplicativo seu tempo é calculado como:\n• Tempo de Qiyam = ponto médio da noite islâmica entre Maghrib e Fajr\n\nQuando ativado aparece na lista de horários de oração."
+  sw: "Qiyam al-Layl (Tahajjud) ni moja ya sala za hiari bora na zenye thawabu zaidi. Wakati wake unaendelea kutoka baada ya Isha hadi Fajr, na theluthi ya mwisho ya usiku ikiwa bora zaidi.\n\nKatika programu wakati wake unakokotolewa kama:\n• Wakati wa Qiyam = katikati ya usiku wa Kiislamu kati ya Maghrib na Fajr\n\nInapowashwa inaonekana katika orodha ya nyakati za sala."
+  ha: "Qiyamul Lail (Tahajjud) yana cikin mafi kyawun sallolin nafila masu lada. Lokacinsa yana daga bayan Isha zuwa Fajr, da ɗaya bisa uku na ƙarshen dare mafi falala.\n\nA cikin app ana ƙididdiga lokacinsa kamar haka:\n• Lokacin Qiyam = tsakiyar dare na Musulunci tsakanin Magariba da Fajr\n\nAna nuna shi a jerin lokutan sallah idan an kunna shi."
+
+──────────────────────────────────────────
+HELP 9 — THIKR REMINDERS
+(already defined in previous prompt — 
+ensure it is implemented and not empty)
+i18n key: thikr_reminders_help_title / thikr_reminders_help_body
+──────────────────────────────────────────
+
+Verify the thikr reminder help button exists and 
+shows the content defined in the previous correction 
+prompt. If empty or missing, restore it now.
+
+──────────────────────────────────────────
+HELP 10 — DEFAULT TAB / شاشة البداية
+(already defined in previous prompt —
+ensure it is implemented and not empty)
+i18n key: default_tab_help_title / default_tab_help_body
+──────────────────────────────────────────
+
+Verify the default tab help button exists and 
+shows the content defined in the previous correction 
+prompt. If empty or missing, restore it now.
+
+════════════════════════════════════════════════════════
+CALENDAR HELP BUTTONS
+════════════════════════════════════════════════════════
+
+Add help buttons to the Today/Calendar tab for 
+moon phase and Hijri month display elements.
+
+──────────────────────────────────────────
+HELP 11 — NEW HILAL / MOON SIGHTING
+i18n key: help_new_hilal
+──────────────────────────────────────────
+
+Title:
+  ar: "الهلال الجديد"
+  en: "New Crescent Moon"
+  fr: "Nouveau Croissant"
+  es: "Nueva Luna Creciente"
+  ru: "Новый полумесяц"
+  zh: "新月"
+  tr: "Yeni Hilal"
+  ur: "نیا ہلال"
+  id: "Hilal Baru"
+  bn: "নতুন হিলাল"
+  fa: "هلال جدید"
+  ms: "Anak Bulan Baru"
+  pt: "Nova Lua Crescente"
+  sw: "Hilali Mpya"
+  ha: "Sabon Wata"
+
+Body:
+  ar: "يُشير مؤشر الهلال إلى أول ظهور للقمر بعد المحاق، وهو ما يُعلن بداية الشهر القمري الجديد في الإسلام.\n\nيعتمد التطبيق على حسابات جان مياس الفلكية لتحديد موعد ظهور الهلال المتوقع لكل شهر.\n\nملاحظة: التوقيت الفعلي لبداية الشهر قد يختلف بحسب رؤية الهلال في بلدك. استخدم إعداد تعديل التاريخ الهجري للمطابقة."
+  en: "The Hilal indicator shows the first appearance of the moon after the new moon phase, which marks the beginning of a new Islamic lunar month.\n\nThe app uses Jean Meeus astronomical calculations to determine the expected Hilal appearance for each month.\n\nNote: the actual start of the month may differ based on moon sighting in your country. Use the Hijri adjustment setting to match."
+  fr: "L'indicateur Hilal montre la première apparition de la lune après la nouvelle lune, qui marque le début d'un nouveau mois lunaire islamique.\n\nL'application utilise les calculs astronomiques de Jean Meeus pour déterminer l'apparition attendue du Hilal.\n\nRemarque : le début réel du mois peut différer selon l'observation du croissant dans votre pays."
+  es: "El indicador de Hilal muestra la primera aparición de la luna después de la luna nueva, que marca el comienzo de un nuevo mes lunar islámico.\n\nLa aplicación utiliza los cálculos astronómicos de Jean Meeus para determinar la aparición esperada del Hilal.\n\nNota: el inicio real del mes puede diferir según el avistamiento de la luna en tu país."
+  ru: "Индикатор Хилал показывает первое появление луны после новолуния, знаменующее начало нового исламского лунного месяца.\n\nПриложение использует астрономические расчёты Жана Меуса для определения ожидаемого появления Хилала.\n\nПримечание: фактическое начало месяца может отличаться в зависимости от наблюдения луны в вашей стране."
+  zh: "新月指示器显示新月阶段后月亮的首次出现，标志着新伊斯兰太阴月的开始。\n\n应用程序使用让·梅乌斯天文计算来确定每月预期的新月出现时间。\n\n注意：月份的实际开始可能因您所在国家的月亮观测而异。"
+  tr: "Hilal göstergesi, yeni ay evresinden sonra ayın ilk görünümünü gösterir ve yeni bir İslami kamerî ayın başlangıcını işaret eder.\n\nUygulama, her ay için beklenen Hilal görünümünü belirlemek üzere Jean Meeus'un astronomik hesaplamalarını kullanır.\n\nNot: ayın gerçek başlangıcı ülkenizdeki hilal gözlemine göre farklılık gösterebilir."
+  ur: "ہلال کا اشارہ محاق کے بعد چاند کے پہلے ظہور کو ظاہر کرتا ہے جو اسلامی قمری مہینے کا آغاز ہے۔\n\nایپ ہر مہینے متوقع ہلال کے ظہور کا تعین کرنے کے لیے جان مایوس کے فلکیاتی حسابات استعمال کرتی ہے۔\n\nنوٹ: مہینے کا اصل آغاز آپ کے ملک میں ہلال کی رویت کے مطابق مختلف ہو سکتا ہے۔"
+  id: "Indikator Hilal menunjukkan penampakan pertama bulan setelah fase bulan baru, yang menandai awal bulan lunar Islam baru.\n\nAplikasi menggunakan perhitungan astronomi Jean Meeus untuk menentukan penampakan Hilal yang diharapkan setiap bulan.\n\nCatatan: awal bulan yang sebenarnya mungkin berbeda berdasarkan rukyat hilal di negara Anda."
+  bn: "হিলাল সূচক নতুন চাঁদের পর্যায়ের পরে চাঁদের প্রথম উপস্থিতি দেখায়, যা একটি নতুন ইসলামিক চান্দ্র মাসের শুরু চিহ্নিত করে।\n\nঅ্যাপটি প্রতি মাসে প্রত্যাশিত হিলালের উপস্থিতি নির্ধারণ করতে জিন মেউস জ্যোতির্বিজ্ঞান গণনা ব্যবহার করে।\n\nনোট: মাসের প্রকৃত শুরু আপনার দেশে চাঁদ দেখার উপর নির্ভর করে আলাদা হতে পারে।"
+  fa: "شاخص هلال اولین ظهور ماه پس از مرحله ماه نو را نشان می‌دهد که آغاز ماه قمری اسلامی جدید را مشخص می‌کند.\n\nبرنامه از محاسبات نجومی ژان مئوس برای تعیین ظهور مورد انتظار هلال هر ماه استفاده می‌کند.\n\nتوجه: شروع واقعی ماه ممکن است بر اساس رؤیت هلال در کشور شما متفاوت باشد."
+  ms: "Penunjuk Hilal menunjukkan penampakan pertama bulan selepas fasa bulan baru, yang menandakan permulaan bulan lunar Islam baru.\n\nAplikasi menggunakan pengiraan astronomi Jean Meeus untuk menentukan penampakan Hilal yang dijangkakan setiap bulan.\n\nNota: permulaan sebenar bulan mungkin berbeza berdasarkan rukyah anak bulan di negara anda."
+  pt: "O indicador de Hilal mostra a primeira aparição da lua após a fase de lua nova, que marca o início de um novo mês lunar islâmico.\n\nO aplicativo usa os cálculos astronômicos de Jean Meeus para determinar a aparição esperada do Hilal a cada mês.\n\nNota: o início real do mês pode diferir com base na observação da lua em seu país."
+  sw: "Kiashiria cha Hilal kinaonyesha kuonekana kwa kwanza kwa mwezi baada ya awamu ya mwezi mpya, ambayo inaashiria mwanzo wa mwezi mpya wa mwezi wa Kiislamu.\n\nProgramu hutumia mahesabu ya astronomia ya Jean Meeus kuamua kuonekana kunakotarajiwa kwa Hilali kila mwezi.\n\nKumbuka: mwanzo halisi wa mwezi unaweza kutofautiana kulingana na kuona hilali nchini mwako."
+  ha: "Ma'aunin Hilal yana nuna bayyanar farko na wata bayan mataki na wata sabo, wanda ke nuna farkon sabon wata na Musulunci.\n\nApp yana amfani da ƙididdigan taurari na Jean Meeus don ƙayyade bayyanar Hilal da ake tsammani kowane wata.\n\nLura: farkon watan na ainihi na iya bambanta bisa ga ganin wata a ƙasarka."
+
+──────────────────────────────────────────
+HELP 12 — MOON PHASE
+i18n key: help_moon_phase
+──────────────────────────────────────────
+
+Title:
+  ar: "مراحل القمر"
+  en: "Moon Phase"
+  fr: "Phase de la Lune"
+  es: "Fase de la Luna"
+  ru: "Фаза луны"
+  zh: "月相"
+  tr: "Ay Evresi"
+  ur: "چاند کا مرحلہ"
+  id: "Fase Bulan"
+  bn: "চাঁদের দশা"
+  fa: "فاز ماه"
+  ms: "Fasa Bulan"
+  pt: "Fase da Lua"
+  sw: "Awamu ya Mwezi"
+  ha: "Matakin Wata"
+
+Body:
+  ar: "يعرض التطبيق المرحلة القمرية الحالية باستخدام خوارزمية جان مياس الفلكية، وهي من أدق الخوارزميات المستخدمة في الحسابات الفلكية الحديثة.\n\nمراحل القمر الأربع الرئيسية:\n• المحاق: القمر لا يُرى (بداية الشهر فلكياً)\n• التربيع الأول: نصف القمر مضيء\n• البدر: القمر كامل مكتمل\n• التربيع الأخير: نصف القمر مضيء مرة أخرى\n\nتُستحب صيام الأيام البيض (13 و14 و15 من كل شهر هجري) وهي أيام اكتمال القمر."
+  en: "The app displays the current moon phase using the Jean Meeus astronomical algorithm, one of the most accurate algorithms used in modern astronomical calculations.\n\nThe four main moon phases:\n• New Moon: moon is not visible (astronomical start of month)\n• First Quarter: half the moon is illuminated\n• Full Moon: the moon is completely full\n• Last Quarter: half the moon is illuminated again\n\nIt is recommended to fast the White Days (13th, 14th, 15th of each Hijri month) which coincide with the full moon."
+  fr: "L'application affiche la phase lunaire actuelle en utilisant l'algorithme astronomique de Jean Meeus, l'un des plus précis.\n\nLes quatre phases principales :\n• Nouvelle Lune : la lune n'est pas visible\n• Premier Quartier : la moitié de la lune est éclairée\n• Pleine Lune : la lune est complètement pleine\n• Dernier Quartier : la moitié est à nouveau éclairée\n\nIl est recommandé de jeûner les Jours Blancs (13, 14, 15 de chaque mois Hijri)."
+  es: "La aplicación muestra la fase lunar actual usando el algoritmo astronómico de Jean Meeus, uno de los más precisos.\n\nLas cuatro fases principales:\n• Luna Nueva: la luna no es visible\n• Cuarto Creciente: la mitad de la luna está iluminada\n• Luna Llena: la luna está completamente llena\n• Cuarto Menguante: la mitad está iluminada nuevamente\n\nSe recomienda ayunar los Días Blancos (13, 14, 15 de cada mes Hijri)."
+  ru: "Приложение отображает текущую фазу луны, используя астрономический алгоритм Жана Меуса.\n\nЧетыре основные фазы луны:\n• Новолуние: луна не видна\n• Первая четверть: половина луны освещена\n• Полнолуние: луна полностью освещена\n• Последняя четверть: снова половина освещена\n\nРекомендуется поститься в Белые Дни (13, 14, 15 каждого месяца Хиджри)."
+  zh: "应用程序使用让·梅乌斯天文算法显示当前月相。\n\n四个主要月相：\n• 新月：月亮不可见\n• 上弦月：月亮的一半被照亮\n• 满月：月亮完全圆满\n• 下弦月：月亮的一半再次被照亮\n\n建议在每个伊斯兰历月的第13、14、15天斋戒白昼（与满月同期）。"
+  tr: "Uygulama, modern astronomide en doğru algoritmalardan biri olan Jean Meeus'un astronomik algoritmasını kullanarak mevcut ay evresini gösterir.\n\nDört ana ay evresi:\n• Yeni Ay: ay görünmez\n• İlk Çeyrek: ayın yarısı aydınlanmıştır\n• Dolunay: ay tamamen doludur\n• Son Çeyrek: yarısı tekrar aydınlanmıştır\n\nHer Hicri ayın 13, 14, 15. günlerinde (Beyaz Günler) oruç tutmak tavsiye edilir."
+  ur: "ایپ جان مایوس کے فلکیاتی الگورتھم کا استعمال کرتے ہوئے موجودہ چاند کا مرحلہ دکھاتی ہے۔\n\nچاند کے چار بنیادی مراحل:\n• محاق: چاند نظر نہیں آتا\n• پہلا ربع: چاند کا نصف روشن\n• بدر: چاند مکمل روشن\n• آخری ربع: دوبارہ نصف روشن\n\nہر ہجری مہینے کی 13، 14، 15 تاریخ (ایام بیض) کا روزہ رکھنا مستحب ہے۔"
+  id: "Aplikasi menampilkan fase bulan saat ini menggunakan algoritma astronomi Jean Meeus, salah satu yang paling akurat.\n\nEmpat fase bulan utama:\n• Bulan Baru: bulan tidak terlihat\n• Kuartal Pertama: setengah bulan diterangi\n• Bulan Purnama: bulan sepenuhnya penuh\n• Kuartal Terakhir: setengah diterangi lagi\n\nDisunnahkan puasa Ayyamul Bidh (13, 14, 15 setiap bulan Hijriah) yang bertepatan dengan bulan purnama."
+  bn: "অ্যাপটি জিন মেউস জ্যোতির্বিজ্ঞান অ্যালগরিদম ব্যবহার করে বর্তমান চাঁদের দশা প্রদর্শন করে।\n\nচারটি প্রধান চাঁদের দশা:\n• অমাবস্যা: চাঁদ দৃশ্যমান নয়\n• প্রথম চতুর্থাংশ: চাঁদের অর্ধেক আলোকিত\n• পূর্ণিমা: চাঁদ সম্পূর্ণ পূর্ণ\n• শেষ চতুর্থাংশ: আবার অর্ধেক আলোকিত\n\nপ্রতিটি হিজরি মাসের ১৩, ১৪, ১৫ তারিখ (আইয়ামুল বিদ) রোজা রাখা মুস্তাহাব।"
+  fa: "برنامه فاز ماه فعلی را با استفاده از الگوریتم نجومی ژان مئوس نمایش می‌دهد.\n\nچهار فاز اصلی ماه:\n• ماه نو: ماه قابل رؤیت نیست\n• ربع اول: نیمی از ماه روشن است\n• ماه کامل: ماه کاملاً پر است\n• ربع آخر: دوباره نیمی روشن است\n\nروزه گرفتن در ایام بیض (۱۳، ۱۴، ۱۵ هر ماه هجری) مستحب است."
+  ms: "Aplikasi memaparkan fasa bulan semasa menggunakan algoritma astronomi Jean Meeus, salah satu yang paling tepat.\n\nEmpat fasa bulan utama:\n• Bulan Baru: bulan tidak kelihatan\n• Suku Pertama: separuh bulan diterangi\n• Bulan Penuh: bulan penuh sepenuhnya\n• Suku Terakhir: separuh diterangi semula\n\nDisunatkan puasa Ayyamul Bidh (13, 14, 15 setiap bulan Hijri) yang bertepatan dengan bulan penuh."
+  pt: "O aplicativo exibe a fase lunar atual usando o algoritmo astronômico de Jean Meeus, um dos mais precisos.\n\nAs quatro fases principais da lua:\n• Lua Nova: a lua não é visível\n• Quarto Crescente: metade da lua está iluminada\n• Lua Cheia: a lua está completamente cheia\n• Quarto Minguante: metade está iluminada novamente\n\nRecomenda-se jejuar nos Dias Brancos (13, 14, 15 de cada mês Hijri)."
+  sw: "Programu inaonyesha awamu ya sasa ya mwezi kwa kutumia algoriti ya astronomia ya Jean Meeus, moja ya sahihi zaidi.\n\nAwamu nne kuu za mwezi:\n• Mwezi Mpya: mwezi hauonekani\n• Robo ya Kwanza: nusu ya mwezi imeangaziwa\n• Mwezi Mzima: mwezi umejaa kabisa\n• Robo ya Mwisho: nusu imeangaziwa tena\n\nInashauriwa kufunga Siku Nyeupe (13, 14, 15 ya kila mwezi wa Hijri)."
+  ha: "App yana nuna mataki na wata na yanzu ta amfani da algorithm na Jean Meeus, ɗaya daga cikin mafi daidai.\n\nMatakan wata guda huɗu na farko:\n• Sabon Wata: wata ba a gani\n• Kwata na Farko: rabin wata yana haskakawa\n• Cikakken Wata: wata cikakke\n• Kwata na Ƙarshe: rabin yana haskakawa sake\n\nAna ba da shawarar azumin Kwanaki Farare (13, 14, 15 na kowane watan Hijri)."
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Add ALL i18n keys defined above to i18n.ts 
+in all 15 languages.
+
+Every help button must show an Alert — no empty 
+Alerts allowed anywhere in the app.
+
+Follow the exact same help button pattern already 
+established in settings.tsx.
+
+Do not change any feature logic or calculations.
+Do not add new dependencies.
+
+After implementation, search for any remaining 
+empty Alert calls and report them:
+  grep -rn "Alert.alert.*''" app/ components/ \
+    --include="*.tsx" --include="*.ts"
