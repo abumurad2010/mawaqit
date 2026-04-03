@@ -53,22 +53,7 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-widgets",
-        {
-          "widgets": [
-            {
-              "name": "MawaqitWidget",
-              "displayName": "Mawaqit Prayer Times",
-              "description": "Next prayer time and countdown",
-              "supportedFamilies": [
-                "systemSmall",
-                "systemMedium"
-              ]
-            }
-          ]
-        }
-      ],
+      "expo-widgets",
       [
         "expo-notifications",
         {
@@ -83,8 +68,7 @@
           "locationAlwaysAndWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction.",
           "locationWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction."
         }
-      ],
-      "expo-widgets"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -93,24 +77,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d5cbdb82-1df0-4afd-8015-5e50919eac1b",
-        "build": {
-          "experimental": {
-            "ios": {
-              "appExtensions": [
-                {
-                  "targetName": "ExpoWidgetsTarget",
-                  "bundleIdentifier": "com.mawaqit.app.ExpoWidgetsTarget",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.mawaqit.app.widget"
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        }
+        "projectId": "d5cbdb82-1df0-4afd-8015-5e50919eac1b"
       }
     }
   }
