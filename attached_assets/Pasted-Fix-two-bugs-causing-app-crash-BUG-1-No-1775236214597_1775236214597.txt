@@ -1,0 +1,81 @@
+Fix two bugs causing app crash:
+
+════════════════════════════════════════════════════════
+BUG 1 — Notifications API called on web platform
+════════════════════════════════════════════════════════
+
+ERROR:
+"Notifications.cancelAllScheduledNotificationsAsync 
+is not available on web"
+
+The thikr reminders code is calling Expo Notifications 
+APIs without checking if the platform is web first.
+
+Fix: wrap ALL Notifications calls related to thikr 
+reminders with a platform check:
+
+  import { Platform } from 'react-native'
+
+  // BEFORE every Notifications call, add this guard:
+  if (Platform.OS === 'web') return
+
+  // OR wrap the entire scheduling/cancelling function:
+  const scheduleThikrReminders = async () => {
+    if (Platform.OS === 'web') return
+    // ... existing scheduling code
+  }
+
+  const cancelThikrReminders = async () => {
+    if (Platform.OS === 'web') return
+    await Notifications.cancelAllScheduledNotificationsAsync()
+    // ... rest of cancel logic
+  }
+
+Search for ALL instances of Notifications calls 
+in the thikr reminders code and add this guard:
+
+  grep -n "Notifications\." app/(tabs)/settings.tsx \
+    lib/thikr-reminders.ts 2>/dev/null
+
+Every single Notifications call must be guarded 
+with Platform.OS !== 'web' check.
+
+════════════════════════════════════════════════════════
+BUG 2 — Style error in athkar.tsx line 789
+════════════════════════════════════════════════════════
+
+ERROR LOCATION:
+  app/(tabs)/athkar.tsx line 789:56
+  Pressable.props.style → GridCell
+
+The borderColor style value is likely undefined 
+or invalid. The line reads:
+  borderColor: isFavourite ? GOLD : C.separator
+
+Fix: ensure C.separator and GOLD are both valid 
+color strings and never undefined:
+
+  borderColor: isFavourite 
+    ? (GOLD ?? '#c9a84c') 
+    : (C.separator ?? '#2a2416'),
+
+Also check that GOLD is properly defined as a 
+constant at the top of athkar.tsx:
+  const GOLD = '#c9a84c'
+
+And that C.separator is defined in the colors/
+theme context and never undefined.
+
+If C.separator can be undefined, add a fallback:
+  borderColor: isFavourite ? GOLD : (C.separator || '#2a2416')
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any notification scheduling logic 
+beyond adding the Platform.OS web guard.
+Do not change any athkar grid functionality.
+Do not add new dependencies.
+Test in Replit preview after fix to confirm 
+the crash is resolved.
