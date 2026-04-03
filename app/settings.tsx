@@ -379,6 +379,29 @@ export default function SettingsScreen() {
     },
   };
 
+  const HELP_QIYAM: Record<string, string> = {
+    ar: 'قيام الليل (التهجد) من أفضل النوافل وأعظمها أجراً. وقته من بعد العشاء حتى طلوع الفجر، وأفضله في الثلث الأخير من الليل.\n\nيُحسب وقته في التطبيق كالتالي:\n• وقت القيام = منتصف الليل الشرعي بين المغرب والفجر\n\nعند التفعيل يظهر في قائمة أوقات الصلاة ويدخل في تسلسل الصلاة التالية.',
+    en: 'Qiyam al-Layl (Tahajjud) is among the best and most rewarded voluntary prayers. Its time extends from after Isha until Fajr, with the last third of the night being the most virtuous.\n\nIn the app its time is calculated as:\n• Qiyam time = midpoint of the Islamic night between Maghrib and Fajr\n\nWhen enabled it appears in the prayer times list and is included in the next prayer sequence.',
+    fr: 'Le Qiyam al-Layl (Tahajjud) est parmi les meilleures prières surérogatoires. Son temps s\'étend de après Isha jusqu\'au Fajr, le dernier tiers de la nuit étant le plus vertueux.\n\nDans l\'application, son heure est calculée comme :\n• Heure du Qiyam = point médian de la nuit islamique entre le Maghrib et le Fajr\n\nLorsqu\'il est activé, il apparaît dans la liste des horaires de prière.',
+    es: 'El Qiyam al-Layl (Tahajjud) es una de las mejores oraciones voluntarias. Su tiempo se extiende desde después de Isha hasta Fajr, siendo el último tercio de la noche el más virtuoso.\n\nEn la aplicación su tiempo se calcula como:\n• Tiempo de Qiyam = punto medio de la noche islámica entre Maghrib y Fajr\n\nCuando está activado aparece en la lista de horarios de oración.',
+    ru: 'Кыям аль-Лайл (Тахаджуд) — одна из лучших добровольных молитв. Её время — от Иша до Фаджра, причём последняя треть ночи наиболее добродетельна.\n\nВ приложении время рассчитывается как:\n• Время Кыяма = середина исламской ночи между Магрибом и Фаджром\n\nПри включении отображается в списке времён молитв.',
+    zh: '夜礼（塔哈居德）是最好和最有回报的自愿礼拜之一。其时间从宵礼后延伸到晨礼，夜晚的最后三分之一最为高尚。\n\n在应用中其时间计算为：\n• 夜礼时间 = 马格里布和晨礼之间伊斯兰夜晚的中点\n\n启用后出现在礼拜时间列表中。',
+    tr: 'Kıyamu\'l-Leyl (Teheccüd), en iyi ve en çok sevap kazandıran nafile namazlardan biridir. Vakti Yatsıdan sonra Sabaha kadar uzanır, gecenin son üçte biri en faziletli zamandır.\n\nUygulamada vakti şöyle hesaplanır:\n• Kıyam vakti = Akşam ile Sabah arasındaki İslami gecenin orta noktası\n\nEtkinleştirildiğinde namaz vakitleri listesinde görünür.',
+    ur: 'قیام اللیل (تہجد) بہترین نفل نمازوں میں سے ہے۔ اس کا وقت عشاء کے بعد سے فجر تک ہے، رات کا آخری تہائی حصہ سب سے افضل ہے۔\n\nایپ میں اس کا وقت اس طرح حساب کیا جاتا ہے:\n• قیام کا وقت = مغرب اور فجر کے درمیان اسلامی رات کا درمیانی نقطہ\n\nفعال ہونے پر اوقات نماز کی فہرست میں ظاہر ہوتا ہے۔',
+    id: 'Qiyamul Lail (Tahajjud) adalah salah satu shalat sunnah terbaik dan paling berpahala. Waktunya dari setelah Isya hingga Fajr, dengan sepertiga malam terakhir paling utama.\n\nDalam aplikasi waktunya dihitung sebagai:\n• Waktu Qiyam = titik tengah malam Islam antara Maghrib dan Fajr\n\nSaat diaktifkan muncul dalam daftar waktu shalat.',
+    bn: 'কিয়ামুল লাইল (তাহাজ্জুদ) সর্বোত্তম ও সবচেয়ে পুরস্কৃত নফল নামাজের মধ্যে অন্যতম। এর সময় এশার পরে থেকে ফজর পর্যন্ত, রাতের শেষ তৃতীয়াংশ সবচেয়ে পুণ্যময়।\n\nঅ্যাপে এর সময় গণনা করা হয়:\n• কিয়ামের সময় = মাগরিব এবং ফজরের মধ্যে ইসলামিক রাতের মধ্যবিন্দু\n\nসক্রিয় হলে নামাজের সময় তালিকায় দেখা যায়।',
+    fa: 'قیام الیل (تهجد) از بهترین و پرثواب‌ترین نمازهای نافله است. وقت آن از بعد از عشاء تا فجر است و ثلث آخر شب برترین است.\n\nدر برنامه وقت آن به این صورت محاسبه می‌شود:\n• وقت قیام = نقطه میانی شب اسلامی بین مغرب و فجر\n\nهنگام فعال‌سازی در فهرست اوقات نماز نمایش داده می‌شود.',
+    ms: 'Qiyamullail (Tahajjud) adalah antara solat sunat yang terbaik dan paling berpahala. Waktunya dari selepas Isyak hingga Fajr, dengan sepertiga malam terakhir paling utama.\n\nDalam aplikasi waktunya dikira sebagai:\n• Waktu Qiyam = titik tengah malam Islam antara Maghrib dan Fajr\n\nApabila diaktifkan ia muncul dalam senarai waktu solat.',
+    pt: 'O Qiyam al-Layl (Tahajjud) é uma das melhores e mais recompensadas orações voluntárias. Seu tempo se estende de após Isha até Fajr, sendo o último terço da noite o mais virtuoso.\n\nNo aplicativo seu tempo é calculado como:\n• Tempo de Qiyam = ponto médio da noite islâmica entre Maghrib e Fajr\n\nQuando ativado aparece na lista de horários de oração.',
+    sw: 'Qiyam al-Layl (Tahajjud) ni moja ya sala za hiari bora na zenye thawabu zaidi. Wakati wake unaendelea kutoka baada ya Isha hadi Fajr, na theluthi ya mwisho ya usiku ikiwa bora zaidi.\n\nKatika programu wakati wake unakokotolewa kama:\n• Wakati wa Qiyam = katikati ya usiku wa Kiislamu kati ya Maghrib na Fajr\n\nInapowashwa inaonekana katika orodha ya nyakati za sala.',
+    ha: 'Qiyamul Lail (Tahajjud) yana cikin mafi kyawun sallolin nafila masu lada. Lokacinsa yana daga bayan Isha zuwa Fajr, da ɗaya bisa uku na ƙarshen dare mafi falala.\n\nA cikin app ana ƙididdiga lokacinsa kamar haka:\n• Lokacin Qiyam = tsakiyar dare na Musulunci tsakanin Magariba da Fajr\n\nAna nuna shi a jerin lokutan sallah idan an kunna shi.',
+  };
+
+  const showHelp = (title: string, body: string) => {
+    Haptics.selectionAsync();
+    Alert.alert(title, body);
+  };
+
   const recommendedMethod = getMethodForCountry(countryCode);
 
   // Play an adhan preview using expo-av's Sound (proper load/stop/unload lifecycle).
@@ -588,15 +611,22 @@ export default function SettingsScreen() {
 
 
   const Row = ({
-    label, right, noBorder,
-  }: { label: string; right: React.ReactNode; noBorder?: boolean }) => (
+    label, right, noBorder, onHelp,
+  }: { label: string; right: React.ReactNode; noBorder?: boolean; onHelp?: () => void }) => (
     <View style={[
       styles.settingRow,
       { borderBottomColor: C.separator, borderBottomWidth: noBorder ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' }
     ]}>
-      <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flexShrink: 1 }]}>
-        {label}
-      </Text>
+      <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flexShrink: 1 }}>
+        <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+          {label}
+        </Text>
+        {onHelp && (
+          <Pressable onPress={onHelp} hitSlop={8}>
+            <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+          </Pressable>
+        )}
+      </View>
       <View style={[styles.rightSide, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
         {right}
       </View>
@@ -742,6 +772,9 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
           </Text>
+          <Pressable onPress={() => showHelp(isAr ? 'تعديل التاريخ الهجري' : 'Hijri Date Adjustment', HELP[lang]?.hijri ?? HELP['en'].hijri)} hitSlop={8}>
+            <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+          </Pressable>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: isRtl ? 'flex-end' : 'flex-start', gap: 8 }]}>
@@ -785,6 +818,9 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
           </Text>
+          <Pressable onPress={() => showHelp(isAr ? 'طريقة الحساب' : 'Calculation Method', HELP[lang]?.calcMethod ?? HELP['en'].calcMethod)} hitSlop={8}>
+            <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+          </Pressable>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {/* Calculation method — dropdown row */}
@@ -910,7 +946,7 @@ export default function SettingsScreen() {
           {/* Asr method */}
           <Row
             label={tr.asrMethod}
-            helpKey="asrMethod"
+            onHelp={() => showHelp(isAr ? 'طريقة حساب العصر' : 'Asr Calculation Method', HELP[lang]?.asrMethod ?? HELP['en'].asrMethod)}
             right={
               <View style={styles.chips}>
                 <Chip value={tr.standard} selected={draftAsrMethod === 'standard'} onPress={() => setDraftAsrMethod('standard')} />
@@ -922,9 +958,14 @@ export default function SettingsScreen() {
           {/* Maghrib offset — compact single section */}
           <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'stretch', gap: 6 }]}>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
-              </Text>
+              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                  {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
+                </Text>
+                <Pressable onPress={() => showHelp(isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin', HELP[lang]?.maghrib ?? HELP['en'].maghrib)} hitSlop={8}>
+                  <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+                </Pressable>
+              </View>
             </View>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               {/* Recommended badge */}
@@ -972,9 +1013,14 @@ export default function SettingsScreen() {
 
           {/* First Adhan */}
           <View style={[styles.compactRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-              {tr.firstAdhanSetting}
-            </Text>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                {tr.firstAdhanSetting}
+              </Text>
+              <Pressable onPress={() => showHelp(isAr ? 'الأذان الأول للفجر' : 'First Adhan (Early Fajr)', HELP[lang]?.firstAdhan ?? HELP['en'].firstAdhan)} hitSlop={8}>
+                <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
+            </View>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setShowFirstAdhanPicker(true); }}
@@ -996,6 +1042,9 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {tr.iqamaSettings}
           </Text>
+          <Pressable onPress={() => showHelp(isAr ? 'وقت الإقامة' : 'Iqama Time', HELP[lang]?.iqama ?? HELP['en'].iqama)} hitSlop={8}>
+            <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+          </Pressable>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const).map((prayer, idx, arr) => (
@@ -1035,9 +1084,14 @@ export default function SettingsScreen() {
 
             {/* ── Dhuha row (toggle + time inline) ── */}
           <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-              {isAr ? 'الضحى' : 'Dhuha'}
-            </Text>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'الضحى' : 'Dhuha'}
+              </Text>
+              <Pressable onPress={() => showHelp(isAr ? 'صلاة الضحى' : 'Dhuha Prayer', HELP[lang]?.dhuha ?? HELP['en'].dhuha)} hitSlop={8}>
+                <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
+            </View>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowDhuha && { opacity: 0.38 }]} pointerEvents={draftShowDhuha ? 'auto' : 'none'}>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setTempDhuhaTime(draftDhuhaTime); setShowDhuhaRoller(true); }}
@@ -1056,9 +1110,14 @@ export default function SettingsScreen() {
 
           {/* ── Qiyam row (toggle + time inline) ── */}
           <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-              {isAr ? 'قيام الليل' : 'Qiyam'}
-            </Text>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                {isAr ? 'قيام الليل' : 'Qiyam'}
+              </Text>
+              <Pressable onPress={() => showHelp(isAr ? 'قيام الليل' : 'Qiyam al-Layl', HELP_QIYAM[lang] ?? HELP_QIYAM['en'])} hitSlop={8}>
+                <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
+            </View>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, !draftShowQiyam && { opacity: 0.38 }]} pointerEvents={draftShowQiyam ? 'auto' : 'none'}>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setTempTahajjudTime(draftTahajjudTime); setShowTahajjudRoller(true); }}

@@ -6,10 +6,10 @@ import { SERIF_EN } from '@/constants/typography';
 import React, { useState, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Platform, Modal,
+  View, Text, StyleSheet, Pressable, ScrollView, Platform, Modal, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
@@ -23,7 +23,6 @@ import {
   gregorianToHijri, hijriMonthName,
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   getMoonPhase, getNewMoonsForMonth, moonEmojiForDay,
   formatNewMoonDate, formatNewMoonLocal, getExpectedCrescentDate,
@@ -504,9 +503,14 @@ export default function CalendarScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowMoonDetail(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
-              {isAr ? 'تفاصيل طور القمر' : 'Moon Phase Details'}
-            </Text>
+            <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, marginBottom: 0 }]}>
+                {isAr ? 'تفاصيل طور القمر' : 'Moon Phase Details'}
+              </Text>
+              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(isAr ? 'مراحل القمر' : 'Moon Phase', MOON_PHASE_HELP[lang] ?? MOON_PHASE_HELP['en']); }} hitSlop={8}>
+                <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
+            </View>
             <Text style={styles.modalEmoji}>{selectedMoon.emoji}</Text>
             <Text style={[styles.modalPhaseName, { color: C.text }]}>
               {isAr ? selectedMoon.nameAr : selectedMoon.name}
@@ -594,9 +598,14 @@ export default function CalendarScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setShowNewMoonLookup(false)}>
           <Pressable style={[styles.modalSheet, { backgroundColor: C.backgroundCard }]} onPress={e => e.stopPropagation()}>
             <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN }]}>
-              {isAr ? '🌒 رصد الهلال' : '🌒 Crescent Sighting Lookup'}
-            </Text>
+            <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+              <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, marginBottom: 0 }]}>
+                {isAr ? '🌒 رصد الهلال' : '🌒 Crescent Sighting Lookup'}
+              </Text>
+              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(isAr ? 'الهلال الجديد' : 'New Crescent Moon', CRESCENT_HELP[lang] ?? CRESCENT_HELP['en']); }} hitSlop={8}>
+                <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
+            </View>
 
             {/* Month / year navigation */}
             <View style={[styles.nmMonthNav, { flexDirection: 'row' }]}>
