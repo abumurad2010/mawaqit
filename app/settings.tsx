@@ -32,7 +32,7 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
-    iqamaOffsets,
+    iqamaOffsets, dhikrRemindersEnabled, defaultTab,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -71,6 +71,8 @@ export default function SettingsScreen() {
   const [showTahajjudRoller, setShowTahajjudRoller] = useState(false);
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
+  const [showDefaultTabModal, setShowDefaultTabModal] = useState(false);
+  const [dhikrToast, setDhikrToast] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
@@ -478,6 +480,28 @@ export default function SettingsScreen() {
     router.back();
   };
 
+  const TAB_OPTIONS: { key: string; label: string }[] = [
+    { key: 'index',    label: isAr ? 'أوقات الصلاة' : tr.prayers },
+    { key: 'calendar', label: isAr ? 'اليوم' : tr.today },
+    { key: 'qibla',   label: isAr ? 'القبلة' : tr.qibla },
+    { key: 'athkar',  label: 'الأذكار' },
+    { key: 'quran',   label: isAr ? 'القرآن الكريم' : tr.quran },
+  ];
+
+  const handleDhikrToggle = async () => {
+    Haptics.selectionAsync();
+    const newVal = !dhikrRemindersEnabled;
+    if (newVal) {
+      const granted = await requestNotifPermission();
+      if (!granted) return;
+    }
+    await updateSettings({ dhikrRemindersEnabled: newVal });
+    if (newVal) {
+      setDhikrToast(true);
+      setTimeout(() => setDhikrToast(false), 2500);
+    }
+  };
+
   const NOTIF_PRAYERS: { key: string; ar: string; en: string }[] = [
     { key: 'fajr',    ar: 'الفجر',       en: 'Fajr' },
     { key: 'dhuha',   ar: 'الضحى',       en: 'Dhuha' },
@@ -628,6 +652,32 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
+
+        {/* General */}
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+            {isAr ? 'عام' : 'General'}
+          </Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setShowDefaultTabModal(true); }}
+            style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
+          >
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="home-outline" size={18} color={C.tint} />
+              <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
+                {tr.default_tab_label}
+              </Text>
+            </View>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={{ color: C.textMuted, fontSize: 13, fontFamily: SANS }}>
+                {TAB_OPTIONS.find(o => o.key === (defaultTab ?? 'index'))?.label ?? TAB_OPTIONS[0]!.label}
+              </Text>
+              <MaterialCommunityIcons name={isRtl ? 'chevron-left' : 'chevron-right'} size={18} color={C.textMuted} />
+            </View>
+          </Pressable>
+        </View>
 
         {/* Accessibility */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
@@ -801,6 +851,51 @@ export default function SettingsScreen() {
                           </View>
                         )}
                       </View>
+                      {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </Modal>
+
+          {/* Default Tab Picker Modal */}
+          <Modal visible={showDefaultTabModal} animationType="slide" transparent presentationStyle="pageSheet">
+            <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
+                  {tr.default_tab_label}
+                </Text>
+                <Pressable onPress={() => setShowDefaultTabModal(false)}>
+                  <Ionicons name="close" size={22} color={C.textSecond} />
+                </Pressable>
+              </View>
+              <ScrollView>
+                {TAB_OPTIONS.map((tab, idx) => {
+                  const isSelected = (defaultTab ?? 'index') === tab.key;
+                  const isLast = idx === TAB_OPTIONS.length - 1;
+                  return (
+                    <Pressable
+                      key={tab.key}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        updateSettings({ defaultTab: tab.key });
+                        setShowDefaultTabModal(false);
+                      }}
+                      style={[
+                        styles.methodRow,
+                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' },
+                        isSelected && { backgroundColor: C.tint + '18' },
+                      ]}
+                    >
+                      <Text style={{
+                        fontSize: 13, fontWeight: isSelected ? '700' : '500',
+                        color: isSelected ? C.tint : C.text,
+                        fontFamily: isRtl ? 'Amiri_400Regular' : SANS,
+                        flex: 1, textAlign: isRtl ? 'right' : 'left',
+                      }}>
+                        {tab.label}
+                      </Text>
                       {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
                     </Pressable>
                   );
@@ -1247,6 +1342,41 @@ export default function SettingsScreen() {
               </View>
             );
           })}
+        </View>
+
+        {/* Dhikr Reminders */}
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+            {tr.dhikr_reminders_section}
+          </Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="heart-outline" size={18} color={C.tint} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                  {tr.dhikr_reminders_label}
+                </Text>
+                <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }}>
+                  {tr.dhikr_reminders_subtitle}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={dhikrRemindersEnabled}
+              onValueChange={handleDhikrToggle}
+              trackColor={{ false: C.backgroundSecond, true: C.tint + '80' }}
+              thumbColor={dhikrRemindersEnabled ? C.tint : C.textMuted}
+            />
+          </View>
+          {dhikrToast && (
+            <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
+              <Text style={{ fontSize: 11, color: C.tint, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                {tr.dhikr_reminders_activated}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Dua */}

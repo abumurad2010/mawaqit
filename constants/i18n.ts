@@ -509,6 +509,12 @@ const base = {
   about_closing_dua: 'Our Lord, accept from us — Al-Baqarah 2:127',
   about_privacy_link: 'Privacy Policy',
   about_contact_link: 'Get in touch',
+  dhikr_reminder_title: 'Dhikr Reminder',
+  dhikr_reminders_section: 'Dhikr Reminders',
+  dhikr_reminders_label: 'Daily Dhikr Reminders',
+  dhikr_reminders_subtitle: '5 gentle reminders throughout the day',
+  dhikr_reminders_activated: 'Dhikr reminders activated',
+  default_tab_label: 'Default Tab',
 };
 
 export type Translations = typeof base;
@@ -852,6 +858,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'ربنا تقبل منا — البقرة 2:127',
     about_privacy_link: 'سياسة الخصوصية',
     about_contact_link: 'تواصل معنا',
+    dhikr_reminder_title: 'تذكير بالذكر',
+    dhikr_reminders_section: 'أذكار اليوم',
+    dhikr_reminders_label: 'تذكيرات الأذكار اليومية',
+    dhikr_reminders_subtitle: '٥ تذكيرات لطيفة على مدار اليوم',
+    dhikr_reminders_activated: 'تم تفعيل تذكيرات الأذكار',
+    default_tab_label: 'التبويب الافتراضي',
   },
 
   fr: {
@@ -1135,6 +1147,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Notre Seigneur, accepte de nous — Al-Baqarah 2:127',
     about_privacy_link: 'Politique de Confidentialité',
     about_contact_link: 'Nous contacter',
+    dhikr_reminder_title: 'Rappel de Dhikr',
+    dhikr_reminders_section: 'Rappels de Dhikr',
+    dhikr_reminders_label: 'Rappels de dhikr quotidiens',
+    dhikr_reminders_subtitle: '5 rappels discrets tout au long de la journée',
+    dhikr_reminders_activated: 'Rappels de dhikr activés',
+    default_tab_label: 'Onglet par défaut',
   },
 
   es: {
@@ -1413,6 +1431,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Señor nuestro, acepta de nosotros — Al-Baqarah 2:127',
     about_privacy_link: 'Política de Privacidad',
     about_contact_link: 'Contáctenos',
+    dhikr_reminder_title: 'Recordatorio de Dhikr',
+    dhikr_reminders_section: 'Recordatorios de Dhikr',
+    dhikr_reminders_label: 'Recordatorios diarios de dhikr',
+    dhikr_reminders_subtitle: '5 recordatorios suaves a lo largo del día',
+    dhikr_reminders_activated: 'Recordatorios de dhikr activados',
+    default_tab_label: 'Pestaña predeterminada',
   },
 
   ru: {
@@ -1694,6 +1718,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Господь наш, прими от нас — Аль-Бакара 2:127',
     about_privacy_link: 'Политика Конфиденциальности',
     about_contact_link: 'Связаться с нами',
+    dhikr_reminder_title: 'Напоминание о зикре',
+    dhikr_reminders_section: 'Напоминания о зикре',
+    dhikr_reminders_label: 'Ежедневные напоминания о зикре',
+    dhikr_reminders_subtitle: '5 мягких напоминаний в течение дня',
+    dhikr_reminders_activated: 'Напоминания о зикре активированы',
+    default_tab_label: 'Вкладка по умолчанию',
   },
 
   zh: {
@@ -1975,6 +2005,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: '我们的主啊，请接受我们 — 巴卡拉章 2:127',
     about_privacy_link: '隐私政策',
     about_contact_link: '联系我们',
+    dhikr_reminder_title: '念珠提醒',
+    dhikr_reminders_section: '念珠提醒',
+    dhikr_reminders_label: '每日念珠提醒',
+    dhikr_reminders_subtitle: '全天5次轻柔提醒',
+    dhikr_reminders_activated: '念珠提醒已激活',
+    default_tab_label: '默认标签页',
   },
 
   tr: {
@@ -2261,6 +2297,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Rabbimiz, bizden kabul et — El-Bakara 2:127',
     about_privacy_link: 'Gizlilik Politikası',
     about_contact_link: 'Bize ulaşın',
+    dhikr_reminder_title: 'Zikir Hatırlatması',
+    dhikr_reminders_section: 'Zikir Hatırlatmaları',
+    dhikr_reminders_label: 'Günlük zikir hatırlatmaları',
+    dhikr_reminders_subtitle: 'Gün boyunca 5 nazik hatırlatma',
+    dhikr_reminders_activated: 'Zikir hatırlatmaları etkinleştirildi',
+    default_tab_label: 'Varsayılan sekme',
   },
 
   ur: {
@@ -2547,6 +2589,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'اے ہمارے رب! ہماری طرف سے قبول فرما — البقرة 2:127',
     about_privacy_link: 'رازداری کی پالیسی',
     about_contact_link: 'ہم سے رابطہ کریں',
+    dhikr_reminder_title: 'ذکر یاددہانی',
+    dhikr_reminders_section: 'ذکر یاددہانیاں',
+    dhikr_reminders_label: 'روزانہ ذکر یاددہانیاں',
+    dhikr_reminders_subtitle: 'دن بھر 5 لطیف یاددہانیاں',
+    dhikr_reminders_activated: 'ذکر یاددہانیاں فعال ہو گئیں',
+    default_tab_label: 'پہلا ٹیب',
   },
 
   id: {
@@ -2830,6 +2878,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Ya Tuhan kami, terimalah dari kami — Al-Baqarah 2:127',
     about_privacy_link: 'Kebijakan Privasi',
     about_contact_link: 'Hubungi kami',
+    dhikr_reminder_title: 'Pengingat Dzikir',
+    dhikr_reminders_section: 'Pengingat Dzikir',
+    dhikr_reminders_label: 'Pengingat dzikir harian',
+    dhikr_reminders_subtitle: '5 pengingat lembut sepanjang hari',
+    dhikr_reminders_activated: 'Pengingat dzikir diaktifkan',
+    default_tab_label: 'Tab default',
   },
 
   bn: {
@@ -3111,6 +3165,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'হে আমাদের রব, আমাদের কাছ থেকে কবুল করুন — আল-বাকারাহ 2:127',
     about_privacy_link: 'গোপনীয়তা নীতি',
     about_contact_link: 'আমাদের সাথে যোগাযোগ করুন',
+    dhikr_reminder_title: 'যিকির স্মরণিকা',
+    dhikr_reminders_section: 'যিকির স্মরণিকা',
+    dhikr_reminders_label: 'দৈনিক যিকির স্মরণিকা',
+    dhikr_reminders_subtitle: 'সারাদিনে ৫টি মৃদু স্মরণিকা',
+    dhikr_reminders_activated: 'যিকির স্মরণিকা সক্রিয় হয়েছে',
+    default_tab_label: 'ডিফল্ট ট্যাব',
   },
 
   fa: {
@@ -3397,6 +3457,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'پروردگارا، از ما بپذیر — البقره 2:127',
     about_privacy_link: 'سیاست حریم خصوصی',
     about_contact_link: 'با ما در تماس باشید',
+    dhikr_reminder_title: 'یادآوری ذکر',
+    dhikr_reminders_section: 'یادآوری‌های ذکر',
+    dhikr_reminders_label: 'یادآوری‌های روزانه ذکر',
+    dhikr_reminders_subtitle: '۵ یادآوری ملایم در طول روز',
+    dhikr_reminders_activated: 'یادآوری‌های ذکر فعال شد',
+    default_tab_label: 'برگه پیش‌فرض',
   },
 
   ms: {
@@ -3675,6 +3741,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Ya Tuhan kami, terimalah daripada kami — Al-Baqarah 2:127',
     about_privacy_link: 'Dasar Privasi',
     about_contact_link: 'Hubungi kami',
+    dhikr_reminder_title: 'Peringatan Zikir',
+    dhikr_reminders_section: 'Peringatan Zikir',
+    dhikr_reminders_label: 'Peringatan zikir harian',
+    dhikr_reminders_subtitle: '5 peringatan lembut sepanjang hari',
+    dhikr_reminders_activated: 'Peringatan zikir diaktifkan',
+    default_tab_label: 'Tab lalai',
   },
 
   pt: {
@@ -3953,6 +4025,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Senhor nosso, aceita de nós — Al-Baqarah 2:127',
     about_privacy_link: 'Política de Privacidade',
     about_contact_link: 'Entre em contato',
+    dhikr_reminder_title: 'Lembrete de Dhikr',
+    dhikr_reminders_section: 'Lembretes de Dhikr',
+    dhikr_reminders_label: 'Lembretes diários de dhikr',
+    dhikr_reminders_subtitle: '5 lembretes suaves ao longo do dia',
+    dhikr_reminders_activated: 'Lembretes de dhikr ativados',
+    default_tab_label: 'Aba padrão',
   },
 
   sw: {
@@ -4231,6 +4309,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Mola wetu, pokea kutoka kwetu — Al-Baqarah 2:127',
     about_privacy_link: 'Sera ya Faragha',
     about_contact_link: 'Wasiliana nasi',
+    dhikr_reminder_title: 'Ukumbusha wa Dhikri',
+    dhikr_reminders_section: 'Vikumbusha vya Dhikri',
+    dhikr_reminders_label: 'Vikumbusha vya kila siku vya dhikri',
+    dhikr_reminders_subtitle: 'Vikumbusha 5 laini mchana mzima',
+    dhikr_reminders_activated: 'Vikumbusha vya dhikri vimewashwa',
+    default_tab_label: 'Kichupo cha chaguo-msingi',
   },
 
   ha: {
@@ -4509,6 +4593,12 @@ const translations: Record<Lang, PartialT> = {
     about_closing_dua: 'Ubangijinmu, karɓa daga gare mu — Al-Baqarah 2:127',
     about_privacy_link: 'Manufar Sirri',
     about_contact_link: 'Tuntube mu',
+    dhikr_reminder_title: 'Tunatarwa na Zikiri',
+    dhikr_reminders_section: 'Tunatar da Zikiri',
+    dhikr_reminders_label: 'Tunatarwar zikiri na yau da kullum',
+    dhikr_reminders_subtitle: 'Tunatarwa 5 mai laushi a duk yini',
+    dhikr_reminders_activated: 'An kunna tunatarwar zikiri',
+    default_tab_label: 'Tab na asali',
   },
 };
 

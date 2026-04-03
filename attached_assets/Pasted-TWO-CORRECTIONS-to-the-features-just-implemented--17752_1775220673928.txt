@@ -1,0 +1,139 @@
+TWO CORRECTIONS to the features just implemented:
+
+════════════════════════════════════════════════════════
+CORRECTION 1 — SPELLING: dhikr → thikr everywhere
+════════════════════════════════════════════════════════
+
+Find and replace ALL instances of the following 
+throughout the entire codebase including code, 
+i18n keys, i18n values, comments, and file names:
+
+  "dhikr" → "thikr"
+  "Dhikr" → "Thikr"
+  "DHIKR" → "THIKR"
+
+This includes:
+  - i18n keys: dhikr_reminder_title → thikr_reminder_title
+  - i18n keys: dhikr_reminders_section → thikr_reminders_section
+  - i18n keys: dhikr_reminders_label → thikr_reminders_label
+  - i18n keys: dhikr_reminders_subtitle → thikr_reminders_subtitle
+  - i18n keys: dhikr_reminders_activated → thikr_reminders_activated
+  - AsyncStorage key: 'dhikr_reminders_enabled' → 'thikr_reminders_enabled'
+  - Constant name: DHIKR_REMINDERS → THIKR_REMINDERS
+  - File name: constants/dhikr-reminders.ts → constants/thikr-reminders.ts
+  - Any variable names containing dhikr → thikr
+  - Any display text in i18n.ts containing 
+    "dhikr" or "Dhikr" → "thikr" or "Thikr"
+
+Run this search to find all instances:
+  grep -rn "dhikr\|Dhikr\|DHIKR" \
+    app/ constants/ lib/ components/ \
+    --include="*.ts" --include="*.tsx" \
+    --include="*.js" --include="*.json"
+
+Replace every single instance found.
+
+════════════════════════════════════════════════════════
+CORRECTION 2 — ADD HELP BUTTONS
+════════════════════════════════════════════════════════
+
+Add a help button (help-circle-outline icon, size 18,
+color C.textMuted) next to both new settings rows.
+
+Follow the exact same help button pattern already 
+used elsewhere in settings.tsx.
+
+──────────────────────────────────────────
+HELP BUTTON 1 — Thikr Reminders toggle
+──────────────────────────────────────────
+
+Place the help button to the right of the 
+"Remember Allah reminders" label.
+
+Tapping it shows an Alert with this content:
+
+Title i18n key: thikr_reminders_help_title
+  ar: "تذكير بالذكر"
+  en: "Thikr Reminders"
+  fr: "Rappels de thikr"
+  es: "Recordatorios de thikr"
+  ru: "Напоминания о зикре"
+  zh: "祈祷提醒"
+  tr: "Zikir Hatırlatıcıları"
+  ur: "ذکر کی یاددہانیاں"
+  id: "Pengingat Thikr"
+  bn: "যিকিরের রিমাইন্ডার"
+  fa: "یادآوری‌های ذکر"
+  ms: "Peringatan Thikr"
+  pt: "Lembretes de thikr"
+  sw: "Vikumbusho vya Thikr"
+  ha: "Tunatarwar Thikr"
+
+Body i18n key: thikr_reminders_help_body
+  ar: "عند التفعيل، سيرسل التطبيق 5 إشعارات صامتة يومياً في أوقات عشوائية بين الفجر والعشاء، تذكّرك بذكر الله. كل إشعار يعرض ذكراً مختلفاً باللغة العربية ولغة التطبيق المختارة. لا صوت ولا شارة."
+  en: "When enabled, the app sends 5 silent notifications daily at random times between Fajr and Isha, reminding you to remember Allah. Each notification shows a different thikr in Arabic and your selected app language. No sound. No badge."
+  fr: "Lorsqu'il est activé, l'application envoie 5 notifications silencieuses quotidiennement à des heures aléatoires entre Fajr et Isha, vous rappelant de faire thikr. Chaque notification affiche un thikr différent en arabe et dans la langue de l'application. Sans son ni badge."
+  es: "Cuando está activado, la aplicación envía 5 notificaciones silenciosas diarias en momentos aleatorios entre Fajr e Isha, recordándote que recuerdes a Allah. Cada notificación muestra un thikr diferente en árabe y en el idioma seleccionado. Sin sonido ni insignia."
+  ru: "При включении приложение отправляет 5 беззвучных уведомлений в день в случайное время между Фаджром и Ишой, напоминая вам о зикре. Каждое уведомление показывает разный зикр на арабском и выбранном языке. Без звука и значка."
+  zh: "启用后，应用每天在晨礼和宵礼之间的随机时间发送5条静音通知，提醒您记念真主。每条通知显示不同的祈祷词，用阿拉伯语和所选语言显示。无声音无徽章。"
+  tr: "Etkinleştirildiğinde, uygulama Fajr ile Yatsı arasında rastgele zamanlarda günlük 5 sessiz bildirim göndererek sizi zikir yapmaya hatırlatır. Her bildirim Arapça ve seçilen dilde farklı bir zikir gösterir. Ses ve rozet yok."
+  ur: "فعال ہونے پر، ایپ فجر اور عشاء کے درمیان بے ترتیب اوقات میں روزانہ 5 خاموش اطلاعات بھیجتی ہے، آپ کو اللہ کو یاد کرنے کی یاددہانی کراتی ہے۔ ہر اطلاع عربی اور منتخب زبان میں مختلف ذکر دکھاتی ہے۔ کوئی آواز نہیں، کوئی بیج نہیں۔"
+  id: "Saat diaktifkan, aplikasi mengirim 5 notifikasi senyap setiap hari pada waktu acak antara Fajr dan Isya, mengingatkan Anda untuk berdzikir. Setiap notifikasi menampilkan thikr berbeda dalam bahasa Arab dan bahasa yang dipilih. Tanpa suara dan lencana."
+  bn: "সক্রিয় হলে, অ্যাপটি ফজর ও ইশার মধ্যে এলোমেলো সময়ে প্রতিদিন ৫টি নীরব বিজ্ঞপ্তি পাঠায়, আপনাকে আল্লাহকে স্মরণ করিয়ে দেয়। প্রতিটি বিজ্ঞপ্তি আরবি ও নির্বাচিত ভাষায় আলাদা যিকির দেখায়। কোনো শব্দ বা ব্যাজ নেই।"
+  fa: "هنگام فعال‌سازی، برنامه روزانه ۵ اعلان بی‌صدا در زمان‌های تصادفی بین فجر و عشا ارسال می‌کند تا یاد خدا را به شما یادآوری کند. هر اعلان ذکر متفاوتی به عربی و زبان انتخابی نشان می‌دهد. بدون صدا و نشان."
+  ms: "Apabila diaktifkan, aplikasi menghantar 5 pemberitahuan senyap setiap hari pada masa rawak antara Fajr dan Isyak, mengingatkan anda untuk berzikir. Setiap pemberitahuan memaparkan thikr berbeza dalam bahasa Arab dan bahasa yang dipilih. Tanpa bunyi dan lencana."
+  pt: "Quando ativado, o aplicativo envia 5 notificações silenciosas diariamente em horários aleatórios entre Fajr e Isha, lembrando você de fazer thikr. Cada notificação mostra um thikr diferente em árabe e no idioma selecionado. Sem som e sem emblema."
+  sw: "Inapowashwa, programu hutuma arifa 5 za kimya kila siku kwa nyakati za nasibu kati ya Fajr na Isha, kukukumbusha kumkumbuka Allah. Kila arifa inaonyesha thikr tofauti kwa Kiarabu na lugha uliyochagua. Bila sauti na beji."
+  ha: "Idan an kunna shi, app yana aika sanarwa 5 na shiru kowace rana a lokutan bazuwar tsakanin Fajr da Isha, yana tunatad da kai ka tunawa Allah. Kowane sanarwa yana nuna thikr daban da Larabci da yaren da ka zaɓa. Babu sauti da alama."
+
+──────────────────────────────────────────
+HELP BUTTON 2 — Default Tab setting
+──────────────────────────────────────────
+
+Place the help button to the right of the 
+"Default Tab" label.
+
+Tapping it shows an Alert with this content:
+
+Title i18n key: default_tab_help_title
+  ar: "التبويب الافتراضي"
+  en: "Default Tab"
+  fr: "Onglet par défaut"
+  es: "Pestaña predeterminada"
+  ru: "Вкладка по умолчанию"
+  zh: "默认标签"
+  tr: "Varsayılan sekme"
+  ur: "ڈیفالٹ ٹیب"
+  id: "Tab default"
+  bn: "ডিফল্ট ট্যাব"
+  fa: "تب پیش‌فرض"
+  ms: "Tab lalai"
+  pt: "Aba padrão"
+  sw: "Kichupo cha default"
+  ha: "Tab na farko"
+
+Body i18n key: default_tab_help_body
+  ar: "اختر التبويب الذي يفتح عليه التطبيق عند التشغيل. لا يؤثر هذا الإعداد على التنقل أثناء استخدام التطبيق."
+  en: "Choose which tab the app opens to when launched. This setting only affects the launch screen and does not affect navigation during normal use."
+  fr: "Choisissez l'onglet sur lequel l'application s'ouvre au lancement. Ce paramètre n'affecte que l'écran de démarrage et non la navigation normale."
+  es: "Elige a qué pestaña se abre la aplicación al iniciarse. Esta configuración solo afecta la pantalla de inicio y no la navegación normal."
+  ru: "Выберите вкладку, на которой приложение открывается при запуске. Этот параметр влияет только на экран запуска и не влияет на обычную навигацию."
+  zh: "选择应用启动时打开的标签。此设置仅影响启动界面，不影响正常使用期间的导航。"
+  tr: "Uygulamanın başlatıldığında hangi sekmeyi açacağını seçin. Bu ayar yalnızca başlangıç ekranını etkiler, normal navigasyonu etkilemez."
+  ur: "چنیں کہ ایپ کھلنے پر کون سا ٹیب کھلے۔ یہ ترتیب صرف لانچ اسکرین پر اثر ڈالتی ہے اور عام استعمال کے دوران نیویگیشن پر نہیں۔"
+  id: "Pilih tab yang dibuka aplikasi saat diluncurkan. Pengaturan ini hanya memengaruhi layar peluncuran dan tidak memengaruhi navigasi selama penggunaan normal."
+  bn: "অ্যাপটি চালু হলে কোন ট্যাবে খুলবে তা বেছে নিন। এই সেটিং শুধুমাত্র লঞ্চ স্ক্রিনকে প্রভাবিত করে, স্বাভাবিক ব্যবহারের সময় নেভিগেশনকে নয়।"
+  fa: "انتخاب کنید که برنامه هنگام راه‌اندازی به کدام تب باز شود. این تنظیم فقط صفحه راه‌اندازی را تحت تأثیر قرار می‌دهد و بر ناوبری عادی تأثیر نمی‌گذارد."
+  ms: "Pilih tab yang dibuka oleh aplikasi semasa dilancarkan. Tetapan ini hanya mempengaruhi skrin pelancaran dan tidak mempengaruhi navigasi semasa penggunaan biasa."
+  pt: "Escolha para qual aba o aplicativo abre ao ser iniciado. Esta configuração afeta apenas a tela de inicialização e não afeta a navegação durante o uso normal."
+  sw: "Chagua kichupo ambacho programu inafungua inapozinduliwa. Mipangilio hii inaathiri skrini ya uzinduzi tu na haiathiri urambazaji wakati wa matumizi ya kawaida."
+  ha: "Zaɓi wane tab app ke buɗewa lokacin da aka ƙaddamar. Wannan saitin yana shafar allo na ƙaddamarwa kawai kuma baya shafar tafiya a lokacin amfani na yau da kullum."
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Do not change any feature logic — spelling fix only.
+Help buttons must follow existing help button pattern.
+Add all new i18n keys to all 15 languages in i18n.ts.
+Do not add new dependencies.

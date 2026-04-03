@@ -1,0 +1,579 @@
+TWO NEW FEATURES:
+
+════════════════════════════════════════════════════════
+FEATURE 1 — DHIKR REMINDER NOTIFICATIONS
+════════════════════════════════════════════════════════
+
+WHAT IT DOES:
+Sends silent banner notifications at random times 
+throughout the day reminding the user to remember 
+Allah. Each notification shows a random dhikr in 
+the user's SELECTED APP LANGUAGE. No sound. No 
+badge. Banner only. User can enable/disable in Settings.
+
+────────────────────────────────────────────────────
+DHIKR LIST — ALL 15 LANGUAGES
+────────────────────────────────────────────────────
+
+Store as an array of objects in constants/dhikr-reminders.ts.
+Each dhikr has translations for all 15 languages.
+Arabic is always shown as the primary text.
+The translation in the user's selected language 
+appears as the notification body subtitle.
+
+const DHIKR_REMINDERS = [
+  {
+    id: 1,
+    ar: "لا إله إلا الله",
+    en: "There is no god but Allah",
+    fr: "Il n'y a de dieu qu'Allah",
+    es: "No hay dios sino Allah",
+    ru: "Нет бога, кроме Аллаха",
+    zh: "万物非主，唯有真主",
+    tr: "Allah'tan başka ilah yoktur",
+    ur: "اللہ کے سوا کوئی معبود نہیں",
+    id: "Tidak ada tuhan selain Allah",
+    bn: "আল্লাহ ছাড়া কোনো উপাস্য নেই",
+    fa: "هیچ معبودی جز الله نیست",
+    ms: "Tiada tuhan melainkan Allah",
+    pt: "Não há deus senão Allah",
+    sw: "Hapana mungu ila Allah",
+    ha: "Babu abin bautawa sai Allah",
+  },
+  {
+    id: 2,
+    ar: "سبحان الله",
+    en: "Glory be to Allah",
+    fr: "Gloire à Allah",
+    es: "Gloria a Allah",
+    ru: "Слава Аллаху",
+    zh: "真主至纯",
+    tr: "Allah'ı tenzih ederim",
+    ur: "اللہ پاک ہے",
+    id: "Maha Suci Allah",
+    bn: "আল্লাহ পবিত্র",
+    fa: "خداوند منزه است",
+    ms: "Maha Suci Allah",
+    pt: "Glória a Allah",
+    sw: "Utukufu ni wa Allah",
+    ha: "Tsarki ya tabbata ga Allah",
+  },
+  {
+    id: 3,
+    ar: "الحمد لله",
+    en: "All praise is for Allah",
+    fr: "Louange à Allah",
+    es: "Toda alabanza es para Allah",
+    ru: "Хвала Аллаху",
+    zh: "赞美真主",
+    tr: "Hamd Allah'a aittir",
+    ur: "تمام تعریفیں اللہ کے لیے ہیں",
+    id: "Segala puji bagi Allah",
+    bn: "সমস্ত প্রশংসা আল্লাহর জন্য",
+    fa: "ستایش از آن خداست",
+    ms: "Segala puji bagi Allah",
+    pt: "Todo louvor é para Allah",
+    sw: "Sifa zote ni za Allah",
+    ha: "Godiya ta tabbata ga Allah",
+  },
+  {
+    id: 4,
+    ar: "الله أكبر",
+    en: "Allah is the Greatest",
+    fr: "Allah est le plus Grand",
+    es: "Allah es el más Grande",
+    ru: "Аллах Велик",
+    zh: "真主至大",
+    tr: "Allah en büyüktür",
+    ur: "اللہ سب سے بڑا ہے",
+    id: "Allah Maha Besar",
+    bn: "আল্লাহ সর্বশ্রেষ্ঠ",
+    fa: "خداوند بزرگتر است",
+    ms: "Allah Maha Besar",
+    pt: "Allah é o Maior",
+    sw: "Allah ni Mkubwa zaidi",
+    ha: "Allah shi ne Mafi Girma",
+  },
+  {
+    id: 5,
+    ar: "أستغفر الله",
+    en: "I seek forgiveness from Allah",
+    fr: "Je demande pardon à Allah",
+    es: "Pido perdón a Allah",
+    ru: "Прошу прощения у Аллаха",
+    zh: "我向真主求恕",
+    tr: "Allah'tan bağışlanma dilerim",
+    ur: "میں اللہ سے معافی مانگتا ہوں",
+    id: "Aku memohon ampun kepada Allah",
+    bn: "আমি আল্লাহর কাছে ক্ষমা চাই",
+    fa: "از خداوند آمرزش می‌خواهم",
+    ms: "Aku memohon keampunan Allah",
+    pt: "Peço perdão a Allah",
+    sw: "Ninaomba msamaha kwa Allah",
+    ha: "Ina neman gafara daga Allah",
+  },
+  {
+    id: 6,
+    ar: "سبحان الله وبحمده",
+    en: "Glory and praise be to Allah",
+    fr: "Gloire et louange à Allah",
+    es: "Gloria y alabanza a Allah",
+    ru: "Слава Аллаху и хвала Ему",
+    zh: "真主至纯，赞美归他",
+    tr: "Allah'ı hamd ile tenzih ederim",
+    ur: "اللہ کی تسبیح اور اس کی حمد",
+    id: "Maha Suci Allah dan segala puji bagi-Nya",
+    bn: "আল্লাহর পবিত্রতা ও প্রশংসা",
+    fa: "خداوند منزه و ستوده است",
+    ms: "Maha Suci Allah dan segala puji bagi-Nya",
+    pt: "Glória e louvor a Allah",
+    sw: "Utukufu na sifa ni za Allah",
+    ha: "Tsarki da godiya ga Allah",
+  },
+  {
+    id: 7,
+    ar: "سبحان الله العظيم",
+    en: "Glory be to Allah the Almighty",
+    fr: "Gloire à Allah le Tout-Puissant",
+    es: "Gloria a Allah el Todopoderoso",
+    ru: "Слава Великому Аллаху",
+    zh: "至高真主至纯",
+    tr: "Yüce Allah'ı tenzih ederim",
+    ur: "عظیم اللہ کی پاکی",
+    id: "Maha Suci Allah Yang Maha Agung",
+    bn: "মহান আল্লাহর পবিত্রতা",
+    fa: "خداوند بزرگ منزه است",
+    ms: "Maha Suci Allah Yang Maha Agung",
+    pt: "Glória a Allah o Todo-Poderoso",
+    sw: "Utukufu wa Allah Mtukufu",
+    ha: "Tsarki ga Allah Mai Girma",
+  },
+  {
+    id: 8,
+    ar: "لا حول ولا قوة إلا بالله",
+    en: "There is no power except with Allah",
+    fr: "Il n'y a de puissance qu'en Allah",
+    es: "No hay poder sino con Allah",
+    ru: "Нет силы, кроме как у Аллаха",
+    zh: "除真主外无能无力",
+    tr: "Güç ve kuvvet yalnız Allah'tadır",
+    ur: "اللہ کے سوا کوئی طاقت نہیں",
+    id: "Tiada daya dan kekuatan kecuali dengan Allah",
+    bn: "আল্লাহ ছাড়া কোনো শক্তি নেই",
+    fa: "هیچ نیرو و قدرتی جز به خداوند نیست",
+    ms: "Tiada daya dan kekuatan melainkan dengan Allah",
+    pt: "Não há poder senão com Allah",
+    sw: "Hakuna nguvu ila kwa Allah",
+    ha: "Babu ikon da karfi sai da Allah",
+  },
+  {
+    id: 9,
+    ar: "اللهم صلِّ على سيدنا محمد",
+    en: "O Allah, send blessings upon our Prophet Muhammad",
+    fr: "Ô Allah, bénis notre Prophète Muhammad",
+    es: "Oh Allah, bendice a nuestro Profeta Muhammad",
+    ru: "О Аллах, благослови нашего Пророка Мухаммада",
+    zh: "主啊，赐福于我们的先知穆罕默德",
+    tr: "Allah'ım, Peygamberimiz Muhammed'e salat eyle",
+    ur: "اے اللہ، ہمارے نبی محمد پر درود بھیج",
+    id: "Ya Allah, limpahkan shalawat atas Nabi Muhammad",
+    bn: "হে আল্লাহ, আমাদের নবী মুহাম্মদের উপর দরুদ পাঠাও",
+    fa: "خداوندا، بر پیامبر ما محمد درود فرست",
+    ms: "Ya Allah, selawatlah ke atas Nabi Muhammad",
+    pt: "Ó Allah, abençoa o nosso Profeta Muhammad",
+    sw: "Ee Allah, mtumie rehema Mtume wetu Muhammad",
+    ha: "Ya Allah, ka aika salati ga Annabinmu Muhammad",
+  },
+  {
+    id: 10,
+    ar: "اللهم صلِّ وسلِّم على نبينا محمد",
+    en: "O Allah, send blessings and peace upon our Prophet Muhammad",
+    fr: "Ô Allah, bénis et salue notre Prophète Muhammad",
+    es: "Oh Allah, bendice y saluda a nuestro Profeta Muhammad",
+    ru: "О Аллах, благослови и приветствуй нашего Пророка Мухаммада",
+    zh: "主啊，赐福并赐平安于我们的先知穆罕默德",
+    tr: "Allah'ım, Peygamberimiz Muhammed'e salat ve selam eyle",
+    ur: "اے اللہ، ہمارے نبی محمد پر درود و سلام بھیج",
+    id: "Ya Allah, limpahkan shalawat dan salam atas Nabi Muhammad",
+    bn: "হে আল্লাহ, আমাদের নবী মুহাম্মদের উপর সালাত ও সালাম পাঠাও",
+    fa: "خداوندا، بر پیامبر ما محمد صلوات و سلام فرست",
+    ms: "Ya Allah, selawat dan salam ke atas Nabi Muhammad",
+    pt: "Ó Allah, abençoa e saluda o nosso Profeta Muhammad",
+    sw: "Ee Allah, mtumie rehema na amani Mtume wetu Muhammad",
+    ha: "Ya Allah, ka aika salati da sallama ga Annabinmu Muhammad",
+  },
+  {
+    id: 11,
+    ar: "سبحان الله وبحمده، سبحان الله العظيم",
+    en: "Glory and praise to Allah, glory to Allah the Almighty",
+    fr: "Gloire et louange à Allah, gloire à Allah le Tout-Puissant",
+    es: "Gloria y alabanza a Allah, gloria a Allah el Todopoderoso",
+    ru: "Слава Аллаху и хвала Ему, слава Великому Аллаху",
+    zh: "真主至纯赞美归他，至高真主至纯",
+    tr: "Allah'ı hamd ile tenzih ederim, Yüce Allah'ı tenzih ederim",
+    ur: "اللہ کی تسبیح اور حمد، عظیم اللہ کی پاکی",
+    id: "Maha Suci Allah dan segala puji bagi-Nya, Maha Suci Allah Yang Maha Agung",
+    bn: "আল্লাহর পবিত্রতা ও প্রশংসা, মহান আল্লাহর পবিত্রতা",
+    fa: "خداوند منزه و ستوده است، خداوند بزرگ منزه است",
+    ms: "Maha Suci Allah dan segala puji bagi-Nya, Maha Suci Allah Yang Maha Agung",
+    pt: "Glória e louvor a Allah, glória a Allah o Todo-Poderoso",
+    sw: "Utukufu na sifa ni za Allah, Utukufu wa Allah Mtukufu",
+    ha: "Tsarki da godiya ga Allah, Tsarki ga Allah Mai Girma",
+  },
+  {
+    id: 12,
+    ar: "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير",
+    en: "None has the right to be worshipped except Allah, alone without partner, to Him belongs sovereignty and praise, and He is over all things omnipotent",
+    fr: "Nul n'a le droit d'être adoré sinon Allah seul sans associé, à Lui appartient la souveraineté et la louange, et Il est Omnipotent",
+    es: "Nadie tiene derecho a ser adorado excepto Allah, solo sin asociado, a Él pertenece la soberanía y la alabanza, y Él es Omnipotente",
+    ru: "Нет права на поклонение, кроме Аллаха, Единого, без партнёра, Ему принадлежит власть и хвала, и Он над всем Всемогущ",
+    zh: "万物非主，唯有真主，独一无偶，国权归他，赞美归他，他对万事全能",
+    tr: "Allah'tan başka ibadete layık ilah yoktur, O tektir, ortağı yoktur, mülk O'nundur, hamd O'nadır ve O her şeye kadirdir",
+    ur: "اللہ کے سوا کوئی معبود نہیں، وہ اکیلا ہے، اس کا کوئی شریک نہیں، اسی کی بادشاہی اور تعریف ہے، وہ ہر چیز پر قادر ہے",
+    id: "Tiada tuhan selain Allah, sendiri tiada sekutu bagi-Nya, milik-Nya kerajaan dan pujian, dan Dia berkuasa atas segala sesuatu",
+    bn: "আল্লাহ ছাড়া কোনো উপাস্য নেই, তিনি একা, তার কোনো শরিক নেই, রাজত্ব ও প্রশংসা তারই, তিনি সবকিছুর উপর ক্ষমতাবান",
+    fa: "هیچ معبودی جز الله نیست، تنها و بی‌شریک، فرمانروایی و ستایش از آن اوست، و او بر هر چیزی تواناست",
+    ms: "Tiada tuhan melainkan Allah, tunggal tiada sekutu bagi-Nya, milik-Nya kerajaan dan pujian, dan Dia berkuasa atas segala sesuatu",
+    pt: "Não há deus senão Allah, sozinho sem parceiro, a Ele pertence a soberania e o louvor, e Ele é Onipotente",
+    sw: "Hapana mungu ila Allah, peke yake bila mshirika, ufalme na sifa ni vyake, na yeye ni muweza wa kila kitu",
+    ha: "Babu abin bautawa sai Allah, shi kaɗai babu abokin tarayya, mulki da godiya nashi ne, kuma shi mai ikon komai ne",
+  },
+  {
+    id: 13,
+    ar: "اللهم اغفر لي وتب عليّ",
+    en: "O Allah, forgive me and accept my repentance",
+    fr: "Ô Allah, pardonne-moi et accepte mon repentir",
+    es: "Oh Allah, perdóname y acepta mi arrepentimiento",
+    ru: "О Аллах, прости меня и прими моё покаяние",
+    zh: "主啊，饶恕我并接受我的悔罪",
+    tr: "Allah'ım, beni bağışla ve tövbemi kabul et",
+    ur: "اے اللہ، مجھے معاف کر اور میری توبہ قبول فرما",
+    id: "Ya Allah, ampunilah aku dan terimalah taubatku",
+    bn: "হে আল্লাহ, আমাকে ক্ষমা করো এবং আমার তাওবা কবুল করো",
+    fa: "خداوندا، مرا ببخش و توبه‌ام را بپذیر",
+    ms: "Ya Allah, ampunilah aku dan terimalah taubatku",
+    pt: "Ó Allah, perdoa-me e aceita o meu arrependimento",
+    sw: "Ee Allah, nisamehe na nikubalie toba yangu",
+    ha: "Ya Allah, ka gafarta mini ka kuma karɓi tubarki",
+  },
+  {
+    id: 14,
+    ar: "رب اغفر لي وارحمني وتب عليّ",
+    en: "My Lord, forgive me, have mercy on me, and accept my repentance",
+    fr: "Mon Seigneur, pardonne-moi, aie pitié de moi et accepte mon repentir",
+    es: "Mi Señor, perdóname, ten misericordia de mí y acepta mi arrepentimiento",
+    ru: "Господь мой, прости меня, помилуй меня и прими моё покаяние",
+    zh: "我的主，饶恕我，怜悯我，接受我的悔罪",
+    tr: "Rabbim, beni bağışla, merhamet et ve tövbemi kabul et",
+    ur: "اے میرے رب، مجھے معاف کر، مجھ پر رحم فرما اور میری توبہ قبول کر",
+    id: "Ya Tuhanku, ampunilah aku, kasihilah aku dan terimalah taubatku",
+    bn: "হে আমার রব, আমাকে ক্ষমা করো, আমার উপর রহম করো এবং আমার তাওবা কবুল করো",
+    fa: "پروردگارا، مرا ببخش، به من رحم کن و توبه‌ام را بپذیر",
+    ms: "Ya Tuhanku, ampunilah aku, rahmatilah aku dan terimalah taubatku",
+    pt: "Meu Senhor, perdoa-me, tem misericórdia de mim e aceita o meu arrependimento",
+    sw: "Mola wangu, nisamehe, nionee huruma na nikubalie toba yangu",
+    ha: "Ya Ubangijina, ka gafarta mini, ka yi mini rahama ka kuma karɓi tubarki",
+  },
+  {
+    id: 15,
+    ar: "حسبي الله ونعم الوكيل",
+    en: "Allah is sufficient for me and He is the best disposer of affairs",
+    fr: "Allah me suffit et Il est le meilleur garant",
+    es: "Allah me es suficiente y Él es el mejor guardián",
+    ru: "Аллах мне достаточен и Он лучший Попечитель",
+    zh: "真主对我已足够，他是最好的监护者",
+    tr: "Allah bana yeter, O ne güzel vekildir",
+    ur: "اللہ میرے لیے کافی ہے اور وہ بہترین کارساز ہے",
+    id: "Cukuplah Allah bagiku dan Dia sebaik-baik pelindung",
+    bn: "আল্লাহই আমার জন্য যথেষ্ট এবং তিনি সর্বোত্তম কার্যনির্বাহক",
+    fa: "خداوند برای من کافی است و او بهترین وکیل است",
+    ms: "Cukuplah Allah bagiku dan Dia sebaik-baik penjaga",
+    pt: "Allah me é suficiente e Ele é o melhor guardião",
+    sw: "Allah ananisimamia na yeye ni bora wa kusimamia",
+    ha: "Allah ya ishe ni kuma shi ne mafi kyawun mai kula",
+  },
+]
+
+────────────────────────────────────────────────────
+NOTIFICATION CONTENT — IN USER'S SELECTED LANGUAGE
+────────────────────────────────────────────────────
+
+Read the user's current app language from the 
+existing language state/context (same as used 
+throughout the app).
+
+const userLang = appLanguage ?? 'ar'
+
+Notification title in user's language:
+  ar: "تذكير بالذكر"
+  en: "Dhikr Reminder"
+  fr: "Rappel de dhikr"
+  es: "Recordatorio de dhikr"
+  ru: "Напоминание зикра"
+  zh: "祈祷提醒"
+  tr: "Zikir Hatırlatıcısı"
+  ur: "ذکر کی یاددہانی"
+  id: "Pengingat Dzikir"
+  bn: "যিকিরের স্মরণ"
+  fa: "یادآوری ذکر"
+  ms: "Peringatan Zikir"
+  pt: "Lembrete de dhikr"
+  sw: "Ukumbusho wa Dhikri"
+  ha: "Tunatarwa Zikiri"
+  i18n key: dhikr_reminder_title
+
+Notification body:
+  Line 1: Arabic text (always shown regardless of lang)
+  Line 2: Translation in userLang (if lang is not Arabic)
+
+  const getNotificationBody = (dhikr, lang) => {
+    if (lang === 'ar') return dhikr.ar
+    return `${dhikr.ar}\n${dhikr[lang] ?? dhikr.en}`
+  }
+
+This way Arabic-speaking users see only Arabic,
+and all other users see Arabic + their language.
+
+────────────────────────────────────────────────────
+SCHEDULING LOGIC
+────────────────────────────────────────────────────
+
+Schedule 5 notifications per day at random times
+between 30 minutes after Fajr and 30 minutes 
+before Isha:
+
+  const wakingStart = fajrTime + 30 * 60 * 1000
+  const wakingEnd = ishaTime - 30 * 60 * 1000
+  const wakingDuration = wakingEnd - wakingStart
+  const interval = wakingDuration / 5
+
+  let lastDhikrIndex = -1
+
+  for (let i = 0; i < 5; i++) {
+    const base = wakingStart + (interval * i)
+    const randomOffset = Math.random() * interval * 0.8
+    const notifTime = base + randomOffset
+
+    // Pick random dhikr, never same as previous
+    let index
+    do {
+      index = Math.floor(Math.random() * DHIKR_REMINDERS.length)
+    } while (index === lastDhikrIndex)
+    lastDhikrIndex = index
+
+    const dhikr = DHIKR_REMINDERS[index]
+    const lang = getCurrentAppLanguage()
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: t(dhikr_reminder_title),
+        body: getNotificationBody(dhikr, lang),
+        sound: false,
+        badge: 0,
+        priority: Notifications
+          .AndroidNotificationPriority.DEFAULT,
+      },
+      trigger: { date: new Date(notifTime) },
+    })
+  }
+
+RESCHEDULE:
+  - On app open each day
+  - When language changes — cancel and reschedule 
+    with new language
+  - When prayer times change (location/settings)
+  - Cancel and reschedule if user changes language
+
+────────────────────────────────────────────────────
+SETTINGS TOGGLE
+────────────────────────────────────────────────────
+
+Add under Notifications section in Settings:
+
+Divider label:
+  i18n key: dhikr_reminders_section
+  ar: "تذكير بالذكر"
+  en: "Dhikr Reminders"
+  fr: "Rappels de dhikr"
+  es: "Recordatorios de dhikr"
+  ru: "Напоминания зикра"
+  zh: "祈祷提醒"
+  tr: "Zikir Hatırlatıcıları"
+  ur: "ذکر کی یاددہانیاں"
+  id: "Pengingat Dzikir"
+  bn: "যিকিরের রিমাইন্ডার"
+  fa: "یادآوری‌های ذکر"
+  ms: "Peringatan Zikir"
+  pt: "Lembretes de dhikr"
+  sw: "Vikumbusho vya Dhikri"
+  ha: "Tunatarwar Zikiri"
+
+Toggle row:
+  icon: 'heart-outline' (C.tint)
+  label i18n key: dhikr_reminders_label
+  ar: "تذكير بذكر الله"
+  en: "Remember Allah reminders"
+  fr: "Rappels de dhikr"
+  es: "Recordatorios de dhikr"
+  ru: "Напоминания о зикре"
+  zh: "记念真主提醒"
+  tr: "Allah'ı zikretme hatırlatıcıları"
+  ur: "اللہ کو یاد کرنے کی یاددہانی"
+  id: "Pengingat mengingat Allah"
+  bn: "আল্লাহকে স্মরণের রিমাইন্ডার"
+  fa: "یادآوری ذکر خدا"
+  ms: "Peringatan mengingati Allah"
+  pt: "Lembretes de dhikr"
+  sw: "Vikumbusho vya kumkumbuka Allah"
+  ha: "Tunatarwa tunawa Allah"
+
+Subtitle i18n key: dhikr_reminders_subtitle
+  ar: "٥ تذكيرات يومية عشوائية — بدون صوت"
+  en: "5 random silent reminders daily"
+  fr: "5 rappels silencieux aléatoires par jour"
+  es: "5 recordatorios silenciosos aleatorios al día"
+  ru: "5 случайных беззвучных напоминаний в день"
+  zh: "每天5次随机静音提醒"
+  tr: "Günlük 5 rastgele sessiz hatırlatıcı"
+  ur: "روزانہ 5 بے ترتیب خاموش یاددہانیاں"
+  id: "5 pengingat acak tanpa suara setiap hari"
+  bn: "প্রতিদিন ৫টি এলোমেলো নীরব রিমাইন্ডার"
+  fa: "۵ یادآوری تصادفی بی‌صدا در روز"
+  ms: "5 peringatan rawak senyap setiap hari"
+  pt: "5 lembretes silenciosos aleatórios por dia"
+  sw: "Vikumbusho 5 vya nasibu bila sauti kwa siku"
+  ha: "Tunatarwa 5 na bazuwar shiru a kowace rana"
+
+Default: OFF
+AsyncStorage key: 'dhikr_reminders_enabled'
+
+When toggled ON:
+  - Request notification permission if not already granted
+  - Schedule today's 5 reminders immediately
+  - Schedule tomorrow's 5 reminders
+  - Show toast:
+      i18n key: dhikr_reminders_activated
+      ar: "سيتم تذكيرك بذكر الله إن شاء الله"
+      en: "You will be reminded to remember Allah, Allah willing"
+      fr: "Vous serez rappelé de faire dhikr, inch'Allah"
+      es: "Se le recordará hacer dhikr, insha'Allah"
+      ru: "Вам будут приходить напоминания о зикре, ин ша Аллах"
+      zh: "您将收到记念真主的提醒，إن شاء الله"
+      tr: "Allah'ı zikretmeniz için hatırlatılacaksınız, inşallah"
+      ur: "آپ کو اللہ کو یاد کرنے کی یاددہانی کی جائے گی ان شاء اللہ"
+      id: "Anda akan diingatkan untuk berdzikir, insya Allah"
+      bn: "আপনাকে আল্লাহকে স্মরণ করতে মনে করিয়ে দেওয়া হবে, ইনশাআল্লাহ"
+      fa: "به یاد خداوند یادآوری خواهید شد، إن شاء الله"
+      ms: "Anda akan diingatkan untuk berzikir, insya-Allah"
+      pt: "Você será lembrado de fazer dhikr, insha'Allah"
+      sw: "Utakumbushwa kumkumbuka Allah, إن شاء الله"
+      ha: "Za a tunatad da kai ka tunawa Allah, إن شاء الله"
+
+When toggled OFF:
+  - Cancel all scheduled dhikr reminders only
+  - Do not cancel prayer notifications
+
+When app language changes:
+  - If dhikr reminders are enabled, cancel all 
+    existing dhikr notifications and reschedule 
+    with new language immediately
+
+════════════════════════════════════════════════════════
+FEATURE 2 — DEFAULT TAB SETTING
+════════════════════════════════════════════════════════
+
+Add a setting that lets the user choose which tab
+the app opens to on launch.
+
+────────────────────────────────────────────────────
+SETTING LOCATION
+────────────────────────────────────────────────────
+
+In Settings screen, add under General section:
+
+  icon: 'home-outline' (C.tint)
+  label i18n key: default_tab_label
+  ar: "التبويب الافتراضي"
+  en: "Default Tab"
+  fr: "Onglet par défaut"
+  es: "Pestaña predeterminada"
+  ru: "Вкладка по умолчанию"
+  zh: "默认标签"
+  tr: "Varsayılan sekme"
+  ur: "ڈیفالٹ ٹیب"
+  id: "Tab default"
+  bn: "ডিফল্ট ট্যাব"
+  fa: "تب پیش‌فرض"
+  ms: "Tab lalai"
+  pt: "Aba padrão"
+  sw: "Kichupo cha default"
+  ha: "Tab na farko"
+
+Current selection shown on right in muted text.
+Tapping opens a bottom sheet with tab options.
+
+────────────────────────────────────────────────────
+TAB OPTIONS (5 options with icons and labels)
+────────────────────────────────────────────────────
+
+1. Prayer Times — default
+   icon: 'moon-crescent-outline'
+   value: 'prayer-times'
+   i18n key: tab_prayer_times (existing)
+
+2. Today
+   icon: 'calendar-today'
+   value: 'today'
+   i18n key: tab_today (existing)
+
+3. Qibla
+   icon: 'compass-outline'
+   value: 'qibla'
+   i18n key: tab_qibla (existing)
+
+4. Athkar
+   icon: 'hands-pray'
+   value: 'athkar'
+   i18n key: tab_athkar (existing)
+
+5. Quran
+   icon: 'book-open-variant'
+   value: 'quran'
+   i18n key: tab_quran (existing)
+
+Each option shows icon + label + checkmark if selected.
+
+────────────────────────────────────────────────────
+IMPLEMENTATION
+────────────────────────────────────────────────────
+
+AsyncStorage key: 'default_tab'
+Default value: 'prayer-times'
+
+In app/_layout.tsx, on app launch:
+
+  useEffect(() => {
+    const loadDefaultTab = async () => {
+      const defaultTab = await AsyncStorage.getItem(
+        'default_tab'
+      ) ?? 'prayer-times'
+      router.replace(`/(tabs)/${defaultTab}`)
+    }
+    loadDefaultTab()
+  }, [])
+
+Runs once on launch only.
+Normal tab navigation is not affected after launch.
+
+════════════════════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════════════════════
+
+Dhikr notifications: NO sound, NO badge, banner only.
+Dhikr notifications must never cancel or conflict 
+with prayer time notifications.
+When language changes, reschedule dhikr notifications
+in new language immediately if feature is enabled.
+Default tab only affects app launch, not navigation.
+Add ALL i18n keys to all 15 languages in i18n.ts.
+Do not add new dependencies.

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import React, { useEffect, useRef } from 'react';
@@ -9,7 +9,7 @@ import { useFonts, Amiri_400Regular, Amiri_700Bold } from '@expo-google-fonts/am
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { queryClient } from '@/lib/query-client';
-import { AppProvider } from '@/contexts/AppContext';
+import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { playAthan } from '@/lib/audio';
 
@@ -24,7 +24,22 @@ Notifications.setNotificationHandler({
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
+  const { defaultTab } = useApp();
   const appState = useRef(AppState.currentState);
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    if (hasRedirected.current) return;
+    if (!defaultTab || defaultTab === 'index') {
+      hasRedirected.current = true;
+      return;
+    }
+    hasRedirected.current = true;
+    const timeout = setTimeout(() => {
+      router.replace(`/(tabs)/${defaultTab}` as any);
+    }, 150);
+    return () => clearTimeout(timeout);
+  }, [defaultTab]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && 'serviceWorker' in navigator) {

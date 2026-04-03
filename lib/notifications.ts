@@ -5,6 +5,7 @@ import type { CalcMethod, AsrMethod } from './prayer-times';
 import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
+import { DHIKR_ITEMS, DHIKR_TIMES, getDhikrText } from '@/constants/dhikr-reminders';
 
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
@@ -34,6 +35,62 @@ export async function requestNotificationPermission(): Promise<boolean> {
 export async function cancelAllPrayerNotifications() {
   if (Platform.OS === 'web') return;
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+export async function cancelDhikrNotifications() {
+  if (Platform.OS === 'web') return;
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const dhikrIds = scheduled
+      .filter(n => (n.content.data as Record<string, unknown>)?.type === 'dhikr_reminder')
+      .map(n => n.identifier);
+    await Promise.all(dhikrIds.map(id => Notifications.cancelScheduledNotificationAsync(id)));
+  } catch { /* ignore */ }
+}
+
+export async function scheduleDhikrNotifications(params: {
+  lang: Lang;
+  daysAhead?: number;
+}) {
+  if (Platform.OS === 'web') return;
+  const { lang } = params;
+  const daysAhead = params.daysAhead ?? 7;
+  const tr = t(lang);
+  const title = tr.dhikr_reminder_title;
+  const now = new Date();
+
+  for (let d = 0; d < daysAhead; d++) {
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + d);
+
+    const daySeed = baseDate.getFullYear() * 10000 + (baseDate.getMonth() + 1) * 100 + baseDate.getDate();
+    const shuffled = [...DHIKR_ITEMS].sort((a, b) => {
+      const ha = Math.sin(daySeed * DHIKR_ITEMS.indexOf(a) + 1) * 10000;
+      const hb = Math.sin(daySeed * DHIKR_ITEMS.indexOf(b) + 1) * 10000;
+      return (ha - Math.floor(ha)) - (hb - Math.floor(hb));
+    });
+    const daily = shuffled.slice(0, 5);
+
+    for (let i = 0; i < DHIKR_TIMES.length; i++) {
+      const [hh, mm] = DHIKR_TIMES[i].split(':').map(Number);
+      const notifTime = new Date(baseDate);
+      notifTime.setHours(hh!, mm!, 0, 0);
+      if (notifTime <= now) continue;
+
+      const item = daily[i]!;
+      const body = getDhikrText(item, lang);
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data: { type: 'dhikr_reminder' },
+          sound: false,
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifTime },
+      });
+    }
+  }
 }
 
 export async function schedulePrayerNotifications(params: {
