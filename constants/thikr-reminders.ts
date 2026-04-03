@@ -1,12 +1,12 @@
 import type { Lang } from './i18n';
 
-export interface DhikrItem {
+export interface ThikrItem {
   ar: string;
   transliteration: string;
   translations: Partial<Record<Lang, string>>;
 }
 
-export const DHIKR_ITEMS: DhikrItem[] = [
+export const THIKR_ITEMS: ThikrItem[] = [
   {
     ar: 'سُبْحَانَ اللَّهِ',
     transliteration: 'Subḥānallāh',
@@ -309,9 +309,9 @@ export const DHIKR_ITEMS: DhikrItem[] = [
   },
 ];
 
-export const DHIKR_TIMES = ['07:00', '10:00', '13:30', '16:30', '20:00'];
+export const THIKR_TIMES = ['07:00', '10:00', '13:30', '16:30', '20:00'];
 
-export function getDhikrText(item: DhikrItem, lang: Lang): string {
+export function getThikrText(item: ThikrItem, lang: Lang): string {
   if (lang === 'ar') return item.ar;
   return item.translations[lang] ?? item.translations.en ?? item.ar;
 }

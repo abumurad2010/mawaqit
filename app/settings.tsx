@@ -32,7 +32,7 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
-    iqamaOffsets, dhikrRemindersEnabled, defaultTab,
+    iqamaOffsets, thikrRemindersEnabled, defaultTab,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -72,7 +72,7 @@ export default function SettingsScreen() {
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showDefaultTabModal, setShowDefaultTabModal] = useState(false);
-  const [dhikrToast, setDhikrToast] = useState(false);
+  const [thikrToast, setThikrToast] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
@@ -488,17 +488,17 @@ export default function SettingsScreen() {
     { key: 'quran',   label: isAr ? 'القرآن الكريم' : tr.quran },
   ];
 
-  const handleDhikrToggle = async () => {
+  const handleThikrToggle = async () => {
     Haptics.selectionAsync();
-    const newVal = !dhikrRemindersEnabled;
+    const newVal = !thikrRemindersEnabled;
     if (newVal) {
       const granted = await requestNotifPermission();
       if (!granted) return;
     }
-    await updateSettings({ dhikrRemindersEnabled: newVal });
+    await updateSettings({ thikrRemindersEnabled: newVal });
     if (newVal) {
-      setDhikrToast(true);
-      setTimeout(() => setDhikrToast(false), 2500);
+      setThikrToast(true);
+      setTimeout(() => setThikrToast(false), 2500);
     }
   };
 
@@ -669,6 +669,9 @@ export default function SettingsScreen() {
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
                 {tr.default_tab_label}
               </Text>
+              <Pressable onPress={(e) => { e.stopPropagation(); Haptics.selectionAsync(); Alert.alert(tr.default_tab_help_title, tr.default_tab_help_body); }} hitSlop={8}>
+                <Ionicons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
             </View>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
               <Text style={{ color: C.textMuted, fontSize: 13, fontFamily: SANS }}>
@@ -1344,10 +1347,10 @@ export default function SettingsScreen() {
           })}
         </View>
 
-        {/* Dhikr Reminders */}
+        {/* Thikr Reminders */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {tr.dhikr_reminders_section}
+            {tr.thikr_reminders_section}
           </Text>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -1355,25 +1358,30 @@ export default function SettingsScreen() {
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
               <Ionicons name="heart-outline" size={18} color={C.tint} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                  {tr.dhikr_reminders_label}
-                </Text>
+                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                    {tr.thikr_reminders_label}
+                  </Text>
+                  <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.thikr_reminders_help_title, tr.thikr_reminders_help_body); }} hitSlop={8}>
+                    <Ionicons name="help-circle-outline" size={18} color={C.textMuted} />
+                  </Pressable>
+                </View>
                 <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }}>
-                  {tr.dhikr_reminders_subtitle}
+                  {tr.thikr_reminders_subtitle}
                 </Text>
               </View>
             </View>
             <Switch
-              value={dhikrRemindersEnabled}
-              onValueChange={handleDhikrToggle}
+              value={thikrRemindersEnabled}
+              onValueChange={handleThikrToggle}
               trackColor={{ false: C.backgroundSecond, true: C.tint + '80' }}
-              thumbColor={dhikrRemindersEnabled ? C.tint : C.textMuted}
+              thumbColor={thikrRemindersEnabled ? C.tint : C.textMuted}
             />
           </View>
-          {dhikrToast && (
+          {thikrToast && (
             <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
               <Text style={{ fontSize: 11, color: C.tint, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                {tr.dhikr_reminders_activated}
+                {tr.thikr_reminders_activated}
               </Text>
             </View>
           )}

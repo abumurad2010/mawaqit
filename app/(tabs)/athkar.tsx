@@ -15,7 +15,7 @@ import type { Lang } from '@/constants/i18n';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
-import ATHKAR_CATEGORIES, { AthkarCategory, Dhikr } from '@/constants/athkar-data';
+import ATHKAR_CATEGORIES, { AthkarCategory, Thikr } from '@/constants/athkar-data';
 
 const FAVS_KEY = 'athkar_favourites';
 const FAV_HINT_KEY = 'athkar_fav_hint_seen';
@@ -63,7 +63,7 @@ export default function AthkarScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [selectedCategory, setSelectedCategory] = useState<AthkarCategory | null>(null);
-  const [highlightDhikrIdx, setHighlightDhikrIdx] = useState<number>(-1);
+  const [highlightThikrIdx, setHighlightThikrIdx] = useState<number>(-1);
   const [highlightQuery, setHighlightQuery] = useState<string>('');
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
@@ -73,7 +73,7 @@ export default function AthkarScreen() {
   const [favHintSeen, setFavHintSeen] = useState(false);
   const [athkarLang, setAthkarLang] = useState<Lang>((lang as Lang) || 'ar');
   const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('md');
-  const readerRef = useRef<FlatList<Dhikr>>(null);
+  const readerRef = useRef<FlatList<Thikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setAthkarFontSize = useCallback((fs: AthkarFontSize) => {
@@ -135,7 +135,7 @@ export default function AthkarScreen() {
 
   const openCategory = useCallback((cat: AthkarCategory, hlIdx?: number, hlQuery?: string) => {
     Haptics.selectionAsync();
-    setHighlightDhikrIdx(hlIdx ?? -1);
+    setHighlightThikrIdx(hlIdx ?? -1);
     setHighlightQuery(hlQuery ?? '');
     setSelectedCategory(cat);
     setCounts({});
@@ -154,14 +154,14 @@ export default function AthkarScreen() {
     setCounts({});
   }, []);
 
-  const handleTap = useCallback((cat: AthkarCategory, dhikr: Dhikr, idx: number) => {
+  const handleTap = useCallback((cat: AthkarCategory, thikr: Thikr, idx: number) => {
     const key = getKey(cat.id, idx);
     setCounts(prev => {
       const cur = prev[key] ?? 0;
-      if (cur >= dhikr.count) return prev;
+      if (cur >= thikr.count) return prev;
       const next = cur + 1;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (next >= dhikr.count) {
+      if (next >= thikr.count) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         pendingAdvance.current = setTimeout(() => {
           const nextIncompleteIdx = cat.adhkar.findIndex((d, i) => {
@@ -212,7 +212,7 @@ export default function AthkarScreen() {
           displayMode={displayMode}
           athkarLang={athkarLang}
           athkarFontSize={athkarFontSize}
-          highlightIdx={highlightDhikrIdx}
+          highlightIdx={highlightThikrIdx}
           highlightQuery={highlightQuery}
         />
       ) : (
@@ -826,11 +826,11 @@ interface ReaderProps {
   C: any;
   topInset: number;
   bottomInset: number;
-  readerRef: React.RefObject<FlatList<Dhikr>>;
+  readerRef: React.RefObject<FlatList<Thikr>>;
   counts: Record<string, number>;
   getCount: (catId: string, idx: number) => number;
   isDone: (catId: string, idx: number, required: number) => boolean;
-  onTap: (cat: AthkarCategory, dhikr: Dhikr, idx: number) => void;
+  onTap: (cat: AthkarCategory, thikr: Thikr, idx: number) => void;
   onBack: () => void;
   onReset: () => void;
   displayMode: 'arabic' | 'full';
@@ -851,7 +851,7 @@ function ReaderScreen({
   const cardFS = FONT_STEPS[athkarFontSize];
   const [activeHighlight, setActiveHighlight] = useState(highlightQuery.length > 0);
 
-  // Auto-scroll to highlighted dhikr on mount
+  // Auto-scroll to highlighted thikr on mount
   useEffect(() => {
     if (highlightIdx >= 0 && highlightIdx < category.adhkar.length) {
       const timer = setTimeout(() => {
@@ -894,7 +894,7 @@ function ReaderScreen({
     }, 1500);
   }, []);
 
-  const handleCopy = useCallback((dhikr: Dhikr, translation: string, index: number) => {
+  const handleCopy = useCallback((thikr: Thikr, translation: string, index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCopyHighlightIdx(index);
     const copyText = async (text: string) => {
@@ -906,24 +906,24 @@ function ReaderScreen({
     const tCopy = (key: string, fallback: string) => (tr as any)[key] ?? fallback;
     if (displayMode === 'arabic') {
       Alert.alert(
-        tCopy('copy_dhikr_title', 'Copy Dhikr'),
+        tCopy('copy_thikr_title', 'Copy Thikr'),
         undefined,
         [
-          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(dhikr.arabic) },
+          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(thikr.arabic) },
           { text: tCopy('btn_cancel', 'Cancel'), style: 'cancel', onPress: clearHighlight },
         ],
       );
     } else {
       Alert.alert(
-        tCopy('copy_dhikr_title', 'Copy Dhikr'),
+        tCopy('copy_thikr_title', 'Copy Thikr'),
         undefined,
         [
-          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(dhikr.arabic) },
-          { text: tCopy('copy_translit_only', 'Transliteration only'), onPress: () => copyText(dhikr.transliteration) },
+          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(thikr.arabic) },
+          { text: tCopy('copy_translit_only', 'Transliteration only'), onPress: () => copyText(thikr.transliteration) },
           { text: tCopy('copy_translation_only', 'Translation only'), onPress: () => copyText(translation) },
-          { text: tCopy('copy_arabic_translit', 'Arabic + Transliteration'), onPress: () => copyText(dhikr.arabic + '\n\n' + dhikr.transliteration) },
-          { text: tCopy('copy_arabic_translation', 'Arabic + Translation'), onPress: () => copyText(dhikr.arabic + '\n\n' + translation) },
-          { text: tCopy('copy_all', 'Copy all'), onPress: () => copyText(dhikr.arabic + '\n\n' + dhikr.transliteration + '\n\n' + translation) },
+          { text: tCopy('copy_arabic_translit', 'Arabic + Transliteration'), onPress: () => copyText(thikr.arabic + '\n\n' + thikr.transliteration) },
+          { text: tCopy('copy_arabic_translation', 'Arabic + Translation'), onPress: () => copyText(thikr.arabic + '\n\n' + translation) },
+          { text: tCopy('copy_all', 'Copy all'), onPress: () => copyText(thikr.arabic + '\n\n' + thikr.transliteration + '\n\n' + translation) },
           { text: tCopy('btn_cancel', 'Cancel'), style: 'cancel', onPress: clearHighlight },
         ],
       );
@@ -1007,14 +1007,14 @@ function ReaderScreen({
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={() => {}}
         onScrollBeginDrag={() => activeHighlight && setActiveHighlight(false)}
-        renderItem={({ item: dhikr, index }) => {
-          const done = isDone(category.id, index, dhikr.count);
+        renderItem={({ item: thikr, index }) => {
+          const done = isDone(category.id, index, thikr.count);
           const cur = getCount(category.id, index);
-          const translation = (i18n[athkarLang] as any)?.[dhikr.translationKey] ?? '';
+          const translation = (i18n[athkarLang] as any)?.[thikr.translationKey] ?? '';
 
           return (
-            <DhikrCard
-              dhikr={dhikr}
+            <ThikrCard
+              thikr={thikr}
               index={index}
               done={done}
               cur={cur}
@@ -1023,8 +1023,8 @@ function ReaderScreen({
               translationRtl={athkarRtl}
               C={C}
               displayMode={displayMode}
-              onTap={() => onTap(category, dhikr, index)}
-              onCopy={() => handleCopy(dhikr, translation, index)}
+              onTap={() => onTap(category, thikr, index)}
+              onCopy={() => handleCopy(thikr, translation, index)}
               highlighted={copyHighlightIdx === index}
               arabicFontSize={cardFS.arabic}
               translitFontSize={cardFS.translit}
@@ -1047,7 +1047,7 @@ function ReaderScreen({
 }
 
 interface CardProps {
-  dhikr: Dhikr;
+  thikr: Thikr;
   index: number;
   done: boolean;
   cur: number;
@@ -1106,7 +1106,7 @@ function inlineHighlight(text: string, query: string, tintColor: string): React.
   return parts;
 }
 
-function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
+function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
@@ -1135,7 +1135,7 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
             },
           ]}>
             <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>
-              {cur}/{dhikr.count}
+              {cur}/{thikr.count}
             </Text>
           </View>
           {done && (
@@ -1146,12 +1146,12 @@ function DhikrCard({ dhikr, index, done, cur, translation, isRtl, translationRtl
         </View>
 
         <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.75, color: done ? C.tint : C.text }]}>
-          {searchHighlight ? inlineHighlight(dhikr.arabic, searchQuery, C.tint) : dhikr.arabic}
+          {searchHighlight ? inlineHighlight(thikr.arabic, searchQuery, C.tint) : thikr.arabic}
         </Text>
 
         {displayMode === 'full' && (
           <Text style={[styles.translitText, { fontSize: translitFontSize, lineHeight: translitFontSize * 1.5, color: C.textMuted }]}>
-            {searchHighlight ? inlineHighlight(dhikr.transliteration, searchQuery, C.tint) : dhikr.transliteration}
+            {searchHighlight ? inlineHighlight(thikr.transliteration, searchQuery, C.tint) : thikr.transliteration}
           </Text>
         )}
 

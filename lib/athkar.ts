@@ -3,7 +3,7 @@
  * Sources: Hisn al-Muslim, Sahih Bukhari, Sahih Muslim, Abu Dawud, Tirmidhi
  */
 
-export interface Dhikr {
+export interface Thikr {
   id: string;
   arabic: string;
   transliteration: string;
@@ -15,8 +15,8 @@ export interface Dhikr {
 }
 
 export interface AthkarSet {
-  morning: Dhikr[];
-  evening: Dhikr[];
+  morning: Thikr[];
+  evening: Thikr[];
 }
 
 const ATHKAR: AthkarSet = {
@@ -991,11 +991,11 @@ const ATHKAR: AthkarSet = {
 
 export default ATHKAR;
 
-export function getDhikrTranslation(dhikr: Dhikr, lang: string): string {
-  return dhikr.translations[lang] ?? dhikr.translations['en'] ?? '';
+export function getThikrTranslation(thikr: Thikr, lang: string): string {
+  return thikr.translations[lang] ?? thikr.translations['en'] ?? '';
 }
 
-export function getDhikrVirtue(dhikr: Dhikr, lang: string): string | undefined {
-  if (!dhikr.virtue) return undefined;
-  return dhikr.virtue[lang] ?? dhikr.virtue['en'];
+export function getThikrVirtue(thikr: Thikr, lang: string): string | undefined {
+  if (!thikr.virtue) return undefined;
+  return thikr.virtue[lang] ?? thikr.virtue['en'];
 }

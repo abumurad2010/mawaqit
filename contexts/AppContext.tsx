@@ -13,7 +13,7 @@ import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
-import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleDhikrNotifications } from '@/lib/notifications';
+import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
 import type { AccessibilityTheme, ColorPalette } from '@/constants/colors';
 
@@ -89,7 +89,7 @@ interface AppSettings {
   showQiyam: boolean;    // whether to show Qiyam row on timings tab
   eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
   iqamaOffsets: Record<string, number>; // per-prayer iqama delay in minutes (user overrides)
-  dhikrRemindersEnabled: boolean;
+  thikrRemindersEnabled: boolean;
   defaultTab: string;
 }
 
@@ -136,7 +136,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   showQiyam: true,
   eidPrayerTime: '07:30',
   iqamaOffsets: {},
-  dhikrRemindersEnabled: false,
+  thikrRemindersEnabled: false,
   defaultTab: 'index',
 };
 
@@ -254,7 +254,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!location) return;
-    const { prayerNotifications, lang, calcMethod, asrMethod, dhikrRemindersEnabled } = settings;
+    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled } = settings;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
 
     const rescheduleAll = async () => {
@@ -275,13 +275,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else {
         await cancelAllPrayerNotifications();
       }
-      if (dhikrRemindersEnabled) {
-        await scheduleDhikrNotifications({ lang });
+      if (thikrRemindersEnabled) {
+        await scheduleThikrNotifications({ lang });
       }
     };
 
     rescheduleAll();
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.dhikrRemindersEnabled]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

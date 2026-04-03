@@ -9,7 +9,7 @@
  * 'shield-cross', 'shield-cross-outline'
  */
 
-export interface Dhikr {
+export interface Thikr {
   arabic: string;
   transliteration: string;
   translationKey: string;
@@ -20,10 +20,10 @@ export interface AthkarCategory {
   id: string;
   icon: string;
   nameKey: string;
-  adhkar: Dhikr[];
+  adhkar: Thikr[];
 }
 
-const MORNING_ADHKAR: Dhikr[] = [
+const MORNING_ADHKAR: Thikr[] = [
   {
     arabic: "اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ ۖ وَلَا يَئُودُهُ حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيمُ",
     transliteration: "Allāhu lā ilāha illā huwal-ḥayyul-qayyūm. Lā taʾkhudhuhu sinatun wa lā nawm. Lahu mā fis-samāwāti wa mā fil-arḍ. Man dhalladhī yashfaʿu ʿindahu illā biʾidhnih. Yaʿlamu mā bayna aydīhim wa mā khalfahum wa lā yuḥīṭūna bishayʾin min ʿilmihi illā bimā shāʾ. Wasiʿa kursiyyuhus-samāwāti wal-arḍ, wa lā yaʾūduhu ḥifẓuhumā wa huwal-ʿaliyyul-ʿaẓīm.",
@@ -146,8 +146,8 @@ const MORNING_ADHKAR: Dhikr[] = [
   },
 ];
 
-function makeEveningAdhkar(): Dhikr[] {
-  const evening: Dhikr[] = [];
+function makeEveningAdhkar(): Thikr[] {
+  const evening: Thikr[] = [];
 
   MORNING_ADHKAR.forEach((d, i) => {
     // i === 4 (morning_5) is the evening duplicate of athkar_evening_1.
