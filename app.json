@@ -93,7 +93,24 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d5cbdb82-1df0-4afd-8015-5e50919eac1b"
+        "projectId": "d5cbdb82-1df0-4afd-8015-5e50919eac1b",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ExpoWidgetsTarget",
+                  "bundleIdentifier": "com.mawaqit.app.ExpoWidgetsTarget",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.mawaqit.app.widget"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }
