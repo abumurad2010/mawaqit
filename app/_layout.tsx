@@ -13,13 +13,15 @@ import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { playAthan } from '@/lib/audio';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 SplashScreen.preventAutoHideAsync();
 
