@@ -34,7 +34,9 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
 export async function cancelAllPrayerNotifications() {
   if (Platform.OS === 'web') return;
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch { /* ignore on web/unavailable */ }
 }
 
 export async function cancelThikrNotifications() {
@@ -80,15 +82,17 @@ export async function scheduleThikrNotifications(params: {
       const item = daily[i]!;
       const body = getThikrText(item, lang);
 
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data: { type: 'thikr_reminder' },
-          sound: false,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifTime },
-      });
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title,
+            body,
+            data: { type: 'thikr_reminder' },
+            sound: false,
+          },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifTime },
+        });
+      } catch { /* ignore */ }
     }
   }
 }
@@ -151,15 +155,17 @@ export async function schedulePrayerNotifications(params: {
 
       const sound: string | false = hasAthan ? false : 'default';
 
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: labels[prayerKey] ?? prayerKey,
-          body: lang === 'ar' ? 'حان وقت الصلاة' : "It's time to pray",
-          data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan },
-          sound,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
-      });
+      try {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: labels[prayerKey] ?? prayerKey,
+            body: lang === 'ar' ? 'حان وقت الصلاة' : "It's time to pray",
+            data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan },
+            sound,
+          },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
+        });
+      } catch { /* ignore */ }
     }
   }
 }

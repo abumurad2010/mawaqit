@@ -280,7 +280,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    rescheduleAll();
+    rescheduleAll().catch(() => { /* notifications unavailable on web */ });
   }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
