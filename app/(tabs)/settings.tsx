@@ -20,6 +20,8 @@ import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import { getPreviousTab } from '@/lib/prev-tab';
 import AppLogo from '@/components/AppLogo';
+import ThemeToggle from '@/components/ThemeToggle';
+import LangToggle from '@/components/LangToggle';
 import type { SecondLang } from '@/contexts/AppContext';
 const SANS = 'Inter_400Regular';
 const SANS_MD = 'Inter_500Medium';
@@ -31,7 +33,7 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
-    iqamaOffsets, thikrRemindersEnabled, defaultTab,
+    iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -41,6 +43,15 @@ export default function SettingsScreen() {
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 84 : insets.bottom + 49;
+
+  // Font sizer — same logic as index.tsx
+  const FONT_STEPS = ['small', 'medium', 'large', 'xlarge'] as const;
+  const SIZE_LABELS: Record<typeof FONT_STEPS[number], string> = { small: 'S', medium: 'M', large: 'L', xlarge: 'XL' };
+  const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
+  const canDecrease = fsIdx > 0;
+  const canIncrease = fsIdx < FONT_STEPS.length - 1;
+  const decreaseFont = () => { if (fsIdx > 0) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[fsIdx - 1] }); } };
+  const increaseFont = () => { if (fsIdx < FONT_STEPS.length - 1) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[fsIdx + 1] }); } };
 
   // Local draft state — nothing is saved until the user taps Save
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
@@ -607,11 +618,22 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
 
-      {/* Header: Cancel | Logo | Save */}
-      <View style={{ paddingTop: topInset + 10, paddingHorizontal: 20, paddingBottom: 4 }}>
-        <View style={[styles.header, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+      {/* ── Header (fixed, outside ScrollView) ── */}
+      <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
 
-          {/* LEFT: Cancel */}
+        {/* ROW 1: LangToggle | AppLogo (centered) | ThemeToggle */}
+        <View style={[styles.header, { marginBottom: 2 }]}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LangToggle />
+          </View>
+          <AppLogo tintColor={C.tint} lang={lang} />
+          <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
+            <ThemeToggle />
+          </View>
+        </View>
+
+        {/* ROW 2: Cancel / Save — respects RTL */}
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, marginBottom: 2 }}>
           <Pressable
             onPress={handleCancel}
             style={({ pressed }) => [styles.cancelBtn, { opacity: pressed ? 0.6 : 1 }]}
@@ -620,26 +642,47 @@ export default function SettingsScreen() {
               {isAr ? 'إلغاء' : 'Cancel'}
             </Text>
           </Pressable>
+          <Pressable
+            onPress={handleSave}
+            style={({ pressed }) => [
+              styles.saveBtn,
+              { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
+            ]}
+          >
+            <Text style={[styles.saveBtnText, { color: hasChanges ? C.tintText : C.tint }]}>
+              {isAr ? 'حفظ' : 'Save'}
+            </Text>
+          </Pressable>
+        </View>
 
-          {/* CENTER: App Logo */}
-          <AppLogo tintColor={C.tint} lang={lang} />
+        {/* ROW 3: Page title */}
+        <Text style={[styles.pageTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: 'center' }]}>
+          {tr.settings}
+        </Text>
 
-          {/* RIGHT: Save */}
-          <View style={[styles.headerRight]}>
+        {/* ROW 4: Font sizer — right-aligned, above first section */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 4, marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
             <Pressable
-              onPress={handleSave}
-              style={({ pressed }) => [
-                styles.saveBtn,
-                { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
-              ]}
+              onPress={decreaseFont}
+              disabled={!canDecrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canDecrease ? 1 : 0.3 }]}
             >
-              <Text style={[styles.saveBtnText, { color: hasChanges ? C.tintText : C.tint }]}>
-                {isAr ? 'حفظ' : 'Save'}
-              </Text>
+              <Text style={[styles.fontPillLabel, { color: C.textMuted }]}>A−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 28, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {SIZE_LABELS[fontSize as typeof FONT_STEPS[number]] ?? 'M'}
+            </Text>
+            <Pressable
+              onPress={increaseFont}
+              disabled={!canIncrease}
+              style={[styles.fontPill, { backgroundColor: C.backgroundSecond, opacity: canIncrease ? 1 : 0.3 }]}
+            >
+              <Text style={[styles.fontPillLabel, { color: C.textMuted, fontSize: 14 }]}>A+</Text>
             </Pressable>
           </View>
-
         </View>
+
       </View>
 
       <ScrollView
@@ -1435,23 +1478,16 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cancelBtn: {
-    flex: 1, alignItems: 'flex-start',
-    paddingVertical: 7,
-  },
+  headerWrap: { gap: 4, paddingBottom: 4 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  pageTitle: { fontSize: 15, fontWeight: '700', textAlign: 'center', marginTop: 2, marginBottom: 0 },
+  cancelBtn: { paddingVertical: 6, paddingHorizontal: 4 },
   cancelBtnText: { fontSize: 13, fontWeight: '400' },
-  headerRight: {
-    flex: 1, alignItems: 'flex-end',
-  },
-  saveBtn: {
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 16,
-  },
+  saveBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16 },
   saveBtnText: { fontSize: 13, fontWeight: '600' },
+  fontPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignItems: 'center' },
+  fontPillLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.2 },
   sectionTitle: {
     fontSize: 11, fontWeight: '700', letterSpacing: 0.6,
     textTransform: 'uppercase', marginTop: 18, marginBottom: 6,
