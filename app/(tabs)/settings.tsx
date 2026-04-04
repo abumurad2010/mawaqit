@@ -629,15 +629,14 @@ export default function SettingsScreen() {
       {/* ── Header (fixed, outside ScrollView) ── */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
 
-        {/* ROW 1: LangToggle | AppLogo (centered) | ThemeToggle */}
+        {/* ROW 1: ThemeToggle + LangToggle (left) | AppLogo (center) | empty balance (right) */}
         <View style={[styles.header, { marginBottom: 2 }]}>
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+            <ThemeToggle />
             <LangToggle />
           </View>
           <AppLogo tintColor={C.tint} lang={lang} />
-          <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]}>
-            <ThemeToggle />
-          </View>
+          <View style={[styles.headerActions, { flex: 1, justifyContent: 'flex-end' }]} />
         </View>
 
         {/* ROW 2: Cancel | "Settings" title centered | Save */}
