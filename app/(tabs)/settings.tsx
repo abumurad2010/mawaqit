@@ -640,13 +640,18 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* ROW 2: Page title */}
-        <Text style={[styles.pageTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: 'center' }]}>
-          {tr.settings}
-        </Text>
-
-        {/* ROW 3: Cancel / Save — respects RTL */}
+        {/* ROW 2: Cancel | "Settings" title centered | Save */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, marginBottom: 2 }}>
+          {/* Title absolutely centered over the full row */}
+          <Text
+            style={[styles.pageTitle, {
+              position: 'absolute', left: 0, right: 0, textAlign: 'center',
+              color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold',
+            }]}
+            pointerEvents="none"
+          >
+            {tr.settings}
+          </Text>
           <Pressable
             onPress={handleCancel}
             style={({ pressed }) => [styles.cancelBtn, { opacity: pressed ? 0.6 : 1 }]}
