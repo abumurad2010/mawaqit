@@ -68,8 +68,12 @@ export async function playAthan(
 
     activePlayer = player;
 
-    player.addListener('playbackStatusUpdate', (s: { didJustFinish: boolean }) => {
+    player.addListener('playbackStatusUpdate', (s: any) => {
       if (sessionId !== sid) { killPlayer(player); return; }
+      if (s.isLoaded && !s.playing) {
+        player.volume = 1.0;
+        player.play();
+      }
       if (s.didJustFinish) {
         clearTimers();
         activePlayer = null;
@@ -79,8 +83,6 @@ export async function playAthan(
       }
     });
 
-    player.volume = 1.0;
-    player.play();
     scheduleStop(type);
   } catch {
     const cb = onStopCb;

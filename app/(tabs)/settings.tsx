@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal, Switch,
   Alert, Linking,
 } from 'react-native';
 import { gregorianToHijri } from '@/lib/hijri';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
@@ -93,6 +93,14 @@ export default function SettingsScreen() {
       stopAthan();
     };
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        stopAthan();
+      };
+    }, [])
+  );
 
   // ── Eid proximity — visibility window for the Eid Prayer row ────────────────
   //
