@@ -972,15 +972,10 @@ export default function SettingsScreen() {
                         isSelected && { backgroundColor: C.tint + '18' },
                       ]}
                     >
-                      <View style={{ flex: 1, gap: 2 }}>
+                      <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                          {isAr ? opt.labelAr : opt.label}
+                          {isRtl ? opt.labelAr : opt.label}
                         </Text>
-                        {!isAr && (
-                          <Text style={{ fontSize: 12, color: C.textSecond, fontFamily: 'Amiri_400Regular' }}>
-                            {opt.labelAr}
-                          </Text>
-                        )}
                       </View>
                       {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
                     </Pressable>
@@ -1056,11 +1051,8 @@ export default function SettingsScreen() {
                     >
                       <View style={{ flex: 1, gap: 2 }}>
                         <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                          {isAr ? opt.labelAr : opt.label}
+                          {isRtl ? opt.labelAr : opt.label}
                         </Text>
-                        {!isAr && (
-                          <Text style={{ fontSize: 12, color: C.textSecond, fontFamily: 'Amiri_400Regular' }}>{opt.labelAr}</Text>
-                        )}
                       </View>
                       {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
                     </Pressable>
@@ -1613,7 +1605,7 @@ export default function SettingsScreen() {
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 7, borderWidth: 1, borderColor: draftPrayerAdhan[prayer.key] ? C.tint : C.separator, backgroundColor: draftPrayerAdhan[prayer.key] ? C.tint + '15' : 'transparent' }}
                       >
                         <Text style={{ fontSize: 11, fontFamily: 'Amiri_400Regular', color: draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond }}>
-                          {ADHAN_OPTIONS.find(o => o.key === (draftPrayerAdhan[prayer.key] ?? draftAdhan))?.labelAr ?? 'مكة'}
+                          {(() => { const o = ADHAN_OPTIONS.find(o => o.key === (draftPrayerAdhan[prayer.key] ?? draftAdhan)); return isRtl ? (o?.labelAr ?? 'مكة') : (o?.label ?? 'Makkah'); })()}
                         </Text>
                         <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
                       </Pressable>
