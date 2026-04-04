@@ -5,7 +5,7 @@ import type { CalcMethod, AsrMethod } from './prayer-times';
 import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
-import { THIKR_ITEMS, THIKR_TIMES, getThikrText } from '@/constants/thikr-reminders';
+import { THIKR_ITEMS, getThikrText } from '@/constants/thikr-reminders';
 
 const isNative = Platform.OS !== 'web';
 
@@ -26,6 +26,49 @@ function parseExactTime(hhmm: string, baseDate: Date): Date {
   const d = new Date(baseDate);
   d.setHours(h, m, 0, 0);
   return d;
+}
+
+/**
+ * Generate up to `count` timestamps in [fajrMs, ishaMs) with guaranteed
+ * ≥30-minute gaps between any two consecutive results.
+ *
+ * Algorithm:
+ *  1. Divide the Fajr→Isha window into non-overlapping 30-minute slots.
+ *  2. Shuffle the slot indices with a deterministic day-seed.
+ *  3. Pick the first `count` slots (or fewer if the window is shorter).
+ *  4. Sort picked slots chronologically.
+ *  5. Each picked slot maps to: fajr + slot*30 min (start of the slot).
+ *
+ * Because every notification occupies a distinct 30-minute slot, no two
+ * consecutive notifications are ever closer than 30 minutes apart.
+ */
+function generateThikrTimes(
+  fajrMs: number,
+  ishaMs: number,
+  count: number,
+  daySeed: number,
+): number[] {
+  const windowMins = Math.floor((ishaMs - fajrMs) / 60000);
+  const slotCount = Math.floor(windowMins / 30);
+  if (slotCount <= 0 || count <= 0) return [];
+
+  // Build slot array [0, 1, 2, ..., slotCount-1]
+  const slots = Array.from({ length: slotCount }, (_, i) => i);
+
+  // Deterministic Fisher-Yates shuffle using daySeed
+  for (let i = slots.length - 1; i > 0; i--) {
+    const rng = Math.abs(Math.sin(daySeed * 9301 + i * 49297 + 233)) % 1;
+    const j = Math.floor(rng * (i + 1));
+    const tmp = slots[i]!;
+    slots[i] = slots[j]!;
+    slots[j] = tmp;
+  }
+
+  // Pick first `count` slots (capped by available slots), sort chronologically
+  const picked = slots.slice(0, Math.min(count, slotCount)).sort((a, b) => a - b);
+
+  // Map each slot index → absolute timestamp (start of 30-min slot)
+  return picked.map(slot => fajrMs + slot * 30 * 60000);
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
@@ -54,10 +97,15 @@ export async function cancelThikrNotifications() {
 
 export async function scheduleThikrNotifications(params: {
   lang: Lang;
+  count: number;
+  location: LocationData;
+  calcMethod: CalcMethod;
+  asrMethod: AsrMethod;
+  maghribOffset: number;
   daysAhead?: number;
 }) {
   if (!isNative) return;
-  const { lang } = params;
+  const { lang, count, location } = params;
   const daysAhead = params.daysAhead ?? 7;
   const tr = t(lang);
   const title = tr.thikr_reminder_title;
@@ -67,21 +115,42 @@ export async function scheduleThikrNotifications(params: {
     const baseDate = new Date();
     baseDate.setDate(baseDate.getDate() + d);
 
-    const daySeed = baseDate.getFullYear() * 10000 + (baseDate.getMonth() + 1) * 100 + baseDate.getDate();
-    const shuffled = [...THIKR_ITEMS].sort((a, b) => {
-      const ha = Math.sin(daySeed * THIKR_ITEMS.indexOf(a) + 1) * 10000;
-      const hb = Math.sin(daySeed * THIKR_ITEMS.indexOf(b) + 1) * 10000;
-      return (ha - Math.floor(ha)) - (hb - Math.floor(hb));
+    // Calculate actual Fajr and Isha times for this location and day
+    const times = calculatePrayerTimes({
+      lat: location.lat,
+      lng: location.lng,
+      date: baseDate,
+      method: params.calcMethod,
+      asrMethod: params.asrMethod,
+      maghribOffset: params.maghribOffset,
     });
-    const daily = shuffled.slice(0, 5);
 
-    for (let i = 0; i < THIKR_TIMES.length; i++) {
-      const [hh, mm] = THIKR_TIMES[i].split(':').map(Number);
-      const notifTime = new Date(baseDate);
-      notifTime.setHours(hh!, mm!, 0, 0);
+    const fajrMs = times.fajr.getTime();
+    const ishaMs = times.isha.getTime();
+
+    // Unique seed per calendar day (YYYYMMDD integer)
+    const daySeed =
+      baseDate.getFullYear() * 10000 +
+      (baseDate.getMonth() + 1) * 100 +
+      baseDate.getDate();
+
+    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, count, daySeed);
+
+    // Deterministically shuffle thikr items for today
+    const shuffled = [...THIKR_ITEMS].sort((a, b) => {
+      const ia = THIKR_ITEMS.indexOf(a);
+      const ib = THIKR_ITEMS.indexOf(b);
+      const ha = Math.abs(Math.sin(daySeed * 6271 + ia * 28657 + 3)) % 1;
+      const hb = Math.abs(Math.sin(daySeed * 6271 + ib * 28657 + 3)) % 1;
+      return ha - hb;
+    });
+
+    for (let i = 0; i < thikrTimes.length; i++) {
+      const notifTime = new Date(thikrTimes[i]!);
       if (notifTime <= now) continue;
 
-      const item = daily[i]!;
+      // Cycle through shuffled items (wraps if count > THIKR_ITEMS.length)
+      const item = shuffled[i % shuffled.length]!;
       const body = getThikrText(item, lang);
 
       try {
