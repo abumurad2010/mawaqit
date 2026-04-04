@@ -101,7 +101,7 @@ function ClassicTabLayout() {
         name="settings"
         options={{
           title: tr.settings,
-          tabBarItemStyle: Platform.OS === 'web' ? {} : { marginLeft: 8 },
+          tabBarItemStyle: Platform.OS === 'web' ? { marginLeft: 24 } : { marginLeft: 24 },
           tabBarIcon: ({ focused, size }) => (
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}

@@ -421,6 +421,7 @@ export default function SettingsScreen() {
       showQiyam: draftShowQiyam,
       eidPrayerTime: draftEidPrayerTime,
     });
+    router.navigate(`/(tabs)/${defaultTab ?? 'index'}` as any);
   };
 
   const TAB_OPTIONS: { key: string; label: string }[] = [

@@ -56,7 +56,7 @@ export async function playAthan(
       playsInSilentMode: true,
       shouldDuckAndroid: true,
       playThroughEarpieceAndroid: false,
-    });
+    } as any);
   } catch {}
 
   function isCurrentSession() {
@@ -83,6 +83,7 @@ export async function playAthan(
       if (!isCurrentSession()) { killPlayer(player); return; }
       if (s.didJustFinish) finishCurrentSession();
     });
+    try { player.volume = 1.0; } catch {}
     player.play();
     scheduleStop(type);
   }
