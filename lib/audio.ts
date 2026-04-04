@@ -51,7 +51,7 @@ export async function playAthan(
 
   try {
     await setAudioModeAsync({
-      allowsRecordingIOS: false,
+      allowsRecording: false,
       staysActiveInBackground: false,
       playsInSilentMode: true,
       shouldDuckAndroid: true,

@@ -563,12 +563,6 @@ export default function PrayerTimesScreen() {
             >
               <Ionicons name={locationMode === 'manual' ? 'location-outline' : 'locate'} size={19} color={C.tint} />
             </Pressable>
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); router.push('/settings'); }}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
-            >
-              <Ionicons name="settings-outline" size={19} color={C.textSecond} />
-            </Pressable>
           </View>
         </View>
 

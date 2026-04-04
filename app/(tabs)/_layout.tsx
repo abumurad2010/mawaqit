@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, Text } from 'react-native';
 import React from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
+
+const SETTINGS_BLUE = '#4A90D9';
 
 function ClassicTabLayout() {
   const { isDark, lang, colors, isRtl } = useApp();
@@ -94,6 +96,33 @@ function ClassicTabLayout() {
       }}
     >
       {isRtl ? [...screens].reverse() : screens}
+      <Tabs.Screen
+        key="settings"
+        name="settings"
+        options={{
+          title: tr.settings,
+          tabBarItemStyle: Platform.OS === 'web' ? {} : { marginLeft: 8 },
+          tabBarIcon: ({ focused, size }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={size}
+              color={focused ? SETTINGS_BLUE : C.tabIconDefault}
+            />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                color: focused ? SETTINGS_BLUE : C.tabIconDefault,
+                fontSize: 10,
+                fontFamily: 'Inter_400Regular',
+                marginBottom: Platform.OS === 'ios' ? 0 : 2,
+              }}
+            >
+              {tr.settings}
+            </Text>
+          ),
+        }}
+      />
     </Tabs>
   );
 }

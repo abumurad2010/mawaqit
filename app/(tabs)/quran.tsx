@@ -71,8 +71,15 @@ export default function QuranScreen() {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  const { data: mushafNamesMap } = useQuery<Record<number, string>>({
+    queryKey: ['/surah-names', lang],
+    queryFn: () => fetchSurahNamesByLang(lang),
+    enabled: mode === 'mushaf' && !isAr,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const bottomInset = Platform.OS === 'web' ? 84 : insets.bottom + 49;
 
   const openSurah = (number: number) => {
     Haptics.selectionAsync();
@@ -118,10 +125,14 @@ export default function QuranScreen() {
             {mode === 'transliteration'
               ? surahNamesMap
                 ? <Text style={{ fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }}>
-                    {` · ${surahNamesMap[item.number] ?? item.english}`}
+                    {` · ${surahNamesMap[item.number] ?? item.arabic}`}
                   </Text>
-                : ` · ${item.english}`
-              : (!isAr ? ` · ${item.english}` : '')
+                : ` · ${item.arabic}`
+              : (!isAr
+                  ? <Text style={{ fontFamily: isRtlLang(lang) ? 'Amiri_400Regular' : SERIF_EN }}>
+                      {` · ${mushafNamesMap?.[item.number] ?? item.arabic}`}
+                    </Text>
+                  : '')
             }
           </Text>
           <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: qFS.meta }]}>
@@ -309,7 +320,7 @@ export default function QuranScreen() {
         data={SURAH_META}
         keyExtractor={item => String(item.number)}
         renderItem={renderItem}
-        extraData={[surahNamesMap, quranFontSize]}
+        extraData={[surahNamesMap, mushafNamesMap, quranFontSize]}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
         ListFooterComponent={
           <View style={[styles.duaRow, { paddingBottom: 8 }]}>

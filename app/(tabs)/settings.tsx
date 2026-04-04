@@ -17,8 +17,7 @@ import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
-import { Audio } from 'expo-av';
-import { getApiUrl } from '@/lib/query-client';
+import { playAthan, stopAthan } from '@/lib/audio';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import type { SecondLang } from '@/contexts/AppContext';
@@ -41,7 +40,7 @@ export default function SettingsScreen() {
   const isRtl = isRtlLang(lang);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
-  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const bottomInset = Platform.OS === 'web' ? 84 : insets.bottom + 49;
 
   // Local draft state — nothing is saved until the user taps Save
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
@@ -74,43 +73,13 @@ export default function SettingsScreen() {
   const [showDefaultTabModal, setShowDefaultTabModal] = useState(false);
   const [thikrToast, setThikrToast] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
   const isMountedRef = useRef(true);
 
-  // Stop and fully unload the current preview sound.
-  // The ref is nulled SYNCHRONOUSLY before any async work so that
-  // re-entrant calls (tapping again while a previous cleanup is mid-flight)
-  // never touch the same Sound instance twice.
-  const stopAndUnloadSound = async () => {
-    const sound = soundRef.current;
-    soundRef.current = null; // null FIRST — prevents re-entry
-    if (sound) {
-      try {
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded) {
-          await sound.stopAsync();
-          await sound.unloadAsync();
-        }
-      } catch { /* already unloaded or never loaded */ }
-    }
-    if (isMountedRef.current) {
-      setPreviewing(null);
-    }
-  };
-
-  // Configure audio session once on mount and guarantee cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
-    Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      staysActiveInBackground: false,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    }).catch(() => {});
     return () => {
       isMountedRef.current = false;
-      stopAndUnloadSound();
+      stopAthan();
     };
   }, []);
 
@@ -404,64 +373,16 @@ export default function SettingsScreen() {
 
   const recommendedMethod = getMethodForCountry(countryCode);
 
-  // Play an adhan preview using expo-av's Sound (proper load/stop/unload lifecycle).
-  // Always calls stopAndUnloadSound() first so there is never more than one
-  // Sound instance alive at a time — this is the key fix for the crash/loop.
-  const playAdhanPreview = async (key: string, type: 'full' | 'abbreviated') => {
-    // 1. Tear down any existing sound (synchronous ref-nil + async unload)
-    await stopAndUnloadSound();
-    // 2. 150 ms gap — iOS needs this between unload and load or it reuses
-    //    the same buffer and produces the looping artifact
-    await new Promise<void>(resolve => setTimeout(resolve, 150));
-    if (!isMountedRef.current) return;
-
-    try {
-      // Re-apply audio session before each play (required for iOS silent mode)
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        staysActiveInBackground: false,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-
-      const adhanPath = type === 'abbreviated' ? '/api/adhan/abbreviated' : '/api/adhan';
-      const uri = new URL(adhanPath, getApiUrl()).toString();
-
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true, volume: 1.0, isLooping: false },
-      );
-
-      // If we were unmounted (or another tap fired) during the async load, clean up
-      if (!isMountedRef.current || soundRef.current !== null) {
-        try { await sound.unloadAsync(); } catch {}
-        return;
-      }
-
-      soundRef.current = sound;
-      setPreviewing(key);
-
-      // Stop and unload naturally when playback finishes
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (!status.isLoaded) return;
-        if ((status as any).didJustFinish) {
-          stopAndUnloadSound();
-        }
-      });
-    } catch {
-      soundRef.current = null;
-      if (isMountedRef.current) setPreviewing(null);
-    }
-  };
-
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (previewing === key) {
-      await stopAndUnloadSound();
+      await stopAthan();
+      if (isMountedRef.current) setPreviewing(null);
     } else {
+      await stopAthan();
       const type = draftNotifications[key]?.athan === 'abbreviated' ? 'abbreviated' : 'full';
-      await playAdhanPreview(key, type);
+      if (isMountedRef.current) setPreviewing(key);
+      playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); });
     }
   };
 
@@ -500,7 +421,6 @@ export default function SettingsScreen() {
       showQiyam: draftShowQiyam,
       eidPrayerTime: draftEidPrayerTime,
     });
-    router.back();
   };
 
   const TAB_OPTIONS: { key: string; label: string }[] = [
@@ -601,10 +521,13 @@ export default function SettingsScreen() {
     // If this prayer is actively being previewed, restart with the new type
     // so the audio doesn't keep playing the old adhan while the UI shows the new selection.
     if (previewing === key) {
+      await stopAthan();
       if (athan === 'none') {
-        await stopAndUnloadSound();
+        if (isMountedRef.current) setPreviewing(null);
       } else {
-        await playAdhanPreview(key, athan === 'abbreviated' ? 'abbreviated' : 'full');
+        const type = athan === 'abbreviated' ? 'abbreviated' : 'full';
+        if (isMountedRef.current) setPreviewing(key);
+        playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); });
       }
     }
   };
@@ -652,12 +575,7 @@ export default function SettingsScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); router.back(); }}
-          style={({ pressed }) => [styles.closeBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Ionicons name="close" size={20} color={C.textSecond} />
-        </Pressable>
+        <View style={styles.closeBtn} />
         <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
           {tr.settings}
         </Text>
