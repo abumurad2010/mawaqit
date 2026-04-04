@@ -106,13 +106,13 @@ function ClassicTabLayout() {
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}
               size={size}
-              color={focused ? SETTINGS_BLUE : C.tabIconDefault}
+              color={focused ? SETTINGS_BLUE : '#5BA4CF'}
             />
           ),
           tabBarLabel: ({ focused }) => (
             <Text
               style={{
-                color: focused ? SETTINGS_BLUE : C.tabIconDefault,
+                color: focused ? SETTINGS_BLUE : '#5BA4CF',
                 fontSize: 10,
                 fontFamily: 'Inter_400Regular',
                 marginBottom: Platform.OS === 'ios' ? 0 : 2,
