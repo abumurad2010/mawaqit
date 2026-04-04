@@ -19,8 +19,7 @@ import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import { getPreviousTab } from '@/lib/prev-tab';
-import ThemeToggle from '@/components/ThemeToggle';
-import LangToggle from '@/components/LangToggle';
+import AppLogo from '@/components/AppLogo';
 import type { SecondLang } from '@/contexts/AppContext';
 const SANS = 'Inter_400Regular';
 const SANS_MD = 'Inter_500Medium';
@@ -608,36 +607,38 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-        <Pressable
-          onPress={handleCancel}
-          style={({ pressed }) => [
-            styles.cancelBtn,
-            { opacity: pressed ? 0.6 : 1 }
-          ]}
-        >
-          <Text style={[styles.cancelBtnText, { color: C.textMuted }]}>
-            {isAr ? 'إلغاء' : 'Cancel'}
-          </Text>
-        </Pressable>
-        <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
-          {tr.settings}
-        </Text>
-        <View style={styles.headerActions}>
-          <LangToggle />
-          <ThemeToggle />
+      {/* Header: Cancel | Logo | Save */}
+      <View style={{ paddingTop: topInset + 10, paddingHorizontal: 20, paddingBottom: 4 }}>
+        <View style={[styles.header, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+
+          {/* LEFT: Cancel */}
           <Pressable
-            onPress={handleSave}
-            style={({ pressed }) => [
-              styles.saveBtn,
-              { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
-            ]}
+            onPress={handleCancel}
+            style={({ pressed }) => [styles.cancelBtn, { opacity: pressed ? 0.6 : 1 }]}
           >
-            <Text style={[styles.saveBtnText, { color: hasChanges ? C.tintText : C.tint }]}>
-              {isAr ? 'حفظ' : 'Save'}
+            <Text style={[styles.cancelBtnText, { color: C.textMuted }]}>
+              {isAr ? 'إلغاء' : 'Cancel'}
             </Text>
           </Pressable>
+
+          {/* CENTER: App Logo */}
+          <AppLogo tintColor={C.tint} lang={lang} />
+
+          {/* RIGHT: Save */}
+          <View style={[styles.headerRight]}>
+            <Pressable
+              onPress={handleSave}
+              style={({ pressed }) => [
+                styles.saveBtn,
+                { backgroundColor: hasChanges ? C.tint : C.tintLight, opacity: pressed ? 0.8 : 1 }
+              ]}
+            >
+              <Text style={[styles.saveBtnText, { color: hasChanges ? C.tintText : C.tint }]}>
+                {isAr ? 'حفظ' : 'Save'}
+              </Text>
+            </Pressable>
+          </View>
+
         </View>
       </View>
 
@@ -1436,15 +1437,16 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingBottom: 12,
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 16, fontWeight: '700' },
   cancelBtn: {
-    paddingHorizontal: 4, paddingVertical: 7,
-    minWidth: 56, alignItems: 'flex-start',
+    flex: 1, alignItems: 'flex-start',
+    paddingVertical: 7,
   },
   cancelBtnText: { fontSize: 13, fontWeight: '400' },
+  headerRight: {
+    flex: 1, alignItems: 'flex-end',
+  },
   saveBtn: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: 16,
