@@ -34,6 +34,7 @@ export default function SettingsScreen() {
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
     iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
+    selectedAdhan,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -84,6 +85,7 @@ export default function SettingsScreen() {
   const [showDefaultTabModal, setShowDefaultTabModal] = useState(false);
   const [thikrToast, setThikrToast] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
+  const [draftAdhan, setDraftAdhan] = useState(selectedAdhan ?? 'makkah');
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -401,7 +403,7 @@ export default function SettingsScreen() {
       await stopAthan();
       const type = draftNotifications[key]?.athan === 'abbreviated' ? 'abbreviated' : 'full';
       if (isMountedRef.current) setPreviewing(key);
-      playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); });
+      playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); }, draftAdhan);
     }
   };
 
@@ -417,7 +419,8 @@ export default function SettingsScreen() {
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
     draftFirstAdhanOffset !== (firstAdhanOffset ?? 0) ||
     JSON.stringify(draftIqamaOffsets) !== JSON.stringify({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) }) ||
-    normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
+    normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {}) ||
+    draftAdhan !== (selectedAdhan ?? 'makkah');
 
   const TAB_ROUTES: Record<string, string> = {
     index: '/',
@@ -447,6 +450,7 @@ export default function SettingsScreen() {
       showDhuha: draftShowDhuha,
       showQiyam: draftShowQiyam,
       eidPrayerTime: draftEidPrayerTime,
+      selectedAdhan: draftAdhan,
     });
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
@@ -472,6 +476,7 @@ export default function SettingsScreen() {
     setTempDhuhaTime(dhuhaTime ?? '07:30');
     setTempTahajjudTime(tahajjudTime ?? '03:00');
     setTempEidPrayerTime(eidPrayerTime ?? '07:30');
+    setDraftAdhan(selectedAdhan ?? 'makkah');
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
   };
@@ -510,6 +515,17 @@ export default function SettingsScreen() {
   ];
 
   const EMPTY_CFG: PrayerNotifConfig = { banner: false, athan: 'none' };
+
+  const ADHAN_OPTIONS = [
+    { key: 'makkah',      label: 'Makkah',      labelAr: 'مكة' },
+    { key: 'madinah',     label: 'Madinah',     labelAr: 'المدينة' },
+    { key: 'egypt',       label: 'Egypt',       labelAr: 'مصر' },
+    { key: 'halab',       label: 'Halab',       labelAr: 'حلب' },
+    { key: 'aqsa',        label: 'Al-Aqsa',     labelAr: 'الأقصى' },
+    { key: 'hussaini',    label: 'Al-Hussaini', labelAr: 'الحسيني' },
+    { key: 'abdul-hakam', label: 'Abdul Hakam', labelAr: 'عبد الحكم' },
+    { key: 'bakir',       label: 'Bakir Bash',  labelAr: 'باكر باش' },
+  ];
 
   const requestNotifPermission = async (): Promise<boolean> => {
     if (Platform.OS === 'web') return true;
@@ -580,7 +596,7 @@ export default function SettingsScreen() {
       } else {
         const type = athan === 'abbreviated' ? 'abbreviated' : 'full';
         if (isMountedRef.current) setPreviewing(key);
-        playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); });
+        playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); }, draftAdhan);
       }
     }
   };
@@ -1343,6 +1359,71 @@ export default function SettingsScreen() {
               </Text>
             </View>
           )}
+        </View>
+
+        {/* Adhan Voice */}
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+            {isAr ? 'صوت الأذان' : 'Adhan Voice'}
+          </Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          {ADHAN_OPTIONS.map((opt, idx) => {
+            const isSelected = draftAdhan === opt.key;
+            const isPreviewingThis = previewing === `adhan-${opt.key}`;
+            const isLast = idx === ADHAN_OPTIONS.length - 1;
+            return (
+              <Pressable
+                key={opt.key}
+                onPress={() => { Haptics.selectionAsync(); setDraftAdhan(opt.key); }}
+                style={[
+                  styles.settingRow,
+                  { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' },
+                ]}
+              >
+                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                  <Ionicons
+                    name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={18}
+                    color={isSelected ? C.tint : C.separator}
+                  />
+                  <View>
+                    <Text style={{ fontSize: 13, color: C.text, fontFamily: SANS_MD, textAlign: isRtl ? 'right' : 'left' }}>
+                      {isAr ? opt.labelAr : opt.label}
+                    </Text>
+                    {!isAr && (
+                      <Text style={{ fontSize: 11, color: C.textSecond, fontFamily: 'Amiri_400Regular', textAlign: 'right' }}>
+                        {opt.labelAr}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+                <Pressable
+                  onPress={async () => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (isPreviewingThis) {
+                      await stopAthan();
+                      if (isMountedRef.current) setPreviewing(null);
+                    } else {
+                      await stopAthan();
+                      if (isMountedRef.current) setPreviewing(`adhan-${opt.key}`);
+                      playAthan('abbreviated', () => { if (isMountedRef.current) setPreviewing(null); }, opt.key);
+                    }
+                  }}
+                  style={[styles.previewBtn, { borderColor: C.separator }]}
+                >
+                  <Ionicons
+                    name={isPreviewingThis ? 'stop-circle-outline' : 'play-circle-outline'}
+                    size={14}
+                    color={isPreviewingThis ? C.tint : C.textSecond}
+                  />
+                  <Text style={{ fontSize: 11, color: isPreviewingThis ? C.tint : C.textSecond, fontWeight: '500' }}>
+                    {isAr ? 'معاينة' : 'Preview'}
+                  </Text>
+                </Pressable>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Notifications */}

@@ -91,6 +91,7 @@ interface AppSettings {
   iqamaOffsets: Record<string, number>; // per-prayer iqama delay in minutes (user overrides)
   thikrRemindersEnabled: boolean;
   defaultTab: string;
+  selectedAdhan: string;
 }
 
 interface AppContextValue extends AppSettings {
@@ -138,6 +139,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   iqamaOffsets: {},
   thikrRemindersEnabled: false,
   defaultTab: 'index',
+  selectedAdhan: 'makkah',
 };
 
 const VALID_CALC_METHODS = [

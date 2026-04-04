@@ -1,7 +1,16 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
 
-const BUNDLED = require('@/assets/sounds/athan.mp3');
+const ADHAN_FILES: Record<string, any> = {
+  'abdul-hakam': require('@/assets/sounds/Abdul-Hakam.mp3'),
+  'aqsa':        require('@/assets/sounds/Adhan-Alaqsa.mp3'),
+  'egypt':       require('@/assets/sounds/Adhan-Egypt.mp3'),
+  'halab':       require('@/assets/sounds/Adhan-Halab.mp3'),
+  'madinah':     require('@/assets/sounds/Adhan-Madinah.mp3'),
+  'makkah':      require('@/assets/sounds/Adhan-Makkah.mp3'),
+  'hussaini':    require('@/assets/sounds/Al-Hussaini.mp3'),
+  'bakir':       require('@/assets/sounds/Bakir-Bash.mp3'),
+};
 
 let sessionId = 0;
 let activePlayer: AudioPlayer | null = null;
@@ -40,6 +49,7 @@ function scheduleStop(type: 'full' | 'abbreviated') {
 export async function playAthan(
   type: 'full' | 'abbreviated' = 'full',
   onStop?: () => void,
+  selectedAdhan: string = 'makkah',
 ) {
   await stopAthan();
 
@@ -59,7 +69,8 @@ export async function playAthan(
   if (sessionId !== sid) return;
 
   try {
-    const player = createAudioPlayer(BUNDLED);
+    const source = ADHAN_FILES[selectedAdhan] ?? ADHAN_FILES['makkah'];
+    const player = createAudioPlayer(source);
 
     if (sessionId !== sid) {
       killPlayer(player);

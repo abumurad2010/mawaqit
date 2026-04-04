@@ -26,7 +26,7 @@ if (Platform.OS !== 'web') {
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { defaultTab } = useApp();
+  const { defaultTab, selectedAdhan } = useApp();
   const appState = useRef(AppState.currentState);
   const hasRedirected = useRef(false);
 
@@ -68,12 +68,12 @@ function RootLayoutNav() {
 
     const foregroundSub = Notifications.addNotificationReceivedListener(notification => {
       const data = notification.request.content.data;
-      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full');
+      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, selectedAdhan);
     });
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
-      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full');
+      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, selectedAdhan);
     });
 
     return () => {
