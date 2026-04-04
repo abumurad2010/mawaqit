@@ -83,6 +83,7 @@ export default function SettingsScreen() {
   const [showEidRoller, setShowEidRoller] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showDefaultTabModal, setShowDefaultTabModal] = useState(false);
+  const [showAdhanModal, setShowAdhanModal] = useState(false);
   const [thikrToast, setThikrToast] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [draftAdhan, setDraftAdhan] = useState(selectedAdhan ?? 'makkah');
@@ -933,6 +934,55 @@ export default function SettingsScreen() {
             </View>
           </Modal>
 
+          {/* Adhan Voice Picker Modal */}
+          <Modal visible={showAdhanModal} animationType="slide" transparent presentationStyle="pageSheet">
+            <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
+                  {isAr ? 'صوت الأذان' : 'Adhan Voice'}
+                </Text>
+                <Pressable onPress={() => setShowAdhanModal(false)}>
+                  <Ionicons name="close" size={22} color={C.textSecond} />
+                </Pressable>
+              </View>
+              <ScrollView>
+                {ADHAN_OPTIONS.map((opt, idx) => {
+                  const isSelected = draftAdhan === opt.key;
+                  const isLast = idx === ADHAN_OPTIONS.length - 1;
+                  return (
+                    <Pressable
+                      key={opt.key}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        stopAthan();
+                        setPreviewing(null);
+                        setDraftAdhan(opt.key);
+                        setShowAdhanModal(false);
+                      }}
+                      style={[
+                        styles.methodRow,
+                        { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' },
+                        isSelected && { backgroundColor: C.tint + '18' },
+                      ]}
+                    >
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                          {isAr ? opt.labelAr : opt.label}
+                        </Text>
+                        {!isAr && (
+                          <Text style={{ fontSize: 12, color: C.textSecond, fontFamily: 'Amiri_400Regular' }}>
+                            {opt.labelAr}
+                          </Text>
+                        )}
+                      </View>
+                      {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </Modal>
+
           {/* Default Tab Picker Modal */}
           <Modal visible={showDefaultTabModal} animationType="slide" transparent presentationStyle="pageSheet">
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
@@ -1368,62 +1418,71 @@ export default function SettingsScreen() {
           </Text>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          {ADHAN_OPTIONS.map((opt, idx) => {
-            const isSelected = draftAdhan === opt.key;
-            const isPreviewingThis = previewing === `adhan-${opt.key}`;
-            const isLast = idx === ADHAN_OPTIONS.length - 1;
-            return (
+          <View style={[styles.settingRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+              {isAr ? 'صوت الأذان' : 'Adhan Voice'}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {/* Dropdown */}
               <Pressable
-                key={opt.key}
-                onPress={() => { Haptics.selectionAsync(); setDraftAdhan(opt.key); }}
-                style={[
-                  styles.settingRow,
-                  { borderBottomColor: C.separator, borderBottomWidth: isLast ? 0 : 1, flexDirection: isRtl ? 'row-reverse' : 'row' },
-                ]}
+                onPress={() => { Haptics.selectionAsync(); setShowAdhanModal(true); }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: C.separator, backgroundColor: C.backgroundSecond }}
               >
-                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                  <Ionicons
-                    name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={18}
-                    color={isSelected ? C.tint : C.separator}
-                  />
-                  <View>
-                    <Text style={{ fontSize: 13, color: C.text, fontFamily: SANS_MD, textAlign: isRtl ? 'right' : 'left' }}>
-                      {isAr ? opt.labelAr : opt.label}
-                    </Text>
-                    {!isAr && (
-                      <Text style={{ fontSize: 11, color: C.textSecond, fontFamily: 'Amiri_400Regular', textAlign: 'right' }}>
-                        {opt.labelAr}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Pressable
-                  onPress={async () => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    if (isPreviewingThis) {
-                      await stopAthan();
-                      if (isMountedRef.current) setPreviewing(null);
-                    } else {
-                      await stopAthan();
-                      if (isMountedRef.current) setPreviewing(`adhan-${opt.key}`);
-                      playAthan('abbreviated', () => { if (isMountedRef.current) setPreviewing(null); }, opt.key);
-                    }
-                  }}
-                  style={[styles.previewBtn, { borderColor: C.separator }]}
-                >
-                  <Ionicons
-                    name={isPreviewingThis ? 'stop-circle-outline' : 'play-circle-outline'}
-                    size={14}
-                    color={isPreviewingThis ? C.tint : C.textSecond}
-                  />
-                  <Text style={{ fontSize: 11, color: isPreviewingThis ? C.tint : C.textSecond, fontWeight: '500' }}>
-                    {isAr ? 'معاينة' : 'Preview'}
-                  </Text>
-                </Pressable>
+                <Text style={{ fontSize: 12, color: C.text, fontFamily: SANS_MD }}>
+                  {isAr
+                    ? (ADHAN_OPTIONS.find(o => o.key === draftAdhan)?.labelAr ?? 'مكة')
+                    : (ADHAN_OPTIONS.find(o => o.key === draftAdhan)?.label ?? 'Makkah')}
+                </Text>
+                <Ionicons name="chevron-down" size={12} color={C.textSecond} />
               </Pressable>
-            );
-          })}
+              {/* Full preview */}
+              <Pressable
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (previewing === 'adhan-full') {
+                    await stopAthan();
+                    if (isMountedRef.current) setPreviewing(null);
+                  } else {
+                    await stopAthan();
+                    if (isMountedRef.current) setPreviewing('adhan-full');
+                    playAthan('full', () => { if (isMountedRef.current) setPreviewing(null); }, draftAdhan);
+                  }
+                }}
+                style={[styles.subChip, {
+                  backgroundColor: previewing === 'adhan-full' ? C.tint + '20' : 'transparent',
+                  borderColor: previewing === 'adhan-full' ? C.tint : C.separator,
+                }]}
+              >
+                <Ionicons name={previewing === 'adhan-full' ? 'stop-circle-outline' : 'play-circle-outline'} size={12} color={previewing === 'adhan-full' ? C.tint : C.textSecond} />
+                <Text style={{ fontSize: 11, fontWeight: '600', color: previewing === 'adhan-full' ? C.tint : C.textSecond }}>
+                  {isAr ? 'كامل' : 'Full'}
+                </Text>
+              </Pressable>
+              {/* Abbrev preview */}
+              <Pressable
+                onPress={async () => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  if (previewing === 'adhan-abbrev') {
+                    await stopAthan();
+                    if (isMountedRef.current) setPreviewing(null);
+                  } else {
+                    await stopAthan();
+                    if (isMountedRef.current) setPreviewing('adhan-abbrev');
+                    playAthan('abbreviated', () => { if (isMountedRef.current) setPreviewing(null); }, draftAdhan);
+                  }
+                }}
+                style={[styles.subChip, {
+                  backgroundColor: previewing === 'adhan-abbrev' ? C.tint + '20' : 'transparent',
+                  borderColor: previewing === 'adhan-abbrev' ? C.tint : C.separator,
+                }]}
+              >
+                <Ionicons name={previewing === 'adhan-abbrev' ? 'stop-circle-outline' : 'play-circle-outline'} size={12} color={previewing === 'adhan-abbrev' ? C.tint : C.textSecond} />
+                <Text style={{ fontSize: 11, fontWeight: '600', color: previewing === 'adhan-abbrev' ? C.tint : C.textSecond }}>
+                  {isAr ? 'مختصر' : 'Abbrev'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
 
         {/* Notifications */}
