@@ -1,7 +1,7 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
 
-const BUNDLED = require('@/assets/sounds/athan.wav');
+const BUNDLED = require('@/assets/sounds/athan.mp3');
 
 let sessionId = 0;
 let activePlayer: AudioPlayer | null = null;
