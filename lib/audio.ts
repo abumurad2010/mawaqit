@@ -49,11 +49,11 @@ export async function playAthan(
   try {
     await setAudioModeAsync({
       allowsRecording: false,
-      staysActiveInBackground: false,
+      shouldPlayInBackground: false,
       playsInSilentMode: true,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    } as any);
+      interruptionMode: 'duckOthers',
+      shouldRouteThroughEarpiece: false,
+    });
   } catch {}
 
   if (sessionId !== sid) return;
@@ -67,13 +67,11 @@ export async function playAthan(
     }
 
     activePlayer = player;
+    player.volume = 1.0;
+    player.play();
 
     player.addListener('playbackStatusUpdate', (s: any) => {
       if (sessionId !== sid) { killPlayer(player); return; }
-      if (s.isLoaded && !s.playing) {
-        player.volume = 1.0;
-        player.play();
-      }
       if (s.didJustFinish) {
         clearTimers();
         activePlayer = null;
