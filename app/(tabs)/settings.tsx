@@ -18,6 +18,7 @@ import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
+import { getPreviousTab } from '@/lib/prev-tab';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import type { SecondLang } from '@/contexts/AppContext';
@@ -400,6 +401,14 @@ export default function SettingsScreen() {
     JSON.stringify(draftIqamaOffsets) !== JSON.stringify({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) }) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {});
 
+  const TAB_ROUTES: Record<string, string> = {
+    index: '/',
+    calendar: '/calendar',
+    qibla: '/qibla',
+    athkar: '/athkar',
+    quran: '/quran',
+  };
+
   const handleSave = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const resolvedDraft = draftSecondLang === 'auto' ? detectSecondLang(countryCode) : draftSecondLang;
@@ -421,20 +430,31 @@ export default function SettingsScreen() {
       showQiyam: draftShowQiyam,
       eidPrayerTime: draftEidPrayerTime,
     });
-    const VALID_TABS = ['index', 'calendar', 'qibla', 'athkar', 'quran'];
-    const targetTab = VALID_TABS.includes(defaultTab ?? '') ? (defaultTab ?? 'index') : 'index';
-    // From inside (tabs), sibling routes are addressed without the group prefix.
-    // '/(tabs)/index' is only valid when navigating INTO the group from outside.
-    const tabRoutes: Record<string, string> = {
-      index: '/',
-      calendar: '/calendar',
-      qibla: '/qibla',
-      athkar: '/athkar',
-      quran: '/quran',
-    };
-    const targetRoute = tabRoutes[targetTab] ?? '/';
-    console.log('defaultTab:', defaultTab);
-    console.log('navigating to:', targetRoute);
+    const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
+    router.replace(targetRoute as any);
+  };
+
+  const handleCancel = () => {
+    Haptics.selectionAsync();
+    // Reset all drafts back to committed settings (discard changes)
+    setDraftCalcMethod(calcMethod);
+    setDraftAsrMethod(asrMethod);
+    setDraftAdjustment(maghribAdjustment ?? 0);
+    setDraftHijri(hijriAdjustment ?? 0);
+    setDraftNotifications(prayerNotifications ?? {});
+    setDraftSecondLang(secondLang ?? 'auto');
+    setDraftAccessibilityTheme(accessibilityTheme ?? 'default');
+    setDraftFirstAdhanOffset(firstAdhanOffset ?? 0);
+    setDraftIqamaOffsets({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) });
+    setDraftDhuhaTime(dhuhaTime ?? '07:30');
+    setDraftTahajjudTime(tahajjudTime ?? '03:00');
+    setDraftShowDhuha(showDhuha !== false);
+    setDraftShowQiyam(showQiyam !== false);
+    setDraftEidPrayerTime(eidPrayerTime ?? '07:30');
+    setTempDhuhaTime(dhuhaTime ?? '07:30');
+    setTempTahajjudTime(tahajjudTime ?? '03:00');
+    setTempEidPrayerTime(eidPrayerTime ?? '07:30');
+    const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
   };
 
@@ -590,7 +610,17 @@ export default function SettingsScreen() {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-        <View style={styles.closeBtn} />
+        <Pressable
+          onPress={handleCancel}
+          style={({ pressed }) => [
+            styles.cancelBtn,
+            { opacity: pressed ? 0.6 : 1 }
+          ]}
+        >
+          <Text style={[styles.cancelBtnText, { color: C.textMuted }]}>
+            {isAr ? 'إلغاء' : 'Cancel'}
+          </Text>
+        </Pressable>
         <Text style={[styles.title, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
           {tr.settings}
         </Text>
@@ -1409,11 +1439,12 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  closeBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-  },
   title: { fontSize: 16, fontWeight: '700' },
+  cancelBtn: {
+    paddingHorizontal: 4, paddingVertical: 7,
+    minWidth: 56, alignItems: 'flex-start',
+  },
+  cancelBtnText: { fontSize: 13, fontWeight: '400' },
   saveBtn: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: 16,

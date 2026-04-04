@@ -5,6 +5,7 @@ import React from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
+import { setPreviousTab } from '@/lib/prev-tab';
 
 const SETTINGS_BLUE = '#4A90D9';
 
@@ -94,6 +95,17 @@ function ClassicTabLayout() {
             />
           ) : null,
       }}
+      screenListeners={({ navigation, route }) => ({
+        tabPress: () => {
+          if (route.name === 'settings') {
+            const state = navigation.getState();
+            const currentName = state.routes[state.index]?.name;
+            if (currentName && currentName !== 'settings') {
+              setPreviousTab(currentName);
+            }
+          }
+        },
+      })}
     >
       {isRtl ? [...screens].reverse() : screens}
       <Tabs.Screen
