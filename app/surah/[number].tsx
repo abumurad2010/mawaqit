@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import { t } from '@/constants/i18n';
+import { t, isRtlLang } from '@/constants/i18n';
 import { fetchSurah, SURAH_META, type Ayah } from '@/lib/quran-api';
 
 const BASE_FONT_SIZE = 26;
@@ -41,6 +41,7 @@ export default function SurahScreen() {
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
+  const isRtl = isRtlLang(lang);
 
   const [surahNum, setSurahNum] = useState(initialNum);
   const [page, setPage] = useState<PageState>({ surahNum: initialNum, ayahs: [], loading: true, error: null });
@@ -128,13 +129,17 @@ export default function SurahScreen() {
   const navigateRef = useRef(navigateTo);
   useEffect(() => { navigateRef.current = navigateTo; }, [navigateTo]);
 
+  const isRtlRef = useRef(isRtl);
+  useEffect(() => { isRtlRef.current = isRtl; }, [isRtl]);
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
       onPanResponderRelease: (_, g) => {
-        if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('next');
-        else if (g.dx > SWIPE_THRESHOLD) navigateRef.current('prev');
+        const rtl = isRtlRef.current;
+        if (g.dx < -SWIPE_THRESHOLD) navigateRef.current(rtl ? 'prev' : 'next');
+        else if (g.dx > SWIPE_THRESHOLD) navigateRef.current(rtl ? 'next' : 'prev');
       },
     })
   ).current;
