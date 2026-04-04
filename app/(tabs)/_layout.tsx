@@ -19,8 +19,8 @@ function ClassicTabLayout() {
       name="index"
       options={{
         title: tr.prayers,
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons name="moon-outline" size={size} color={color} />
+        tabBarIcon: ({ color, size, focused }) => (
+          <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />
         ),
       }}
     />,
