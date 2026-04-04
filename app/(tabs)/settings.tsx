@@ -31,7 +31,7 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
-    iqamaOffsets, thikrRemindersEnabled, thikrDailyCount, defaultTab,
+    iqamaOffsets, thikrRemindersEnabled, defaultTab,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -72,7 +72,6 @@ export default function SettingsScreen() {
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showDefaultTabModal, setShowDefaultTabModal] = useState(false);
   const [thikrToast, setThikrToast] = useState(false);
-  const [showThikrCountPicker, setShowThikrCountPicker] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
@@ -877,50 +876,6 @@ export default function SettingsScreen() {
             </View>
           </Modal>
 
-          {/* Thikr Daily Count Picker */}
-          <Modal visible={showThikrCountPicker} transparent animationType="fade" onRequestClose={() => setShowThikrCountPicker(false)}>
-            <Pressable style={{ flex: 1, backgroundColor: '#00000088', justifyContent: 'center', alignItems: 'center' }} onPress={() => setShowThikrCountPicker(false)}>
-              <Pressable
-                style={{ backgroundColor: C.backgroundCard, borderRadius: 18, paddingVertical: 8, width: 280 }}
-                onPress={e => e.stopPropagation()}
-              >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: C.text, fontFamily: SANS, textAlign: 'center', paddingVertical: 14, paddingHorizontal: 20 }}>
-                  {isAr ? 'عدد التذكيرات يومياً' : 'Reminders per day'}
-                </Text>
-                <View style={{ height: 1, backgroundColor: C.separator }} />
-                {[1, 3, 5, 7, 10, 12, 15, 18, 20, 25, 30].map((n, idx, arr) => {
-                  const active = (thikrDailyCount ?? 15) === n;
-                  const isLast = idx === arr.length - 1;
-                  return (
-                    <Pressable
-                      key={n}
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        updateSettings({ thikrDailyCount: n });
-                        setShowThikrCountPicker(false);
-                      }}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        paddingVertical: 13,
-                        paddingHorizontal: 20,
-                        borderBottomWidth: isLast ? 0 : 1,
-                        borderBottomColor: C.separator,
-                        backgroundColor: active ? C.tint + '14' : 'transparent',
-                      }}
-                    >
-                      <Text style={{ fontSize: 15, color: active ? C.tint : C.text, fontFamily: SANS, fontWeight: active ? '600' : '400' }}>
-                        {n}
-                      </Text>
-                      {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
-                    </Pressable>
-                  );
-                })}
-              </Pressable>
-            </Pressable>
-          </Modal>
-
           {/* Asr method */}
           <Row
             label={tr.asrMethod}
@@ -1295,44 +1250,6 @@ export default function SettingsScreen() {
               thumbColor={thikrRemindersEnabled ? C.tint : C.textMuted}
             />
           </View>
-          {thikrRemindersEnabled && (
-            <View style={{ paddingHorizontal: 14, paddingTop: 4, paddingBottom: 12, borderTopWidth: 1, borderTopColor: C.separator }}>
-              <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left', marginBottom: 8 }}>
-                {isAr ? 'عدد التذكيرات يومياً' : 'Reminders per day'}
-              </Text>
-              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', gap: 8, flexWrap: 'wrap' }}>
-                {[5, 10, 15, 20].map(n => {
-                  const count = thikrDailyCount ?? 15;
-                  const active = count === n;
-                  return (
-                    <Pressable
-                      key={n}
-                      onPress={() => { Haptics.selectionAsync(); updateSettings({ thikrDailyCount: n }); }}
-                      style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: active ? C.tint : C.backgroundSecond }}
-                    >
-                      <Text style={{ fontSize: 14, fontFamily: SANS, color: active ? C.tintText : C.text }}>
-                        {n}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-                {(() => {
-                  const count = thikrDailyCount ?? 15;
-                  const isCustom = ![5, 10, 15, 20].includes(count);
-                  return (
-                    <Pressable
-                      onPress={() => { Haptics.selectionAsync(); setShowThikrCountPicker(true); }}
-                      style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: isCustom ? C.tint : C.backgroundSecond }}
-                    >
-                      <Text style={{ fontSize: 14, fontFamily: SANS, color: isCustom ? C.tintText : C.text }}>
-                        {isCustom ? String(count) : (isAr ? 'تخصيص' : 'Custom')}
-                      </Text>
-                    </Pressable>
-                  );
-                })()}
-              </View>
-            </View>
-          )}
           {thikrToast && (
             <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
               <Text style={{ fontSize: 11, color: C.tint, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left' }}>

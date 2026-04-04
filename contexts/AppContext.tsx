@@ -90,7 +90,6 @@ interface AppSettings {
   eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
   iqamaOffsets: Record<string, number>; // per-prayer iqama delay in minutes (user overrides)
   thikrRemindersEnabled: boolean;
-  thikrDailyCount: number;
   defaultTab: string;
 }
 
@@ -138,7 +137,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   eidPrayerTime: '07:30',
   iqamaOffsets: {},
   thikrRemindersEnabled: false,
-  thikrDailyCount: 15,
   defaultTab: 'index',
 };
 
@@ -282,7 +280,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           await cancelThikrNotifications();
           await scheduleThikrNotifications({
             lang,
-            count: settings.thikrDailyCount ?? 15,
             location,
             calcMethod,
             asrMethod,
@@ -295,7 +292,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     rescheduleAll();
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.thikrDailyCount]);
+  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

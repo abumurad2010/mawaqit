@@ -95,9 +95,11 @@ export async function cancelThikrNotifications() {
   } catch { /* ignore */ }
 }
 
+const THIKR_DAILY_COUNT = 18;
+const THIKR_WINDOW_AFTER_ISHA_MS = 5 * 60 * 60 * 1000; // 5 hours after Isha
+
 export async function scheduleThikrNotifications(params: {
   lang: Lang;
-  count: number;
   location: LocationData;
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
@@ -105,7 +107,7 @@ export async function scheduleThikrNotifications(params: {
   daysAhead?: number;
 }) {
   if (!isNative) return;
-  const { lang, count, location } = params;
+  const { lang, location } = params;
   const daysAhead = params.daysAhead ?? 7;
   const tr = t(lang);
   const title = tr.thikr_reminder_title;
@@ -126,7 +128,8 @@ export async function scheduleThikrNotifications(params: {
     });
 
     const fajrMs = times.fajr.getTime();
-    const ishaMs = times.isha.getTime();
+    // Window ends 5 hours after Isha
+    const ishaMs = times.isha.getTime() + THIKR_WINDOW_AFTER_ISHA_MS;
 
     // Unique seed per calendar day (YYYYMMDD integer)
     const daySeed =
@@ -134,7 +137,7 @@ export async function scheduleThikrNotifications(params: {
       (baseDate.getMonth() + 1) * 100 +
       baseDate.getDate();
 
-    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, count, daySeed);
+    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, THIKR_DAILY_COUNT, daySeed);
 
     // Deterministically shuffle thikr items for today
     const shuffled = [...THIKR_ITEMS].sort((a, b) => {
