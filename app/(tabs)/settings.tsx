@@ -1499,10 +1499,21 @@ export default function SettingsScreen() {
         </View>
 
         {/* Notifications */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {isAr ? 'الإشعارات' : 'Notifications'}
           </Text>
+          <Pressable
+            onPress={() => Alert.alert(
+              isAr ? 'أنواع الإشعارات' : 'Notification Types',
+              isAr
+                ? 'أنواع الإشعارات:\n\n🔔 إشعار نصي — تنبيه صامت باسم الصلاة عند دخول وقتها.\n\n🔊 إشعار الأذان — يُشغّل الأذان عند دخول وقت الصلاة.\n\nصوت الأذان — اختر صوت الأذان لكل صلاة.\n\nكامل — الأذان كاملاً (نحو 5 دقائق).\n\nمختصر — أذان قصير (نحو 27 ثانية).'
+                : 'Notification Types:\n\n🔔 Text notification — sends a silent alert with the prayer name at prayer time.\n\n🔊 Adhan notification — plays the adhan audio at prayer time.\n\nAdhan Sound — select which adhan voice to use for that prayer.\n\nFull — plays the complete adhan (~5 minutes).\n\nAbbreviated — plays a short adhan (~27 seconds).',
+            )}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+          </Pressable>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {NOTIF_PRAYERS.map((prayer, idx) => {

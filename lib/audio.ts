@@ -42,7 +42,7 @@ export async function stopAthan() {
 
 function scheduleStop(type: 'full' | 'abbreviated') {
   if (stopTimer) clearTimeout(stopTimer);
-  const secs = type === 'abbreviated' ? 28 : 300;
+  const secs = type === 'abbreviated' ? 27 : 300;
   stopTimer = setTimeout(() => stopAthan(), secs * 1000);
 }
 
