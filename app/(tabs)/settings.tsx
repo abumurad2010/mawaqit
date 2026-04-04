@@ -1504,12 +1504,7 @@ export default function SettingsScreen() {
             {isAr ? 'الإشعارات' : 'Notifications'}
           </Text>
           <Pressable
-            onPress={() => Alert.alert(
-              isAr ? 'أنواع الإشعارات' : 'Notification Types',
-              isAr
-                ? 'أنواع الإشعارات:\n\n🔔 إشعار نصي — تنبيه صامت باسم الصلاة عند دخول وقتها.\n\n🔊 إشعار الأذان — يُشغّل الأذان عند دخول وقت الصلاة.\n\nصوت الأذان — اختر صوت الأذان لكل صلاة.\n\nكامل — الأذان كاملاً (نحو 5 دقائق).\n\nمختصر — أذان قصير (نحو 27 ثانية).'
-                : 'Notification Types:\n\n🔔 Text notification — sends a silent alert with the prayer name at prayer time.\n\n🔊 Adhan notification — plays the adhan audio at prayer time.\n\nAdhan Sound — select which adhan voice to use for that prayer.\n\nFull — plays the complete adhan (~5 minutes).\n\nAbbreviated — plays a short adhan (~27 seconds).',
-            )}
+            onPress={() => Alert.alert(tr.notifHelpTitle, tr.notifHelpText)}
             hitSlop={8}
           >
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
@@ -1611,7 +1606,7 @@ export default function SettingsScreen() {
                     {/* Adhan voice dropdown */}
                     <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4 }}>
                       <Text style={{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }}>
-                        {isAr ? 'صوت' : 'Voice'}
+                        {tr.adhanSound}
                       </Text>
                       <Pressable
                         onPress={() => { Haptics.selectionAsync(); setActivePrayerAdhanKey(prayer.key); }}
