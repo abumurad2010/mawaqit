@@ -184,6 +184,8 @@ export async function schedulePrayerNotifications(params: {
   daysAhead?: number;
   dhuhaTime?: string;     // "HH:MM" exact local time
   tahajjudTime?: string;  // "HH:MM" exact local time
+  selectedAdhan?: string;
+  prayerAdhan?: Record<string, string>;
 }) {
   await cancelAllPrayerNotifications();
   if (!isNative) return;
@@ -228,13 +230,14 @@ export async function schedulePrayerNotifications(params: {
       if (!prayerTime || prayerTime <= now) continue;
 
       const sound: string | false = hasAthan ? false : 'default';
+      const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
 
       try {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: labels[prayerKey] ?? prayerKey,
             body: lang === 'ar' ? 'حان وقت الصلاة' : "It's time to pray",
-            data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan },
+            data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan, athanVoice },
             sound,
           },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },

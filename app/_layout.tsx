@@ -68,12 +68,12 @@ function RootLayoutNav() {
 
     const foregroundSub = Notifications.addNotificationReceivedListener(notification => {
       const data = notification.request.content.data;
-      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, selectedAdhan);
+      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, (data.athanVoice as string | undefined) ?? selectedAdhan);
     });
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(response => {
       const data = response.notification.request.content.data;
-      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, selectedAdhan);
+      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, (data.athanVoice as string | undefined) ?? selectedAdhan);
     });
 
     return () => {

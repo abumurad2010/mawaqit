@@ -92,6 +92,7 @@ interface AppSettings {
   thikrRemindersEnabled: boolean;
   defaultTab: string;
   selectedAdhan: string;
+  prayerAdhan: Record<string, string>;
 }
 
 interface AppContextValue extends AppSettings {
@@ -140,6 +141,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   thikrRemindersEnabled: false,
   defaultTab: 'index',
   selectedAdhan: 'makkah',
+  prayerAdhan: {},
 };
 
 const VALID_CALC_METHODS = [
@@ -274,6 +276,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             locationUtcOffset,
             dhuhaTime: settings.dhuhaTime ?? '07:30',
             tahajjudTime: settings.tahajjudTime ?? '03:00',
+            selectedAdhan: settings.selectedAdhan ?? 'makkah',
+            prayerAdhan: settings.prayerAdhan ?? {},
           });
         } else {
           await cancelAllPrayerNotifications();
