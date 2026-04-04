@@ -1,0 +1,163 @@
+MAWAQIT 2.0 — PHASE 1 ENHANCEMENTS
+Three major features to implement. Read everything 
+before starting. Report findings and plan before 
+writing any code.
+
+════════════════════════════════════════════════════════
+FEATURE 1 — KNOWN LOCATIONS & CONTEXT NOTIFICATIONS
+════════════════════════════════════════════════════════
+
+CONCEPT:
+The app detects the user's physical context and offers 
+relevant Islamic content (Athkar or Quran) at the right 
+moment — without being intrusive.
+
+TRIGGERS:
+1. Sustained motion detected (5-10 min) → user is 
+   walking or commuting
+2. Stationary at UNKNOWN location (15-20 min) → user 
+   is waiting somewhere
+
+In both cases, send a notification:
+"You have a moment — read Athkar or Quran?"
+User taps → opens in-app choice screen:
+  • Athkar (text)
+  • Quran (text or audio — user picks)
+
+KNOWN LOCATIONS:
+User defines unlimited saved locations, each with:
+  • Custom label (Home, Work, Gym, Parents, Mosque...)
+  • Behavior: Silent (no notifications) OR 
+    Active (trigger notifications)
+  • Set by dropping a pin or using current location
+
+When user is at a SILENT known location → no context 
+notifications sent.
+When user is at an ACTIVE known location → notifications 
+trigger normally (same as unknown location logic).
+
+USER SETTINGS:
+  • Add/edit/delete known locations
+  • Per-location behavior (Silent/Active)
+  • Motion sensitivity: Conservative (10 min) / 
+    Balanced (7 min) / Sensitive (5 min)
+  • Stationary trigger duration: 10 / 15 / 20 min
+  • Master toggle to enable/disable feature entirely
+
+IMPLEMENTATION NOTES:
+  • Use expo-location for geofencing 
+    (Location.startGeofencingAsync)
+  • Use expo-task-manager for background tasks
+  • Use accelerometer (expo-sensors) to detect motion
+  • Store known locations in AsyncStorage
+  • All location processing on-device — nothing sent 
+    to any server
+  • Request location permissions with clear explanation
+
+════════════════════════════════════════════════════════
+FEATURE 2 — NEAREST MOSQUE
+════════════════════════════════════════════════════════
+
+CONCEPT:
+Show the user the nearest mosques to their current 
+location with distance, travel time, and directions.
+
+UI:
+  • New screen accessible from home/settings
+  • List of nearby mosques sorted by distance
+  • Each mosque card shows:
+    - Name (in local language if available)
+    - Distance (km or miles based on device locale)
+    - Walking time estimate
+    - Driving time estimate
+    - One-tap directions (opens Apple Maps or 
+      Google Maps)
+  • Map view toggle (optional, show pins on map)
+
+OFFLINE BEHAVIOR:
+  • Cache last fetched mosque list in AsyncStorage
+  • Show cached results when offline with 
+    "Last updated X hours ago" message
+  • Show clear "Connect to internet to refresh" prompt
+
+IMPLEMENTATION NOTES:
+  • Use Google Places API (Nearby Search) with 
+    type: "mosque"
+  • API key should be stored in app config / 
+    environment variable — NOT hardcoded
+  • Radius: 2km default, expandable to 5km
+  • Request location permission before fetching
+  • Handle empty results gracefully 
+    ("No mosques found nearby — try expanding search")
+
+════════════════════════════════════════════════════════
+FEATURE 3 — CALENDAR-AWARE PRAYER WINDOWS
+════════════════════════════════════════════════════════
+
+CONCEPT:
+Mawaqit reads the user's calendar and identifies the 
+best windows for prayer throughout the day — surfacing 
+gentle suggestions when a prayer time conflicts with 
+a scheduled event.
+
+SUPPORTED CALENDARS:
+  • Apple Calendar (iOS — via expo-calendar, no OAuth)
+  • Google Calendar (OAuth 2.0)
+  • Microsoft Outlook / Microsoft 365 (OAuth 2.0)
+
+HOW IT WORKS:
+1. User connects their calendar(s) in Settings
+2. App reads today's events (read-only, never writes)
+3. Maps each prayer time against calendar events
+4. If a prayer time falls during an event, sends a 
+   notification BEFORE the event:
+   "Dhuhr enters at 1:15 PM — you have a meeting 
+   at 1:00 PM. Pray before your meeting?"
+5. Notification sent at a user-defined lead time 
+   (default: 30 minutes before conflict)
+
+UI IN SETTINGS:
+  • "Connected Calendars" section
+  • Connect/disconnect each calendar provider
+  • Toggle calendar feature on/off
+  • Set lead time for conflict notifications 
+    (15 / 30 / 45 / 60 minutes)
+
+PRIVACY:
+  • Calendar data is read-only
+  • Never stored on any server
+  • Processed entirely on-device
+  • Clear permission explanation shown before 
+    requesting access
+
+IMPLEMENTATION NOTES:
+  • Apple Calendar: use expo-calendar 
+    (no OAuth needed on iOS)
+  • Google Calendar: use Google OAuth 2.0 + 
+    Google Calendar API v3
+  • Microsoft Outlook: use Microsoft OAuth 2.0 + 
+    Microsoft Graph API /me/events
+  • Store OAuth tokens securely in expo-secure-store
+  • Refresh tokens automatically in background
+  • Handle revoked permissions gracefully
+
+════════════════════════════════════════════════════════
+BEFORE WRITING ANY CODE:
+════════════════════════════════════════════════════════
+
+1. Check which of these packages are already 
+   installed:
+   cat package.json | grep -E "expo-location|expo-task-manager|expo-calendar|expo-secure-store|expo-sensors"
+
+2. Check if Google Places API key exists anywhere:
+   grep -rn "GOOGLE\|Places\|API_KEY" \
+     app.json eas.json .env* \
+     --include="*.json" --include="*.env"
+
+3. Report what's installed and what needs to be added
+
+4. Propose implementation plan for all three features 
+   before writing any code
+
+Do not install anything or write any code yet.
+Report findings first.
