@@ -524,15 +524,31 @@ export default function SettingsScreen() {
   const EMPTY_CFG: PrayerNotifConfig = { banner: false, athan: 'none' };
 
   const ADHAN_OPTIONS = [
-    { key: 'makkah',      label: 'Makkah',      labelAr: 'مكة' },
-    { key: 'madinah',     label: 'Madinah',     labelAr: 'المدينة' },
-    { key: 'egypt',       label: 'Egypt',       labelAr: 'مصر' },
-    { key: 'halab',       label: 'Halab',       labelAr: 'حلب' },
-    { key: 'aqsa',        label: 'Al-Aqsa',     labelAr: 'الأقصى' },
-    { key: 'hussaini',    label: 'Al-Hussaini', labelAr: 'الحسيني' },
-    { key: 'abdul-hakam', label: 'Abdul Hakam', labelAr: 'عبد الحكم' },
-    { key: 'bakir',       label: 'Bakir Bash',  labelAr: 'بكر باش' },
+    { key: 'makkah' },
+    { key: 'madinah' },
+    { key: 'egypt' },
+    { key: 'halab' },
+    { key: 'aqsa' },
+    { key: 'hussaini' },
+    { key: 'abdul-hakam' },
+    { key: 'bakir' },
   ];
+
+  const ADHAN_NAME_MAP: Record<string, keyof typeof tr> = {
+    'makkah':      'adhanName_makkah',
+    'madinah':     'adhanName_madinah',
+    'egypt':       'adhanName_egypt',
+    'halab':       'adhanName_halab',
+    'aqsa':        'adhanName_aqsa',
+    'hussaini':    'adhanName_hussaini',
+    'abdul-hakam': 'adhanName_abdulhakam',
+    'bakir':       'adhanName_bakir',
+  };
+
+  const adhanLabel = (key: string): string => {
+    const trKey = ADHAN_NAME_MAP[key];
+    return trKey ? (tr[trKey] as string) : key;
+  };
 
   const requestNotifPermission = async (): Promise<boolean> => {
     if (Platform.OS === 'web') return true;
@@ -974,7 +990,7 @@ export default function SettingsScreen() {
                     >
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                          {isRtl ? opt.labelAr : opt.label}
+                          {adhanLabel(opt.key)}
                         </Text>
                       </View>
                       {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
@@ -1000,7 +1016,6 @@ export default function SettingsScreen() {
                 {/* "Default" option — inherit from global */}
                 {(() => {
                   const effectiveDefault = draftAdhan;
-                  const defaultLabel = ADHAN_OPTIONS.find(o => o.key === effectiveDefault);
                   const isSelected = activePrayerAdhanKey !== null && !(activePrayerAdhanKey in draftPrayerAdhan);
                   return (
                     <Pressable
@@ -1023,7 +1038,7 @@ export default function SettingsScreen() {
                     >
                       <View style={{ flex: 1, gap: 2 }}>
                         <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                          {isAr ? `افتراضي (${defaultLabel?.labelAr ?? 'مكة'})` : `Default (${defaultLabel?.label ?? 'Makkah'})`}
+                          {isRtl ? `افتراضي (${adhanLabel(effectiveDefault)})` : `Default (${adhanLabel(effectiveDefault)})`}
                         </Text>
                       </View>
                       {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
@@ -1051,7 +1066,7 @@ export default function SettingsScreen() {
                     >
                       <View style={{ flex: 1, gap: 2 }}>
                         <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                          {isRtl ? opt.labelAr : opt.label}
+                          {adhanLabel(opt.key)}
                         </Text>
                       </View>
                       {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
@@ -1605,7 +1620,7 @@ export default function SettingsScreen() {
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 7, borderWidth: 1, borderColor: draftPrayerAdhan[prayer.key] ? C.tint : C.separator, backgroundColor: draftPrayerAdhan[prayer.key] ? C.tint + '15' : 'transparent' }}
                       >
                         <Text style={{ fontSize: 11, fontFamily: 'Amiri_400Regular', color: draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond }}>
-                          {(() => { const o = ADHAN_OPTIONS.find(o => o.key === (draftPrayerAdhan[prayer.key] ?? draftAdhan)); return isRtl ? (o?.labelAr ?? 'مكة') : (o?.label ?? 'Makkah'); })()}
+                          {adhanLabel(draftPrayerAdhan[prayer.key] ?? draftAdhan)}
                         </Text>
                         <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
                       </Pressable>
