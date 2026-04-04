@@ -1,13 +1,11 @@
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import type { AudioPlayer } from 'expo-audio';
-import { getApiUrl } from '@/lib/query-client';
 
 const BUNDLED = require('@/assets/sounds/athan.wav');
 
 let sessionId = 0;
 let activePlayer: AudioPlayer | null = null;
 let stopTimer: ReturnType<typeof setTimeout> | null = null;
-let loadTimer: ReturnType<typeof setTimeout> | null = null;
 let onStopCb: (() => void) | null = null;
 
 function killPlayer(p: AudioPlayer | null) {
@@ -20,7 +18,6 @@ function killPlayer(p: AudioPlayer | null) {
 
 function clearTimers() {
   if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
-  if (loadTimer) { clearTimeout(loadTimer); loadTimer = null; }
 }
 
 export async function stopAthan() {
@@ -59,81 +56,35 @@ export async function playAthan(
     } as any);
   } catch {}
 
-  function isCurrentSession() {
-    return sessionId === sid;
-  }
+  if (sessionId !== sid) return;
 
-  function finishCurrentSession() {
-    if (!isCurrentSession()) return;
-    clearTimers();
-    activePlayer = null;
-    const cb = onStopCb;
-    onStopCb = null;
-    cb?.();
-  }
+  try {
+    const player = createAudioPlayer(BUNDLED);
 
-  function activatePlayer(player: AudioPlayer) {
-    if (!isCurrentSession()) {
+    if (sessionId !== sid) {
       killPlayer(player);
       return;
     }
-    clearTimers();
+
     activePlayer = player;
+
     player.addListener('playbackStatusUpdate', (s: { didJustFinish: boolean }) => {
-      if (!isCurrentSession()) { killPlayer(player); return; }
-      if (s.didJustFinish) finishCurrentSession();
+      if (sessionId !== sid) { killPlayer(player); return; }
+      if (s.didJustFinish) {
+        clearTimers();
+        activePlayer = null;
+        const cb = onStopCb;
+        onStopCb = null;
+        cb?.();
+      }
     });
-    try { player.volume = 1.0; } catch {}
+
+    player.volume = 1.0;
     player.play();
     scheduleStop(type);
-  }
-
-  const adhanPath = type === 'abbreviated' ? '/api/adhan/abbreviated' : '/api/adhan';
-  const backendUrl = new URL(adhanPath, getApiUrl()).toString();
-
-  let backendPlayer: AudioPlayer | null = null;
-
-  try {
-    backendPlayer = createAudioPlayer(backendUrl);
-
-    backendPlayer.addListener('playbackStatusUpdate', (s: {
-      isLoaded: boolean; didJustFinish: boolean;
-    }) => {
-      if (!isCurrentSession()) {
-        killPlayer(backendPlayer);
-        return;
-      }
-      if (s.isLoaded) {
-        clearTimers();
-        activatePlayer(backendPlayer!);
-        return;
-      }
-      if (s.didJustFinish) {
-        killPlayer(backendPlayer);
-        backendPlayer = null;
-        useBundled();
-      }
-    });
-
-    loadTimer = setTimeout(() => {
-      loadTimer = null;
-      if (!isCurrentSession()) { killPlayer(backendPlayer); return; }
-      killPlayer(backendPlayer);
-      backendPlayer = null;
-      useBundled();
-    }, 10000);
-
   } catch {
-    useBundled();
-  }
-
-  function useBundled() {
-    if (!isCurrentSession()) return;
-    try {
-      const p = createAudioPlayer(BUNDLED);
-      activatePlayer(p);
-    } catch {
-      finishCurrentSession();
-    }
+    const cb = onStopCb;
+    onStopCb = null;
+    cb?.();
   }
 }
