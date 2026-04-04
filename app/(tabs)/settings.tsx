@@ -423,7 +423,19 @@ export default function SettingsScreen() {
     });
     const VALID_TABS = ['index', 'calendar', 'qibla', 'athkar', 'quran'];
     const targetTab = VALID_TABS.includes(defaultTab ?? '') ? (defaultTab ?? 'index') : 'index';
-    router.replace(`/(tabs)/${targetTab}` as any);
+    // From inside (tabs), sibling routes are addressed without the group prefix.
+    // '/(tabs)/index' is only valid when navigating INTO the group from outside.
+    const tabRoutes: Record<string, string> = {
+      index: '/',
+      calendar: '/calendar',
+      qibla: '/qibla',
+      athkar: '/athkar',
+      quran: '/quran',
+    };
+    const targetRoute = tabRoutes[targetTab] ?? '/';
+    console.log('defaultTab:', defaultTab);
+    console.log('navigating to:', targetRoute);
+    router.replace(targetRoute as any);
   };
 
   const TAB_OPTIONS: { key: string; label: string }[] = [
