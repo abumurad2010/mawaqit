@@ -421,7 +421,9 @@ export default function SettingsScreen() {
       showQiyam: draftShowQiyam,
       eidPrayerTime: draftEidPrayerTime,
     });
-    router.navigate(`/(tabs)/${defaultTab ?? 'index'}` as any);
+    const VALID_TABS = ['index', 'calendar', 'qibla', 'athkar', 'quran'];
+    const targetTab = VALID_TABS.includes(defaultTab ?? '') ? (defaultTab ?? 'index') : 'index';
+    router.replace(`/(tabs)/${targetTab}` as any);
   };
 
   const TAB_OPTIONS: { key: string; label: string }[] = [
