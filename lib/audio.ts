@@ -12,6 +12,17 @@ const ADHAN_FILES: Record<string, any> = {
   'bakir':       require('@/assets/sounds/Bakir-Bash.mp3'),
 };
 
+const ADHAN_FILES_ABB: Record<string, any> = {
+  'abdul-hakam': require('@/assets/sounds/Abdul-Hakam-Abb.m4a'),
+  'aqsa':        require('@/assets/sounds/Adhan-Alaqsa-Abb.m4a'),
+  'egypt':       require('@/assets/sounds/Adhan-Egypt-Abb.m4a'),
+  'halab':       require('@/assets/sounds/Adhan-Halab-Abb.m4a'),
+  'madinah':     require('@/assets/sounds/Adhan-Madinah-Abb.m4a'),
+  'makkah':      require('@/assets/sounds/Adhan-Makka-Abb.m4a'),
+  'hussaini':    require('@/assets/sounds/Al-Hussaini-Abb.m4a'),
+  'bakir':       require('@/assets/sounds/Bakir-Bash-Abb.m4a'),
+};
+
 let sessionId = 0;
 let activePlayer: AudioPlayer | null = null;
 let stopTimer: ReturnType<typeof setTimeout> | null = null;
@@ -40,12 +51,6 @@ export async function stopAthan() {
   cb?.();
 }
 
-function scheduleStop(type: 'full' | 'abbreviated') {
-  if (stopTimer) clearTimeout(stopTimer);
-  const secs = type === 'abbreviated' ? 27 : 300;
-  stopTimer = setTimeout(() => stopAthan(), secs * 1000);
-}
-
 export async function playAthan(
   type: 'full' | 'abbreviated' = 'full',
   onStop?: () => void,
@@ -69,7 +74,8 @@ export async function playAthan(
   if (sessionId !== sid) return;
 
   try {
-    const source = ADHAN_FILES[selectedAdhan] ?? ADHAN_FILES['makkah'];
+    const map = type === 'abbreviated' ? ADHAN_FILES_ABB : ADHAN_FILES;
+    const source = map[selectedAdhan] ?? map['makkah'];
     const player = createAudioPlayer(source);
 
     if (sessionId !== sid) {
@@ -92,7 +98,10 @@ export async function playAthan(
       }
     });
 
-    scheduleStop(type);
+    // Safety timeout only for full adhan (abbreviated files end naturally)
+    if (type === 'full') {
+      stopTimer = setTimeout(() => stopAthan(), 300 * 1000);
+    }
   } catch {
     const cb = onStopCb;
     onStopCb = null;
