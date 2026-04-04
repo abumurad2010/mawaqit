@@ -531,7 +531,7 @@ export default function SettingsScreen() {
     { key: 'aqsa',        label: 'Al-Aqsa',     labelAr: 'الأقصى' },
     { key: 'hussaini',    label: 'Al-Hussaini', labelAr: 'الحسيني' },
     { key: 'abdul-hakam', label: 'Abdul Hakam', labelAr: 'عبد الحكم' },
-    { key: 'bakir',       label: 'Bakir Bash',  labelAr: 'باكر باش' },
+    { key: 'bakir',       label: 'Bakir Bash',  labelAr: 'بكر باش' },
   ];
 
   const requestNotifPermission = async (): Promise<boolean> => {
@@ -1498,80 +1498,6 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* Adhan Voice */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'صوت الأذان' : 'Adhan Voice'}
-          </Text>
-        </View>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={[styles.settingRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-              {isAr ? 'صوت الأذان' : 'Adhan Voice'}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {/* Dropdown */}
-              <Pressable
-                onPress={() => { Haptics.selectionAsync(); setShowAdhanModal(true); }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: C.separator, backgroundColor: C.backgroundSecond }}
-              >
-                <Text style={{ fontSize: 12, color: C.text, fontFamily: SANS_MD }}>
-                  {isAr
-                    ? (ADHAN_OPTIONS.find(o => o.key === draftAdhan)?.labelAr ?? 'مكة')
-                    : (ADHAN_OPTIONS.find(o => o.key === draftAdhan)?.label ?? 'Makkah')}
-                </Text>
-                <Ionicons name="chevron-down" size={12} color={C.textSecond} />
-              </Pressable>
-              {/* Full preview */}
-              <Pressable
-                onPress={async () => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  if (previewing === 'adhan-full') {
-                    await stopAthan();
-                    if (isMountedRef.current) setPreviewing(null);
-                  } else {
-                    await stopAthan();
-                    if (isMountedRef.current) setPreviewing('adhan-full');
-                    playAthan('full', () => { if (isMountedRef.current) setPreviewing(null); }, draftAdhan);
-                  }
-                }}
-                style={[styles.subChip, {
-                  backgroundColor: previewing === 'adhan-full' ? C.tint + '20' : 'transparent',
-                  borderColor: previewing === 'adhan-full' ? C.tint : C.separator,
-                }]}
-              >
-                <Ionicons name={previewing === 'adhan-full' ? 'stop-circle-outline' : 'play-circle-outline'} size={12} color={previewing === 'adhan-full' ? C.tint : C.textSecond} />
-                <Text style={{ fontSize: 11, fontWeight: '600', color: previewing === 'adhan-full' ? C.tint : C.textSecond }}>
-                  {isAr ? 'كامل' : 'Full'}
-                </Text>
-              </Pressable>
-              {/* Abbrev preview */}
-              <Pressable
-                onPress={async () => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  if (previewing === 'adhan-abbrev') {
-                    await stopAthan();
-                    if (isMountedRef.current) setPreviewing(null);
-                  } else {
-                    await stopAthan();
-                    if (isMountedRef.current) setPreviewing('adhan-abbrev');
-                    playAthan('abbreviated', () => { if (isMountedRef.current) setPreviewing(null); }, draftAdhan);
-                  }
-                }}
-                style={[styles.subChip, {
-                  backgroundColor: previewing === 'adhan-abbrev' ? C.tint + '20' : 'transparent',
-                  borderColor: previewing === 'adhan-abbrev' ? C.tint : C.separator,
-                }]}
-              >
-                <Ionicons name={previewing === 'adhan-abbrev' ? 'stop-circle-outline' : 'play-circle-outline'} size={12} color={previewing === 'adhan-abbrev' ? C.tint : C.textSecond} />
-                <Text style={{ fontSize: 11, fontWeight: '600', color: previewing === 'adhan-abbrev' ? C.tint : C.textSecond }}>
-                  {isAr ? 'مختصر' : 'Abbrev'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
         {/* Notifications */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
@@ -1638,19 +1564,6 @@ export default function SettingsScreen() {
                       />
                     </Pressable>
 
-                    {/* Per-prayer adhan voice dropdown — always visible */}
-                    <Pressable
-                      onPress={() => { Haptics.selectionAsync(); setActivePrayerAdhanKey(prayer.key); }}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 7, borderWidth: 1, borderColor: draftPrayerAdhan[prayer.key] ? C.tint : C.separator, backgroundColor: draftPrayerAdhan[prayer.key] ? C.tint + '15' : C.backgroundSecond }}
-                    >
-                      <Text style={{ fontSize: 11, fontFamily: 'Amiri_400Regular', color: draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond }}>
-                        {draftPrayerAdhan[prayer.key]
-                          ? (ADHAN_OPTIONS.find(o => o.key === draftPrayerAdhan[prayer.key])?.labelAr ?? '—')
-                          : '—'}
-                      </Text>
-                      <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
-                    </Pressable>
-
                   </View>
                 </View>
 
@@ -1684,6 +1597,21 @@ export default function SettingsScreen() {
                         {isAr ? 'مختصر' : 'Abbr.'}
                       </Text>
                     </Pressable>
+                    {/* Adhan voice dropdown */}
+                    <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }}>
+                        {isAr ? 'صوت' : 'Voice'}
+                      </Text>
+                      <Pressable
+                        onPress={() => { Haptics.selectionAsync(); setActivePrayerAdhanKey(prayer.key); }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 7, borderWidth: 1, borderColor: draftPrayerAdhan[prayer.key] ? C.tint : C.separator, backgroundColor: draftPrayerAdhan[prayer.key] ? C.tint + '15' : 'transparent' }}
+                      >
+                        <Text style={{ fontSize: 11, fontFamily: 'Amiri_400Regular', color: draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond }}>
+                          {ADHAN_OPTIONS.find(o => o.key === (draftPrayerAdhan[prayer.key] ?? draftAdhan))?.labelAr ?? 'مكة'}
+                        </Text>
+                        <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
+                      </Pressable>
+                    </View>
                     <View style={{ flex: 1 }} />
                     <Pressable
                       onPress={() => handlePreview(prayer.key)}
