@@ -1,47 +1,10 @@
-import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Tabs } from 'expo-router';
-import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet } from 'react-native';
 import React from 'react';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-
-function NativeTabLayout() {
-  const { isRtl, lang } = useApp();
-  const tr = t(lang);
-
-  const triggers = [
-    <NativeTabs.Trigger key="index" name="index">
-      <Icon sf={{ default: 'moon.stars', selected: 'moon.stars.fill' }} />
-      <Label>{tr.prayers}</Label>
-    </NativeTabs.Trigger>,
-    <NativeTabs.Trigger key="calendar" name="calendar">
-      <Icon sf={{ default: 'calendar', selected: 'calendar.badge.checkmark' }} />
-      <Label>{tr.today}</Label>
-    </NativeTabs.Trigger>,
-    <NativeTabs.Trigger key="qibla" name="qibla">
-      <Icon sf={{ default: 'location.circle', selected: 'location.circle.fill' }} />
-      <Label>{tr.qibla}</Label>
-    </NativeTabs.Trigger>,
-    <NativeTabs.Trigger key="athkar" name="athkar">
-      <Icon sf={{ default: 'moon', selected: 'moon.fill' }} />
-      <Label>الأذكار</Label>
-    </NativeTabs.Trigger>,
-    <NativeTabs.Trigger key="quran" name="quran">
-      <Icon sf={{ default: 'book', selected: 'book.fill' }} />
-      <Label>{tr.quran}</Label>
-    </NativeTabs.Trigger>,
-  ];
-
-  return (
-    <NativeTabs>
-      {isRtl ? [...triggers].reverse() : triggers}
-    </NativeTabs>
-  );
-}
 
 function ClassicTabLayout() {
   const { isDark, lang, colors, isRtl } = useApp();
@@ -136,8 +99,5 @@ function ClassicTabLayout() {
 }
 
 export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
   return <ClassicTabLayout />;
 }
