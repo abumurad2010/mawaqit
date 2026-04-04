@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
+  Animated, PanResponder, useWindowDimensions,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -16,6 +17,7 @@ import { getTranslation, getTransliteration } from '@/lib/quran-translations';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
 
+const SWIPE_THRESHOLD = 80;
 const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const BISMILLAH_TRANSLIT = 'Bismi Allāhi l-raḥmāni l-raḥīm';
 const AYAHS_PER_PAGE = 5;
@@ -51,7 +53,7 @@ function highlightLatinInline(
 
 export default function SurahTransliterationScreen() {
   const { number, startAyah, highlight } = useLocalSearchParams<{ number: string; startAyah?: string; highlight?: string }>();
-  const surahNum = Number(number ?? '1');
+  const [surahNum, setSurahNum] = useState(Number(number ?? '1'));
   const startAyahNum = Number(startAyah ?? '0');
   const highlightTerm = highlight ?? '';
   const insets = useSafeAreaInsets();
@@ -71,6 +73,8 @@ export default function SurahTransliterationScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
+  const { width: W } = useWindowDimensions();
+  const isRtl = isRtlLang(lang);
   const isRtlTranslation = isRtlLang(translitLang);
   const fontScale = [0.80, 1.0, 1.22, 1.45, 1.70][fsIdx] ?? 1.0;
 
@@ -86,6 +90,52 @@ export default function SurahTransliterationScreen() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  // Surah swipe navigation
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const transitioningRef = useRef(false);
+  const surahNumRef = useRef(surahNum);
+
+  const navigateSurah = useCallback((dir: 'next' | 'prev') => {
+    if (transitioningRef.current) return;
+    const cur = surahNumRef.current;
+    const newNum = dir === 'next' ? cur + 1 : cur - 1;
+    if (newNum < 1 || newNum > 114) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    transitioningRef.current = true;
+    const toX = dir === 'next' ? -W : W;
+    Animated.timing(slideAnim, { toValue: toX, duration: 260, useNativeDriver: true }).start(() => {
+      slideAnim.setValue(-toX);
+      surahNumRef.current = newNum;
+      setSurahNum(newNum);
+      setCurrentPage(1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
+        transitioningRef.current = false;
+      });
+    });
+  }, [W, slideAnim]);
+
+  const navigateSurahRef = useRef(navigateSurah);
+  useEffect(() => { navigateSurahRef.current = navigateSurah; }, [navigateSurah]);
+
+  const isRtlRef = useRef(isRtl);
+  useEffect(() => { isRtlRef.current = isRtl; }, [isRtl]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderRelease: (_, g) => {
+        const rtl = isRtlRef.current;
+        if (g.dx < -SWIPE_THRESHOLD) navigateSurahRef.current(rtl ? 'prev' : 'next');
+        else if (g.dx > SWIPE_THRESHOLD) navigateSurahRef.current(rtl ? 'next' : 'prev');
+      },
+    })
+  ).current;
+
+  const prevSurah = surahNum > 1 ? surahNum - 1 : null;
+  const nextSurah = surahNum < 114 ? surahNum + 1 : null;
 
   const [showHighlight, setShowHighlight] = useState(highlightTerm.length > 0);
 
@@ -242,7 +292,41 @@ export default function SurahTransliterationScreen() {
         </Pressable>
       </Modal>
 
-      {/* ── Scrollable ayah content ── */}
+      {/* ── Swipe hint strip ── */}
+      <View style={[styles.swipeHint, { backgroundColor: C.backgroundCard }]}>
+        <Pressable
+          onPress={() => prevSurah !== null && navigateSurah('prev')}
+          style={styles.swipeHintBtn}
+          disabled={prevSurah === null}
+        >
+          <Ionicons name="chevron-back" size={14} color={prevSurah !== null ? C.tint : C.separator} />
+          {prevSurah !== null && (
+            <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
+              {SURAH_META[prevSurah - 1]?.transliteration ?? ''}
+            </Text>
+          )}
+        </Pressable>
+
+        <Text style={[styles.swipeHintCenter, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+          {isAr ? 'اسحب للتنقل' : 'swipe to navigate'}
+        </Text>
+
+        <Pressable
+          onPress={() => nextSurah !== null && navigateSurah('next')}
+          style={[styles.swipeHintBtn, { justifyContent: 'flex-end' }]}
+          disabled={nextSurah === null}
+        >
+          {nextSurah !== null && (
+            <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
+              {SURAH_META[nextSurah - 1]?.transliteration ?? ''}
+            </Text>
+          )}
+          <Ionicons name="chevron-forward" size={14} color={nextSurah !== null ? C.tint : C.separator} />
+        </Pressable>
+      </View>
+
+      {/* ── Scrollable ayah content + bottom bar (swipeable) ── */}
+      <Animated.View style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]} {...panResponder.panHandlers}>
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 16, paddingTop: 12 }}
@@ -342,17 +426,6 @@ export default function SurahTransliterationScreen() {
           borderTopColor: C.separator,
         },
       ]}>
-        <Pressable
-          onPress={() => currentPage > 1 && goPage(currentPage - 1)}
-          disabled={currentPage === 1}
-          style={({ pressed }) => [
-            styles.navBtn,
-            { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: (currentPage === 1 || pressed) ? 0.35 : 1 },
-          ]}
-        >
-          <Ionicons name="chevron-back" size={22} color={C.tint} />
-        </Pressable>
-
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -388,18 +461,8 @@ export default function SurahTransliterationScreen() {
             )
           }
         </ScrollView>
-
-        <Pressable
-          onPress={() => currentPage < totalPages && goPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          style={({ pressed }) => [
-            styles.navBtn,
-            { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: (currentPage === totalPages || pressed) ? 0.35 : 1 },
-          ]}
-        >
-          <Ionicons name="chevron-forward" size={22} color={C.tint} />
-        </Pressable>
       </View>
+      </Animated.View>
     </View>
   );
 }
@@ -481,14 +544,19 @@ const styles = StyleSheet.create({
   translitText: { fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   translationText: { fontSize: 13, lineHeight: 20, opacity: 0.85 },
 
+  swipeHint: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 12, paddingVertical: 6, marginHorizontal: 16,
+    borderRadius: 10, marginBottom: 6,
+  },
+  swipeHintBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+  swipeHintText: { fontSize: 12, maxWidth: 90 },
+  swipeHintCenter: { fontSize: 11, textAlign: 'center', flex: 0 },
+
   bottomBar: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 14, paddingTop: 10, gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  navBtn: {
-    width: 42, height: 42, borderRadius: 12, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
   },
   pagePills: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
