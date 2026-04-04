@@ -1205,6 +1205,46 @@ export default function SettingsScreen() {
           </Pressable>
         </Modal>
 
+        {/* Thikr Reminders */}
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
+          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
+            {tr.thikr_reminders_section}
+          </Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <Ionicons name="heart-outline" size={18} color={C.tint} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                    {tr.thikr_reminders_label}
+                  </Text>
+                  <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.thikr_reminders_help_title, tr.thikr_reminders_help_body); }} hitSlop={8}>
+                    <Ionicons name="help-circle-outline" size={18} color={C.textMuted} />
+                  </Pressable>
+                </View>
+                <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }}>
+                  {tr.thikr_reminders_subtitle}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={thikrRemindersEnabled}
+              onValueChange={handleThikrToggle}
+              trackColor={{ false: C.backgroundSecond, true: C.tint + '80' }}
+              thumbColor={thikrRemindersEnabled ? C.tint : C.textMuted}
+            />
+          </View>
+          {thikrToast && (
+            <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
+              <Text style={{ fontSize: 11, color: C.tint, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                {tr.thikr_reminders_activated}
+              </Text>
+            </View>
+          )}
+        </View>
+
         {/* Notifications */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
@@ -1323,46 +1363,6 @@ export default function SettingsScreen() {
               </View>
             );
           })}
-        </View>
-
-        {/* Thikr Reminders */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {tr.thikr_reminders_section}
-          </Text>
-        </View>
-        <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-            <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-              <Ionicons name="heart-outline" size={18} color={C.tint} />
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                    {tr.thikr_reminders_label}
-                  </Text>
-                  <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.thikr_reminders_help_title, tr.thikr_reminders_help_body); }} hitSlop={8}>
-                    <Ionicons name="help-circle-outline" size={18} color={C.textMuted} />
-                  </Pressable>
-                </View>
-                <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 2 }}>
-                  {tr.thikr_reminders_subtitle}
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={thikrRemindersEnabled}
-              onValueChange={handleThikrToggle}
-              trackColor={{ false: C.backgroundSecond, true: C.tint + '80' }}
-              thumbColor={thikrRemindersEnabled ? C.tint : C.textMuted}
-            />
-          </View>
-          {thikrToast && (
-            <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
-              <Text style={{ fontSize: 11, color: C.tint, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                {tr.thikr_reminders_activated}
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Dua */}
