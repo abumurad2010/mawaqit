@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform,
-  ActivityIndicator, ScrollView, Modal, Animated,
-  PanResponder, Dimensions, useWindowDimensions,
+  ActivityIndicator, ScrollView, Modal,
+  PanResponder,
 } from 'react-native';
+import Animated, {
+  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +38,6 @@ export default function SurahScreen() {
   const initialNum = parseInt(params.number ?? '1', 10);
   const targetAyah = params.ayah ? parseInt(params.ayah, 10) : null;
 
-  const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, isBookmarked, addBookmark, removeBookmark, setLastReadSurah, colors } = useApp();
   const C = colors;
@@ -54,7 +56,7 @@ export default function SurahScreen() {
   const ayahPositions = useRef<Record<number, number>>({});
   const ayahsBlockY = useRef(0);
   const scrolled = useRef(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const flip = useSharedValue(0);
   const transitioningRef = useRef(false);
   const surahNumRef = useRef(surahNum);
 
@@ -98,6 +100,17 @@ export default function SurahScreen() {
     }
   }, [targetAyah, page.ayahs]);
 
+  const flipStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 1200 },
+      { rotateY: `${flip.value}deg` },
+    ],
+  }));
+
+  const flipShadowStyle = useAnimatedStyle(() => ({
+    opacity: (Math.abs(flip.value) / 90) * 0.45,
+  }));
+
   const navigateTo = useCallback((dir: 'next' | 'prev') => {
     if (transitioningRef.current) return;
     const cur = surahNumRef.current;
@@ -106,25 +119,27 @@ export default function SurahScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     transitioningRef.current = true;
     setTransitioning(true);
-    const toX = dir === 'next' ? -W : W;
-    Animated.timing(slideAnim, {
-      toValue: toX,
-      duration: 260,
-      useNativeDriver: true,
-    }).start(() => {
-      slideAnim.setValue(-toX);
+    const outAngle = dir === 'next' ? -90 : 90;
+
+    const doSwap = () => {
       surahNumRef.current = newNum;
       setSurahNum(newNum);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => {
-        transitioningRef.current = false;
-        setTransitioning(false);
-      });
+    };
+    const doFinish = () => {
+      transitioningRef.current = false;
+      setTransitioning(false);
+    };
+
+    flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+      if (done) {
+        runOnJS(doSwap)();
+        flip.value = -outAngle;
+        flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+          if (done2) runOnJS(doFinish)();
+        });
+      }
     });
-  }, [W, slideAnim]);
+  }, [flip]);
 
   const navigateRef = useRef(navigateTo);
   useEffect(() => { navigateRef.current = navigateTo; }, [navigateTo]);
@@ -248,11 +263,16 @@ export default function SurahScreen() {
         </Pressable>
       </View>
 
-      {/* Content with slide animation + swipe handler */}
+      {/* Content with page flip animation + swipe handler */}
       <Animated.View
-        style={[styles.contentWrap, { transform: [{ translateX: slideAnim }] }]}
+        style={[styles.contentWrap, flipStyle]}
         {...panResponder.panHandlers}
       >
+        {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
+          pointerEvents="none"
+        />
         {page.loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={C.tint} />

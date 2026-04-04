@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
-  Animated, PanResponder, useWindowDimensions,
+  PanResponder,
 } from 'react-native';
+import Animated, {
+  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
+} from 'react-native-reanimated';
 import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -73,7 +76,6 @@ export default function SurahTransliterationScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
-  const { width: W } = useWindowDimensions();
   const isRtl = isRtlLang(lang);
   const isRtlTranslation = isRtlLang(translitLang);
   const fontScale = [0.80, 1.0, 1.22, 1.45, 1.70][fsIdx] ?? 1.0;
@@ -92,9 +94,20 @@ export default function SurahTransliterationScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   // Surah swipe navigation
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const flip = useSharedValue(0);
   const transitioningRef = useRef(false);
   const surahNumRef = useRef(surahNum);
+
+  const flipStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 1200 },
+      { rotateY: `${flip.value}deg` },
+    ],
+  }));
+
+  const flipShadowStyle = useAnimatedStyle(() => ({
+    opacity: (Math.abs(flip.value) / 90) * 0.45,
+  }));
 
   const navigateSurah = useCallback((dir: 'next' | 'prev') => {
     if (transitioningRef.current) return;
@@ -103,18 +116,28 @@ export default function SurahTransliterationScreen() {
     if (newNum < 1 || newNum > 114) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     transitioningRef.current = true;
-    const toX = dir === 'next' ? -W : W;
-    Animated.timing(slideAnim, { toValue: toX, duration: 260, useNativeDriver: true }).start(() => {
-      slideAnim.setValue(-toX);
+    const outAngle = dir === 'next' ? -90 : 90;
+
+    const doSwap = () => {
       surahNumRef.current = newNum;
       setSurahNum(newNum);
       setCurrentPage(1);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
-      Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        transitioningRef.current = false;
-      });
+    };
+    const doFinish = () => {
+      transitioningRef.current = false;
+    };
+
+    flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+      if (done) {
+        runOnJS(doSwap)();
+        flip.value = -outAngle;
+        flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+          if (done2) runOnJS(doFinish)();
+        });
+      }
     });
-  }, [W, slideAnim]);
+  }, [flip]);
 
   const navigateSurahRef = useRef(navigateSurah);
   useEffect(() => { navigateSurahRef.current = navigateSurah; }, [navigateSurah]);
@@ -326,7 +349,12 @@ export default function SurahTransliterationScreen() {
       </View>
 
       {/* ── Scrollable ayah content + bottom bar (swipeable) ── */}
-      <Animated.View style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]} {...panResponder.panHandlers}>
+      <Animated.View style={[{ flex: 1 }, flipStyle]} {...panResponder.panHandlers}>
+        {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
+          pointerEvents="none"
+        />
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 16, paddingTop: 12 }}
