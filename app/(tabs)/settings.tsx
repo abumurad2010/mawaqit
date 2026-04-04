@@ -1638,6 +1638,21 @@ export default function SettingsScreen() {
                       />
                     </Pressable>
 
+                    {/* Per-prayer adhan voice dropdown — only when athan active */}
+                    {hasAthan && (
+                      <Pressable
+                        onPress={() => { Haptics.selectionAsync(); setActivePrayerAdhanKey(prayer.key); }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 7, borderWidth: 1, borderColor: draftPrayerAdhan[prayer.key] ? C.tint : C.separator, backgroundColor: draftPrayerAdhan[prayer.key] ? C.tint + '15' : C.backgroundSecond }}
+                      >
+                        <Text style={{ fontSize: 11, fontFamily: 'Amiri_400Regular', color: draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond }}>
+                          {draftPrayerAdhan[prayer.key]
+                            ? (ADHAN_OPTIONS.find(o => o.key === draftPrayerAdhan[prayer.key])?.labelAr ?? '—')
+                            : '—'}
+                        </Text>
+                        <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
+                      </Pressable>
+                    )}
+
                   </View>
                 </View>
 
@@ -1670,16 +1685,6 @@ export default function SettingsScreen() {
                       <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'abbreviated' ? C.tint : C.textSecond }}>
                         {isAr ? 'مختصر' : 'Abbr.'}
                       </Text>
-                    </Pressable>
-                    {/* Per-prayer adhan voice dropdown */}
-                    <Pressable
-                      onPress={() => { Haptics.selectionAsync(); setActivePrayerAdhanKey(prayer.key); }}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 7, borderWidth: 1, borderColor: draftPrayerAdhan[prayer.key] ? C.tint : C.separator, backgroundColor: draftPrayerAdhan[prayer.key] ? C.tint + '15' : 'transparent' }}
-                    >
-                      <Text style={{ fontSize: 11, fontFamily: 'Amiri_400Regular', color: draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond }}>
-                        {ADHAN_OPTIONS.find(o => o.key === (draftPrayerAdhan[prayer.key] ?? draftAdhan))?.labelAr ?? 'مكة'}
-                      </Text>
-                      <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
                     </Pressable>
                     <View style={{ flex: 1 }} />
                     <Pressable
