@@ -25,7 +25,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
-import { mawaqitWidget } from '@/widgets/MawaqitWidget';
+import { mawaqitWidget } from '@/widgets_disabled/MawaqitWidget';
 
 /**
  * Parse "HH:MM" → Date on today (or tomorrow) at that local time.
