@@ -632,7 +632,12 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* ROW 2: Cancel / Save — respects RTL */}
+        {/* ROW 2: Page title */}
+        <Text style={[styles.pageTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: 'center' }]}>
+          {tr.settings}
+        </Text>
+
+        {/* ROW 3: Cancel / Save — respects RTL */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, marginBottom: 2 }}>
           <Pressable
             onPress={handleCancel}
@@ -654,11 +659,6 @@ export default function SettingsScreen() {
             </Text>
           </Pressable>
         </View>
-
-        {/* ROW 3: Page title */}
-        <Text style={[styles.pageTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: 'center' }]}>
-          {tr.settings}
-        </Text>
 
         {/* ROW 4: Font sizer — right-aligned, above first section */}
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 4, marginBottom: 4 }}>
