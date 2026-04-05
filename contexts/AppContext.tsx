@@ -12,6 +12,7 @@ import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
+import { BUNDLED_LANGS } from '@/lib/quran-transliteration';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications, cancelThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
@@ -120,7 +121,7 @@ interface AppContextValue extends AppSettings {
 const DEFAULT_SETTINGS: AppSettings = {
   lang: 'ar',
   secondLang: 'auto',
-  translitLang: 'ar',
+  translitLang: 'en',
   themeMode: 'dark',
   accessibilityTheme: 'default',
   calcMethod: 'MWL',
@@ -212,6 +213,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Ensure secondLang exists (migration for existing users)
           if (!parsed.secondLang) {
             parsed.secondLang = 'auto';
+          }
+          // Derive translitLang from app language for new installs
+          if (!parsed.translitLang) {
+            const userLang: Lang = parsed.lang ?? DEFAULT_SETTINGS.lang;
+            parsed.translitLang = BUNDLED_LANGS.includes(userLang) ? userLang : 'en';
           }
           setSettings({ ...DEFAULT_SETTINGS, ...parsed });
         }

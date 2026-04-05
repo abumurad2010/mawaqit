@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Platform, Pressable, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Magnetometer } from 'expo-sensors';
@@ -55,6 +55,7 @@ export default function QiblaScreen() {
   const [isNearlyAligned, setIsNearlyAligned] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [qiblaFontSize, setQiblaFontSizeState] = useState<QiblaFontSize>('sm');
+  const [showCalibrate, setShowCalibrate] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(QIBLA_FS_KEY).then(val => {
@@ -381,7 +382,7 @@ export default function QiblaScreen() {
             style={[styles.calibrateBtn, { borderColor: C.tint + '50', backgroundColor: C.tint + '12' }]}
           >
             <Text style={[styles.calibrateBtnText, { color: C.tint, fontSize: qFS.calib }]}>
-              {isAr ? '⟳  معايرة البوصلة' : '⟳  ' + tr.calibrateBtn}
+              {'⟳  ' + tr.calibrateBtn}
             </Text>
           </Pressable>
         )}
@@ -405,6 +406,50 @@ export default function QiblaScreen() {
           {tr.freeApp}
         </Text>
       </View>
+
+      {/* Compass calibration modal */}
+      <Modal
+        visible={showCalibrate}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCalibrate(false)}
+      >
+        <Pressable style={styles.calibrateOverlay} onPress={() => setShowCalibrate(false)}>
+          <Pressable
+            style={[styles.calibrateSheet, { backgroundColor: C.backgroundCard }]}
+            onPress={e => e.stopPropagation()}
+          >
+            <Text style={[styles.calibrateModalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : undefined }]}>
+              {tr.calibrateTitle}
+            </Text>
+            <View style={styles.infinityWrap}>
+              <Text style={[styles.infinitySymbol, { color: C.tint }]}>∞</Text>
+            </View>
+            <View style={styles.calibrateStep}>
+              <View style={[styles.stepNum, { backgroundColor: C.tint }]}>
+                <Text style={styles.stepNumText}>1</Text>
+              </View>
+              <Text style={[styles.stepText, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {tr.calibrateStep1}
+              </Text>
+            </View>
+            <View style={styles.calibrateStep}>
+              <View style={[styles.stepNum, { backgroundColor: C.tint }]}>
+                <Text style={styles.stepNumText}>2</Text>
+              </View>
+              <Text style={[styles.stepText, { color: C.text, fontFamily: isAr ? 'Amiri_400Regular' : undefined }]}>
+                {tr.calibrateStep2}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setShowCalibrate(false)}
+              style={[styles.calibrateDoneBtn, { backgroundColor: C.tint }]}
+            >
+              <Text style={[styles.calibrateDoneText, { color: C.tintText }]}>{tr.calibrateDone}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
     </View>
   );

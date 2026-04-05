@@ -1,8 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform, Alert,
-  ScrollView, PanResponder, Animated, useWindowDimensions,
+  ScrollView, PanResponder,
 } from 'react-native';
+import Animated, {
+  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -170,7 +173,6 @@ export default function QuranReaderScreen() {
   const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
   const highlightTerm = params.highlight ?? '';
 
-  const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, setLastReadPage,
           addBookmark, removeBookmark, isBookmarked, colors, updateSettings } = useApp();
@@ -188,9 +190,20 @@ export default function QuranReaderScreen() {
       : null
   );
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const flip = useSharedValue(0);
   const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const flipStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 1200 },
+      { rotateY: `${flip.value}deg` },
+    ],
+  }));
+
+  const flipShadowStyle = useAnimatedStyle(() => ({
+    opacity: (Math.abs(flip.value) / 90) * 0.45,
+  }));
 
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
   const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
@@ -212,19 +225,29 @@ export default function QuranReaderScreen() {
     const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
     if (newPage < 1 || newPage > TOTAL_PAGES) return;
     navigating.current = true;
-    // Quran is RTL: "next" page is to the left, "prev" page is to the right
-    const toX = direction === 'next' ? -W : W;
-    Animated.timing(slideAnim, { toValue: toX, duration: 180, useNativeDriver: true }).start(() => {
+    // Mushaf is always RTL: next page flips left (−90°), prev page flips right (+90°)
+    const outAngle = direction === 'next' ? -90 : 90;
+
+    const doSwap = () => {
       setPageNum(newPage);
       setHighlightTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
-      slideAnim.setValue(-toX);
-      Animated.timing(slideAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
-        navigating.current = false;
-      });
+    };
+    const doFinish = () => {
+      navigating.current = false;
+    };
+
+    flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+      if (done) {
+        runOnJS(doSwap)();
+        flip.value = -outAngle;
+        flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+          if (done2) runOnJS(doFinish)();
+        });
+      }
     });
     Haptics.selectionAsync();
-  }, [pageNum, W, slideAnim]);
+  }, [pageNum, flip]);
 
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
@@ -343,9 +366,14 @@ export default function QuranReaderScreen() {
 
       {/* ── Page content with swipe ── */}
       <Animated.View
-        style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]}
+        style={[{ flex: 1 }, flipStyle]}
         {...panResponder.panHandlers}
       >
+        {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
+          pointerEvents="none"
+        />
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}

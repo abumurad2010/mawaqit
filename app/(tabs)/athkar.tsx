@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal, Dimensions, TextInput, useWindowDimensions,
 } from 'react-native';
@@ -9,6 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import i18n, { t, isRtlLang, LANG_META, LANG_FLAG } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
@@ -55,6 +56,7 @@ function normalizeForAthkarSearch(s: string): string {
 
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { lang, colors: C, isDark } = useApp();
   const tr = t(lang);
   const isRtl = isRtlLang(lang);
@@ -75,6 +77,18 @@ export default function AthkarScreen() {
   const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('md');
   const readerRef = useRef<FlatList<Thikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset to category list when tab icon is pressed while already on this tab
+  useLayoutEffect(() => {
+    const unsubscribe = (navigation as any).addListener('tabPress', () => {
+      if (selectedCategory !== null) {
+        setSelectedCategory(null);
+        setHighlightThikrIdx(-1);
+        setHighlightQuery('');
+      }
+    });
+    return unsubscribe;
+  }, [navigation, selectedCategory]);
 
   const setAthkarFontSize = useCallback((fs: AthkarFontSize) => {
     setAthkarFontSizeState(fs);

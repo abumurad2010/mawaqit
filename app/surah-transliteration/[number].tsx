@@ -93,10 +93,15 @@ export default function SurahTransliterationScreen() {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Surah swipe navigation
+  // Page swipe navigation (with surah overflow at boundaries)
   const flip = useSharedValue(0);
   const transitioningRef = useRef(false);
   const surahNumRef = useRef(surahNum);
+  const currentPageRef = useRef(currentPage);
+  const totalPagesRef = useRef(totalPages);
+
+  useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
+  useEffect(() => { totalPagesRef.current = totalPages; }, [totalPages]);
 
   const flipStyle = useAnimatedStyle(() => ({
     transform: [
@@ -109,25 +114,32 @@ export default function SurahTransliterationScreen() {
     opacity: (Math.abs(flip.value) / 90) * 0.45,
   }));
 
-  const navigateSurah = useCallback((dir: 'next' | 'prev') => {
+  const navigateSurah = useCallback((dir: 'next' | 'prev', goToLastPage = false) => {
     if (transitioningRef.current) return;
     const cur = surahNumRef.current;
     const newNum = dir === 'next' ? cur + 1 : cur - 1;
     if (newNum < 1 || newNum > 114) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     transitioningRef.current = true;
-    const outAngle = dir === 'next' ? -90 : 90;
+    // Direction: for RTL swipe left = next, for LTR swipe right = next
+    const outAngle = isRtl ? (dir === 'next' ? -90 : 90) : (dir === 'next' ? 90 : -90);
 
     const doSwap = () => {
       surahNumRef.current = newNum;
       setSurahNum(newNum);
-      setCurrentPage(1);
+      if (goToLastPage) {
+        const newAyahs = getSurah(newNum).ayahs.length;
+        const newTotal = Math.max(1, Math.ceil(newAyahs / AYAHS_PER_PAGE));
+        setCurrentPage(newTotal);
+      } else {
+        setCurrentPage(1);
+      }
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     };
     const doFinish = () => {
       transitioningRef.current = false;
     };
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
       if (done) {
         runOnJS(doSwap)();
@@ -137,10 +149,58 @@ export default function SurahTransliterationScreen() {
         });
       }
     });
-  }, [flip]);
+  }, [flip, isRtl]);
 
-  const navigateSurahRef = useRef(navigateSurah);
-  useEffect(() => { navigateSurahRef.current = navigateSurah; }, [navigateSurah]);
+  const navigatePage = useCallback((dir: 'next' | 'prev') => {
+    if (transitioningRef.current) return;
+    const pg = currentPageRef.current;
+    const tot = totalPagesRef.current;
+
+    if (dir === 'next') {
+      if (pg < tot) {
+        // Next page within surah
+        transitioningRef.current = true;
+        const outAngle = isRtl ? -90 : 90;
+        Haptics.selectionAsync();
+        flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+          if (done) {
+            runOnJS(setCurrentPage)(pg + 1);
+            runOnJS(() => scrollRef.current?.scrollTo({ y: 0, animated: false }))();
+            flip.value = -outAngle;
+            flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+              if (done2) { transitioningRef.current = false; }
+            });
+          }
+        });
+      } else {
+        // At last page — overflow to next surah
+        navigateSurah('next', false);
+      }
+    } else {
+      if (pg > 1) {
+        // Prev page within surah
+        transitioningRef.current = true;
+        const outAngle = isRtl ? 90 : -90;
+        Haptics.selectionAsync();
+        flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+          if (done) {
+            runOnJS(setCurrentPage)(pg - 1);
+            runOnJS(() => scrollRef.current?.scrollTo({ y: 0, animated: false }))();
+            flip.value = -outAngle;
+            flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+              if (done2) { transitioningRef.current = false; }
+            });
+          }
+        });
+      } else {
+        // At first page — overflow to prev surah (go to its last page)
+        navigateSurah('prev', true);
+      }
+    }
+  }, [flip, isRtl, navigateSurah]);
+
+  const navigatePageRef = useRef(navigatePage);
+  useEffect(() => { navigatePageRef.current = navigatePage; }, [navigatePage]);
 
   const isRtlRef = useRef(isRtl);
   useEffect(() => { isRtlRef.current = isRtl; }, [isRtl]);
@@ -151,14 +211,21 @@ export default function SurahTransliterationScreen() {
         Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
       onPanResponderRelease: (_, g) => {
         const rtl = isRtlRef.current;
-        if (g.dx < -SWIPE_THRESHOLD) navigateSurahRef.current(rtl ? 'prev' : 'next');
-        else if (g.dx > SWIPE_THRESHOLD) navigateSurahRef.current(rtl ? 'next' : 'prev');
+        // RTL: swipe left = next page; LTR: swipe right = next page
+        if (rtl) {
+          if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('next');
+          else if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('prev');
+        } else {
+          if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('next');
+          else if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('prev');
+        }
       },
     })
   ).current;
 
   const prevSurah = surahNum > 1 ? surahNum - 1 : null;
   const nextSurah = surahNum < 114 ? surahNum + 1 : null;
+
 
   const [showHighlight, setShowHighlight] = useState(highlightTerm.length > 0);
 
@@ -317,34 +384,42 @@ export default function SurahTransliterationScreen() {
 
       {/* ── Swipe hint strip ── */}
       <View style={[styles.swipeHint, { backgroundColor: C.backgroundCard }]}>
+        {/* Prev: prev page within surah, or prev surah if at page 1 */}
         <Pressable
-          onPress={() => prevSurah !== null && navigateSurah('prev')}
+          onPress={() => navigatePage('prev')}
           style={styles.swipeHintBtn}
-          disabled={prevSurah === null}
+          disabled={currentPage === 1 && prevSurah === null}
         >
-          <Ionicons name="chevron-back" size={14} color={prevSurah !== null ? C.tint : C.separator} />
-          {prevSurah !== null && (
-            <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
-              {SURAH_META[prevSurah - 1]?.transliteration ?? ''}
-            </Text>
-          )}
+          <Ionicons
+            name="chevron-back" size={14}
+            color={(currentPage > 1 || prevSurah !== null) ? C.tint : C.separator}
+          />
+          <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
+            {currentPage > 1
+              ? `${tr.page ?? 'Page'} ${currentPage - 1}`
+              : prevSurah !== null ? (SURAH_META[prevSurah - 1]?.transliteration ?? '') : ''}
+          </Text>
         </Pressable>
 
         <Text style={[styles.swipeHintCenter, { color: C.textMuted, fontFamily: SERIF_EN }]}>
-          {isAr ? 'اسحب للتنقل' : 'swipe to navigate'}
+          {currentPage}/{totalPages}
         </Text>
 
+        {/* Next: next page within surah, or next surah if at last page */}
         <Pressable
-          onPress={() => nextSurah !== null && navigateSurah('next')}
+          onPress={() => navigatePage('next')}
           style={[styles.swipeHintBtn, { justifyContent: 'flex-end' }]}
-          disabled={nextSurah === null}
+          disabled={currentPage === totalPages && nextSurah === null}
         >
-          {nextSurah !== null && (
-            <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
-              {SURAH_META[nextSurah - 1]?.transliteration ?? ''}
-            </Text>
-          )}
-          <Ionicons name="chevron-forward" size={14} color={nextSurah !== null ? C.tint : C.separator} />
+          <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
+            {currentPage < totalPages
+              ? `${tr.page ?? 'Page'} ${currentPage + 1}`
+              : nextSurah !== null ? (SURAH_META[nextSurah - 1]?.transliteration ?? '') : ''}
+          </Text>
+          <Ionicons
+            name="chevron-forward" size={14}
+            color={(currentPage < totalPages || nextSurah !== null) ? C.tint : C.separator}
+          />
         </Pressable>
       </View>
 
