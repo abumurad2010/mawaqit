@@ -344,8 +344,8 @@ export default function CalendarScreen() {
                 const m1 = hijriMonthName(h1.month, lang);
                 const m2 = hijriMonthName(h2.month, lang);
                 const yr = h1.month !== h2.month
-                  ? `${m1} – ${m2} ${isAr ? toArabicIndic(h2.year) : h2.year} هـ`
-                  : `${m1} ${isAr ? toArabicIndic(h1.year) : h1.year} ${isAr ? 'هـ' : 'AH'}`;
+                  ? `${m1} – ${m2} ${isAr ? toArabicIndic(h2.year) : h2.year} ${tr.hijriEraSuffix}`
+                  : `${m1} ${isAr ? toArabicIndic(h1.year) : h1.year} ${tr.hijriEraSuffix}`;
                 return yr;
               })()}
             </Text>
@@ -426,7 +426,7 @@ export default function CalendarScreen() {
             >
               <Text style={{ fontSize: 14 }}>{selectedMoon.emoji}</Text>
               <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-                {isAr ? 'طور القمر' : 'Moon Phase'}
+                {tr.moonPhase}
               </Text>
               <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
             </Pressable>
@@ -440,7 +440,7 @@ export default function CalendarScreen() {
             >
               <Text style={{ fontSize: 14 }}>🌒</Text>
               <Text style={[styles.newMoonBtnText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-                {isAr ? 'رصد الهلال' : 'Crescent Sighting'}
+                {tr.crescentSightingLookup}
               </Text>
               <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={C.textMuted} />
             </Pressable>
@@ -455,7 +455,7 @@ export default function CalendarScreen() {
               fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN,
               textAlign: isAr ? 'right' : 'left',
             }]}>
-              {isAr ? 'أوقات الصلاة' : 'Prayer Times'}
+              {tr.prayerTimesSection}
             </Text>
             <View style={[styles.prayerCard, { backgroundColor: isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)' }]}>
               {PRAYER_ORDER.map((key) => (
@@ -490,7 +490,7 @@ export default function CalendarScreen() {
           <View style={[styles.noLocation, { paddingHorizontal: 16 }]}>
             <Ionicons name="location-outline" size={32} color={C.textMuted} />
             <Text style={[styles.noLocationText, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-              {isAr ? 'يرجى تحديد الموقع لعرض أوقات الصلاة' : 'Set your location to see prayer times'}
+              {tr.setLocationForPrayerTimes}
             </Text>
           </View>
         )}
@@ -505,9 +505,9 @@ export default function CalendarScreen() {
             <View style={styles.modalHandle} />
             <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
               <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, marginBottom: 0 }]}>
-                {isAr ? 'تفاصيل طور القمر' : 'Moon Phase Details'}
+                {tr.moonPhaseDetails}
               </Text>
-              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(isAr ? 'مراحل القمر' : 'Moon Phase', MOON_PHASE_HELP[lang] ?? MOON_PHASE_HELP['en']); }} hitSlop={8}>
+              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.moonPhase, MOON_PHASE_HELP[lang] ?? MOON_PHASE_HELP['en']); }} hitSlop={8}>
                 <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
               </Pressable>
             </View>
@@ -520,17 +520,17 @@ export default function CalendarScreen() {
             {/* Stats */}
             {[
               {
-                label: isAr ? 'الإضاءة' : 'Illumination',
+                label: tr.illumination,
                 value: `${selectedMoon.illumination}%`,
                 icon: 'sunny-outline',
               },
               {
-                label: isAr ? 'يوم الشهر الهجري' : 'Hijri Day',
-                value: isAr ? `اليوم ${selectedHijri.day}` : `Day ${selectedHijri.day}`,
+                label: tr.hijriDay,
+                value: `${selectedHijri.day}`,
                 icon: 'calendar-outline',
               },
               ...(location ? [{
-                label: isAr ? 'المنطقة' : 'Territory',
+                label: tr.territory,
                 value: location.city && location.country
                   ? `${location.city}, ${location.country}`
                   : location.city ?? location.country
@@ -538,22 +538,22 @@ export default function CalendarScreen() {
                 icon: 'location-outline',
               }] : []),
               ...(selectedDateNewMoon ? [{
-                label: isAr ? 'وقت الاقتران (محلي)' : 'Conjunction Time (local)',
+                label: tr.conjunctionTime,
                 value: formatNewMoonLocal(selectedDateNewMoon, locationUtcOffset),
                 icon: 'time-outline',
               }] : []),
               ...(crescentWindow ? [{
-                label: isAr ? 'نافذة رؤية الهلال' : 'Crescent Visibility',
+                label: tr.crescentVisibility,
                 value: `${formatTimeAtOffset(crescentWindow.sunset, locationUtcOffset)} – ${formatTimeAtOffset(crescentWindow.moonset, locationUtcOffset)}`,
                 icon: 'eye-outline',
               }] : []),
               {
-                label: isAr ? 'المرحلة' : 'Phase Value',
+                label: tr.phaseValue,
                 value: `${(selectedMoon.phase * 100).toFixed(1)}%`,
                 icon: 'analytics-outline',
               },
               {
-                label: isAr ? 'التاريخ المختار' : 'Selected Date',
+                label: tr.selectedDate,
                 value: `${selectedDate.d}/${selectedDate.m}/${selectedDate.y}`,
                 icon: 'today-outline',
               },
@@ -587,7 +587,7 @@ export default function CalendarScreen() {
             </View>
 
             <Pressable onPress={() => setShowMoonDetail(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
-              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
+              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{tr.close}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -600,9 +600,9 @@ export default function CalendarScreen() {
             <View style={styles.modalHandle} />
             <View style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
               <Text style={[styles.modalTitle, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, marginBottom: 0 }]}>
-                {isAr ? '🌒 رصد الهلال' : '🌒 Crescent Sighting Lookup'}
+                {`🌒 ${tr.crescentSightingLookup}`}
               </Text>
-              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(isAr ? 'الهلال الجديد' : 'New Crescent Moon', CRESCENT_HELP[lang] ?? CRESCENT_HELP['en']); }} hitSlop={8}>
+              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.newCrescentMoon, CRESCENT_HELP[lang] ?? CRESCENT_HELP['en']); }} hitSlop={8}>
                 <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
               </Pressable>
             </View>
@@ -630,7 +630,7 @@ export default function CalendarScreen() {
             <View style={[styles.nmResultBox, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
               {lookupCrescentInfos.length === 0 ? (
                 <Text style={[styles.moonSub, { color: C.textMuted, textAlign: 'center', padding: 16 }]}>
-                  {isAr ? 'لا يوجد هلال هذا الشهر' : 'No crescent sighting expected this month'}
+                  {tr.noCrescentThisMonth}
                 </Text>
               ) : (
                 lookupCrescentInfos.map((info, i) => {
@@ -643,7 +643,7 @@ export default function CalendarScreen() {
                       {/* Primary: expected crescent date */}
                       <Text style={{ fontSize: 36, marginBottom: 6 }}>🌒</Text>
                       <Text style={[styles.nmCrescentLabel, { color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-                        {isAr ? 'موعد رؤية الهلال المتوقع' : 'Expected Crescent Sighting'}
+                        {tr.expectedCrescentSighting}
                       </Text>
                       <Text style={[styles.nmDateTime, { color: C.text, marginBottom: 8 }]}>
                         {crescentLabel}
@@ -677,7 +677,7 @@ export default function CalendarScreen() {
             </View>
 
             <Pressable onPress={() => setShowNewMoonLookup(false)} style={[styles.modalClose, { backgroundColor: C.tint }]}>
-              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{isAr ? 'إغلاق' : 'Close'}</Text>
+              <Text style={[styles.modalCloseText, { color: C.tintText }]}>{tr.close}</Text>
             </Pressable>
           </Pressable>
         </Pressable>

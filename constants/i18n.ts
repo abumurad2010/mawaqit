@@ -549,6 +549,8 @@ const base = {
   selectedDate: 'Selected Date',
   setLocationForPrayerTimes: 'Set your location to see prayer times',
   prayerTimesSection: 'Prayer Times',
+  newCrescentMoon: 'New Crescent Moon',
+  hijriEraSuffix: 'AH',
 
   // UI labels (settings / quran / tabs)
   off: 'Off',
@@ -972,6 +974,8 @@ const translations: Record<Lang, PartialT> = {
     selectedDate: 'التاريخ المختار',
     setLocationForPrayerTimes: 'يرجى تحديد الموقع لعرض أوقات الصلاة',
     prayerTimesSection: 'أوقات الصلاة',
+    newCrescentMoon: 'الهلال الجديد',
+    hijriEraSuffix: 'هـ',
     off: 'إيقاف',
     full: 'كامل',
     abbr: 'مختصر',
