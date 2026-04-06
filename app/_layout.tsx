@@ -16,9 +16,10 @@ import { playAthan } from '@/lib/audio';
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
-      shouldSetBadge: true,
+      shouldSetBadge: false,
     }),
   });
 }
@@ -80,7 +81,7 @@ function RootLayoutNav() {
       foregroundSub.remove();
       responseSub.remove();
     };
-  }, []);
+  }, [selectedAdhan]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

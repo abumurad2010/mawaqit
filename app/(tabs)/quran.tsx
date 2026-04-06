@@ -136,7 +136,7 @@ export default function QuranScreen() {
             }
           </Text>
           <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: qFS.meta }]}>
-            {item.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
+            {item.type === 'Meccan' ? tr.makkiyya : tr.madaniyya}
             {' · '}
             {item.ayahs} {isAr ? 'آية' : 'verses'}
           </Text>
@@ -214,7 +214,7 @@ export default function QuranScreen() {
           >
             <Ionicons name="book" size={13} color={mode === 'mushaf' ? C.tintText : C.textMuted} />
             <Text style={[styles.segmentLabel, { color: mode === 'mushaf' ? C.tintText : C.textMuted }]}>
-              {isAr ? 'المصحف' : 'Mushaf'}
+              {tr.mushaf}
             </Text>
           </Pressable>
 
@@ -224,7 +224,7 @@ export default function QuranScreen() {
           >
             <Ionicons name="language" size={13} color={mode === 'transliteration' ? C.tintText : C.textMuted} />
             <Text style={[styles.segmentLabel, { color: mode === 'transliteration' ? C.tintText : C.textMuted }]}>
-              {isAr ? 'النقل الحرفي' : 'Transliteration'}
+              {tr.transliteration}
             </Text>
           </Pressable>
         </View>
@@ -267,7 +267,7 @@ export default function QuranScreen() {
             >
               <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
                 <Text style={[styles.pickerTitle, { color: C.text, fontFamily: SERIF_EN }]}>
-                  {isAr ? 'لغة الترجمة' : 'Translation language'}
+                  {tr.translationLanguage}
                 </Text>
               </View>
               <ScrollView showsVerticalScrollIndicator={false}>
@@ -311,7 +311,7 @@ export default function QuranScreen() {
         >
           <Ionicons name="book-outline" size={15} color={C.tintText} />
           <Text style={[styles.continueBtnText, { color: C.tintText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-            {isAr ? `متابعة القراءة — صفحة ${lastReadPage}` : `Continue Reading — Page ${lastReadPage}`}
+            {`${tr.continueReading} — ${tr.page} ${lastReadPage}`}
           </Text>
         </Pressable>
       )}

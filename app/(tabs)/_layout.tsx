@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useSegments } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet, Text } from 'react-native';
 import React from 'react';
@@ -13,6 +13,9 @@ function ClassicTabLayout() {
   const { isDark, lang, colors, isRtl } = useApp();
   const C = colors;
   const tr = t(lang);
+  const segments = useSegments();
+  const isOnSettings = segments[segments.length - 1] === 'settings';
+  const hiddenTabStyle = isOnSettings ? { display: 'none' as const, width: 0 } : undefined;
 
   const screens = [
     <Tabs.Screen
@@ -20,6 +23,7 @@ function ClassicTabLayout() {
       name="index"
       options={{
         title: tr.prayers,
+        tabBarItemStyle: hiddenTabStyle,
         tabBarIcon: ({ color, size, focused }) => (
           <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />
         ),
@@ -30,6 +34,7 @@ function ClassicTabLayout() {
       name="calendar"
       options={{
         title: tr.today,
+        tabBarItemStyle: hiddenTabStyle,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="calendar-outline" size={size} color={color} />
         ),
@@ -40,6 +45,7 @@ function ClassicTabLayout() {
       name="qibla"
       options={{
         title: tr.qibla,
+        tabBarItemStyle: hiddenTabStyle,
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="compass-outline" size={size} color={color} />
         ),
@@ -49,7 +55,8 @@ function ClassicTabLayout() {
       key="athkar"
       name="athkar"
       options={{
-        title: 'الأذكار',
+        title: tr.athkar,
+        tabBarItemStyle: hiddenTabStyle,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="moon-outline" size={size} color={color} />
         ),
@@ -60,6 +67,7 @@ function ClassicTabLayout() {
       name="quran"
       options={{
         title: tr.quran,
+        tabBarItemStyle: hiddenTabStyle,
         tabBarIcon: ({ color, size }) => (
           <MaterialCommunityIcons name="book-open-page-variant-outline" size={size} color={color} />
         ),

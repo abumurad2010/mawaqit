@@ -90,6 +90,7 @@ export default function SettingsScreen() {
   const [draftPrayerAdhan, setDraftPrayerAdhan] = useState<Record<string, string>>(prayerAdhan ?? {});
   const [activePrayerAdhanKey, setActivePrayerAdhanKey] = useState<string | null>(null);
   const isMountedRef = useRef(true);
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -101,6 +102,7 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
       return () => {
         stopAthan();
       };
@@ -575,14 +577,14 @@ export default function SettingsScreen() {
     // Step 3: If still not granted (user denied), guide them to Settings
     if (finalStatus !== 'granted') {
       Alert.alert(
-        isAr ? 'الإشعارات معطلة' : 'Notifications Disabled',
+        tr.notificationsDisabled,
         isAr
           ? 'يرجى تفعيل الإشعارات لتطبيق مواقيت من إعدادات جهازك.'
           : 'Please enable notifications for Mawaqit in your iPhone Settings.',
         [
-          { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+          { text: tr.btn_cancel, style: 'cancel' },
           {
-            text: isAr ? 'فتح الإعدادات' : 'Open Settings',
+            text: tr.openSettingsBtn,
             onPress: () => Linking.openURL('app-settings:'),
           },
         ],
@@ -696,7 +698,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [styles.cancelBtn, { opacity: pressed ? 0.6 : 1 }]}
           >
             <Text style={[styles.cancelBtnText, { color: C.textMuted }]}>
-              {isAr ? 'إلغاء' : 'Cancel'}
+              {tr.btn_cancel}
             </Text>
           </Pressable>
           <Pressable
@@ -707,7 +709,7 @@ export default function SettingsScreen() {
             ]}
           >
             <Text style={[styles.saveBtnText, { color: hasChanges ? C.tintText : C.tint }]}>
-              {isAr ? 'حفظ' : 'Save'}
+              {tr.save}
             </Text>
           </Pressable>
         </View>
@@ -738,6 +740,7 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 40 }}
         showsVerticalScrollIndicator={false}
       >
@@ -745,7 +748,7 @@ export default function SettingsScreen() {
         {/* General */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'عام' : 'General'}
+            {tr.general}
           </Text>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -774,20 +777,20 @@ export default function SettingsScreen() {
         {/* Accessibility */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'المساعدة البصرية' : 'Accessibility'}
+            {tr.accessibility}
           </Text>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', padding: 10, gap: 8 }}>
             {([
-              { key: 'default' as AccessibilityTheme,       label: isAr ? 'الافتراضي'    : 'Default',       swatchLight: '#1a7a4a', swatchDark: '#34C759' },
-              { key: 'high-contrast' as AccessibilityTheme, label: isAr ? 'تباين عالٍ'   : 'High Contrast',  swatchLight: '#000000', swatchDark: '#FFFFFF' },
-              { key: 'colorblind' as AccessibilityTheme,    label: isAr ? 'عمى الألوان'  : 'Color Blind',    swatchLight: '#0055CC', swatchDark: '#409CFF' },
-              { key: 'warm' as AccessibilityTheme,          label: isAr ? 'دافئ'          : 'Warm',           swatchLight: '#8C6400', swatchDark: '#E8A000' },
-              { key: 'blossom' as AccessibilityTheme,       label: isAr ? 'الوردي'        : 'Blossom',        swatchLight: '#B83255', swatchDark: '#FF7AA0' },
-              { key: 'ocean' as AccessibilityTheme,         label: isAr ? 'المحيط'        : 'Ocean',          swatchLight: '#0B6FAA', swatchDark: '#4FC3F7' },
-              { key: 'violet' as AccessibilityTheme,        label: isAr ? 'البنفسجي'      : 'Violet',         swatchLight: '#6B3FA0', swatchDark: '#C084FC' },
-              { key: 'gold' as AccessibilityTheme,          label: isAr ? 'الذهبي'        : 'Gold',           swatchLight: '#8B6800', swatchDark: '#FFD60A' },
+              { key: 'default' as AccessibilityTheme,       label: tr.themeDefault,       swatchLight: '#1a7a4a', swatchDark: '#34C759' },
+              { key: 'high-contrast' as AccessibilityTheme, label: tr.themeHighContrast,  swatchLight: '#000000', swatchDark: '#FFFFFF' },
+              { key: 'colorblind' as AccessibilityTheme,    label: tr.themeColorBlind,    swatchLight: '#0055CC', swatchDark: '#409CFF' },
+              { key: 'warm' as AccessibilityTheme,          label: tr.themeWarm,          swatchLight: '#8C6400', swatchDark: '#E8A000' },
+              { key: 'blossom' as AccessibilityTheme,       label: tr.themeBlossom,       swatchLight: '#B83255', swatchDark: '#FF7AA0' },
+              { key: 'ocean' as AccessibilityTheme,         label: tr.themeOcean,         swatchLight: '#0B6FAA', swatchDark: '#4FC3F7' },
+              { key: 'violet' as AccessibilityTheme,        label: tr.themeViolet,        swatchLight: '#6B3FA0', swatchDark: '#C084FC' },
+              { key: 'gold' as AccessibilityTheme,          label: tr.themeGold,          swatchLight: '#8B6800', swatchDark: '#FFD60A' },
             ] as const).map((theme) => {
               const isSelected = draftAccessibilityTheme === theme.key;
               const swatch = isDark ? theme.swatchDark : theme.swatchLight;
@@ -829,7 +832,7 @@ export default function SettingsScreen() {
         {/* Hijri date adjustment */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'التقويم الهجري' : 'Hijri Calendar'}
+            {tr.hijriCalendar}
           </Text>
           <Pressable onPress={() => showHelp(isAr ? 'تعديل التاريخ الهجري' : 'Hijri Date Adjustment', HELP[lang]?.hijri ?? HELP['en'].hijri)} hitSlop={8}>
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
@@ -859,12 +862,12 @@ export default function SettingsScreen() {
                 </Pressable>
               </View>
               <Text style={[styles.stepperLabel, { color: C.textSecond, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
-                {isAr ? 'يوم' : draftHijri === 0 ? 'no offset' : Math.abs(draftHijri) === 1 ? 'day' : 'days'}
+                {draftHijri === 0 ? tr.noOffset : Math.abs(draftHijri) === 1 ? tr.day : tr.days}
               </Text>
               {draftHijri !== 0 && (
                 <Pressable onPress={() => { Haptics.selectionAsync(); setDraftHijri(0); }}>
                   <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600' }}>
-                    {isAr ? 'إعادة ضبط' : 'Reset'}
+                    {tr.reset}
                   </Text>
                 </Pressable>
               )}
@@ -875,7 +878,7 @@ export default function SettingsScreen() {
         {/* Prayer Calculation */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'حساب أوقات الصلاة' : 'Prayer Calculation'}
+            {tr.prayerCalculation}
           </Text>
           <Pressable onPress={() => showHelp(isAr ? 'طريقة الحساب' : 'Calculation Method', HELP[lang]?.calcMethod ?? HELP['en'].calcMethod)} hitSlop={8}>
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
@@ -1139,9 +1142,9 @@ export default function SettingsScreen() {
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4 }}>
                 <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                  {isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin'}
+                  {tr.maghribSafetyMargin}
                 </Text>
-                <Pressable onPress={() => showHelp(isAr ? 'احتياط المغرب' : 'Maghrib Safety Margin', HELP[lang]?.maghrib ?? HELP['en'].maghrib)} hitSlop={8}>
+                <Pressable onPress={() => showHelp(tr.maghribSafetyMargin, HELP[lang]?.maghrib ?? HELP['en'].maghrib)} hitSlop={8}>
                   <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
                 </Pressable>
               </View>
@@ -1177,13 +1180,13 @@ export default function SettingsScreen() {
               {/* Total */}
               <View style={[styles.totalBadge, { backgroundColor: C.tint, paddingHorizontal: 8, paddingVertical: 4 }]}>
                 <Text style={[styles.totalBadgeText, { color: C.tintText, fontSize: 12 }]}>
-                  {isAr ? `= ${maghribBase + draftAdjustment} د` : `= ${maghribBase + draftAdjustment} min`}
+                  {`= ${maghribBase + draftAdjustment} ${tr.minutes}`}
                 </Text>
               </View>
               {draftAdjustment !== 0 && (
                 <Pressable onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(0); }}>
                   <Text style={{ color: C.tint, fontSize: 11, fontWeight: '600' }}>
-                    {isAr ? 'إعادة ضبط' : 'Reset'}
+                    {tr.reset}
                   </Text>
                 </Pressable>
               )}
@@ -1236,9 +1239,7 @@ export default function SettingsScreen() {
               }]}
             >
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-                {isAr
-                  ? { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' }[prayer]
-                  : { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' }[prayer]}
+                {({ fajr: tr.fajr, dhuhr: tr.dhuhr, asr: tr.asr, maghrib: tr.maghrib, isha: tr.isha } as Record<string, string>)[prayer]}
               </Text>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setShowIqamaPicker(prayer); }}

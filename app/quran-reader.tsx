@@ -225,8 +225,8 @@ export default function QuranReaderScreen() {
     const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
     if (newPage < 1 || newPage > TOTAL_PAGES) return;
     navigating.current = true;
-    // Mushaf is always RTL: next page flips left (−90°), prev page flips right (+90°)
-    const outAngle = direction === 'next' ? -90 : 90;
+    // Mushaf is always RTL: next page flips right (+90°), prev page flips left (−90°)
+    const outAngle = direction === 'next' ? 90 : -90;
 
     const doSwap = () => {
       setPageNum(newPage);
@@ -290,9 +290,9 @@ export default function QuranReaderScreen() {
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > Math.abs(g.dy) && Math.abs(g.dx) > 12,
       onPanResponderRelease: (_, g) => {
-        // Quran is RTL: swipe left (dx < 0) = next page, swipe right (dx > 0) = prev page
-        if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('next');
-        else if (g.dx > SWIPE_THRESHOLD) navigateRef.current('prev');
+        // Quran is RTL: swipe right (dx > 0) = next page, swipe left (dx < 0) = prev page
+        if (g.dx > SWIPE_THRESHOLD) navigateRef.current('next');
+        else if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('prev');
       },
     })
   ).current;
@@ -321,7 +321,7 @@ export default function QuranReaderScreen() {
     <View style={[styles.root, { backgroundColor: bgColor }]}>
 
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator }]}>
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator, zIndex: 2 }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
@@ -341,20 +341,25 @@ export default function QuranReaderScreen() {
         </View>
 
         <View style={styles.headerRight}>
-          <Pressable
-            onPress={() => changeFontSize(-1)}
-            disabled={fsIdx === 0}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
-          >
-            <Text style={{ color: C.tint, fontSize: 13, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => changeFontSize(1)}
-            disabled={fsIdx === FONT_STEPS.length - 1}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
-          >
-            <Text style={{ color: C.tint, fontSize: 17, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+            <Pressable
+              onPress={() => changeFontSize(-1)}
+              disabled={fsIdx === 0}
+              style={[styles.fontPill, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : 1 }]}
+            >
+              <Text style={{ color: C.textMuted, fontSize: 11, fontWeight: '700', fontFamily: 'Inter_600SemiBold' }}>A−</Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 24, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {(['XS','S','M','L','XL'] as const)[fsIdx] ?? 'M'}
+            </Text>
+            <Pressable
+              onPress={() => changeFontSize(1)}
+              disabled={fsIdx === FONT_STEPS.length - 1}
+              style={[styles.fontPill, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : 1 }]}
+            >
+              <Text style={{ color: C.textMuted, fontSize: 13, fontWeight: '700', fontFamily: 'Inter_600SemiBold' }}>A+</Text>
+            </Pressable>
+          </View>
           <Pressable
             onPress={() => router.push('/bookmarks')}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
@@ -366,7 +371,7 @@ export default function QuranReaderScreen() {
 
       {/* ── Page content with swipe ── */}
       <Animated.View
-        style={[{ flex: 1 }, flipStyle]}
+        style={[{ flex: 1, overflow: 'hidden' }, flipStyle]}
         {...panResponder.panHandlers}
       >
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
@@ -519,6 +524,7 @@ const styles = StyleSheet.create({
   headerSurah: { fontSize: 17, letterSpacing: 0.5 },
   headerJuz: { fontSize: 11, marginTop: 1 },
   iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  fontPill: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   pageContent: { paddingHorizontal: 16, paddingTop: 4 },
 
   bismillah: {

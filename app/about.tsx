@@ -58,6 +58,9 @@ export default function AboutScreen() {
           <Text style={[styles.appTagline, { color: C.textMuted }]}>
             {tr.about_app_tagline}
           </Text>
+          <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 4 }}>
+            v{APP_VERSION}
+          </Text>
         </View>
 
         <View style={[styles.separator, { backgroundColor: C.separator }]} />

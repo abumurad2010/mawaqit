@@ -120,8 +120,8 @@ export default function SurahTransliterationScreen() {
     const newNum = dir === 'next' ? cur + 1 : cur - 1;
     if (newNum < 1 || newNum > 114) return;
     transitioningRef.current = true;
-    // Direction: for RTL swipe left = next, for LTR swipe right = next
-    const outAngle = isRtl ? (dir === 'next' ? -90 : 90) : (dir === 'next' ? 90 : -90);
+    // Direction: for RTL swipe right = next, for LTR swipe left = next
+    const outAngle = isRtl ? (dir === 'next' ? 90 : -90) : (dir === 'next' ? -90 : 90);
 
     const doSwap = () => {
       surahNumRef.current = newNum;
@@ -160,7 +160,7 @@ export default function SurahTransliterationScreen() {
       if (pg < tot) {
         // Next page within surah
         transitioningRef.current = true;
-        const outAngle = isRtl ? -90 : 90;
+        const outAngle = isRtl ? 90 : -90;
         Haptics.selectionAsync();
         flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
@@ -180,7 +180,7 @@ export default function SurahTransliterationScreen() {
       if (pg > 1) {
         // Prev page within surah
         transitioningRef.current = true;
-        const outAngle = isRtl ? 90 : -90;
+        const outAngle = isRtl ? -90 : 90;
         Haptics.selectionAsync();
         flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
@@ -211,13 +211,13 @@ export default function SurahTransliterationScreen() {
         Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
       onPanResponderRelease: (_, g) => {
         const rtl = isRtlRef.current;
-        // RTL: swipe left = next page; LTR: swipe right = next page
+        // RTL: swipe right = next page; LTR: swipe left = next page
         if (rtl) {
-          if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('next');
-          else if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('prev');
-        } else {
           if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('next');
           else if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('prev');
+        } else {
+          if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('next');
+          else if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('prev');
         }
       },
     })
@@ -271,7 +271,7 @@ export default function SurahTransliterationScreen() {
       <PageBackground />
 
       {/* ── Sticky header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 8, backgroundColor: C.background + 'F0', borderBottomColor: C.separator }]}>
+      <View style={[styles.header, { paddingTop: topInset + 8, backgroundColor: C.background + 'F0', borderBottomColor: C.separator, zIndex: 2 }]}>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
           style={[styles.backBtn, { backgroundColor: C.backgroundCard }]}
@@ -424,7 +424,7 @@ export default function SurahTransliterationScreen() {
       </View>
 
       {/* ── Scrollable ayah content + bottom bar (swipeable) ── */}
-      <Animated.View style={[{ flex: 1 }, flipStyle]} {...panResponder.panHandlers}>
+      <Animated.View style={[{ flex: 1, overflow: 'hidden' }, flipStyle]} {...panResponder.panHandlers}>
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
