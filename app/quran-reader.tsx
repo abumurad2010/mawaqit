@@ -260,12 +260,12 @@ export default function QuranReaderScreen() {
       ? `${surahName?.arabic ?? ''} — آية ${toArabicIndic(ayah.ayahNum)}`
       : `${surahName?.transliteration ?? ''} — Ayah ${ayah.ayahNum}`;
     Alert.alert(
-      bookmarked ? (isAr ? 'إزالة الإشارة' : 'Remove Bookmark') : (isAr ? 'إضافة إشارة' : 'Bookmark Ayah'),
+      bookmarked ? tr.removeBookmark : tr.addBookmark,
       label,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: tr.btn_cancel, style: 'cancel' },
         {
-          text: bookmarked ? (isAr ? 'إزالة' : 'Remove') : (isAr ? 'إضافة' : 'Add'),
+          text: bookmarked ? tr.remove : tr.add,
           onPress: () => {
             if (bookmarked) {
               removeBookmark(ayah.surahNum, ayah.ayahNum);
@@ -490,7 +490,7 @@ export default function QuranReaderScreen() {
         >
           <Ionicons name="chevron-back" size={16} color={C.tint} />
           <Text style={[styles.navBtnText, { color: C.tint }]}>
-            {isAr ? 'السابقة' : 'Prev'}
+            {tr.prev}
           </Text>
         </Pressable>
 
@@ -503,7 +503,7 @@ export default function QuranReaderScreen() {
           ]}
         >
           <Text style={[styles.navBtnText, { color: C.tint }]}>
-            {isAr ? 'التالية' : 'Next'}
+            {tr.next}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={C.tint} />
         </Pressable>

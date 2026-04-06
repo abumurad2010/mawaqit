@@ -138,7 +138,7 @@ export default function QuranScreen() {
           <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: qFS.meta }]}>
             {item.type === 'Meccan' ? tr.makkiyya : tr.madaniyya}
             {' · '}
-            {item.ayahs} {isAr ? 'آية' : 'verses'}
+            {item.ayahs} {tr.verses}
           </Text>
         </View>
 

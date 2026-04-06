@@ -48,7 +48,7 @@ export default function QuranTOCScreen() {
           <Text style={[styles.translit, { color: C.textMuted }]}>{item.transliteration}</Text>
         </View>
         <Text style={[styles.tag, { color: C.tint, backgroundColor: C.surface }]}>
-          {item.type === 'Meccan' ? (isAr ? 'م' : 'M') : (isAr ? 'د' : 'D')}
+          {item.type === 'Meccan' ? tr.makkiyyaAbbr : tr.madaniyyaAbbr}
         </Text>
       </Pressable>
     </Animated.View>
@@ -82,7 +82,7 @@ export default function QuranTOCScreen() {
           style={[styles.searchInput, { color: C.text }]}
           value={filter}
           onChangeText={setFilter}
-          placeholder={isAr ? 'ابحث عن سورة...' : 'Search surah...'}
+          placeholder={tr.searchSurah}
           placeholderTextColor={C.textMuted}
           textAlign={isAr ? 'right' : 'left'}
         />

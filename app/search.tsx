@@ -122,7 +122,7 @@ export default function SearchScreen() {
           </View>
           <View style={styles.resultInfo}>
             <Text style={[styles.resultSurah, { color: C.tint }]}>
-              {meta?.arabic ?? ''} · {isAr ? 'آية' : 'Ayah'} {item.ayahNum}
+              {meta?.arabic ?? ''} · {tr.ayah} {item.ayahNum}
             </Text>
             <Text style={[styles.resultText, { color: C.text, fontFamily: 'Amiri_400Regular' }]} numberOfLines={3}>
               {item.text}
@@ -156,7 +156,7 @@ export default function SearchScreen() {
           </View>
           <View style={styles.resultInfo}>
             <Text style={[styles.resultSurah, { color: C.tint }]}>
-              {meta?.arabic ?? ''} · {isAr ? 'آية' : 'Ayah'} {item.ayahNum}
+              {meta?.arabic ?? ''} · {tr.ayah} {item.ayahNum}
             </Text>
             {item.translitSnippet.length > 0 && (
               <Text style={[styles.resultText, { color: C.tint, fontStyle: 'italic' }]} numberOfLines={2}>
@@ -223,7 +223,7 @@ export default function SearchScreen() {
           <View style={[styles.modePill, { backgroundColor: C.tintLight }]}>
             <Ionicons name="language" size={12} color={C.tint} />
             <Text style={[styles.modePillText, { color: C.tint }]}>
-              {isAr ? 'وضع النقل الحرفي' : 'Transliteration mode'}
+              {tr.transliterationMode}
             </Text>
           </View>
         )}
@@ -236,7 +236,7 @@ export default function SearchScreen() {
           <View style={styles.center}>
             <Ionicons name="search-outline" size={48} color={C.textMuted} />
             <Text style={[styles.emptyText, { color: C.textMuted }]}>
-              {isAr ? 'لم يتم العثور على نتائج' : 'No results found'}
+              {tr.noResults}
             </Text>
           </View>
         ) : (

@@ -246,7 +246,7 @@ export default function SurahScreen() {
         </Pressable>
 
         <Text style={[styles.swipeHintCenter, { color: C.textMuted }]}>
-          {isAr ? 'اسحب للتنقل' : 'swipe to navigate'}
+          {tr.swipeToNavigate}
         </Text>
 
         <Pressable
@@ -282,7 +282,7 @@ export default function SurahScreen() {
           <View style={styles.center}>
             <Ionicons name="wifi-outline" size={48} color={C.textMuted} />
             <Text style={[styles.errorText, { color: C.text }]}>
-              {isAr ? 'تعذر التحميل — تحقق من الاتصال' : 'Could not load — check connection'}
+              {tr.loadError}
             </Text>
             <Pressable onPress={() => loadSurah(surahNum)}>
               <Text style={{ color: C.tint, marginTop: 12 }}>{tr.retry}</Text>
@@ -302,9 +302,9 @@ export default function SurahScreen() {
               </Text>
               <Text style={[styles.surahEnglishName, { color: C.tintText, opacity: 0.8 }]}>{meta?.transliteration}</Text>
               <Text style={[styles.surahMeta, { color: C.tintText, opacity: 0.65 }]}>
-                {meta?.type === 'Meccan' ? (isAr ? 'مكية' : 'Meccan') : (isAr ? 'مدنية' : 'Medinan')}
+                {meta?.type === 'Meccan' ? tr.makkiyya : tr.madaniyya}
                 {' · '}
-                {meta?.ayahs} {isAr ? 'آية' : 'verses'}
+                {meta?.ayahs} {tr.verses}
               </Text>
             </View>
 
@@ -319,7 +319,7 @@ export default function SurahScreen() {
 
             {/* Hint */}
             <Text style={[styles.hint, { color: C.textMuted }]}>
-              {isAr ? 'اضغط مطولاً على آية لحفظها' : 'Long press a verse to bookmark it'}
+              {tr.longPressBookmark}
             </Text>
 
             {/* Ayahs */}
@@ -420,8 +420,8 @@ export default function SurahScreen() {
               />
               <Text style={[styles.modalBtnText, { color: selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah) ? '#fff' : C.tintText }]}>
                 {selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah)
-                  ? (isAr ? 'إزالة الإشارة' : 'Remove Bookmark')
-                  : (isAr ? 'إضافة إشارة' : 'Add Bookmark')}
+                  ? tr.removeBookmark
+                  : tr.addBookmark}
               </Text>
             </Pressable>
           </View>

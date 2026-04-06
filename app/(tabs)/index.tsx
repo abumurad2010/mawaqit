@@ -700,7 +700,7 @@ export default function PrayerTimesScreen() {
           >
             <Ionicons name="return-up-back-outline" size={13} color={C.tint} />
             <Text style={[styles.backTodayText, { color: C.tint, fontSize: hFS }]}>
-              {isAr ? 'العودة لليوم' : 'Back to Today'}
+              {tr.backToToday}
             </Text>
           </Pressable>
         </View>
@@ -807,7 +807,7 @@ export default function PrayerTimesScreen() {
                         {eidLabel}
                       </Text>
                       <View style={[styles.naflBadge, { backgroundColor: C.tint + '22' }]}>
-                        <Text style={[styles.naflBadgeText, { color: C.tint }]}>{isAr ? 'عيد' : 'Eid'}</Text>
+                        <Text style={[styles.naflBadgeText, { color: C.tint }]}>{tr.eid}</Text>
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: eidTime < now ? C.textMuted : C.tint, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
@@ -832,7 +832,7 @@ export default function PrayerTimesScreen() {
                         styles.prayerName,
                         { color: dhuhaTime < now ? C.textMuted : C.gold, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: pFS, lineHeight: pLH }
                       ]}>
-                        {isAr ? 'الضحى' : tr.dhuha}
+                        {tr.dhuha}
                       </Text>
                       <View style={[styles.naflBadge, { backgroundColor: C.gold + '22' }]}>
                         <Text style={[styles.naflBadgeText, { color: C.gold }]}>{tr.nafl}</Text>

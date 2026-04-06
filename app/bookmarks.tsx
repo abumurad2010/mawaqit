@@ -58,14 +58,14 @@ export default function BookmarksScreen() {
                 <View style={[styles.typeBadge, { backgroundColor: C.tintLight, borderColor: C.tint }]}>
                   <Ionicons name="language" size={10} color={C.tint} />
                   <Text style={[styles.typeBadgeText, { color: C.tint }]}>
-                    {isAr ? 'نقل حرفي' : 'Translit'}
+                    {tr.translit}
                   </Text>
                 </View>
               )}
             </View>
             <View style={styles.metaRow}>
               <Text style={[styles.ayahNum, { color: C.textSecond, fontWeight: fw }]}>
-                {isAr ? `الآية ${item.ayahNumber}` : `Ayah ${item.ayahNumber}`}
+                {`${tr.ayah} ${item.ayahNumber}`}
               </Text>
               {!!item.timestamp && (
                 <Text style={[styles.timestamp, { color: C.textMuted, fontWeight: fw }]}>

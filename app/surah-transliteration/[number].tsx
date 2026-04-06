@@ -284,7 +284,7 @@ export default function SurahTransliterationScreen() {
             {meta?.arabic ?? ''}
           </Text>
           <Text style={[styles.headerSub, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
-            {meta?.transliteration ?? ''} · {totalAyahs} {isAr ? 'آية' : 'verses'}
+            {meta?.transliteration ?? ''} · {totalAyahs} {tr.verses}
           </Text>
         </View>
 
@@ -347,7 +347,7 @@ export default function SurahTransliterationScreen() {
           >
             <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
               <Text style={[styles.pickerTitle, { color: C.text, fontFamily: SERIF_EN }]}>
-                {isAr ? 'لغة الترجمة' : 'Translation language'}
+                {tr.translationLanguage}
               </Text>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>

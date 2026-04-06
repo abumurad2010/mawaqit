@@ -266,7 +266,7 @@ export default function QiblaScreen() {
         <Animated.View entering={FadeIn.delay(300)} style={styles.instruction}>
           {isAlignedState ? (
             <Text style={[styles.alignedText, { color: C.tint, fontFamily: isAr ? 'Amiri_700Bold' : undefined, fontSize: qFS.instr }]}>
-              {isAr ? '✦ أنت تواجه القبلة ✦' : '✦ Facing the Qibla ✦'}
+              {tr.facingQibla}
             </Text>
           ) : (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -352,22 +352,22 @@ export default function QiblaScreen() {
                 <View style={styles.mecRow}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
                     <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{KAABA_LAT}°N</Text>
-                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'خط العرض' : 'Latitude'}</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{tr.latitude}</Text>
                   </View>
                   <View style={styles.mecCell}>
                     <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{KAABA_LNG}°E</Text>
-                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'خط الطول' : 'Longitude'}</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{tr.longitude}</Text>
                   </View>
                 </View>
                 {/* Row 2: fixed Qibla bearing | distance */}
                 <View style={[styles.mecRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }]}>
                   <View style={[styles.mecCell, { borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}>
                     <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{heading.toFixed(1)}°</Text>
-                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'الاتجاه' : 'Bearing'}</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{tr.bearing}</Text>
                   </View>
                   <View style={styles.mecCell}>
                     <Text style={[styles.mecValue, { color: col, fontSize: qFS.value }]}>{`${Math.round(distance).toLocaleString()} km`}</Text>
-                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{isAr ? 'المسافة' : 'Distance'}</Text>
+                    <Text style={[styles.mecLabel, { color: col, fontSize: qFS.label }]}>{tr.distance}</Text>
                   </View>
                 </View>
               </>
