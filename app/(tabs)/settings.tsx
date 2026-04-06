@@ -491,11 +491,11 @@ export default function SettingsScreen() {
   };
 
   const TAB_OPTIONS: { key: string; label: string }[] = [
-    { key: 'index',    label: isAr ? 'أوقات الصلاة' : tr.prayers },
-    { key: 'calendar', label: isAr ? 'اليوم' : tr.today },
-    { key: 'qibla',   label: isAr ? 'القبلة' : tr.qibla },
-    { key: 'athkar',  label: 'الأذكار' },
-    { key: 'quran',   label: isAr ? 'القرآن الكريم' : tr.quran },
+    { key: 'index',    label: tr.prayers },
+    { key: 'calendar', label: tr.today },
+    { key: 'qibla',   label: tr.qibla },
+    { key: 'athkar',  label: tr.athkar },
+    { key: 'quran',   label: tr.quran },
   ];
 
   const handleThikrToggle = async () => {
@@ -834,7 +834,7 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {tr.hijriCalendar}
           </Text>
-          <Pressable onPress={() => showHelp(isAr ? 'تعديل التاريخ الهجري' : 'Hijri Date Adjustment', HELP[lang]?.hijri ?? HELP['en'].hijri)} hitSlop={8}>
+          <Pressable onPress={() => showHelp(tr.hijriCalendar, HELP[lang]?.hijri ?? HELP['en'].hijri)} hitSlop={8}>
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
           </Pressable>
         </View>
@@ -880,7 +880,7 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {tr.prayerCalculation}
           </Text>
-          <Pressable onPress={() => showHelp(isAr ? 'طريقة الحساب' : 'Calculation Method', HELP[lang]?.calcMethod ?? HELP['en'].calcMethod)} hitSlop={8}>
+          <Pressable onPress={() => showHelp(tr.prayerCalculation, HELP[lang]?.calcMethod ?? HELP['en'].calcMethod)} hitSlop={8}>
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
           </Pressable>
         </View>
@@ -965,7 +965,7 @@ export default function SettingsScreen() {
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
               <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
-                  {isAr ? 'صوت الأذان' : 'Adhan Voice'}
+                  {tr.adhanSound}
                 </Text>
                 <Pressable onPress={() => setShowAdhanModal(false)}>
                   <Ionicons name="close" size={22} color={C.textSecond} />
@@ -1009,7 +1009,7 @@ export default function SettingsScreen() {
             <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
               <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
                 <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
-                  {isAr ? 'صوت الأذان' : 'Adhan Voice'}
+                  {tr.adhanSound}
                 </Text>
                 <Pressable onPress={() => setActivePrayerAdhanKey(null)}>
                   <Ionicons name="close" size={22} color={C.textSecond} />
@@ -1128,7 +1128,7 @@ export default function SettingsScreen() {
           {/* Asr method */}
           <Row
             label={tr.asrMethod}
-            onHelp={() => showHelp(isAr ? 'طريقة حساب العصر' : 'Asr Calculation Method', HELP[lang]?.asrMethod ?? HELP['en'].asrMethod)}
+            onHelp={() => showHelp(tr.asrMethod, HELP[lang]?.asrMethod ?? HELP['en'].asrMethod)}
             right={
               <View style={styles.chips}>
                 <Chip value={tr.standard} selected={draftAsrMethod === 'standard'} onPress={() => setDraftAsrMethod('standard')} />
@@ -1154,9 +1154,7 @@ export default function SettingsScreen() {
               <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isRtl ? 'row-reverse' : 'row', flex: 1 }]}>
                 <Ionicons name="location-outline" size={12} color={C.tint} />
                 <Text style={[styles.autoOffsetText, { color: C.tint, fontSize: 12 }]}>
-                  {isAr
-                    ? `${maghribBase} ${maghribBase === 1 ? 'دقيقة' : 'دقائق'}${countryCode ? ` (${countryCode})` : ''}`
-                    : `${maghribBase} min${countryCode ? ` (${countryCode})` : ''}`}
+                  {`${maghribBase} ${tr.minutes}${countryCode ? ` (${countryCode})` : ''}`}
                 </Text>
               </View>
               {/* Stepper */}
@@ -1199,7 +1197,7 @@ export default function SettingsScreen() {
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                 {tr.firstAdhanSetting}
               </Text>
-              <Pressable onPress={() => showHelp(isAr ? 'الأذان الأول للفجر' : 'First Adhan (Early Fajr)', HELP[lang]?.firstAdhan ?? HELP['en'].firstAdhan)} hitSlop={8}>
+              <Pressable onPress={() => showHelp(tr.firstAdhan, HELP[lang]?.firstAdhan ?? HELP['en'].firstAdhan)} hitSlop={8}>
                 <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
               </Pressable>
             </View>
@@ -1210,8 +1208,8 @@ export default function SettingsScreen() {
               >
                 <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
                   {draftFirstAdhanOffset === 0
-                    ? (isAr ? 'إيقاف' : 'Off')
-                    : isAr ? `${draftFirstAdhanOffset} د قبل` : `${draftFirstAdhanOffset} min before`}
+                    ? tr.off
+                    : `${draftFirstAdhanOffset} ${tr.minBefore}`}
                 </Text>
                 <Ionicons name="chevron-down" size={13} color={C.tint} />
               </Pressable>
@@ -1224,7 +1222,7 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
             {tr.iqamaSettings}
           </Text>
-          <Pressable onPress={() => showHelp(isAr ? 'وقت الإقامة' : 'Iqama Time', HELP[lang]?.iqama ?? HELP['en'].iqama)} hitSlop={8}>
+          <Pressable onPress={() => showHelp(tr.iqamaSettings, HELP[lang]?.iqama ?? HELP['en'].iqama)} hitSlop={8}>
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
           </Pressable>
         </View>
@@ -1246,7 +1244,7 @@ export default function SettingsScreen() {
                 style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
               >
                 <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
-                  {isAr ? `${draftIqamaOffsets[prayer] ?? 10} د` : `${draftIqamaOffsets[prayer] ?? 10} min`}
+                  {`${draftIqamaOffsets[prayer] ?? 10} ${tr.minutes}`}
                 </Text>
                 <Ionicons name="chevron-down" size={13} color={C.tint} />
               </Pressable>
@@ -1257,7 +1255,7 @@ export default function SettingsScreen() {
         {/* Nafl Prayer Timings */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'الضحى وقيام الليل' : 'Dhuha & Qiyam'}
+            {tr.dhuhaAndQiyam}
           </Text>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -1266,9 +1264,9 @@ export default function SettingsScreen() {
           <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'الضحى' : 'Dhuha'}
+                {tr.dhuha}
               </Text>
-              <Pressable onPress={() => showHelp(isAr ? 'صلاة الضحى' : 'Dhuha Prayer', HELP[lang]?.dhuha ?? HELP['en'].dhuha)} hitSlop={8}>
+              <Pressable onPress={() => showHelp(tr.dhuha, HELP[lang]?.dhuha ?? HELP['en'].dhuha)} hitSlop={8}>
                 <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
               </Pressable>
             </View>
@@ -1292,9 +1290,9 @@ export default function SettingsScreen() {
           <View style={[styles.compactRow, { borderBottomWidth: 1, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                {isAr ? 'قيام الليل' : 'Qiyam'}
+                {tr.qiyam}
               </Text>
-              <Pressable onPress={() => showHelp(isAr ? 'قيام الليل' : 'Qiyam al-Layl', HELP_QIYAM[lang] ?? HELP_QIYAM['en'])} hitSlop={8}>
+              <Pressable onPress={() => showHelp(tr.qiyam, HELP_QIYAM[lang] ?? HELP_QIYAM['en'])} hitSlop={8}>
                 <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
               </Pressable>
             </View>
@@ -1318,7 +1316,7 @@ export default function SettingsScreen() {
           {isNearEid && (
             <View style={[styles.compactRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
-                {isAr ? 'صلاة العيد' : 'Eid Prayer'}
+                {tr.eidPrayer}
               </Text>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setTempEidPrayerTime(draftEidPrayerTime); setShowEidRoller(true); }}
@@ -1337,14 +1335,14 @@ export default function SettingsScreen() {
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowDhuhaRoller(false)} />
             <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
-                {isAr ? 'حدد وقت الضحى' : 'Set Dhuha Time'}
+                {tr.setDhuhaTime}
               </Text>
               <TimeRoller value={tempDhuhaTime} onChange={setTempDhuhaTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
-                {isAr ? 'يُصلَّى الضحى بعد ارتفاع الشمس وقبل الظهر' : 'Prayed after sunrise and before Dhuhr'}
+                {tr.dhuhaHint}
               </Text>
               <Pressable onPress={() => { setDraftDhuhaTime(tempDhuhaTime); setShowDhuhaRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
-                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{(tr as any).btn_done ?? 'Done'}</Text>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{tr.btn_done}</Text>
               </Pressable>
             </View>
           </View>
@@ -1356,14 +1354,14 @@ export default function SettingsScreen() {
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowTahajjudRoller(false)} />
             <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
-                {isAr ? 'حدد وقت قيام الليل' : 'Set Qiyam Time'}
+                {tr.setQiyamTime}
               </Text>
               <TimeRoller value={tempTahajjudTime} onChange={setTempTahajjudTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
-                {isAr ? 'الثلث الأخير من الليل: من نحو ٢ – ٤ صباحاً' : 'Last third of night: approx 2–4 AM'}
+                {tr.qiyamHint}
               </Text>
               <Pressable onPress={() => { setDraftTahajjudTime(tempTahajjudTime); setShowTahajjudRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
-                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{(tr as any).btn_done ?? 'Done'}</Text>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{tr.btn_done}</Text>
               </Pressable>
             </View>
           </View>
@@ -1375,14 +1373,14 @@ export default function SettingsScreen() {
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowEidRoller(false)} />
             <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
               <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
-                {isAr ? 'حدد وقت صلاة العيد' : 'Set Eid Prayer Time'}
+                {tr.setEidTime}
               </Text>
               <TimeRoller value={tempEidPrayerTime} onChange={setTempEidPrayerTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
               <Text style={[styles.rollerHint, { color: C.textMuted }]}>
-                {isAr ? 'أدخل الوقت الرسمي لصلاة العيد في مدينتك' : 'Enter the official Eid prayer time for your city or mosque'}
+                {tr.eidHint}
               </Text>
               <Pressable onPress={() => { setDraftEidPrayerTime(tempEidPrayerTime); setShowEidRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
-                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{(tr as any).btn_done ?? 'Done'}</Text>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{tr.btn_done}</Text>
               </Pressable>
             </View>
           </View>
@@ -1393,7 +1391,7 @@ export default function SettingsScreen() {
           <Pressable style={styles.dropdownOverlay} onPress={() => setShowFirstAdhanPicker(false)}>
             <View style={[styles.dropdownSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
               <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
-                {isAr ? 'الأذان الأول — التنبيه المبكر' : 'Early Adhan Reminder'}
+                {tr.earlyAdhanReminder}
               </Text>
               {([0, 5, 10, 15, 20, 25, 30] as const).map((mins, idx, arr) => {
                 const isSelected = draftFirstAdhanOffset === mins;
@@ -1413,9 +1411,7 @@ export default function SettingsScreen() {
                     ]}
                   >
                     <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
-                      {mins === 0
-                        ? (isAr ? 'إيقاف' : 'Off')
-                        : isAr ? `${mins} ${mins === 5 ? 'دقائق' : 'دقيقة'}` : `${mins} min`}
+                      {mins === 0 ? tr.off : `${mins} ${tr.minutes}`}
                     </Text>
                     {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
                   </Pressable>
@@ -1456,7 +1452,7 @@ export default function SettingsScreen() {
                     ]}
                   >
                     <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
-                      {isAr ? `${mins} دقيقة` : `${mins} min`}
+                      {`${mins} ${tr.minutes}`}
                     </Text>
                     {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
                   </Pressable>
@@ -1509,7 +1505,7 @@ export default function SettingsScreen() {
         {/* Notifications */}
         <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6, marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
           <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {isAr ? 'الإشعارات' : 'Notifications'}
+            {tr.notifications}
           </Text>
           <Pressable
             onPress={() => Alert.alert(tr.notifHelpTitle, tr.notifHelpText)}
@@ -1544,7 +1540,7 @@ export default function SettingsScreen() {
                     styles.notifLabel,
                     { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
-                    {isAr ? prayer.ar : prayer.en}
+                    {(tr as any)[prayer.key] ?? prayer.en}
                   </Text>
                   <View style={styles.notifChips}>
 
@@ -1597,7 +1593,7 @@ export default function SettingsScreen() {
                       }]}
                     >
                       <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'full' ? C.tint : C.textSecond }}>
-                        {isAr ? 'كامل' : 'Full'}
+                        {tr.full}
                       </Text>
                     </Pressable>
                     <Pressable
@@ -1608,7 +1604,7 @@ export default function SettingsScreen() {
                       }]}
                     >
                       <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'abbreviated' ? C.tint : C.textSecond }}>
-                        {isAr ? 'مختصر' : 'Abbr.'}
+                        {tr.abbr}
                       </Text>
                     </Pressable>
                     {/* Adhan voice dropdown */}
@@ -1637,7 +1633,7 @@ export default function SettingsScreen() {
                         color={previewing === prayer.key ? C.tint : C.textSecond}
                       />
                       <Text style={{ fontSize: 11, color: previewing === prayer.key ? C.tint : C.textSecond, fontWeight: '500' }}>
-                        {isAr ? 'معاينة' : 'Preview'}
+                        {tr.preview}
                       </Text>
                     </Pressable>
                   </View>

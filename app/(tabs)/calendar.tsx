@@ -296,7 +296,7 @@ export default function CalendarScreen() {
                 style={[styles.todayBtn, { backgroundColor: C.backgroundCard }]}
               >
                 <Text style={[styles.todayBtnText, { color: C.tint }]}>
-                  {isAr ? 'اليوم' : 'Today'}
+                  {tr.today}
                 </Text>
               </Pressable>
             </View>
