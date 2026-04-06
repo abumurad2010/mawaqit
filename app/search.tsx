@@ -66,7 +66,7 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, colors } = useApp();
   const C = colors;
-  const tr = t(lang) as any;
+  const tr = t(lang);
   const isAr = lang === 'ar';
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;

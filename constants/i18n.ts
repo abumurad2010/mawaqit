@@ -399,10 +399,6 @@ const base = {
   athkar_wudu_2: "I bear witness that none has the right to be worshipped except Allah, alone, without any partner, and I bear witness that Muhammad is His servant and Messenger. O Allah, make me of those who repent and make me of those who purify themselves. [Said after wudu]",
   athkar_wudu_3: "Glory is to You O Allah and praise. I bear witness that none has the right to be worshipped but You. I seek Your forgiveness and repent to You.",
 
-  athkar_mosque_1: "O Allah, open the gates of Your mercy for me. [Upon entering]",
-  athkar_mosque_2: "O Allah, I ask You for Your bounty. [Upon leaving]",
-  athkar_mosque_3: "I seek refuge in Almighty Allah, by His noble face and His eternal power, from the accursed devil. [Upon entering]",
-
   athkar_istighfar_1: "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant. I abide by Your covenant and promise as best I can. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for there is none who forgives sins but You. [Sayyid al-Istighfar — Master of Forgiveness]",
   athkar_istighfar_2: "I seek the forgiveness of Allah, there is none worthy of worship but He, the Ever-Living, the Sustainer of all, and I repent to Him. (3×)",
   athkar_istighfar_3: "I seek the forgiveness of Allah and repent to Him. (100×)",
@@ -473,11 +469,6 @@ const base = {
   athkar_calamity_2: "Verily we belong to Allah and to Him we shall return. [Al-Baqarah 2:156 — said upon hearing of a death or loss]",
   athkar_calamity_3: "O Allah, forgive him and elevate his station among the rightly guided, and be a successor to his descendants who remain. Forgive us and him, O Lord of the worlds, and make spacious his grave and illuminate it for him. [Said for the deceased]",
   athkar_calamity_4: "O Allah, forgive our living and our dead, those present and those absent, our young and our old, our males and our females. O Allah, whomever You give life among us, give him life upon Islam; and whomever You cause to die, cause him to die upon faith.",
-
-  athkar_rain_1: "Glory is to Him Whose praises the thunder declares, as do the angels in awe of Him. [Said when hearing thunder]",
-  athkar_rain_2: "O Allah, let it be a beneficial rain. [Said when it rains]",
-  athkar_rain_3: "We have been given rain by the grace and mercy of Allah. [Said after rain]",
-  athkar_rain_4: "O Allah, I ask You for its good and the good within it and the good with which it was sent, and I seek refuge in You from its evil and the evil within it and the evil with which it was sent. [Said when fearing wind or storms]",
 
   athkar_quran_khatm_1: "Glory is to You O Allah and praise. None has the right to be worshipped except You. I seek Your forgiveness and repent to You.",
   athkar_quran_khatm_2: "O Allah, have mercy on me through the Quran, and make it for me a leader, a light, a guidance and a mercy. O Allah, remind me of what I have forgotten from it, teach me from it what I am ignorant of, grant me its recitation in the hours of night and the ends of day, and make it a proof for me, O Lord of the worlds.",
