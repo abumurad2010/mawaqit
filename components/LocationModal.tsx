@@ -147,19 +147,19 @@ export default function LocationModal({ visible, onClose }: Props) {
                 ? <ActivityIndicator size="small" color={C.tint} />
                 : <Ionicons name="locate" size={16} color={C.tint} />}
               <Text style={[styles.gpsBtnText, { color: C.tint }]}>
-                {isAr ? 'استخدام الموقع التلقائي (GPS)' : 'Use GPS Location'}
+                {tr.useGPSLocation}
               </Text>
             </Pressable>
 
             <View style={[styles.divider, { borderColor: C.separator }]}>
               <Text style={[styles.dividerText, { color: C.textMuted, backgroundColor: C.backgroundCard }]}>
-                {isAr ? 'أو حدد يدوياً' : 'or set manually'}
+                {tr.orSetManually}
               </Text>
             </View>
 
             {/* City search */}
             <Text style={[styles.label, { color: C.textSecond }]}>
-              {isAr ? 'ابحث عن مدينة' : 'Search by city'}
+              {tr.searchByCity}
             </Text>
             <View style={styles.cityRow}>
               <View style={[styles.inputWrap, { borderColor: C.separator, backgroundColor: C.backgroundSecond }]}>
@@ -170,7 +170,7 @@ export default function LocationModal({ visible, onClose }: Props) {
                     setCityQuery(text);
                     if (!text) setCityResults([]);
                   }}
-                  placeholder={isAr ? 'أدخل اسم المدينة...' : 'Enter city name...'}
+                  placeholder={tr.enterCityName}
                   placeholderTextColor={C.textMuted}
                   onSubmitEditing={searchCity}
                   returnKeyType="search"
@@ -242,13 +242,13 @@ export default function LocationModal({ visible, onClose }: Props) {
                 onPress={() => { onClose(); setCityResults([]); setCityQuery(''); }}
                 style={[styles.btn, { backgroundColor: C.backgroundSecond }]}
               >
-                <Text style={{ color: C.textSecond }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={{ color: C.textSecond }}>{tr.btn_cancel}</Text>
               </Pressable>
               <Pressable
                 onPress={saveManualLocation}
                 style={[styles.btn, { backgroundColor: C.tint }]}
               >
-                <Text style={{ color: C.tintText, fontWeight: '600' }}>{isAr ? 'حفظ' : 'Save'}</Text>
+                <Text style={{ color: C.tintText, fontWeight: '600' }}>{tr.save}</Text>
               </Pressable>
             </View>
           </ScrollView>

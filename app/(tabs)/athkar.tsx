@@ -399,7 +399,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           >
             <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
               <Text style={[styles.pickerTitle, { color: C.text }]}>
-                {isRtl ? 'لغة الترجمة' : 'Translation language'}
+                {tr.translationLanguage}
               </Text>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
