@@ -4,6 +4,13 @@ export interface HijriDate {
   day: number;
 }
 
+export const LANG_LOCALE: Record<string, string> = {
+  ar: 'ar-SA', zh: 'zh-CN', fr: 'fr-FR', tr: 'tr-TR',
+  ur: 'ur-PK', bn: 'bn-BD', ru: 'ru-RU', id: 'id-ID',
+  ms: 'ms-MY', fa: 'fa-IR', sw: 'sw-TZ', ha: 'ha-NG',
+  es: 'es-ES', pt: 'pt-PT', en: 'en-US',
+};
+
 export const HIJRI_MONTHS_AR = [
   'محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني',
   'جمادى الأولى', 'جمادى الثانية', 'رجب', 'شعبان',
@@ -15,6 +22,24 @@ export const HIJRI_MONTHS_EN = [
   'Jumada al-Ula', 'Jumada al-Thaniyah', 'Rajab', "Sha'ban",
   'Ramadan', 'Shawwal', 'Dhul Qadah', 'Dhul Hijjah',
 ];
+
+const HIJRI_MONTHS: Record<string, string[]> = {
+  ar: HIJRI_MONTHS_AR,
+  en: HIJRI_MONTHS_EN,
+  fr: ['Mouharram','Safar','Rabî al-Awwal','Rabî al-Thânî','Joumâdâ al-Ûlâ','Joumâdâ al-Thâniyya','Rajab','Chaâbân','Ramadân','Chawwâl','Dhû al-Qaâda','Dhû al-Hijja'],
+  tr: ['Muharrem','Safer','Rebiülevvel','Rebiülahir','Cemaziyelevvel','Cemaziyelahir','Recep','Şaban','Ramazan','Şevval','Zilkade','Zilhicce'],
+  ur: ['محرم','صفر','ربیع الاول','ربیع الثانی','جمادی الاول','جمادی الثانی','رجب','شعبان','رمضان','شوال','ذوالقعدہ','ذوالحجہ'],
+  fa: ['محرم','صفر','ربیع‌الاول','ربیع‌الثانی','جمادی‌الاول','جمادی‌الثانی','رجب','شعبان','رمضان','شوال','ذیقعده','ذیحجه'],
+  bn: ['মুহররম','সফর','রবিউল আউয়াল','রবিউস সানি','জমাদিউল আউয়াল','জমাদিউস সানি','রজব','শাবান','রমজান','শাওয়াল','জিলকদ','জিলহজ'],
+  ru: ['Мухаррам','Сафар','Раби аль-Авваль','Раби аль-Ахир','Джумада аль-Уля','Джумада аль-Ахира','Раджаб','Шаабан','Рамадан','Шавваль','Зуль-Каада','Зуль-Хиджа'],
+  zh: ['穆哈兰姆月','色法尔月','赖比尔·敖外鲁月','赖比尔·阿希尔月','主马达·敖外鲁月','主马达·阿希尔月','赖哲卜月','舍尔邦月','赖买丹月','闪瓦鲁月','都尔·盖尔达月','都尔·黑哲月'],
+  id: ['Muharram','Safar','Rabiul Awal','Rabiul Akhir','Jumadil Awal','Jumadil Akhir','Rajab',"Sya'ban",'Ramadan','Syawal',"Dzulqa'dah",'Dzulhijjah'],
+  ms: ['Muharram','Safar','Rabiulawal','Rabiulakhir','Jamadilawak','Jamadilakhir','Rejab','Syaaban','Ramadan','Syawal','Zulkaedah','Zulhijjah'],
+  es: ['Muharram','Safar','Rabí al-Awwal','Rabí al-Thani','Jumada al-Ula','Jumada al-Thaniyya','Rajab','Shaabán','Ramadán','Shawwal','Dhul Qada','Dhul Hijja'],
+  pt: ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Ula','Jumada al-Thaniya','Rajab',"Sha'ban",'Ramadão','Shawwal','Dhul Qadah','Dhul Hijjah'],
+  sw: ['Muharamu','Safar','Rabii al-Awwal','Rabii al-Thani','Jumada al-Ula','Jumada al-Thaniyya','Rajab','Shaabani','Ramadhan','Shawwal','Dhul Qadah','Dhul Hijjah'],
+  ha: ['Muharram','Safar',"Rabi'ul Awwal","Rabi'ul Akhir",'Jumada Awwal','Jumada Akhir','Rajab',"Sha'aban",'Ramadan','Shawwal',"Dhul Qa'da",'Dhul Hijja'],
+};
 
 function jdnFromGregorian(year: number, month: number, day: number): number {
   const a = Math.floor((14 - month) / 12);
@@ -70,15 +95,14 @@ export function gregorianToHijri(year: number, month: number, day: number): Hijr
 
 export function hijriMonthName(month: number, lang: string): string {
   const idx = Math.max(0, Math.min(11, month - 1));
-  return lang === 'ar' ? HIJRI_MONTHS_AR[idx] : HIJRI_MONTHS_EN[idx];
+  const months = HIJRI_MONTHS[lang] ?? HIJRI_MONTHS_EN;
+  return months[idx];
 }
 
-export function formatHijriDate(h: HijriDate, lang: string): string {
+export function formatHijriDate(h: HijriDate, lang: string, eraSuffix?: string): string {
   const monthName = hijriMonthName(h.month, lang);
-  if (lang === 'ar') {
-    return `${h.day} ${monthName} ${h.year} هـ`;
-  }
-  return `${h.day} ${monthName} ${h.year} AH`;
+  const suffix = eraSuffix ?? (lang === 'ar' || lang === 'ur' || lang === 'fa' ? 'هـ' : 'AH');
+  return `${h.day} ${monthName} ${h.year} ${suffix}`;
 }
 
 export function getDaysInGregorianMonth(year: number, month: number): number {

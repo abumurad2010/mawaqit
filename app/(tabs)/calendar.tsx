@@ -20,7 +20,7 @@ import {
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import {
-  gregorianToHijri, hijriMonthName,
+  gregorianToHijri, hijriMonthName, LANG_LOCALE,
   getDaysInGregorianMonth, getFirstDayOfMonth,
 } from '@/lib/hijri';
 import {
@@ -265,8 +265,24 @@ export default function CalendarScreen() {
   const isSelected = (d: number) =>
     d === selectedDate.d && viewMonth === selectedDate.m && viewYear === selectedDate.y;
 
-  const monthName = isAr ? GREGORIAN_MONTHS_AR[viewMonth - 1] : GREGORIAN_MONTHS_EN[viewMonth - 1];
-  const dayNames = isAr ? DAYS_AR : DAYS_EN;
+  const _calLocale = lang === 'ar' ? 'ar-SA-u-ca-gregory' : (LANG_LOCALE[lang] ?? 'en-US');
+  const monthName = (() => {
+    try {
+      return new Intl.DateTimeFormat(_calLocale, { month: 'long' }).format(new Date(viewYear, viewMonth - 1, 1));
+    } catch {
+      return isAr ? GREGORIAN_MONTHS_AR[viewMonth - 1] : GREGORIAN_MONTHS_EN[viewMonth - 1];
+    }
+  })();
+  const dayNames = (() => {
+    try {
+      // Sunday = Jan 3 2021, iterate Sun–Sat
+      return Array.from({ length: 7 }, (_, i) =>
+        new Intl.DateTimeFormat(_calLocale, { weekday: 'short' }).format(new Date(2021, 0, 3 + i))
+      );
+    } catch {
+      return isAr ? DAYS_AR : DAYS_EN;
+    }
+  })();
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
   const prayerLabels: Record<string, string> = {
@@ -616,7 +632,7 @@ export default function CalendarScreen() {
                 <Ionicons name="chevron-back" size={22} color={C.tint} />
               </Pressable>
               <Text style={[styles.nmMonthLabel, { color: C.text }]}>
-                {(isAr ? GREGORIAN_MONTHS_AR : GREGORIAN_MONTHS_EN)[lookupMonth - 1]} {lookupYear}
+                {(() => { try { return new Intl.DateTimeFormat(_calLocale, { month: 'long' }).format(new Date(lookupYear, lookupMonth - 1, 1)); } catch { return (isAr ? GREGORIAN_MONTHS_AR : GREGORIAN_MONTHS_EN)[lookupMonth - 1]; } })()} {lookupYear}
               </Text>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); if (lookupMonth === 12) { setLookupYear(y => y + 1); setLookupMonth(1); } else setLookupMonth(m => m + 1); }}
@@ -634,9 +650,15 @@ export default function CalendarScreen() {
                 </Text>
               ) : (
                 lookupCrescentInfos.map((info, i) => {
-                  const months = isAr ? GREGORIAN_MONTHS_AR : GREGORIAN_MONTHS_EN;
                   const cDate = new Date(info.crescentDate.getTime() + (locationUtcOffset ?? 0) * 3600 * 1000);
-                  const crescentLabel = `${months[cDate.getUTCMonth()]} ${cDate.getUTCDate()}, ${cDate.getUTCFullYear()}`;
+                  const crescentLabel = (() => {
+                    try {
+                      return new Intl.DateTimeFormat(_calLocale, { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(cDate.getUTCFullYear(), cDate.getUTCMonth(), cDate.getUTCDate()));
+                    } catch {
+                      const months = isAr ? GREGORIAN_MONTHS_AR : GREGORIAN_MONTHS_EN;
+                      return `${months[cDate.getUTCMonth()]} ${cDate.getUTCDate()}, ${cDate.getUTCFullYear()}`;
+                    }
+                  })();
                   return (
                     <View key={i} style={[styles.nmRow, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', marginTop: 14, paddingTop: 14 }]}>
 

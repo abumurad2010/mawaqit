@@ -442,7 +442,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           >
             <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
             <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
-              {tr.athkar_mode_arabic}
+              عربي
             </Text>
           </Pressable>
           <Pressable

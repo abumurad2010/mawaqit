@@ -24,7 +24,7 @@ import {
   calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
-import { gregorianToHijri, formatHijriDate } from '@/lib/hijri';
+import { gregorianToHijri, formatHijriDate, LANG_LOCALE } from '@/lib/hijri';
 import { mawaqitWidget } from '@/widgets_disabled/MawaqitWidget';
 
 /**
@@ -457,14 +457,15 @@ export default function PrayerTimesScreen() {
     return new Date(utcMs + locationUtcOffset * 3600000);
   }, [viewingDate, locationUtcOffset]);
 
+  const _gLocale = lang === 'ar' ? 'ar-SA-u-ca-gregory' : (LANG_LOCALE[lang] ?? 'en-US');
   const gregorianStr = viewingLocationDate.toLocaleDateString(
-    isAr ? 'ar-SA-u-ca-gregory' : 'en-US',
+    _gLocale,
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
   );
   const hijriBase = new Date(viewingLocationDate);
   hijriBase.setDate(hijriBase.getDate() + (hijriAdjustment ?? 0));
   const hijri = gregorianToHijri(hijriBase.getFullYear(), hijriBase.getMonth() + 1, hijriBase.getDate());
-  const hijriStr = formatHijriDate(hijri, lang);
+  const hijriStr = formatHijriDate(hijri, lang, tr.hijriEraSuffix);
 
   // ── Eid detection on the main screen ────────────────────────────────────────
   //
