@@ -1,11 +1,12 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform, Alert,
-  ScrollView, PanResponder,
+  ScrollView, Dimensions,
 } from 'react-native';
 import Animated, {
-  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
+  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS, interpolate,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +17,7 @@ import { t } from '@/constants/i18n';
 import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, type PageAyah } from '@/lib/quran-api';
 
 const TOTAL_PAGES = 604;
-const SWIPE_THRESHOLD = 55;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -190,20 +191,33 @@ export default function QuranReaderScreen() {
       : null
   );
 
-  const flip = useSharedValue(0);
-  const navigating = useRef(false);
+  const progress = useSharedValue(0);
+  const isTransitioning = useSharedValue(false);
+  const pageNumRef = useRef(pageNum);
   const scrollRef = useRef<ScrollView>(null);
 
-  const flipStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 1200 },
-      { rotateY: `${flip.value}deg` },
-    ],
-  }));
+  useEffect(() => { pageNumRef.current = pageNum; }, [pageNum]);
 
-  const flipShadowStyle = useAnimatedStyle(() => ({
-    opacity: (Math.abs(flip.value) / 90) * 0.45,
-  }));
+  const flipStyle = useAnimatedStyle(() => {
+    const p = progress.value;
+    const ap = Math.abs(p);
+    const rotation = interpolate(p, [-1, 0, 1], [90, 0, -90]);
+    const curl = interpolate(ap, [0, 0.5, 1], [0, 12, 0]);
+    const sc = interpolate(ap, [0, 0.5, 1], [1, 0.97, 1]);
+    return {
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${rotation}deg` },
+        { skewY: `${curl}deg` },
+        { scale: sc },
+      ],
+    };
+  });
+
+  const flipShadowStyle = useAnimatedStyle(() => {
+    const ap = Math.abs(progress.value);
+    return { opacity: interpolate(ap, [0, 0.5, 1], [0, 0.45, 0]) };
+  });
 
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
   const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
@@ -221,36 +235,76 @@ export default function QuranReaderScreen() {
   }, [pageNum]);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
-    if (navigating.current) return;
+    if (isTransitioning.value) return;
     const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
     if (newPage < 1 || newPage > TOTAL_PAGES) return;
-    navigating.current = true;
-    // Mushaf is always RTL: next page flips right (+90°), prev page flips left (−90°)
-    const outAngle = direction === 'next' ? 90 : -90;
+    isTransitioning.value = true;
+    // Mushaf is always RTL: next page flips right (progress → 1), prev page flips left (progress → -1)
+    const outProgress = direction === 'next' ? 1 : -1;
 
     const doSwap = () => {
       setPageNum(newPage);
       setHighlightTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     };
-    const doFinish = () => {
-      navigating.current = false;
-    };
 
-    flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+    progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
       if (done) {
         runOnJS(doSwap)();
-        flip.value = -outAngle;
-        flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-          if (done2) runOnJS(doFinish)();
+        progress.value = -outProgress;
+        progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+          if (done2) { isTransitioning.value = false; }
         });
       }
     });
     Haptics.selectionAsync();
-  }, [pageNum, flip]);
+  }, [pageNum, progress, isTransitioning]);
 
-  const navigateRef = useRef(navigate);
-  navigateRef.current = navigate;
+  // Stable callback for gesture-driven page swaps (runs on JS thread via runOnJS)
+  const onGestureSwap = useCallback((dir: 'next' | 'prev', outP: number) => {
+    const cur = pageNumRef.current;
+    const newPage = dir === 'next' ? cur + 1 : cur - 1;
+    if (newPage >= 1 && newPage <= TOTAL_PAGES) {
+      setPageNum(newPage);
+      setHighlightTarget(null);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      progress.value = -outP;
+      progress.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+        if (done) { isTransitioning.value = false; }
+      });
+      Haptics.selectionAsync();
+    } else {
+      progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done) => {
+        if (done) { isTransitioning.value = false; }
+      });
+    }
+  }, []); // stable: reads only refs and shared values
+
+  // Interactive curved page-flip gesture (Mushaf RTL: right drag = next page)
+  const pan = useMemo(() => Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-5, 5])
+    .onUpdate((e) => {
+      if (isTransitioning.value) return;
+      progress.value = Math.max(-1, Math.min(1, e.translationX / (SCREEN_WIDTH * 0.6)));
+    })
+    .onEnd(() => {
+      const p = progress.value;
+      if (p > 0.5) {
+        isTransitioning.value = true;
+        progress.value = withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+          if (done) runOnJS(onGestureSwap)('next', 1);
+        });
+      } else if (p < -0.5) {
+        isTransitioning.value = true;
+        progress.value = withTiming(-1, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+          if (done) runOnJS(onGestureSwap)('prev', -1);
+        });
+      } else {
+        progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) });
+      }
+    })
+  , [onGestureSwap, isTransitioning, progress]);
 
   const handleLongPressAyah = useCallback((ayah: PageAyah) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -284,18 +338,6 @@ export default function QuranReaderScreen() {
       ]
     );
   }, [isBookmarked, addBookmark, removeBookmark, isAr]);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > Math.abs(g.dy) && Math.abs(g.dx) > 12,
-      onPanResponderRelease: (_, g) => {
-        // Quran is RTL: swipe right (dx > 0) = next page, swipe left (dx < 0) = prev page
-        if (g.dx > SWIPE_THRESHOLD) navigateRef.current('next');
-        else if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('prev');
-      },
-    })
-  ).current;
 
   const pageAyahs = getQuranPage(pageNum);
 
@@ -370,9 +412,9 @@ export default function QuranReaderScreen() {
       </View>
 
       {/* ── Page content with swipe ── */}
+      <GestureDetector gesture={pan}>
       <Animated.View
         style={[{ flex: 1, overflow: 'hidden', zIndex: 1 }, flipStyle]}
-        {...panResponder.panHandlers}
       >
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
         <Animated.View
@@ -473,6 +515,7 @@ export default function QuranReaderScreen() {
           </View>
         </ScrollView>
       </Animated.View>
+      </GestureDetector>
 
       {/* ── Bottom navigation ── */}
       <View style={[styles.bottomNav, {

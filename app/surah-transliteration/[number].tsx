@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
-  PanResponder,
+  Dimensions,
 } from 'react-native';
 import Animated, {
-  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
+  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS, interpolate,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SERIF_EN } from '@/constants/typography';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,7 +21,7 @@ import { getTranslation, getTransliteration } from '@/lib/quran-translations';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
 
-const SWIPE_THRESHOLD = 80;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const BISMILLAH_TRANSLIT = 'Bismi Allāhi l-raḥmāni l-raḥīm';
 const AYAHS_PER_PAGE = 5;
@@ -104,34 +105,46 @@ export default function SurahTransliterationScreen() {
   }, [surahNum, currentPage]);
 
   // Page swipe navigation (with surah overflow at boundaries)
-  const flip = useSharedValue(0);
-  const transitioningRef = useRef(false);
+  const progress = useSharedValue(0);
+  const isTransitioning = useSharedValue(false);
+  const isRtlSV = useSharedValue(isRtl);
   const surahNumRef = useRef(surahNum);
   const currentPageRef = useRef(currentPage);
   const totalPagesRef = useRef(totalPages);
 
   useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
   useEffect(() => { totalPagesRef.current = totalPages; }, [totalPages]);
+  useEffect(() => { isRtlSV.value = isRtl; }, [isRtl]);
 
-  const flipStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 1200 },
-      { rotateY: `${flip.value}deg` },
-    ],
-  }));
+  const flipStyle = useAnimatedStyle(() => {
+    const p = progress.value;
+    const ap = Math.abs(p);
+    const rotation = interpolate(p, [-1, 0, 1], [90, 0, -90]);
+    const curl = interpolate(ap, [0, 0.5, 1], [0, 12, 0]);
+    const sc = interpolate(ap, [0, 0.5, 1], [1, 0.97, 1]);
+    return {
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${rotation}deg` },
+        { skewY: `${curl}deg` },
+        { scale: sc },
+      ],
+    };
+  });
 
-  const flipShadowStyle = useAnimatedStyle(() => ({
-    opacity: (Math.abs(flip.value) / 90) * 0.45,
-  }));
+  const flipShadowStyle = useAnimatedStyle(() => {
+    const ap = Math.abs(progress.value);
+    return { opacity: interpolate(ap, [0, 0.5, 1], [0, 0.45, 0]) };
+  });
 
   const navigateSurah = useCallback((dir: 'next' | 'prev', goToLastPage = false) => {
-    if (transitioningRef.current) return;
+    if (isTransitioning.value) return;
     const cur = surahNumRef.current;
     const newNum = dir === 'next' ? cur + 1 : cur - 1;
     if (newNum < 1 || newNum > 114) return;
-    transitioningRef.current = true;
-    // Direction: for RTL swipe right = next, for LTR swipe left = next
-    const outAngle = isRtl ? (dir === 'next' ? 90 : -90) : (dir === 'next' ? -90 : 90);
+    isTransitioning.value = true;
+    // RTL: next = progress → 1 (right flip), LTR: next = progress → -1 (left flip)
+    const outProgress = isRtl ? (dir === 'next' ? 1 : -1) : (dir === 'next' ? -1 : 1);
 
     const doSwap = () => {
       surahNumRef.current = newNum;
@@ -145,44 +158,40 @@ export default function SurahTransliterationScreen() {
       }
       scrollRef.current?.scrollTo({ y: 0, animated: false });
     };
-    const doFinish = () => {
-      transitioningRef.current = false;
-    };
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+    progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
       if (done) {
         runOnJS(doSwap)();
-        flip.value = -outAngle;
-        flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-          if (done2) runOnJS(doFinish)();
+        progress.value = -outProgress;
+        progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+          if (done2) { isTransitioning.value = false; }
         });
       }
     });
-  }, [flip, isRtl]);
+  }, [progress, isTransitioning, isRtl]);
 
   const navigatePage = useCallback((dir: 'next' | 'prev') => {
-    if (transitioningRef.current) return;
+    if (isTransitioning.value) return;
     const pg = currentPageRef.current;
     const tot = totalPagesRef.current;
 
     if (dir === 'next') {
       if (pg < tot) {
         // Next page within surah
-        transitioningRef.current = true;
-        const outAngle = isRtl ? 90 : -90;
+        isTransitioning.value = true;
+        const outProgress = isRtl ? 1 : -1;
         Haptics.selectionAsync();
         const doSwap = () => {
           setCurrentPage(pg + 1);
           scrollRef.current?.scrollTo({ y: 0, animated: false });
         };
-        const doFinish = () => { transitioningRef.current = false; };
-        flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+        progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
             runOnJS(doSwap)();
-            flip.value = -outAngle;
-            flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-              if (done2) runOnJS(doFinish)();
+            progress.value = -outProgress;
+            progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+              if (done2) { isTransitioning.value = false; }
             });
           }
         });
@@ -193,20 +202,19 @@ export default function SurahTransliterationScreen() {
     } else {
       if (pg > 1) {
         // Prev page within surah
-        transitioningRef.current = true;
-        const outAngle = isRtl ? -90 : 90;
+        isTransitioning.value = true;
+        const outProgress = isRtl ? -1 : 1;
         Haptics.selectionAsync();
         const doSwap = () => {
           setCurrentPage(pg - 1);
           scrollRef.current?.scrollTo({ y: 0, animated: false });
         };
-        const doFinish = () => { transitioningRef.current = false; };
-        flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+        progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
             runOnJS(doSwap)();
-            flip.value = -outAngle;
-            flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-              if (done2) runOnJS(doFinish)();
+            progress.value = -outProgress;
+            progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+              if (done2) { isTransitioning.value = false; }
             });
           }
         });
@@ -215,31 +223,93 @@ export default function SurahTransliterationScreen() {
         navigateSurah('prev', true);
       }
     }
-  }, [flip, isRtl, navigateSurah]);
+  }, [progress, isTransitioning, isRtl, navigateSurah]);
 
-  const navigatePageRef = useRef(navigatePage);
-  useEffect(() => { navigatePageRef.current = navigatePage; }, [navigatePage]);
+  // Stable callback for gesture-driven page swaps (runs on JS thread via runOnJS)
+  const onGestureSwap = useCallback((dir: 'next' | 'prev', outP: number) => {
+    const pg = currentPageRef.current;
+    const tot = totalPagesRef.current;
+    const snum = surahNumRef.current;
 
-  const isRtlRef = useRef(isRtl);
-  useEffect(() => { isRtlRef.current = isRtl; }, [isRtl]);
+    const completeAnim = () => {
+      progress.value = -outP;
+      progress.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+        if (done) { isTransitioning.value = false; }
+      });
+      Haptics.selectionAsync();
+    };
+    const snapBack = () => {
+      progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done) => {
+        if (done) { isTransitioning.value = false; }
+      });
+    };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
-      onPanResponderRelease: (_, g) => {
-        const rtl = isRtlRef.current;
-        // RTL: swipe right = next page; LTR: swipe left = next page
-        if (rtl) {
-          if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('next');
-          else if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('prev');
-        } else {
-          if (g.dx < -SWIPE_THRESHOLD) navigatePageRef.current('next');
-          else if (g.dx > SWIPE_THRESHOLD) navigatePageRef.current('prev');
-        }
-      },
+    if (dir === 'next') {
+      if (pg < tot) {
+        setCurrentPage(pg + 1);
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        completeAnim();
+      } else if (snum < 114) {
+        surahNumRef.current = snum + 1;
+        setSurahNum(snum + 1);
+        setCurrentPage(1);
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        completeAnim();
+      } else {
+        snapBack();
+      }
+    } else {
+      if (pg > 1) {
+        setCurrentPage(pg - 1);
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        completeAnim();
+      } else if (snum > 1) {
+        const newNum = snum - 1;
+        const newAyahs = getSurah(newNum).ayahs.length;
+        const newTotal = Math.max(1, Math.ceil(newAyahs / AYAHS_PER_PAGE));
+        surahNumRef.current = newNum;
+        setSurahNum(newNum);
+        setCurrentPage(newTotal);
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+        completeAnim();
+      } else {
+        snapBack();
+      }
+    }
+  }, []); // stable: reads only refs and shared values
+
+  // Interactive curved page-flip gesture
+  const pan = useMemo(() => Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-5, 5])
+    .onUpdate((e) => {
+      if (isTransitioning.value) return;
+      // Direct mapping: positive = right tilt, negative = left tilt
+      progress.value = Math.max(-1, Math.min(1, e.translationX / (SCREEN_WIDTH * 0.6)));
     })
-  ).current;
+    .onEnd(() => {
+      const p = progress.value;
+      const rtl = isRtlSV.value;
+      // RTL: right drag (+p) = next; LTR: left drag (-p) = next
+      const goingNext = rtl ? p > 0.5 : p < -0.5;
+      const goingPrev = rtl ? p < -0.5 : p > 0.5;
+      if (goingNext) {
+        isTransitioning.value = true;
+        const outP = p >= 0 ? 1 : -1;
+        progress.value = withTiming(outP, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+          if (done) runOnJS(onGestureSwap)('next', outP);
+        });
+      } else if (goingPrev) {
+        isTransitioning.value = true;
+        const outP = p >= 0 ? 1 : -1;
+        progress.value = withTiming(outP, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+          if (done) runOnJS(onGestureSwap)('prev', outP);
+        });
+      } else {
+        progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) });
+      }
+    })
+  , [onGestureSwap, isTransitioning, progress, isRtlSV]);
 
   const prevSurah = surahNum > 1 ? surahNum - 1 : null;
   const nextSurah = surahNum < 114 ? surahNum + 1 : null;
@@ -396,7 +466,8 @@ export default function SurahTransliterationScreen() {
       </Modal>
 
       {/* ── Scrollable ayah content (swipeable) ── */}
-      <Animated.View style={[{ flex: 1, overflow: 'hidden', zIndex: 1 }, flipStyle]} {...panResponder.panHandlers}>
+      <GestureDetector gesture={pan}>
+      <Animated.View style={[{ flex: 1, overflow: 'hidden', zIndex: 1 }, flipStyle]}>
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
@@ -493,6 +564,7 @@ export default function SurahTransliterationScreen() {
       </ScrollView>
 
       </Animated.View>
+      </GestureDetector>
 
       {/* ── Bottom navigation — outside flip animation ── */}
       <View style={[styles.bottomNav, { paddingBottom: bottomInset + 14, borderTopColor: C.separator, backgroundColor: C.background + 'F0', zIndex: 10, elevation: 10 }]}>
