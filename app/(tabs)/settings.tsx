@@ -33,7 +33,7 @@ export default function SettingsScreen() {
     maghribAdjustment, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
-    iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
+    iqamaOffsets, thikrRemindersEnabled, dstEnabled, defaultTab, fontSize,
     selectedAdhan, prayerAdhan,
     updateSettings,
   } = useApp();
@@ -754,7 +754,7 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowDefaultTabModal(true); }}
-            style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
+            style={[styles.settingRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
           >
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
               <Ionicons name="home-outline" size={18} color={C.tint} />
@@ -772,6 +772,27 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name={isRtl ? 'chevron-left' : 'chevron-right'} size={18} color={C.textMuted} />
             </View>
           </Pressable>
+
+          {/* DST toggle */}
+          <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <View style={{ flex: 1, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10 }}>
+              <Ionicons name="time-outline" size={18} color={C.tint} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
+                  {tr.dstSetting}
+                </Text>
+                <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 1 }}>
+                  {tr.dstDesc}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={dstEnabled}
+              onValueChange={(val) => { Haptics.selectionAsync(); updateSettings({ dstEnabled: val }); }}
+              trackColor={{ false: C.backgroundSecond, true: C.tint + '80' }}
+              thumbColor={dstEnabled ? C.tint : C.textMuted}
+            />
+          </View>
         </View>
 
         {/* Accessibility */}

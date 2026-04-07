@@ -4,7 +4,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Animated, {
-  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS, interpolate,
+  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SERIF_EN } from '@/constants/typography';
@@ -92,6 +92,7 @@ export default function SurahTransliterationScreen() {
 
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
   // Global mushaf page for this position (for FIX 2 and FIX 3)
@@ -105,7 +106,7 @@ export default function SurahTransliterationScreen() {
   }, [surahNum, currentPage]);
 
   // Page swipe navigation (with surah overflow at boundaries)
-  const progress = useSharedValue(0);
+  const slideX = useSharedValue(0);
   const isTransitioning = useSharedValue(false);
   const isRtlSV = useSharedValue(isRtl);
   const surahNumRef = useRef(surahNum);
@@ -116,26 +117,9 @@ export default function SurahTransliterationScreen() {
   useEffect(() => { totalPagesRef.current = totalPages; }, [totalPages]);
   useEffect(() => { isRtlSV.value = isRtl; }, [isRtl]);
 
-  const flipStyle = useAnimatedStyle(() => {
-    const p = progress.value;
-    const ap = Math.abs(p);
-    const rotation = interpolate(p, [-1, 0, 1], [90, 0, -90]);
-    const curl = interpolate(ap, [0, 0.5, 1], [0, 12, 0]);
-    const sc = interpolate(ap, [0, 0.5, 1], [1, 0.97, 1]);
-    return {
-      transform: [
-        { perspective: 1200 },
-        { rotateY: `${rotation}deg` },
-        { skewY: `${curl}deg` },
-        { scale: sc },
-      ],
-    };
-  });
-
-  const flipShadowStyle = useAnimatedStyle(() => {
-    const ap = Math.abs(progress.value);
-    return { opacity: interpolate(ap, [0, 0.5, 1], [0, 0.45, 0]) };
-  });
+  const slideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: slideX.value }],
+  }));
 
   const navigateSurah = useCallback((dir: 'next' | 'prev', goToLastPage = false) => {
     if (isTransitioning.value) return;
@@ -143,8 +127,8 @@ export default function SurahTransliterationScreen() {
     const newNum = dir === 'next' ? cur + 1 : cur - 1;
     if (newNum < 1 || newNum > 114) return;
     isTransitioning.value = true;
-    // RTL: next = progress → 1 (right flip), LTR: next = progress → -1 (left flip)
-    const outProgress = isRtl ? (dir === 'next' ? 1 : -1) : (dir === 'next' ? -1 : 1);
+    // RTL: next = exit right (+SCREEN_WIDTH), LTR: next = exit left (-SCREEN_WIDTH)
+    const exitX = isRtl ? (dir === 'next' ? SCREEN_WIDTH : -SCREEN_WIDTH) : (dir === 'next' ? -SCREEN_WIDTH : SCREEN_WIDTH);
 
     const doSwap = () => {
       surahNumRef.current = newNum;
@@ -160,16 +144,16 @@ export default function SurahTransliterationScreen() {
     };
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+    slideX.value = withTiming(exitX, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
       if (done) {
         runOnJS(doSwap)();
-        progress.value = -outProgress;
-        progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+        slideX.value = -exitX;
+        slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
           if (done2) { isTransitioning.value = false; }
         });
       }
     });
-  }, [progress, isTransitioning, isRtl]);
+  }, [slideX, isTransitioning, isRtl]);
 
   const navigatePage = useCallback((dir: 'next' | 'prev') => {
     if (isTransitioning.value) return;
@@ -180,17 +164,17 @@ export default function SurahTransliterationScreen() {
       if (pg < tot) {
         // Next page within surah
         isTransitioning.value = true;
-        const outProgress = isRtl ? 1 : -1;
+        const exitX = isRtl ? SCREEN_WIDTH : -SCREEN_WIDTH;
         Haptics.selectionAsync();
         const doSwap = () => {
           setCurrentPage(pg + 1);
           scrollRef.current?.scrollTo({ y: 0, animated: false });
         };
-        progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+        slideX.value = withTiming(exitX, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
             runOnJS(doSwap)();
-            progress.value = -outProgress;
-            progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+            slideX.value = -exitX;
+            slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
               if (done2) { isTransitioning.value = false; }
             });
           }
@@ -203,17 +187,17 @@ export default function SurahTransliterationScreen() {
       if (pg > 1) {
         // Prev page within surah
         isTransitioning.value = true;
-        const outProgress = isRtl ? -1 : 1;
+        const exitX = isRtl ? -SCREEN_WIDTH : SCREEN_WIDTH;
         Haptics.selectionAsync();
         const doSwap = () => {
           setCurrentPage(pg - 1);
           scrollRef.current?.scrollTo({ y: 0, animated: false });
         };
-        progress.value = withTiming(outProgress, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
+        slideX.value = withTiming(exitX, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
             runOnJS(doSwap)();
-            progress.value = -outProgress;
-            progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
+            slideX.value = -exitX;
+            slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
               if (done2) { isTransitioning.value = false; }
             });
           }
@@ -223,23 +207,23 @@ export default function SurahTransliterationScreen() {
         navigateSurah('prev', true);
       }
     }
-  }, [progress, isTransitioning, isRtl, navigateSurah]);
+  }, [slideX, isTransitioning, isRtl, navigateSurah]);
 
   // Stable callback for gesture-driven page swaps (runs on JS thread via runOnJS)
-  const onGestureSwap = useCallback((dir: 'next' | 'prev', outP: number) => {
+  const onGestureSwap = useCallback((dir: 'next' | 'prev', exitX: number) => {
     const pg = currentPageRef.current;
     const tot = totalPagesRef.current;
     const snum = surahNumRef.current;
 
     const completeAnim = () => {
-      progress.value = -outP;
-      progress.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+      slideX.value = -exitX;
+      slideX.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
         if (done) { isTransitioning.value = false; }
       });
       Haptics.selectionAsync();
     };
     const snapBack = () => {
-      progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done) => {
+      slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done) => {
         if (done) { isTransitioning.value = false; }
       });
     };
@@ -278,38 +262,38 @@ export default function SurahTransliterationScreen() {
     }
   }, []); // stable: reads only refs and shared values
 
-  // Interactive curved page-flip gesture
+  // Slide gesture (RTL: right drag = next; LTR: left drag = next)
   const pan = useMemo(() => Gesture.Pan()
     .activeOffsetX([-12, 12])
-    .failOffsetY([-5, 5])
+    .failOffsetY([-20, 20])
     .onUpdate((e) => {
       if (isTransitioning.value) return;
-      // Direct mapping: positive = right tilt, negative = left tilt
-      progress.value = Math.max(-1, Math.min(1, e.translationX / (SCREEN_WIDTH * 0.6)));
+      slideX.value = e.translationX;
     })
     .onEnd(() => {
-      const p = progress.value;
+      const tx = slideX.value;
       const rtl = isRtlSV.value;
-      // RTL: right drag (+p) = next; LTR: left drag (-p) = next
-      const goingNext = rtl ? p > 0.5 : p < -0.5;
-      const goingPrev = rtl ? p < -0.5 : p > 0.5;
+      const threshold = SCREEN_WIDTH * 0.4;
+      // RTL: right drag (+tx) = next; LTR: left drag (-tx) = next
+      const goingNext = rtl ? tx > threshold : tx < -threshold;
+      const goingPrev = rtl ? tx < -threshold : tx > threshold;
       if (goingNext) {
         isTransitioning.value = true;
-        const outP = p >= 0 ? 1 : -1;
-        progress.value = withTiming(outP, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
-          if (done) runOnJS(onGestureSwap)('next', outP);
+        const exitX = rtl ? SCREEN_WIDTH : -SCREEN_WIDTH;
+        slideX.value = withTiming(exitX, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+          if (done) runOnJS(onGestureSwap)('next', exitX);
         });
       } else if (goingPrev) {
         isTransitioning.value = true;
-        const outP = p >= 0 ? 1 : -1;
-        progress.value = withTiming(outP, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
-          if (done) runOnJS(onGestureSwap)('prev', outP);
+        const exitX = rtl ? -SCREEN_WIDTH : SCREEN_WIDTH;
+        slideX.value = withTiming(exitX, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
+          if (done) runOnJS(onGestureSwap)('prev', exitX);
         });
       } else {
-        progress.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) });
+        slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) });
       }
     })
-  , [onGestureSwap, isTransitioning, progress, isRtlSV]);
+  , [onGestureSwap, isTransitioning, slideX, isRtlSV]);
 
   const prevSurah = surahNum > 1 ? surahNum - 1 : null;
   const nextSurah = surahNum < 114 ? surahNum + 1 : null;
@@ -351,134 +335,15 @@ export default function SurahTransliterationScreen() {
     <View style={[styles.root, { backgroundColor: C.background }]}>
       <PageBackground />
 
-      {/* ── Sticky header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 8, backgroundColor: C.background + 'F0', borderBottomColor: C.separator, zIndex: 10, elevation: 10 }]}>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); router.back(); }}
-          style={[styles.backBtn, { backgroundColor: C.backgroundCard }]}
-        >
-          <Ionicons name="chevron-back" size={20} color={C.tint} />
-        </Pressable>
-
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerArabic, { color: C.text, fontFamily: 'Amiri_700Bold' }]} numberOfLines={1}>
-            {meta?.arabic ?? ''}
-          </Text>
-          <Text style={[styles.headerSub, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
-            {meta?.transliteration ?? ''} · {totalAyahs} {tr.verses}
-          </Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); changeFontSize(-1); }}
-            disabled={fsIdx === 0}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
-          >
-            <Text style={{ color: C.tint, fontSize: 12, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); changeFontSize(1); }}
-            disabled={fsIdx === FONT_STEPS.length - 1}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
-          >
-            <Text style={{ color: C.tint, fontSize: 16, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
-          </Pressable>
-          <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-            <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>
-              {globalPage} / 604
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ── Sticky language dropdown ── */}
-      <Pressable
-        onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
-        style={({ pressed }) => [
-          styles.langBar,
-          {
-            backgroundColor: C.backgroundCard,
-            borderBottomColor: C.separator,
-            opacity: pressed ? 0.75 : 1,
-            zIndex: 10,
-            elevation: 10,
-          },
-        ]}
-      >
-        <Ionicons name="language-outline" size={14} color={C.tint} />
-        <Text style={[styles.langBarNative, { color: C.text, fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }]}>
-          {LANG_META[translitLang]?.native ?? translitLang}
-        </Text>
-        <Text style={[styles.langBarLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
-          {LANG_META[translitLang]?.label ?? ''}
-        </Text>
-        <Ionicons name="chevron-down" size={13} color={C.textMuted} style={{ marginLeft: 'auto' }} />
-      </Pressable>
-
-      {/* ── Language picker modal ── */}
-      <Modal
-        visible={showLangPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLangPicker(false)}
-      >
-        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
-          <Pressable
-            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
-            onPress={e => e.stopPropagation()}
-          >
-            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
-              <Text style={[styles.pickerTitle, { color: C.text, fontFamily: SERIF_EN }]}>
-                {tr.translationLanguage}
-              </Text>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {SUPPORTED_TRANSLIT_LANGS.map(l => {
-                const active = l === translitLang;
-                const rtl = isRtlLang(l);
-                return (
-                  <Pressable
-                    key={l}
-                    onPress={() => setTranslitLang(l)}
-                    style={({ pressed }) => [
-                      styles.pickerRow,
-                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : SERIF_EN }]}>
-                        {LANG_META[l]?.native ?? l}
-                      </Text>
-                      <Text style={[styles.pickerLang, { color: C.textMuted, fontFamily: SERIF_EN }]}>
-                        {LANG_META[l]?.label ?? l}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* ── Scrollable ayah content (swipeable) ── */}
+      {/* ── Scrollable ayah content (swipeable) — fills full screen ── */}
       <GestureDetector gesture={pan}>
-      <Animated.View style={[{ flex: 1, overflow: 'hidden', zIndex: 1 }, flipStyle]}>
-        {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
-        <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
-          pointerEvents="none"
-        />
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 16, paddingTop: 12 }}
-        showsVerticalScrollIndicator={false}
-        onScrollBeginDrag={() => showHighlight && setShowHighlight(false)}
-      >
+      <Animated.View style={[{ flex: 1, overflow: 'hidden' }, slideStyle]}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 16, paddingTop: headerHeight + 12 }}
+          showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={() => showHighlight && setShowHighlight(false)}
+        >
         {/* Bismillah */}
         {meta?.hasBismillah && surahNum !== 9 && currentPage === 1 && (
           <View style={[styles.bismillahCard, { backgroundColor: C.tintLight, borderColor: C.separator }]}>
@@ -490,7 +355,6 @@ export default function SurahTransliterationScreen() {
             </Text>
           </View>
         )}
-
 
         {/* Ayah cards for this page */}
         {pageAyahs.map((item) => {
@@ -561,12 +425,128 @@ export default function SurahTransliterationScreen() {
             </View>
           );
         })}
-      </ScrollView>
-
+        </ScrollView>
       </Animated.View>
       </GestureDetector>
 
-      {/* ── Bottom navigation — outside flip animation ── */}
+      {/* ── Absolute header (always on top) ── */}
+      <View
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, elevation: 100 }}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      >
+        <View style={[styles.header, { paddingTop: topInset + 8, backgroundColor: C.background + 'F0', borderBottomColor: C.separator }]}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); router.back(); }}
+            style={[styles.backBtn, { backgroundColor: C.backgroundCard }]}
+          >
+            <Ionicons name="chevron-back" size={20} color={C.tint} />
+          </Pressable>
+
+          <View style={styles.headerCenter}>
+            <Text style={[styles.headerArabic, { color: C.text, fontFamily: 'Amiri_700Bold' }]} numberOfLines={1}>
+              {meta?.arabic ?? ''}
+            </Text>
+            <Text style={[styles.headerSub, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
+              {meta?.transliteration ?? ''} · {totalAyahs} {tr.verses}
+            </Text>
+          </View>
+
+          <View style={styles.headerRight}>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); changeFontSize(-1); }}
+              disabled={fsIdx === 0}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
+            >
+              <Text style={{ color: C.tint, fontSize: 12, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); changeFontSize(1); }}
+              disabled={fsIdx === FONT_STEPS.length - 1}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
+            >
+              <Text style={{ color: C.tint, fontSize: 16, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
+            </Pressable>
+            <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+              <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>
+                {globalPage} / 604
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Language dropdown ── */}
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); setShowLangPicker(true); }}
+          style={({ pressed }) => [
+            styles.langBar,
+            {
+              backgroundColor: C.backgroundCard,
+              borderBottomColor: C.separator,
+              opacity: pressed ? 0.75 : 1,
+            },
+          ]}
+        >
+          <Ionicons name="language-outline" size={14} color={C.tint} />
+          <Text style={[styles.langBarNative, { color: C.text, fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }]}>
+            {LANG_META[translitLang]?.native ?? translitLang}
+          </Text>
+          <Text style={[styles.langBarLabel, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+            {LANG_META[translitLang]?.label ?? ''}
+          </Text>
+          <Ionicons name="chevron-down" size={13} color={C.textMuted} style={{ marginLeft: 'auto' }} />
+        </Pressable>
+      </View>
+
+      {/* ── Language picker modal ── */}
+      <Modal
+        visible={showLangPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShowLangPicker(false)}>
+          <Pressable
+            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}
+            onPress={e => e.stopPropagation()}
+          >
+            <View style={[styles.pickerHeader, { borderBottomColor: C.separator }]}>
+              <Text style={[styles.pickerTitle, { color: C.text, fontFamily: SERIF_EN }]}>
+                {tr.translationLanguage}
+              </Text>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {SUPPORTED_TRANSLIT_LANGS.map(l => {
+                const active = l === translitLang;
+                const rtl = isRtlLang(l);
+                return (
+                  <Pressable
+                    key={l}
+                    onPress={() => setTranslitLang(l)}
+                    style={({ pressed }) => [
+                      styles.pickerRow,
+                      { borderBottomColor: C.separator, opacity: pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerNative, { color: C.text, fontFamily: rtl ? 'Amiri_400Regular' : SERIF_EN }]}>
+                        {LANG_META[l]?.native ?? l}
+                      </Text>
+                      <Text style={[styles.pickerLang, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+                        {LANG_META[l]?.label ?? l}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      {active && <Ionicons name="checkmark" size={18} color={C.tint} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Bottom navigation ── */}
       <View style={[styles.bottomNav, { paddingBottom: bottomInset + 14, borderTopColor: C.separator, backgroundColor: C.background + 'F0', zIndex: 10, elevation: 10 }]}>
         <Pressable
           onPress={() => navigatePage('prev')}

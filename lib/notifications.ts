@@ -105,10 +105,12 @@ export async function scheduleThikrNotifications(params: {
   asrMethod: AsrMethod;
   maghribOffset: number;
   daysAhead?: number;
+  dstOffsetMs?: number;
 }) {
   if (!isNative) return;
   const { lang, location } = params;
   const daysAhead = params.daysAhead ?? 7;
+  const dstOffsetMs = params.dstOffsetMs ?? 0;
   const tr = t(lang);
   const title = tr.thikr_reminder_title;
   const now = new Date();
@@ -127,9 +129,9 @@ export async function scheduleThikrNotifications(params: {
       maghribOffset: params.maghribOffset,
     });
 
-    const fajrMs = times.fajr.getTime();
+    const fajrMs = times.fajr.getTime() + dstOffsetMs;
     // Window ends 5 hours after Isha
-    const ishaMs = times.isha.getTime() + THIKR_WINDOW_AFTER_ISHA_MS;
+    const ishaMs = times.isha.getTime() + dstOffsetMs + THIKR_WINDOW_AFTER_ISHA_MS;
 
     // Unique seed per calendar day (YYYYMMDD integer)
     const daySeed =
@@ -186,6 +188,7 @@ export async function schedulePrayerNotifications(params: {
   tahajjudTime?: string;  // "HH:MM" exact local time
   selectedAdhan?: string;
   prayerAdhan?: Record<string, string>;
+  dstOffsetMs?: number;
 }) {
   await cancelAllPrayerNotifications();
   if (!isNative) return;
@@ -193,6 +196,7 @@ export async function schedulePrayerNotifications(params: {
   const { prayerNotifications, lang } = params;
   const labels = getPrayerLabels(lang);
   const daysAhead = params.daysAhead ?? 7;
+  const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
 
   for (let d = 0; d < daysAhead; d++) {
@@ -211,14 +215,14 @@ export async function schedulePrayerNotifications(params: {
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;
 
     const prayerTimeMap: Record<string, Date | null> = {
-      fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs) : null,
-      fajr: times.fajr,
-      dhuha: parseExactTime(params.dhuhaTime ?? '07:30', date),
-      dhuhr: times.dhuhr,
-      asr: times.asr,
-      maghrib: times.maghrib,
-      isha: times.isha,
-      qiyam: parseExactTime(params.tahajjudTime ?? '03:00', date),
+      fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs + dstOffsetMs) : null,
+      fajr: new Date(times.fajr.getTime() + dstOffsetMs),
+      dhuha: new Date(parseExactTime(params.dhuhaTime ?? '07:30', date).getTime() + dstOffsetMs),
+      dhuhr: new Date(times.dhuhr.getTime() + dstOffsetMs),
+      asr: new Date(times.asr.getTime() + dstOffsetMs),
+      maghrib: new Date(times.maghrib.getTime() + dstOffsetMs),
+      isha: new Date(times.isha.getTime() + dstOffsetMs),
+      qiyam: new Date(parseExactTime(params.tahajjudTime ?? '03:00', date).getTime() + dstOffsetMs),
     };
 
     for (const [prayerKey, cfg] of Object.entries(prayerNotifications)) {

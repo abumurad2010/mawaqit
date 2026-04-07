@@ -91,6 +91,7 @@ interface AppSettings {
   eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
   iqamaOffsets: Record<string, number>; // per-prayer iqama delay in minutes (user overrides)
   thikrRemindersEnabled: boolean;
+  dstEnabled: boolean;
   defaultTab: string;
   selectedAdhan: string;
   prayerAdhan: Record<string, string>;
@@ -144,6 +145,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   eidPrayerTime: '07:30',
   iqamaOffsets: {},
   thikrRemindersEnabled: false,
+  dstEnabled: false,
   defaultTab: 'index',
   selectedAdhan: 'makkah',
   prayerAdhan: {},
@@ -240,6 +242,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  // Effective location: use manual location if in manual mode, else GPS location.
+  const effectiveLocation: LocationData | null =
+    settings.locationMode === 'manual' && settings.manualLocation
+      ? settings.manualLocation
+      : location;
+
   // Prefer the country code stored with the manual location when in manual mode.
   // This ensures Jumu'ah "Auto (by location)" works from both manual and GPS locations,
   // not just when device GPS has been used recently.
@@ -273,15 +281,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const colors: ColorPalette = getColors(isDark, settings.accessibilityTheme ?? 'default');
 
   useEffect(() => {
-    if (!location) return;
-    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled } = settings;
+    if (!effectiveLocation) return;
+    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled, dstEnabled } = settings;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
+    const dstOffsetMs = dstEnabled ? 3600000 : 0;
 
     const rescheduleAll = async () => {
       try {
         if (hasAny) {
           await schedulePrayerNotifications({
-            location,
+            location: effectiveLocation,
             calcMethod,
             asrMethod,
             maghribOffset,
@@ -294,6 +303,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             tahajjudTime: settings.tahajjudTime ?? '03:00',
             selectedAdhan: settings.selectedAdhan ?? 'makkah',
             prayerAdhan: settings.prayerAdhan ?? {},
+            dstOffsetMs,
           });
         } else {
           await cancelAllPrayerNotifications();
@@ -302,10 +312,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           await cancelThikrNotifications();
           await scheduleThikrNotifications({
             lang,
-            location,
+            location: effectiveLocation,
             calcMethod,
             asrMethod,
             maghribOffset,
+            dstOffsetMs,
           });
         } else {
           await cancelThikrNotifications();
@@ -314,7 +325,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     rescheduleAll();
-  }, [location, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan]);
+  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.dstEnabled, settings.selectedAdhan, settings.prayerAdhan]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
