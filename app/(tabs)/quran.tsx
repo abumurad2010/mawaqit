@@ -44,7 +44,8 @@ export default function QuranScreen() {
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
   const [showLangPicker, setShowLangPicker] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
+  const mushafFlatListRef = useRef<FlatList>(null);
+  const translitFlatListRef = useRef<FlatList>(null);
   const [quranFontSize, setQuranFontSizeState] = useState<QuranFontSize>('sm');
 
   useEffect(() => {
@@ -82,74 +83,71 @@ export default function QuranScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 84 : insets.bottom + 49;
 
-  const openSurah = (number: number) => {
-    Haptics.selectionAsync();
-    if (mode === 'transliteration') {
-      router.push({ pathname: '/surah-transliteration/[number]', params: { number: String(number) } });
-    } else {
-      const page = SURAH_START_PAGES[number] ?? 1;
-      router.push({ pathname: '/quran-reader', params: { page: String(page) } });
-    }
-  };
-
   const setTranslitLang = (l: Lang) => {
     Haptics.selectionAsync();
     updateSettings({ translitLang: l });
   };
 
-  const renderItem = ({ item, index }: { item: typeof SURAH_META[0]; index: number }) => (
+  // Mushaf-specific row — never reads `mode`, so the mushaf FlatList is fully isolated
+  const renderMushafItem = ({ item, index }: { item: typeof SURAH_META[0]; index: number }) => (
     <Animated.View entering={FadeInDown.delay(Math.min(index * 18, 280)).duration(320)}>
       <Pressable
-        onPress={() => openSurah(item.number)}
-        style={({ pressed }) => [
-          styles.surahRow,
-          {
-            backgroundColor: (item.number === lastReadSurah && mode === 'mushaf') || (item.number === translitLastSurah && mode === 'transliteration')
-              ? C.tintLight
-              : isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)',
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
-            opacity: pressed ? 0.75 : 1,
-          },
-        ]}
+        onPress={() => { Haptics.selectionAsync(); const page = SURAH_START_PAGES[item.number] ?? 1; router.push({ pathname: '/quran-reader', params: { page: String(page) } }); }}
+        style={({ pressed }) => [styles.surahRow, {
+          backgroundColor: item.number === lastReadSurah ? C.tintLight : isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)',
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+          opacity: pressed ? 0.75 : 1,
+        }]}
       >
         <View style={[styles.numBadge, { backgroundColor: C.tint, width: qFS.badge, height: qFS.badge, borderRadius: qFS.badge * 0.28 }]}>
           <Text style={[styles.numText, { color: C.tintText, fontSize: qFS.num }]}>{item.number}</Text>
         </View>
-
         <View style={styles.surahInfo}>
-          <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold', fontSize: qFS.arabic }]}>
-            {item.arabic}
-          </Text>
+          <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold', fontSize: qFS.arabic }]}>{item.arabic}</Text>
           <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw, fontFamily: SERIF_EN, fontSize: qFS.english }]}>
             {item.transliteration}
-            {mode === 'transliteration'
-              ? surahNamesMap
-                ? <Text style={{ fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }}>
-                    {` · ${surahNamesMap[item.number] ?? item.arabic}`}
-                  </Text>
-                : ` · ${item.arabic}`
-              : (!isAr
-                  ? <Text style={{ fontFamily: isRtlLang(lang) ? 'Amiri_400Regular' : SERIF_EN }}>
-                      {` · ${mushafNamesMap?.[item.number] ?? item.arabic}`}
-                    </Text>
-                  : '')
-            }
+            {!isAr && <Text style={{ fontFamily: isRtlLang(lang) ? 'Amiri_400Regular' : SERIF_EN }}>{` · ${mushafNamesMap?.[item.number] ?? item.arabic}`}</Text>}
           </Text>
           <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: qFS.meta }]}>
-            {item.type === 'Meccan' ? tr.makkiyya : tr.madaniyya}
-            {' · '}
-            {item.ayahs} {tr.verses}
+            {item.type === 'Meccan' ? tr.makkiyya : tr.madaniyya}{' · '}{item.ayahs} {tr.verses}
           </Text>
         </View>
+        {item.number === lastReadSurah && <Ionicons name="bookmark" size={14} color={C.gold} style={{ marginRight: 2 }} />}
+        <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
+      </Pressable>
+    </Animated.View>
+  );
 
-        {((item.number === lastReadSurah && mode === 'mushaf') || (item.number === translitLastSurah && mode === 'transliteration')) && (
-          <Ionicons name="bookmark" size={14} color={C.gold} style={{ marginRight: 2 }} />
-        )}
-        {mode === 'transliteration'
-          ? <Ionicons name="language-outline" size={14} color={C.tint} />
-          : <Ionicons name="chevron-forward" size={14} color={C.textMuted} />
-        }
+  // Transliteration-specific row — never reads `mode`, so the translit FlatList is fully isolated
+  const renderTranslitItem = ({ item, index }: { item: typeof SURAH_META[0]; index: number }) => (
+    <Animated.View entering={FadeInDown.delay(Math.min(index * 18, 280)).duration(320)}>
+      <Pressable
+        onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/surah-transliteration/[number]', params: { number: String(item.number) } }); }}
+        style={({ pressed }) => [styles.surahRow, {
+          backgroundColor: item.number === translitLastSurah ? C.tintLight : isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)',
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+          opacity: pressed ? 0.75 : 1,
+        }]}
+      >
+        <View style={[styles.numBadge, { backgroundColor: C.tint, width: qFS.badge, height: qFS.badge, borderRadius: qFS.badge * 0.28 }]}>
+          <Text style={[styles.numText, { color: C.tintText, fontSize: qFS.num }]}>{item.number}</Text>
+        </View>
+        <View style={styles.surahInfo}>
+          <Text style={[styles.surahArabic, { color: C.text, fontFamily: 'Amiri_700Bold', fontSize: qFS.arabic }]}>{item.arabic}</Text>
+          <Text style={[styles.surahEnglish, { color: C.textMuted, fontWeight: fw, fontFamily: SERIF_EN, fontSize: qFS.english }]}>
+            {item.transliteration}
+            {surahNamesMap
+              ? <Text style={{ fontFamily: isRtlLang(translitLang) ? 'Amiri_400Regular' : SERIF_EN }}>{` · ${surahNamesMap[item.number] ?? item.arabic}`}</Text>
+              : ` · ${item.arabic}`}
+          </Text>
+          <Text style={[styles.surahMeta, { color: C.textMuted, fontWeight: fw, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN, fontSize: qFS.meta }]}>
+            {item.type === 'Meccan' ? tr.makkiyya : tr.madaniyya}{' · '}{item.ayahs} {tr.verses}
+          </Text>
+        </View>
+        {item.number === translitLastSurah && <Ionicons name="bookmark" size={14} color={C.gold} style={{ marginRight: 2 }} />}
+        <Ionicons name="language-outline" size={14} color={C.tint} />
       </Pressable>
     </Animated.View>
   );
@@ -214,7 +212,7 @@ export default function QuranScreen() {
               Haptics.selectionAsync();
               setMode('mushaf');
               const idx = lastReadSurah - 1;
-              if (idx > 0) setTimeout(() => flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 }), 50);
+              if (idx > 0) setTimeout(() => mushafFlatListRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.3 }), 50);
             }}
             style={[styles.segmentBtn, mode === 'mushaf' && { backgroundColor: C.tint }]}
           >
@@ -229,7 +227,7 @@ export default function QuranScreen() {
               Haptics.selectionAsync();
               setMode('transliteration');
               const idx = translitLastSurah - 1;
-              if (idx > 0) setTimeout(() => flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 }), 50);
+              if (idx > 0) setTimeout(() => translitFlatListRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.3 }), 50);
             }}
             style={[styles.segmentBtn, mode === 'transliteration' && { backgroundColor: C.tint }]}
           >
@@ -342,29 +340,51 @@ export default function QuranScreen() {
         </Pressable>
       )}
 
-      <FlatList
-        ref={flatListRef}
-        data={SURAH_META}
-        keyExtractor={item => String(item.number)}
-        renderItem={renderItem}
-        extraData={[surahNamesMap, mushafNamesMap, quranFontSize, mode, lastReadSurah, translitLastSurah]}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
-        onScrollToIndexFailed={() => {}}
-        ListFooterComponent={
-          <View style={[styles.duaRow, { paddingBottom: 8 }]}>
-            <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>
-              {tr.dua}
-            </Text>
-            <Text style={[styles.freeApp, { color: C.textMuted }]}>
-              {tr.freeApp}
-            </Text>
-          </View>
-        }
-        scrollEnabled={true}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={20}
-        maxToRenderPerBatch={20}
-      />
+      {/* Two completely independent FlatLists — both always mounted, only one visible.
+          display:'none' hides without unmounting, so each preserves its own scroll position. */}
+      <View style={{ flex: 1, display: mode === 'mushaf' ? 'flex' : 'none' }}>
+        <FlatList
+          ref={mushafFlatListRef}
+          data={SURAH_META}
+          keyExtractor={item => String(item.number)}
+          renderItem={renderMushafItem}
+          extraData={[mushafNamesMap, quranFontSize, lastReadSurah]}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
+          onScrollToIndexFailed={() => {}}
+          ListFooterComponent={
+            <View style={[styles.duaRow, { paddingBottom: 8 }]}>
+              <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>{tr.dua}</Text>
+              <Text style={[styles.freeApp, { color: C.textMuted }]}>{tr.freeApp}</Text>
+            </View>
+          }
+          scrollEnabled
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={20}
+          maxToRenderPerBatch={20}
+        />
+      </View>
+
+      <View style={{ flex: 1, display: mode === 'transliteration' ? 'flex' : 'none' }}>
+        <FlatList
+          ref={translitFlatListRef}
+          data={SURAH_META}
+          keyExtractor={item => String(item.number)}
+          renderItem={renderTranslitItem}
+          extraData={[surahNamesMap, quranFontSize, translitLastSurah]}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
+          onScrollToIndexFailed={() => {}}
+          ListFooterComponent={
+            <View style={[styles.duaRow, { paddingBottom: 8 }]}>
+              <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>{tr.dua}</Text>
+              <Text style={[styles.freeApp, { color: C.textMuted }]}>{tr.freeApp}</Text>
+            </View>
+          }
+          scrollEnabled
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={20}
+          maxToRenderPerBatch={20}
+        />
+      </View>
     </View>
   );
 }
