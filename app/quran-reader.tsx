@@ -496,6 +496,8 @@ export default function QuranReaderScreen() {
           </Text>
         </Pressable>
 
+        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{tr.page} {pageNum} / {TOTAL_PAGES}</Text>
+
         <Pressable
           onPress={() => navigate('next')}
           disabled={pageNum >= TOTAL_PAGES}
@@ -560,5 +562,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
   },
+  pageCounter: { fontSize: 12 },
   navBtnText: { fontSize: 13, fontWeight: '600' },
 });

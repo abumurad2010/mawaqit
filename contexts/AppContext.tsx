@@ -116,6 +116,10 @@ interface AppContextValue extends AppSettings {
   setLastReadPage: (page: number) => void;
   lastReadSurah: number;
   setLastReadSurah: (surah: number) => void;
+  translitLastSurah: number;
+  setTranslitLastSurah: (surah: number) => void;
+  translitLastPage: number;
+  setTranslitLastPage: (page: number) => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -160,17 +164,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [lastReadPage, setLastReadPageState] = useState(1);
   const [lastReadSurah, setLastReadSurahState] = useState(1);
+  const [translitLastSurah, setTranslitLastSurahState] = useState(1);
+  const [translitLastPage, setTranslitLastPageState] = useState(1);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [s, b, lrp, lrs, cc] = await Promise.all([
+        const [s, b, lrp, lrs, cc, tls, tlp] = await Promise.all([
           AsyncStorage.getItem('settings'),
           AsyncStorage.getItem('bookmarks'),
           AsyncStorage.getItem('lastReadPage'),
           AsyncStorage.getItem('lastReadSurah'),
           AsyncStorage.getItem('countryCode'),
+          AsyncStorage.getItem('translitLastSurah'),
+          AsyncStorage.getItem('translitLastPage'),
         ]);
         if (s) {
           const parsed = JSON.parse(s);
@@ -225,6 +233,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (lrp) setLastReadPageState(parseInt(lrp, 10));
         if (lrs) setLastReadSurahState(parseInt(lrs, 10));
         if (cc) setCountryCode(cc);
+        if (tls) setTranslitLastSurahState(parseInt(tls, 10));
+        if (tlp) setTranslitLastPageState(parseInt(tlp, 10));
       } catch {}
       setLoaded(true);
     })();
@@ -349,6 +359,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.setItem('lastReadSurah', String(surah));
   };
 
+  const setTranslitLastSurah = async (surah: number) => {
+    setTranslitLastSurahState(surah);
+    await AsyncStorage.setItem('translitLastSurah', String(surah));
+  };
+
+  const setTranslitLastPage = async (page: number) => {
+    setTranslitLastPageState(page);
+    await AsyncStorage.setItem('translitLastPage', String(page));
+  };
+
   const value = useMemo<AppContextValue>(
     () => ({
       ...settings,
@@ -371,8 +391,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLastReadPage,
       lastReadSurah,
       setLastReadSurah,
+      translitLastSurah,
+      setTranslitLastSurah,
+      translitLastPage,
+      setTranslitLastPage,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage],
   );
 
   if (!loaded) return null;

@@ -2,7 +2,7 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform, Modal, ScrollView,
 } from 'react-native';
@@ -16,7 +16,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, LANG_FLAG, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
-import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
+import { SURAH_META, SURAH_START_PAGES, getAyahPage } from '@/lib/quran-api';
 import { SUPPORTED_TRANSLIT_LANGS, fetchSurahNamesByLang } from '@/lib/quran-transliteration';
 import { useQuery } from '@tanstack/react-query';
 
@@ -36,7 +36,7 @@ const QURAN_FS_KEY = 'quran_font_size';
 
 export default function QuranScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, lastReadSurah, lastReadPage, colors, translitLang, updateSettings } = useApp();
+  const { isDark, lang, lastReadSurah, lastReadPage, translitLastSurah, translitLastPage, colors, translitLang, updateSettings } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
@@ -44,6 +44,7 @@ export default function QuranScreen() {
 
   const [mode, setMode] = useState<QuranMode>('mushaf');
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
   const [quranFontSize, setQuranFontSizeState] = useState<QuranFontSize>('sm');
 
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function QuranScreen() {
         style={({ pressed }) => [
           styles.surahRow,
           {
-            backgroundColor: item.number === lastReadSurah && mode === 'mushaf'
+            backgroundColor: (item.number === lastReadSurah && mode === 'mushaf') || (item.number === translitLastSurah && mode === 'transliteration')
               ? C.tintLight
               : isDark ? 'rgba(44,44,46,0.15)' : 'rgba(255,255,255,0.15)',
             borderWidth: StyleSheet.hairlineWidth,
@@ -142,7 +143,7 @@ export default function QuranScreen() {
           </Text>
         </View>
 
-        {item.number === lastReadSurah && mode === 'mushaf' && (
+        {((item.number === lastReadSurah && mode === 'mushaf') || (item.number === translitLastSurah && mode === 'transliteration')) && (
           <Ionicons name="bookmark" size={14} color={C.gold} style={{ marginRight: 2 }} />
         )}
         {mode === 'transliteration'
@@ -209,7 +210,12 @@ export default function QuranScreen() {
         {/* Mode segmented control */}
         <View style={[styles.segmentRow, { backgroundColor: C.backgroundSecond, borderColor: C.separator, marginTop: 10 }]}>
           <Pressable
-            onPress={() => { Haptics.selectionAsync(); setMode('mushaf'); }}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMode('mushaf');
+              const idx = lastReadSurah - 1;
+              if (idx > 0) setTimeout(() => flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 }), 50);
+            }}
             style={[styles.segmentBtn, mode === 'mushaf' && { backgroundColor: C.tint }]}
           >
             <Ionicons name="book" size={13} color={mode === 'mushaf' ? C.tintText : C.textMuted} />
@@ -219,7 +225,12 @@ export default function QuranScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => { Haptics.selectionAsync(); setMode('transliteration'); }}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setMode('transliteration');
+              const idx = translitLastSurah - 1;
+              if (idx > 0) setTimeout(() => flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.3 }), 50);
+            }}
             style={[styles.segmentBtn, mode === 'transliteration' && { backgroundColor: C.tint }]}
           >
             <Ionicons name="language" size={13} color={mode === 'transliteration' ? C.tintText : C.textMuted} />
@@ -303,7 +314,7 @@ export default function QuranScreen() {
         </Modal>
       </View>
 
-      {/* Continue Reading — only in Mushaf mode */}
+      {/* Continue Reading */}
       {mode === 'mushaf' && lastReadPage > 1 && (
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/quran-reader', params: { page: String(lastReadPage) } }); }}
@@ -311,17 +322,34 @@ export default function QuranScreen() {
         >
           <Ionicons name="book-outline" size={15} color={C.tintText} />
           <Text style={[styles.continueBtnText, { color: C.tintText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
-            {`${tr.continueReading} — ${tr.page} ${lastReadPage}`}
+            {`${tr.continueReading} — ${tr.page} ${lastReadPage} / 604`}
+          </Text>
+        </Pressable>
+      )}
+      {mode === 'transliteration' && (translitLastSurah > 1 || translitLastPage > 1) && (
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync();
+            const startAyah = (translitLastPage - 1) * 5 + 1;
+            router.push({ pathname: '/surah-transliteration/[number]', params: { number: String(translitLastSurah), startAyah: String(startAyah) } });
+          }}
+          style={({ pressed }) => [styles.continueBtn, { backgroundColor: C.tint, opacity: pressed ? 0.85 : 1, marginHorizontal: 16, marginBottom: 8 }]}
+        >
+          <Ionicons name="language-outline" size={15} color={C.tintText} />
+          <Text style={[styles.continueBtnText, { color: C.tintText, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]} numberOfLines={1}>
+            {`${tr.continueReading} — ${SURAH_META[translitLastSurah - 1]?.transliteration ?? ''}, ${tr.page} ${getAyahPage(translitLastSurah, (translitLastPage - 1) * 5 + 1)} / 604`}
           </Text>
         </Pressable>
       )}
 
       <FlatList
+        ref={flatListRef}
         data={SURAH_META}
         keyExtractor={item => String(item.number)}
         renderItem={renderItem}
-        extraData={[surahNamesMap, mushafNamesMap, quranFontSize]}
+        extraData={[surahNamesMap, mushafNamesMap, quranFontSize, mode, lastReadSurah, translitLastSurah]}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 24 }}
+        onScrollToIndexFailed={() => {}}
         ListFooterComponent={
           <View style={[styles.duaRow, { paddingBottom: 8 }]}>
             <Text style={[styles.dua, { color: C.textMuted, fontFamily: 'Amiri_400Regular' }]}>

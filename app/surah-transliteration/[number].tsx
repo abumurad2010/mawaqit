@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
-import { SURAH_META, getSurah } from '@/lib/quran-api';
+import { SURAH_META, getSurah, getAyahPage } from '@/lib/quran-api';
 import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import { getTranslation, getTransliteration } from '@/lib/quran-translations';
 import PageBackground from '@/components/PageBackground';
@@ -60,7 +60,7 @@ export default function SurahTransliterationScreen() {
   const startAyahNum = Number(startAyah ?? '0');
   const highlightTerm = highlight ?? '';
   const insets = useSafeAreaInsets();
-  const { isDark, lang, translitLang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings } = useApp();
+  const { isDark, lang, translitLang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings, setTranslitLastSurah, setTranslitLastPage } = useApp();
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
   const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
   const changeFontSize = (dir: 1 | -1) => {
@@ -92,6 +92,16 @@ export default function SurahTransliterationScreen() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  // Global mushaf page for this position (for FIX 2 and FIX 3)
+  const firstAyahOnPage = (currentPage - 1) * AYAHS_PER_PAGE + 1;
+  const globalPage = getAyahPage(surahNum, Math.min(firstAyahOnPage, totalAyahs));
+
+  // Track last-read position for "Continue Reading" (FIX 3)
+  useEffect(() => {
+    setTranslitLastSurah(surahNum);
+    setTranslitLastPage(currentPage);
+  }, [surahNum, currentPage]);
 
   // Page swipe navigation (with surah overflow at boundaries)
   const flip = useSharedValue(0);
@@ -306,7 +316,7 @@ export default function SurahTransliterationScreen() {
           </Pressable>
           <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
             <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>
-              {currentPage}/{totalPages}
+              {globalPage} / 604
             </Text>
           </View>
         </View>
@@ -494,7 +504,7 @@ export default function SurahTransliterationScreen() {
           <Ionicons name="chevron-back" size={16} color={C.tint} />
           <Text style={[styles.navBtnText, { color: C.tint }]}>{tr.prev}</Text>
         </Pressable>
-        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{currentPage}/{totalPages}</Text>
+        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{tr.page} {globalPage} / 604</Text>
         <Pressable
           onPress={() => navigatePage('next')}
           disabled={currentPage === totalPages && nextSurah === null}
