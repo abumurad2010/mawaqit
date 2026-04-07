@@ -236,13 +236,6 @@ export default function SurahTransliterationScreen() {
 
   // All translation and transliteration data is bundled offline — no async needed.
 
-  const goPage = useCallback((p: number) => {
-    Haptics.selectionAsync();
-    setCurrentPage(p);
-    setShowHighlight(false);
-    scrollRef.current?.scrollTo({ y: 0, animated: true });
-  }, []);
-
   const setTranslitLang = useCallback((l: Lang) => {
     Haptics.selectionAsync();
     updateSettings({ translitLang: l });
@@ -382,48 +375,7 @@ export default function SurahTransliterationScreen() {
         </Pressable>
       </Modal>
 
-      {/* ── Swipe hint strip ── */}
-      <View style={[styles.swipeHint, { backgroundColor: C.backgroundCard }]}>
-        {/* Prev: prev page within surah, or prev surah if at page 1 */}
-        <Pressable
-          onPress={() => navigatePage('prev')}
-          style={styles.swipeHintBtn}
-          disabled={currentPage === 1 && prevSurah === null}
-        >
-          <Ionicons
-            name="chevron-back" size={14}
-            color={(currentPage > 1 || prevSurah !== null) ? C.tint : C.separator}
-          />
-          <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
-            {currentPage > 1
-              ? `${tr.page ?? 'Page'} ${currentPage - 1}`
-              : prevSurah !== null ? (SURAH_META[prevSurah - 1]?.transliteration ?? '') : ''}
-          </Text>
-        </Pressable>
-
-        <Text style={[styles.swipeHintCenter, { color: C.textMuted, fontFamily: SERIF_EN }]}>
-          {currentPage}/{totalPages}
-        </Text>
-
-        {/* Next: next page within surah, or next surah if at last page */}
-        <Pressable
-          onPress={() => navigatePage('next')}
-          style={[styles.swipeHintBtn, { justifyContent: 'flex-end' }]}
-          disabled={currentPage === totalPages && nextSurah === null}
-        >
-          <Text style={[styles.swipeHintText, { color: C.textMuted, fontFamily: SERIF_EN }]} numberOfLines={1}>
-            {currentPage < totalPages
-              ? `${tr.page ?? 'Page'} ${currentPage + 1}`
-              : nextSurah !== null ? (SURAH_META[nextSurah - 1]?.transliteration ?? '') : ''}
-          </Text>
-          <Ionicons
-            name="chevron-forward" size={14}
-            color={(currentPage < totalPages || nextSurah !== null) ? C.tint : C.separator}
-          />
-        </Pressable>
-      </View>
-
-      {/* ── Scrollable ayah content + bottom bar (swipeable) ── */}
+      {/* ── Scrollable ayah content (swipeable) ── */}
       <Animated.View style={[{ flex: 1, overflow: 'hidden' }, flipStyle]} {...panResponder.panHandlers}>
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
         <Animated.View
@@ -520,52 +472,28 @@ export default function SurahTransliterationScreen() {
         })}
       </ScrollView>
 
-      {/* ── Fixed bottom navigation bar — always visible ── */}
-      <View style={[
-        styles.bottomBar,
-        {
-          paddingBottom: bottomInset + 8,
-          backgroundColor: C.background + 'F0',
-          borderTopColor: C.separator,
-        },
-      ]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pagePills}
-        >
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter(p => Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages)
-            .reduce<(number | 'dot')[]>((acc, p, idx, arr) => {
-              if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('dot');
-              acc.push(p);
-              return acc;
-            }, [])
-            .map((p, idx) =>
-              p === 'dot' ? (
-                <Text key={`dot-${idx}`} style={[styles.pageDot, { color: C.textMuted }]}>…</Text>
-              ) : (
-                <Pressable
-                  key={p}
-                  onPress={() => goPage(p as number)}
-                  style={[
-                    styles.pagePill,
-                    {
-                      backgroundColor: p === currentPage ? C.tint : C.backgroundCard,
-                      borderColor: p === currentPage ? C.tint : C.separator,
-                    },
-                  ]}
-                >
-                  <Text style={{ color: p === currentPage ? C.tintText : C.textMuted, fontSize: 12, fontWeight: '600' }}>
-                    {p}
-                  </Text>
-                </Pressable>
-              )
-            )
-          }
-        </ScrollView>
-      </View>
       </Animated.View>
+
+      {/* ── Bottom navigation — outside flip animation ── */}
+      <View style={[styles.bottomNav, { paddingBottom: bottomInset + 14, borderTopColor: C.separator, backgroundColor: C.background + 'F0' }]}>
+        <Pressable
+          onPress={() => navigatePage('prev')}
+          disabled={currentPage === 1 && prevSurah === null}
+          style={({ pressed }) => [styles.navBtn, { backgroundColor: C.backgroundCard, opacity: (currentPage === 1 && prevSurah === null) ? 0.3 : pressed ? 0.7 : 1 }]}
+        >
+          <Ionicons name="chevron-back" size={16} color={C.tint} />
+          <Text style={[styles.navBtnText, { color: C.tint }]}>{tr.prev}</Text>
+        </Pressable>
+        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{currentPage}/{totalPages}</Text>
+        <Pressable
+          onPress={() => navigatePage('next')}
+          disabled={currentPage === totalPages && nextSurah === null}
+          style={({ pressed }) => [styles.navBtn, { backgroundColor: C.backgroundCard, opacity: (currentPage === totalPages && nextSurah === null) ? 0.3 : pressed ? 0.7 : 1 }]}
+        >
+          <Text style={[styles.navBtnText, { color: C.tint }]}>{tr.next}</Text>
+          <Ionicons name="chevron-forward" size={16} color={C.tint} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -647,26 +575,15 @@ const styles = StyleSheet.create({
   translitText: { fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   translationText: { fontSize: 13, lineHeight: 20, opacity: 0.85 },
 
-  swipeHint: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 12, paddingVertical: 6, marginHorizontal: 16,
-    borderRadius: 10, marginBottom: 6,
-  },
-  swipeHintBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  swipeHintText: { fontSize: 12, maxWidth: 90 },
-  swipeHintCenter: { fontSize: 11, textAlign: 'center', flex: 0 },
-
-  bottomBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 14, paddingTop: 10, gap: 8,
+  bottomNav: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  pagePills: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+  navBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
   },
-  pagePill: {
-    width: 32, height: 32, borderRadius: 8, borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  pageDot: { fontSize: 14, paddingHorizontal: 2 },
+  navBtnText: { fontSize: 14, fontWeight: '600' },
+  pageCounter: { fontSize: 12 },
 });
