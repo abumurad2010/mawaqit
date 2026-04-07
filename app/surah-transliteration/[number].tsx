@@ -162,13 +162,17 @@ export default function SurahTransliterationScreen() {
         transitioningRef.current = true;
         const outAngle = isRtl ? 90 : -90;
         Haptics.selectionAsync();
+        const doSwap = () => {
+          setCurrentPage(pg + 1);
+          scrollRef.current?.scrollTo({ y: 0, animated: false });
+        };
+        const doFinish = () => { transitioningRef.current = false; };
         flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
-            runOnJS(setCurrentPage)(pg + 1);
-            runOnJS(() => scrollRef.current?.scrollTo({ y: 0, animated: false }))();
+            runOnJS(doSwap)();
             flip.value = -outAngle;
             flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-              if (done2) { transitioningRef.current = false; }
+              if (done2) runOnJS(doFinish)();
             });
           }
         });
@@ -182,13 +186,17 @@ export default function SurahTransliterationScreen() {
         transitioningRef.current = true;
         const outAngle = isRtl ? -90 : 90;
         Haptics.selectionAsync();
+        const doSwap = () => {
+          setCurrentPage(pg - 1);
+          scrollRef.current?.scrollTo({ y: 0, animated: false });
+        };
+        const doFinish = () => { transitioningRef.current = false; };
         flip.value = withTiming(outAngle, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
           if (done) {
-            runOnJS(setCurrentPage)(pg - 1);
-            runOnJS(() => scrollRef.current?.scrollTo({ y: 0, animated: false }))();
+            runOnJS(doSwap)();
             flip.value = -outAngle;
             flip.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-              if (done2) { transitioningRef.current = false; }
+              if (done2) runOnJS(doFinish)();
             });
           }
         });
@@ -264,7 +272,7 @@ export default function SurahTransliterationScreen() {
       <PageBackground />
 
       {/* ── Sticky header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 8, backgroundColor: C.background + 'F0', borderBottomColor: C.separator, zIndex: 2 }]}>
+      <View style={[styles.header, { paddingTop: topInset + 8, backgroundColor: C.background + 'F0', borderBottomColor: C.separator, zIndex: 10, elevation: 10 }]}>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.back(); }}
           style={[styles.backBtn, { backgroundColor: C.backgroundCard }]}
@@ -313,6 +321,8 @@ export default function SurahTransliterationScreen() {
             backgroundColor: C.backgroundCard,
             borderBottomColor: C.separator,
             opacity: pressed ? 0.75 : 1,
+            zIndex: 10,
+            elevation: 10,
           },
         ]}
       >
@@ -376,7 +386,7 @@ export default function SurahTransliterationScreen() {
       </Modal>
 
       {/* ── Scrollable ayah content (swipeable) ── */}
-      <Animated.View style={[{ flex: 1, overflow: 'hidden' }, flipStyle]} {...panResponder.panHandlers}>
+      <Animated.View style={[{ flex: 1, overflow: 'hidden', zIndex: 1 }, flipStyle]} {...panResponder.panHandlers}>
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: '#000', zIndex: 10 }, flipShadowStyle]}
@@ -475,7 +485,7 @@ export default function SurahTransliterationScreen() {
       </Animated.View>
 
       {/* ── Bottom navigation — outside flip animation ── */}
-      <View style={[styles.bottomNav, { paddingBottom: bottomInset + 14, borderTopColor: C.separator, backgroundColor: C.background + 'F0' }]}>
+      <View style={[styles.bottomNav, { paddingBottom: bottomInset + 14, borderTopColor: C.separator, backgroundColor: C.background + 'F0', zIndex: 10, elevation: 10 }]}>
         <Pressable
           onPress={() => navigatePage('prev')}
           disabled={currentPage === 1 && prevSurah === null}

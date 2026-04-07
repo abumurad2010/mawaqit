@@ -321,7 +321,7 @@ export default function QuranReaderScreen() {
     <View style={[styles.root, { backgroundColor: bgColor }]}>
 
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator, zIndex: 2 }]}>
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator, zIndex: 10, elevation: 10 }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
@@ -371,7 +371,7 @@ export default function QuranReaderScreen() {
 
       {/* ── Page content with swipe ── */}
       <Animated.View
-        style={[{ flex: 1, overflow: 'hidden' }, flipStyle]}
+        style={[{ flex: 1, overflow: 'hidden', zIndex: 1 }, flipStyle]}
         {...panResponder.panHandlers}
       >
         {/* Shadow overlay — darkens at 90° edge to enhance 3D depth */}
@@ -479,6 +479,8 @@ export default function QuranReaderScreen() {
         paddingBottom: bottomInset + 14,
         borderTopColor: C.separator,
         backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
+        zIndex: 10,
+        elevation: 10,
       }]}>
         <Pressable
           onPress={() => navigate('prev')}
