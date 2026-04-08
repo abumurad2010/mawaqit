@@ -407,7 +407,7 @@ export default function SettingsScreen() {
       if (isMountedRef.current) setPreviewing(null);
     } else {
       await stopAthan();
-      const type = draftNotifications[key]?.athan === 'abbreviated' ? 'abbreviated' : 'full';
+      const type = Platform.OS === 'ios' ? 'abbreviated' : (draftNotifications[key]?.athan === 'abbreviated' ? 'abbreviated' : 'full');
       const voice = draftPrayerAdhan[key] ?? draftAdhan;
       if (isMountedRef.current) setPreviewing(key);
       playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); }, voice);
@@ -620,7 +620,7 @@ export default function SettingsScreen() {
       if (athan === 'none') {
         if (isMountedRef.current) setPreviewing(null);
       } else {
-        const type = athan === 'abbreviated' ? 'abbreviated' : 'full';
+        const type = Platform.OS === 'ios' ? 'abbreviated' : (athan === 'abbreviated' ? 'abbreviated' : 'full');
         const voice = draftPrayerAdhan[key] ?? draftAdhan;
         if (isMountedRef.current) setPreviewing(key);
         playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); }, voice);
@@ -1626,28 +1626,33 @@ export default function SettingsScreen() {
                     borderBottomWidth: isLast ? 0 : 0,
                     flexDirection: isRtl ? 'row-reverse' : 'row'
                   }]}>
-                    <Pressable
-                      onPress={() => setPrayerAthan(prayer.key, 'full')}
-                      style={[styles.subChip, {
-                        backgroundColor: cfg.athan === 'full' ? C.tint + '20' : 'transparent',
-                        borderColor: cfg.athan === 'full' ? C.tint : C.separator,
-                      }]}
-                    >
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'full' ? C.tint : C.textSecond }}>
-                        {tr.full}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setPrayerAthan(prayer.key, 'abbreviated')}
-                      style={[styles.subChip, {
-                        backgroundColor: cfg.athan === 'abbreviated' ? C.tint + '20' : 'transparent',
-                        borderColor: cfg.athan === 'abbreviated' ? C.tint : C.separator,
-                      }]}
-                    >
-                      <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'abbreviated' ? C.tint : C.textSecond }}>
-                        {tr.abbr}
-                      </Text>
-                    </Pressable>
+                    {/* Full / Abbreviated toggle — Android only */}
+                    {Platform.OS === 'android' && (
+                      <>
+                        <Pressable
+                          onPress={() => setPrayerAthan(prayer.key, 'full')}
+                          style={[styles.subChip, {
+                            backgroundColor: cfg.athan === 'full' ? C.tint + '20' : 'transparent',
+                            borderColor: cfg.athan === 'full' ? C.tint : C.separator,
+                          }]}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'full' ? C.tint : C.textSecond }}>
+                            {tr.full}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => setPrayerAthan(prayer.key, 'abbreviated')}
+                          style={[styles.subChip, {
+                            backgroundColor: cfg.athan === 'abbreviated' ? C.tint + '20' : 'transparent',
+                            borderColor: cfg.athan === 'abbreviated' ? C.tint : C.separator,
+                          }]}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: cfg.athan === 'abbreviated' ? C.tint : C.textSecond }}>
+                            {tr.abbr}
+                          </Text>
+                        </Pressable>
+                      </>
+                    )}
                     {/* Adhan voice dropdown */}
                     <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4 }}>
                       <Text style={{ fontSize: 10, color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }}>
@@ -1662,6 +1667,15 @@ export default function SettingsScreen() {
                         </Text>
                         <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
                       </Pressable>
+                      {/* iOS disclaimer help icon */}
+                      {Platform.OS === 'ios' && (
+                        <Pressable
+                          onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.adhanSound, tr.adhan_ios_disclaimer); }}
+                          hitSlop={8}
+                        >
+                          <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+                        </Pressable>
+                      )}
                     </View>
                     <View style={{ flex: 1 }} />
                     <Pressable

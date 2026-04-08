@@ -61,7 +61,16 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#1a8c5b",
-          "sounds": []
+          "sounds": [
+            "./assets/sounds/caf/Adhan-Makka-Abb.caf",
+            "./assets/sounds/caf/Adhan-Madinah-Abb.caf",
+            "./assets/sounds/caf/Adhan-Egypt-Abb.caf",
+            "./assets/sounds/caf/Adhan-Alaqsa-Abb.caf",
+            "./assets/sounds/caf/Adhan-Halab-Abb.caf",
+            "./assets/sounds/caf/Al-Hussaini-Abb.caf",
+            "./assets/sounds/caf/Bakir-Bash-Abb.caf",
+            "./assets/sounds/caf/Abdul-Hakam-Abb.caf"
+          ]
         }
       ],
       [

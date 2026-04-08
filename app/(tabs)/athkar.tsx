@@ -21,6 +21,14 @@ import ATHKAR_CATEGORIES, { AthkarCategory, Thikr } from '@/constants/athkar-dat
 const FAVS_KEY = 'athkar_favourites';
 const FAV_HINT_KEY = 'athkar_fav_hint_seen';
 const ATHKAR_FS_KEY = 'athkar_font_size';
+const PERSONAL_KEY = 'personal_athkar';
+
+interface PersonalThikrItem {
+  id: string;
+  text: string;
+  name?: string;
+  repetitions: number;
+}
 const GOLD = '#C9A84C';
 const OUTER_PADDING = 14;
 const TILE_GAP = 10;
@@ -65,6 +73,8 @@ export default function AthkarScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [selectedCategory, setSelectedCategory] = useState<AthkarCategory | null>(null);
+  const [showPersonalReader, setShowPersonalReader] = useState(false);
+  const [personalItems, setPersonalItems] = useState<PersonalThikrItem[]>([]);
   const [highlightThikrIdx, setHighlightThikrIdx] = useState<number>(-1);
   const [highlightQuery, setHighlightQuery] = useState<string>('');
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -81,8 +91,9 @@ export default function AthkarScreen() {
   // Reset to category list when tab icon is pressed while already on this tab
   useLayoutEffect(() => {
     const unsubscribe = (navigation as any).addListener('tabPress', () => {
-      if (selectedCategory !== null) {
+      if (selectedCategory !== null || showPersonalReader) {
         setSelectedCategory(null);
+        setShowPersonalReader(false);
         setHighlightThikrIdx(-1);
         setHighlightQuery('');
       }
@@ -101,6 +112,9 @@ export default function AthkarScreen() {
     }).catch(() => {});
     AsyncStorage.getItem(FAV_HINT_KEY).then(val => {
       setFavHintSeen(val === 'true');
+    }).catch(() => {});
+    AsyncStorage.getItem(PERSONAL_KEY).then(raw => {
+      if (raw) setPersonalItems(JSON.parse(raw));
     }).catch(() => {});
     AsyncStorage.getItem(ATHKAR_FS_KEY).then(val => {
       const migrated: Record<string, AthkarFontSize> = { small: 'sm', medium: 'md', large: 'lg' };
@@ -155,10 +169,16 @@ export default function AthkarScreen() {
     setCounts({});
   }, []);
 
+  const savePersonalItems = useCallback((items: PersonalThikrItem[]) => {
+    setPersonalItems(items);
+    AsyncStorage.setItem(PERSONAL_KEY, JSON.stringify(items)).catch(() => {});
+  }, []);
+
   const closeCategory = useCallback(() => {
     if (pendingAdvance.current) clearTimeout(pendingAdvance.current);
     Haptics.selectionAsync();
     setSelectedCategory(null);
+    setShowPersonalReader(false);
     setCounts({});
   }, []);
 
@@ -200,6 +220,26 @@ export default function AthkarScreen() {
     return (counts[getKey(catId, idx)] ?? 0) >= required;
   }, [counts]);
 
+  const handleDone = useCallback((cat: AthkarCategory, thikr: Thikr, idx: number) => {
+    if (pendingAdvance.current) clearTimeout(pendingAdvance.current);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCounts(prev => {
+      const key = getKey(cat.id, idx);
+      if ((prev[key] ?? 0) >= thikr.count) return prev;
+      const updated = { ...prev, [key]: thikr.count };
+      const nextIncompleteIdx = cat.adhkar.findIndex((d, i) => {
+        const k = getKey(cat.id, i);
+        return (updated[k] ?? 0) < d.count;
+      });
+      if (nextIncompleteIdx !== -1) {
+        pendingAdvance.current = setTimeout(() => {
+          readerRef.current?.scrollToIndex({ index: nextIncompleteIdx, animated: true, viewPosition: 0.1 });
+        }, 300);
+      }
+      return updated;
+    });
+  }, []);
+
   const dismissFavHint = useCallback(() => {
     setFavHintSeen(true);
     AsyncStorage.setItem(FAV_HINT_KEY, 'true').catch(() => {});
@@ -207,7 +247,19 @@ export default function AthkarScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      {selectedCategory ? (
+      {showPersonalReader ? (
+        <PersonalReaderScreen
+          lang={lang}
+          isRtl={isRtl}
+          tr={tr}
+          C={C}
+          topInset={topInset}
+          bottomInset={bottomInset}
+          items={personalItems}
+          onSave={savePersonalItems}
+          onBack={closeCategory}
+        />
+      ) : selectedCategory ? (
         <ReaderScreen
           category={selectedCategory}
           lang={lang}
@@ -221,6 +273,7 @@ export default function AthkarScreen() {
           getCount={getCount}
           isDone={isDone}
           onTap={handleTap}
+          onDone={handleDone}
           onBack={closeCategory}
           onReset={resetCounts}
           displayMode={displayMode}
@@ -240,6 +293,8 @@ export default function AthkarScreen() {
           displayMode={displayMode}
           onDisplayMode={setDisplayMode}
           onSelect={openCategory}
+          onOpenPersonal={() => setShowPersonalReader(true)}
+          personalItemCount={personalItems.length}
           favourites={favourites}
           onLongPress={toggleFavourite}
           sortedCategories={sortedCategories}
@@ -266,6 +321,8 @@ interface GridProps {
   displayMode: 'arabic' | 'full';
   onDisplayMode: (m: 'arabic' | 'full') => void;
   onSelect: (cat: AthkarCategory, hlIdx?: number, hlQuery?: string) => void;
+  onOpenPersonal: () => void;
+  personalItemCount: number;
   favourites: string[];
   onLongPress: (cat: AthkarCategory) => void;
   sortedCategories: AthkarCategory[];
@@ -277,7 +334,7 @@ interface GridProps {
   setAthkarFontSize: (fs: AthkarFontSize) => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, favourites, onLongPress, sortedCategories, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, onOpenPersonal, personalItemCount, favourites, onLongPress, sortedCategories, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -673,6 +730,49 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           );
         })}
       </View>
+
+      {/* My Athkar — personal folder tile */}
+      <View style={{ paddingHorizontal: OUTER_PADDING, paddingTop: 12, paddingBottom: 4 }}>
+        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
+            {(tr as any).personal_athkar ?? 'My Athkar'}
+          </Text>
+          <Pressable
+            onPress={() => Alert.alert((tr as any).personal_athkar ?? 'My Athkar', (tr as any).personal_athkar_help ?? '')}
+            hitSlop={8}
+          >
+            <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+          </Pressable>
+        </View>
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); onOpenPersonal(); }}
+          style={({ pressed }) => ({
+            flexDirection: isRtl ? 'row-reverse' : 'row',
+            alignItems: 'center',
+            gap: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            borderRadius: 14,
+            backgroundColor: C.backgroundCard,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: C.separator,
+            opacity: pressed ? 0.75 : 1,
+          })}
+        >
+          <Ionicons name="bookmark-outline" size={22} color={C.tint} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: C.text, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
+              {(tr as any).personal_athkar ?? 'My Athkar'}
+            </Text>
+            <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left', marginTop: 2 }}>
+              {personalItemCount > 0
+                ? `${personalItemCount} ${personalItemCount === 1 ? ((tr as any).thikr_text ?? 'thikr') : ((tr as any).thikr_text ?? 'thikr')}`
+                : ((tr as any).add_thikr ?? 'Add your first thikr')}
+            </Text>
+          </View>
+          <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
+        </Pressable>
+      </View>
       </ScrollView>
 
       <Modal
@@ -840,11 +940,12 @@ interface ReaderProps {
   C: any;
   topInset: number;
   bottomInset: number;
-  readerRef: React.RefObject<FlatList<Thikr>>;
+  readerRef: React.RefObject<FlatList<Thikr> | null>;
   counts: Record<string, number>;
   getCount: (catId: string, idx: number) => number;
   isDone: (catId: string, idx: number, required: number) => boolean;
   onTap: (cat: AthkarCategory, thikr: Thikr, idx: number) => void;
+  onDone: (cat: AthkarCategory, thikr: Thikr, idx: number) => void;
   onBack: () => void;
   onReset: () => void;
   displayMode: 'arabic' | 'full';
@@ -857,7 +958,7 @@ interface ReaderProps {
 function ReaderScreen({
   category, lang, isRtl, tr, C,
   topInset, bottomInset, readerRef,
-  counts, getCount, isDone, onTap, onBack, onReset,
+  counts, getCount, isDone, onTap, onDone, onBack, onReset,
   displayMode, athkarLang, athkarFontSize,
   highlightIdx = -1, highlightQuery = '',
 }: ReaderProps) {
@@ -1036,8 +1137,10 @@ function ReaderScreen({
               isRtl={isRtl}
               translationRtl={athkarRtl}
               C={C}
+              tr={tr}
               displayMode={displayMode}
               onTap={() => onTap(category, thikr, index)}
+              onDone={() => onDone(category, thikr, index)}
               onCopy={() => handleCopy(thikr, translation, index)}
               highlighted={copyHighlightIdx === index}
               arabicFontSize={cardFS.arabic}
@@ -1069,8 +1172,10 @@ interface CardProps {
   isRtl: boolean;
   translationRtl: boolean;
   C: any;
+  tr: any;
   displayMode: 'arabic' | 'full';
   onTap: () => void;
+  onDone: () => void;
   onCopy: () => void;
   highlighted: boolean;
   arabicFontSize: number;
@@ -1120,7 +1225,8 @@ function inlineHighlight(text: string, query: string, tintColor: string): React.
   return parts;
 }
 
-function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, displayMode, onTap, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
+function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, tr, displayMode, onTap, onDone, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
+  const showDoneButton = thikr.count > 3 && !done;
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
@@ -1184,8 +1290,312 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
             {searchHighlight ? inlineHighlight(translation, searchQuery, C.tint) : translation}
           </Text>
         )}
+
+        {showDoneButton && (
+          <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <Pressable
+              onPress={onDone}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingHorizontal: 14,
+                paddingVertical: 7,
+                borderRadius: 10,
+                backgroundColor: C.tint + '18',
+                borderWidth: 1,
+                borderColor: C.tint + '55',
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Ionicons name="checkmark-circle-outline" size={15} color={C.tint} />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
+                {(tr as any).done ?? 'Done'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => Alert.alert((tr as any).done ?? 'Done', (tr as any).done_help ?? '')}
+              hitSlop={10}
+            >
+              <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+            </Pressable>
+          </View>
+        )}
       </Pressable>
     </Animated.View>
+  );
+}
+
+// ─── Personal Athkar Screen ───────────────────────────────────────────────
+
+interface PersonalReaderProps {
+  lang: string;
+  isRtl: boolean;
+  tr: any;
+  C: any;
+  topInset: number;
+  bottomInset: number;
+  items: PersonalThikrItem[];
+  onSave: (items: PersonalThikrItem[]) => void;
+  onBack: () => void;
+}
+
+function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items, onSave, onBack }: PersonalReaderProps) {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<PersonalThikrItem | null>(null);
+  const [formText, setFormText] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formReps, setFormReps] = useState('3');
+  const listRef = useRef<FlatList<PersonalThikrItem>>(null);
+
+  const openAdd = () => {
+    setEditingItem(null);
+    setFormText('');
+    setFormName('');
+    setFormReps('3');
+    setShowForm(true);
+  };
+
+  const openEdit = (item: PersonalThikrItem) => {
+    setEditingItem(item);
+    setFormText(item.text);
+    setFormName(item.name ?? '');
+    setFormReps(String(item.repetitions));
+    setShowForm(true);
+  };
+
+  const handleSaveForm = () => {
+    const text = formText.trim();
+    if (!text) return;
+    const reps = Math.max(1, Math.min(999, parseInt(formReps, 10) || 1));
+    if (editingItem) {
+      onSave(items.map(it => it.id === editingItem.id
+        ? { ...it, text, name: formName.trim() || undefined, repetitions: reps }
+        : it));
+    } else {
+      const newItem: PersonalThikrItem = {
+        id: String(Date.now()),
+        text,
+        name: formName.trim() || undefined,
+        repetitions: reps,
+      };
+      onSave([...items, newItem]);
+    }
+    setShowForm(false);
+  };
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      (tr as any).delete ?? 'Delete',
+      (tr as any).done_help ? undefined : undefined,
+      [
+        { text: (tr as any).btn_cancel ?? 'Cancel', style: 'cancel' },
+        {
+          text: (tr as any).delete ?? 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            onSave(items.filter(it => it.id !== id));
+            setCounts(prev => { const n = { ...prev }; delete n[id]; return n; });
+          },
+        },
+      ],
+    );
+  };
+
+  const handleTap = (item: PersonalThikrItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setCounts(prev => {
+      const cur = prev[item.id] ?? 0;
+      if (cur >= item.repetitions) return prev;
+      const next = cur + 1;
+      if (next >= item.repetitions) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return { ...prev, [item.id]: next };
+    });
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: C.background }}>
+      {/* Header */}
+      <View style={{ paddingTop: topInset + 6, paddingHorizontal: 16, paddingBottom: 10, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }}>
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Ionicons name={isRtl ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
+        </Pressable>
+        <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+          {(tr as any).personal_athkar ?? 'My Athkar'}
+        </Text>
+        <Pressable
+          onPress={openAdd}
+          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.tint, opacity: pressed ? 0.8 : 1 }]}
+        >
+          <Ionicons name="add" size={22} color={C.tintText} />
+        </Pressable>
+      </View>
+
+      {items.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, gap: 16 }}>
+          <Ionicons name="bookmark-outline" size={48} color={C.textMuted} />
+          <Text style={{ fontSize: 15, color: C.textMuted, textAlign: 'center', fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
+            {(tr as any).add_thikr ?? 'Add your first thikr'}
+          </Text>
+          <Pressable
+            onPress={openAdd}
+            style={({ pressed }) => ({ paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14, backgroundColor: C.tint, opacity: pressed ? 0.8 : 1 })}
+          >
+            <Text style={{ color: C.tintText, fontWeight: '600', fontSize: 15, fontFamily: 'Inter_600SemiBold' }}>+</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={items}
+          keyExtractor={it => it.id}
+          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const cur = counts[item.id] ?? 0;
+            const done = cur >= item.repetitions;
+            return (
+              <Animated.View entering={FadeIn.duration(250)} style={{ marginBottom: 10 }}>
+                <Pressable
+                  onPress={() => handleTap(item)}
+                  style={({ pressed }) => [
+                    styles.card,
+                    {
+                      backgroundColor: done ? C.tint + '18' : C.backgroundCard,
+                      borderColor: done ? C.tint + '55' : C.separator,
+                      opacity: pressed && !done ? 0.88 : 1,
+                    },
+                  ]}
+                >
+                  <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <View style={[styles.counterBadge, { backgroundColor: done ? C.tint : C.backgroundCard, borderColor: done ? C.tint : C.separator }]}>
+                      <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>{cur}/{item.repetitions}</Text>
+                    </View>
+                    {done && <Animated.View entering={ZoomIn.duration(200)}><Ionicons name="checkmark-circle" size={20} color={C.tint} /></Animated.View>}
+                    <View style={{ flex: 1 }} />
+                    <Pressable onPress={() => openEdit(item)} hitSlop={8}>
+                      <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
+                    </Pressable>
+                    <Pressable onPress={() => handleDelete(item.id)} hitSlop={8}>
+                      <Ionicons name="trash-outline" size={16} color={C.textMuted} />
+                    </Pressable>
+                  </View>
+                  {!!item.name && (
+                    <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left', marginBottom: 4 }}>
+                      {item.name}
+                    </Text>
+                  )}
+                  <Text style={{ fontFamily: 'Amiri_700Bold', fontSize: 22, lineHeight: 38, textAlign: 'right', writingDirection: 'rtl', color: done ? C.tint : C.text }}>
+                    {item.text}
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            );
+          }}
+        />
+      )}
+
+      {/* Add/Edit Modal */}
+      <Modal visible={showForm} animationType="slide" transparent presentationStyle="pageSheet">
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+          <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', padding: 16, paddingTop: topInset + 12, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }}>
+            <Pressable onPress={() => setShowForm(false)} hitSlop={8}>
+              <Ionicons name="close" size={22} color={C.textSecond} />
+            </Pressable>
+            <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {editingItem ? ((tr as any).edit ?? 'Edit') : '+'}
+            </Text>
+            <Pressable
+              onPress={handleSaveForm}
+              style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 12, backgroundColor: C.tint }}
+            >
+              <Text style={{ color: C.tintText, fontWeight: '600', fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>
+                {(tr as any).save ?? 'Save'}
+              </Text>
+            </Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold' }}>
+                {(tr as any).thikr_text ?? 'Thikr text'}
+              </Text>
+              <TextInput
+                value={formText}
+                onChangeText={setFormText}
+                multiline
+                numberOfLines={4}
+                style={{
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: C.separator,
+                  borderRadius: 12,
+                  padding: 12,
+                  fontSize: 20,
+                  fontFamily: 'Amiri_400Regular',
+                  color: C.text,
+                  backgroundColor: C.backgroundCard,
+                  textAlign: 'right',
+                  writingDirection: 'rtl',
+                  minHeight: 100,
+                }}
+                placeholder="اكتب الذكر هنا..."
+                placeholderTextColor={C.textMuted}
+              />
+            </View>
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
+                {(tr as any).thikr_name ?? 'Name (optional)'}
+              </Text>
+              <TextInput
+                value={formName}
+                onChangeText={setFormName}
+                style={{
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: C.separator,
+                  borderRadius: 12,
+                  padding: 12,
+                  fontSize: 15,
+                  fontFamily: 'Inter_400Regular',
+                  color: C.text,
+                  backgroundColor: C.backgroundCard,
+                  textAlign: isRtl ? 'right' : 'left',
+                }}
+                placeholderTextColor={C.textMuted}
+                placeholder={(tr as any).thikr_name ?? 'Name (optional)'}
+              />
+            </View>
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
+                {(tr as any).repetitions ?? 'Repetitions'}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setFormReps(r => String(Math.max(1, (parseInt(r, 10) || 1) - 1))); }}
+                  style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: C.backgroundSecond, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="remove" size={18} color={C.tint} />
+                </Pressable>
+                <TextInput
+                  value={formReps}
+                  onChangeText={t => setFormReps(t.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  style={{ fontSize: 20, fontWeight: '700', color: C.text, fontFamily: 'Inter_700Bold', minWidth: 50, textAlign: 'center' }}
+                />
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setFormReps(r => String(Math.min(999, (parseInt(r, 10) || 1) + 1))); }}
+                  style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: C.backgroundSecond, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="add" size={18} color={C.tint} />
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
   );
 }
 

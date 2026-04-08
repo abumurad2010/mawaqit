@@ -10,6 +10,18 @@ import { THIKR_ITEMS, getThikrText } from '@/constants/thikr-reminders';
 const isNative = Platform.OS !== 'web';
 const IOS_MAX_NOTIFICATIONS = 64;
 
+/** Maps voice key → abbreviated .caf filename bundled in the iOS app */
+const IOS_CAF_SOUNDS: Record<string, string> = {
+  'makkah':      'Adhan-Makka-Abb.caf',
+  'madinah':     'Adhan-Madinah-Abb.caf',
+  'egypt':       'Adhan-Egypt-Abb.caf',
+  'aqsa':        'Adhan-Alaqsa-Abb.caf',
+  'halab':       'Adhan-Halab-Abb.caf',
+  'hussaini':    'Al-Hussaini-Abb.caf',
+  'bakir':       'Bakir-Bash-Abb.caf',
+  'abdul-hakam': 'Abdul-Hakam-Abb.caf',
+};
+
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
   return {
@@ -220,9 +232,9 @@ export async function schedulePrayerNotifications(params: {
   selectedAdhan?: string;
   prayerAdhan?: Record<string, string>;
   dstOffsetMs?: number;
-}) {
+}): Promise<number> {
   await cancelAllPrayerNotifications();
-  if (!isNative) return;
+  if (!isNative) return 0;
 
   const { prayerNotifications, lang } = params;
   const labels = getPrayerLabels(lang);
@@ -266,8 +278,10 @@ export async function schedulePrayerNotifications(params: {
       const prayerTime = prayerTimeMap[prayerKey];
       if (!prayerTime || prayerTime <= now) continue;
 
-      const sound: string | false = 'default';
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
+      const sound: string | false = Platform.OS === 'ios'
+        ? (IOS_CAF_SOUNDS[athanVoice] ?? 'Adhan-Makka-Abb.caf')
+        : 'default';
 
       try {
         await Notifications.scheduleNotificationAsync({
