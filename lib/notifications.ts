@@ -8,6 +8,7 @@ import type { Lang } from '@/constants/i18n';
 import { THIKR_ITEMS, getThikrText } from '@/constants/thikr-reminders';
 
 const isNative = Platform.OS !== 'web';
+const IOS_MAX_NOTIFICATIONS = 64;
 
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
@@ -96,6 +97,8 @@ export async function cancelThikrNotifications() {
 }
 
 const THIKR_DAILY_COUNT = 18;
+const THIKR_IOS_DAILY_COUNT = 8;
+const THIKR_IOS_DAYS = 3;
 const THIKR_WINDOW_AFTER_ISHA_MS = 5 * 60 * 60 * 1000; // 5 hours after Isha
 
 export async function scheduleThikrNotifications(params: {
@@ -106,11 +109,18 @@ export async function scheduleThikrNotifications(params: {
   maghribOffset: number;
   daysAhead?: number;
   dstOffsetMs?: number;
+  reservedSlots?: number; // notifications already scheduled (iOS budget tracking)
 }) {
   if (!isNative) return;
   const { lang, location } = params;
-  const daysAhead = params.daysAhead ?? 7;
+  const isIos = Platform.OS === 'ios';
+  const daysAhead = isIos ? THIKR_IOS_DAYS : (params.daysAhead ?? 7);
+  const dailyCount = isIos ? THIKR_IOS_DAILY_COUNT : THIKR_DAILY_COUNT;
+  const thikrBudget = isIos
+    ? Math.max(0, IOS_MAX_NOTIFICATIONS - (params.reservedSlots ?? 0))
+    : Infinity;
   const dstOffsetMs = params.dstOffsetMs ?? 0;
+  let thikrScheduled = 0;
   const tr = t(lang);
   const title = tr.thikr_reminder_title;
   const now = new Date();
@@ -139,7 +149,7 @@ export async function scheduleThikrNotifications(params: {
       (baseDate.getMonth() + 1) * 100 +
       baseDate.getDate();
 
-    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, THIKR_DAILY_COUNT, daySeed);
+    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, dailyCount, daySeed);
 
     // Deterministically shuffle thikr items for today
     const shuffled = [...THIKR_ITEMS].sort((a, b) => {
@@ -151,6 +161,7 @@ export async function scheduleThikrNotifications(params: {
     });
 
     for (let i = 0; i < thikrTimes.length; i++) {
+      if (thikrScheduled >= thikrBudget) break;
       const notifTime = new Date(thikrTimes[i]!);
       if (notifTime <= now) continue;
 
@@ -168,8 +179,10 @@ export async function scheduleThikrNotifications(params: {
           },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifTime },
         });
+        thikrScheduled++;
       } catch { /* ignore */ }
     }
+    if (thikrScheduled >= thikrBudget) break;
   }
 }
 
@@ -253,7 +266,7 @@ export async function schedulePrayerNotifications(params: {
       const prayerTime = prayerTimeMap[prayerKey];
       if (!prayerTime || prayerTime <= now) continue;
 
-      const sound: string | false = hasAthan ? false : 'default';
+      const sound: string | false = 'default';
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
 
       try {
@@ -274,4 +287,5 @@ export async function schedulePrayerNotifications(params: {
     }
   }
   console.log(`[Notifications] Total prayer notifications scheduled: ${scheduledCount}`);
+  return scheduledCount;
 }

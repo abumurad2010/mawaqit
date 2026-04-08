@@ -288,8 +288,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const rescheduleAll = async () => {
       try {
+        let prayerCount = 0;
         if (hasAny) {
-          await schedulePrayerNotifications({
+          prayerCount = await schedulePrayerNotifications({
             location: effectiveLocation,
             calcMethod,
             asrMethod,
@@ -317,6 +318,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             asrMethod,
             maghribOffset,
             dstOffsetMs,
+            reservedSlots: prayerCount,
           });
         } else {
           await cancelThikrNotifications();
