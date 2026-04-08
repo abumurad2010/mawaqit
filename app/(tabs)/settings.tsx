@@ -18,6 +18,7 @@ import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
+import { scheduleTestNotification } from '@/lib/notifications';
 import { getPreviousTab } from '@/lib/prev-tab';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -785,6 +786,9 @@ export default function SettingsScreen() {
                   {tr.dstDesc}
                 </Text>
               </View>
+              <Pressable onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.dstSetting, tr.dstHelp); }} hitSlop={8}>
+                <Ionicons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
             </View>
             <Switch
               value={dstEnabled}
@@ -1533,6 +1537,22 @@ export default function SettingsScreen() {
             hitSlop={8}
           >
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+          </Pressable>
+          <Pressable
+            onPress={async () => {
+              const granted = await requestNotifPermission();
+              if (!granted) return;
+              try {
+                await scheduleTestNotification();
+                Alert.alert('Test Scheduled', 'You should receive a notification in 5 seconds.');
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (e) {
+                Alert.alert('Error', String(e));
+              }
+            }}
+            style={{ marginLeft: 'auto', backgroundColor: C.tint + '20', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}
+          >
+            <Text style={{ color: C.tint, fontSize: 12, fontFamily: SANS }}>Test 5s</Text>
           </Pressable>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>

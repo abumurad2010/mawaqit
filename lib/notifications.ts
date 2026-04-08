@@ -173,6 +173,24 @@ export async function scheduleThikrNotifications(params: {
   }
 }
 
+export async function scheduleTestNotification(): Promise<void> {
+  if (!isNative) return;
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Mawaqit — Test',
+      body: 'Notifications are working! ✓',
+      sound: true,
+      data: {},
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 5,
+      repeats: false,
+    },
+  });
+  console.log('[Notifications] Test notification scheduled for 5 seconds from now');
+}
+
 export async function schedulePrayerNotifications(params: {
   location: LocationData;
   calcMethod: CalcMethod;
@@ -198,6 +216,8 @@ export async function schedulePrayerNotifications(params: {
   const daysAhead = params.daysAhead ?? 7;
   const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
+  let scheduledCount = 0;
+  console.log('[Notifications] schedulePrayerNotifications called — location:', params.location, 'daysAhead:', daysAhead, 'dstOffsetMs:', dstOffsetMs);
 
   for (let d = 0; d < daysAhead; d++) {
     const date = new Date();
@@ -246,7 +266,12 @@ export async function schedulePrayerNotifications(params: {
           },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
         });
-      } catch { /* ignore */ }
+        scheduledCount++;
+        console.log(`[Notifications] Scheduled ${prayerKey} for ${prayerTime.toLocaleString()}`);
+      } catch (err) {
+        console.warn('[Notifications] Failed to schedule', prayerKey, err);
+      }
     }
   }
+  console.log(`[Notifications] Total prayer notifications scheduled: ${scheduledCount}`);
 }

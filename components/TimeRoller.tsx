@@ -1,12 +1,13 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import {
   View, Text, FlatList, Platform, StyleSheet,
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
 
-const ITEM_H = 48;
+const ITEM_H = 36;
 const VISIBLE = 5;
 const SIDE = Math.floor(VISIBLE / 2); // 2 items above/below center
+const COPIES = 3; // prev, current, next cycle for infinite wrapping
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
@@ -20,44 +21,74 @@ interface WheelProps {
 }
 
 function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps) {
+  const N = data.length;
+
+  // Extend data COPIES times for infinite scroll illusion
+  const extended = useMemo(
+    () => Array.from({ length: N * COPIES }, (_, i) => data[i % N]!),
+    [data, N],
+  );
+
   const listRef = useRef<FlatList>(null);
-  const mounted = useRef(false);
+  // displayRawIdx tracks our position in the extended array; starts at middle copy
+  const [displayRawIdx, setDisplayRawIdx] = useState(N + selectedIdx);
 
   useEffect(() => {
-    const ms = Platform.OS === 'android' ? 150 : 80;
+    const ms = Platform.OS === 'android' ? 150 : 50;
     const t = setTimeout(() => {
-      listRef.current?.scrollToOffset({ offset: selectedIdx * ITEM_H, animated: false });
-      mounted.current = true;
+      listRef.current?.scrollToOffset({
+        offset: (N + selectedIdx) * ITEM_H,
+        animated: false,
+      });
     }, ms);
     return () => clearTimeout(t);
   }, []);
 
   const commit = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const raw = e.nativeEvent.contentOffset.y / ITEM_H;
-      const idx = Math.max(0, Math.min(Math.round(raw), data.length - 1));
-      onSelect(idx);
+      const rawY = e.nativeEvent.contentOffset.y;
+      const rawIdx = Math.max(0, Math.min(Math.round(rawY / ITEM_H), extended.length - 1));
+
+      // Actual value index within original data (wraps correctly)
+      const actualIdx = rawIdx % N;
+
+      // Re-center to middle copy so both directions remain scrollable
+      const centeredRawIdx = N + actualIdx;
+      if (rawIdx !== centeredRawIdx) {
+        listRef.current?.scrollToOffset({
+          offset: centeredRawIdx * ITEM_H,
+          animated: false,
+        });
+      }
+
+      // Update highlight instantly — no parent round-trip delay
+      setDisplayRawIdx(centeredRawIdx);
+      onSelect(actualIdx);
     },
-    [data.length, onSelect],
+    [N, extended.length, onSelect],
   );
 
   return (
-    <View style={{ height: ITEM_H * VISIBLE, width: 60, overflow: 'hidden' }}>
+    <View style={{ height: ITEM_H * VISIBLE, width: 52, overflow: 'hidden' }}>
       <FlatList
         ref={listRef}
-        data={data}
-        keyExtractor={(item) => item}
+        data={extended}
+        keyExtractor={(_, index) => `${index}`}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_H}
-        decelerationRate={Platform.OS === 'android' ? 0.9 : 'fast'}
+        decelerationRate="fast"
+        scrollEventThrottle={16}
         onMomentumScrollEnd={commit}
         onScrollEndDrag={Platform.OS === 'web' ? commit : undefined}
         contentContainerStyle={{ paddingVertical: ITEM_H * SIDE }}
         getItemLayout={(_, index) => ({
           length: ITEM_H, offset: ITEM_H * index, index,
         })}
-        renderItem={({ item, index }) => {
-          const dist = Math.abs(index - selectedIdx);
+        windowSize={11}
+        initialNumToRender={VISIBLE + 4}
+        renderItem={({ index }) => {
+          const dist = Math.abs(index - displayRawIdx);
+          const item = data[index % N]!;
           return (
             <View style={styles.item}>
               <Text
@@ -65,9 +96,9 @@ function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps
                   styles.itemText,
                   {
                     color: dist === 0 ? tintColor : textColor,
-                    fontSize: dist === 0 ? 32 : dist === 1 ? 24 : 18,
+                    fontSize: dist === 0 ? 26 : dist === 1 ? 20 : 15,
                     fontWeight: dist === 0 ? '700' : '400',
-                    opacity: dist === 0 ? 1 : dist === 1 ? 0.5 : 0.18,
+                    opacity: dist === 0 ? 1 : dist === 1 ? 0.55 : 0.2,
                   },
                 ]}
               >
@@ -136,21 +167,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    gap: 6,
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    gap: 4,
     position: 'relative',
     overflow: 'hidden',
+    alignSelf: 'center',
+    maxWidth: 280,
   },
   highlight: {
     position: 'absolute',
-    left: 12,
-    right: 12,
-    borderRadius: 14,
+    left: 10,
+    right: 10,
+    borderRadius: 10,
     borderWidth: 1.5,
   },
   item: { height: ITEM_H, alignItems: 'center', justifyContent: 'center' },
   itemText: { fontVariant: ['tabular-nums'] },
-  colon: { fontSize: 30, fontWeight: '700', marginTop: -4, alignSelf: 'center' },
+  colon: { fontSize: 24, fontWeight: '700', marginTop: -4, alignSelf: 'center' },
 });
