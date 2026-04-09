@@ -69,13 +69,19 @@ function RootLayoutNav() {
     if (Platform.OS === 'web') return;
 
     const foregroundSub = Notifications.addNotificationReceivedListener(notification => {
-      const data = notification.request.content.data;
-      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, (data.athanVoice as string | undefined) ?? selectedAdhan);
+      // iOS: adhan audio is handled by the .caf notification sound — no JS playback needed
+      if (Platform.OS !== 'ios') {
+        const data = notification.request.content.data;
+        if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, (data.athanVoice as string | undefined) ?? selectedAdhan);
+      }
     });
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data;
-      if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, (data.athanVoice as string | undefined) ?? selectedAdhan);
+      // iOS: adhan audio is handled by the .caf notification sound — no JS playback needed
+      if (Platform.OS !== 'ios') {
+        const data = response.notification.request.content.data;
+        if (data?.playAthan) playAthan(data.athanType === 'abbreviated' ? 'abbreviated' : 'full', undefined, (data.athanVoice as string | undefined) ?? selectedAdhan);
+      }
     });
 
     return () => {
