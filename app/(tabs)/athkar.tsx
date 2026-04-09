@@ -354,17 +354,19 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const labelFontSize = FONT_STEPS[athkarFontSize].tile;
   const SIZE_LABELS: Record<AthkarFontSize, string> = { xs: 'XS', sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
 
-  const totalCategoryPages = Math.ceil(sortedCategories.length / ITEMS_PER_PAGE);
+  type GridItem = AthkarCategory | null | '__personal__';
+  const allGridItems: GridItem[] = ['__personal__', ...sortedCategories];
+  const totalCategoryPages = Math.ceil(allGridItems.length / ITEMS_PER_PAGE);
   const totalPages = totalCategoryPages + 1;
 
-  const categoryPages: (AthkarCategory | null)[][] = [];
+  const categoryPages: GridItem[][] = [];
   for (let p = 0; p < totalCategoryPages; p++) {
-    const slice: (AthkarCategory | null)[] = sortedCategories.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
+    const slice: GridItem[] = allGridItems.slice(p * ITEMS_PER_PAGE, (p + 1) * ITEMS_PER_PAGE);
     while (slice.length < ITEMS_PER_PAGE) slice.push(null);
     categoryPages.push(slice);
   }
   const favPage = favourites.map(id => sortedCategories.find(c => c.id === id) ?? null).filter(Boolean) as AthkarCategory[];
-  const allPages: Array<(AthkarCategory | null)[] | 'FAVS'> = [...categoryPages, 'FAVS'];
+  const allPages: Array<GridItem[] | 'FAVS'> = [...categoryPages, 'FAVS'];
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) setCurrentPage(viewableItems[0].index ?? 0);
@@ -564,7 +566,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         style={{ height: GRID_HEIGHT }}
-        extraData={[favourites, displayMode, athkarLang, athkarFontSize]}
+        extraData={[favourites, displayMode, athkarLang, athkarFontSize, personalItemCount]}
         getItemLayout={(_, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
         renderItem={({ item: pageData }) => {
           if (pageData === 'FAVS') {
@@ -620,8 +622,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               </View>
             );
           }
-          const pageItems = pageData as (AthkarCategory | null)[];
-          const rows: (AthkarCategory | null)[][] = [];
+          const pageItems = pageData as GridItem[];
+          const rows: GridItem[][] = [];
           for (let r = 0; r < ITEMS_PER_PAGE / NUM_COLS; r++) {
             rows.push(pageItems.slice(r * NUM_COLS, (r + 1) * NUM_COLS));
           }
@@ -636,26 +638,44 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                     marginBottom: rIdx < rows.length - 1 ? TILE_GAP : 0,
                   }}
                 >
-                  {row.map((cat, cIdx) => cat ? (
-                    <GridCell
-                      key={cat.id}
-                      cat={cat}
-                      lang={lang}
-                      isRtl={isRtl}
-                      tr={tr}
-                      C={C}
-                      onPress={onSelect}
-                      isFavourite={favourites.includes(cat.id)}
-                      onLongPress={onLongPress}
-                      displayMode={displayMode}
-                      athkarLang={athkarLang}
-                      tileSize={TILE_WIDTH}
-                      tileHeight={TILE_HEIGHT}
-                      labelFontSize={labelFontSize}
-                    />
-                  ) : (
-                    <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_WIDTH, height: TILE_HEIGHT }} />
-                  ))}
+                  {row.map((item, cIdx) => {
+                    if (item === '__personal__') {
+                      return (
+                        <PersonalGridCell
+                          key="__personal__"
+                          isRtl={isRtl}
+                          tr={tr}
+                          C={C}
+                          onPress={onOpenPersonal}
+                          personalItemCount={personalItemCount}
+                          tileSize={TILE_WIDTH}
+                          tileHeight={TILE_HEIGHT}
+                          labelFontSize={labelFontSize}
+                        />
+                      );
+                    }
+                    if (item === null) {
+                      return <View key={`empty-${rIdx}-${cIdx}`} style={{ width: TILE_WIDTH, height: TILE_HEIGHT }} />;
+                    }
+                    return (
+                      <GridCell
+                        key={item.id}
+                        cat={item}
+                        lang={lang}
+                        isRtl={isRtl}
+                        tr={tr}
+                        C={C}
+                        onPress={onSelect}
+                        isFavourite={favourites.includes(item.id)}
+                        onLongPress={onLongPress}
+                        displayMode={displayMode}
+                        athkarLang={athkarLang}
+                        tileSize={TILE_WIDTH}
+                        tileHeight={TILE_HEIGHT}
+                        labelFontSize={labelFontSize}
+                      />
+                    );
+                  })}
                 </View>
               ))}
             </View>
@@ -731,48 +751,6 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         })}
       </View>
 
-      {/* My Athkar — personal folder tile */}
-      <View style={{ paddingHorizontal: OUTER_PADDING, paddingTop: 12, paddingBottom: 4 }}>
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
-            {(tr as any).personal_athkar ?? 'My Athkar'}
-          </Text>
-          <Pressable
-            onPress={() => Alert.alert((tr as any).personal_athkar ?? 'My Athkar', (tr as any).personal_athkar_help ?? '')}
-            hitSlop={8}
-          >
-            <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
-          </Pressable>
-        </View>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); onOpenPersonal(); }}
-          style={({ pressed }) => ({
-            flexDirection: isRtl ? 'row-reverse' : 'row',
-            alignItems: 'center',
-            gap: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            borderRadius: 14,
-            backgroundColor: C.backgroundCard,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: C.separator,
-            opacity: pressed ? 0.75 : 1,
-          })}
-        >
-          <Ionicons name="bookmark-outline" size={22} color={C.tint} />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: C.text, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
-              {(tr as any).personal_athkar ?? 'My Athkar'}
-            </Text>
-            <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left', marginTop: 2 }}>
-              {personalItemCount > 0
-                ? `${personalItemCount} ${personalItemCount === 1 ? ((tr as any).thikr_text ?? 'thikr') : ((tr as any).thikr_text ?? 'thikr')}`
-                : ((tr as any).add_thikr ?? 'Add your first thikr')}
-            </Text>
-          </View>
-          <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
-        </Pressable>
-      </View>
       </ScrollView>
 
       <Modal
@@ -863,6 +841,51 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         </View>
       </Modal>
     </View>
+  );
+}
+
+function PersonalGridCell({ isRtl, tr, C, onPress, personalItemCount, tileSize, tileHeight, labelFontSize }: {
+  isRtl: boolean; tr: any; C: any;
+  onPress: () => void; personalItemCount: number;
+  tileSize: number; tileHeight: number; labelFontSize: number;
+}) {
+  return (
+    <Pressable
+      onPress={() => { Haptics.selectionAsync(); onPress(); }}
+      style={({ pressed }) => [
+        styles.cell,
+        {
+          width: tileSize,
+          height: tileHeight,
+          backgroundColor: GOLD + '22',
+          borderColor: GOLD + '66',
+          opacity: pressed ? 0.75 : 1,
+        },
+      ]}
+    >
+      <Ionicons name="create-outline" size={26} color={GOLD} />
+      <Text
+        style={[
+          styles.cellLabel,
+          {
+            fontSize: labelFontSize,
+            lineHeight: labelFontSize * 1.35,
+            color: GOLD,
+            textAlign: 'center',
+            fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold',
+          },
+        ]}
+        numberOfLines={3}
+        adjustsFontSizeToFit={false}
+      >
+        {(tr as any).personal_athkar ?? 'My Athkar'}
+      </Text>
+      {personalItemCount > 0 && (
+        <View style={{ position: 'absolute', top: 5, right: 5, backgroundColor: GOLD, borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
+          <Text style={{ fontSize: 9, color: '#fff', fontFamily: 'Inter_700Bold', fontWeight: '700' }}>{personalItemCount}</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 

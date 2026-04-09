@@ -1533,7 +1533,7 @@ export default function SettingsScreen() {
             {tr.notifications}
           </Text>
           <Pressable
-            onPress={() => Alert.alert(tr.notifHelpTitle, tr.notifHelpText)}
+            onPress={() => Alert.alert(tr.notifHelpTitle, Platform.OS === 'ios' ? tr.notifHelpText + '\n\n' + (tr as any).notif_help_adhan_ios : tr.notifHelpText)}
             hitSlop={8}
           >
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
@@ -1667,15 +1667,6 @@ export default function SettingsScreen() {
                         </Text>
                         <Ionicons name="chevron-down" size={10} color={draftPrayerAdhan[prayer.key] ? C.tint : C.textSecond} />
                       </Pressable>
-                      {/* iOS disclaimer help icon */}
-                      {Platform.OS === 'ios' && (
-                        <Pressable
-                          onPress={() => { Haptics.selectionAsync(); Alert.alert(tr.adhanSound, tr.adhan_ios_disclaimer); }}
-                          hitSlop={8}
-                        >
-                          <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
-                        </Pressable>
-                      )}
                     </View>
                     <View style={{ flex: 1 }} />
                     <Pressable
