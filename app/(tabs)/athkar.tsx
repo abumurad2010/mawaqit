@@ -1437,6 +1437,11 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
     });
   };
 
+  const handleDone = (item: PersonalThikrItem) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCounts(prev => ({ ...prev, [item.id]: item.repetitions }));
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
       {/* Header */}
@@ -1515,6 +1520,27 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
                   <Text style={{ fontFamily: 'Amiri_700Bold', fontSize: 22, lineHeight: 38, textAlign: 'right', writingDirection: 'rtl', color: done ? C.tint : C.text }}>
                     {item.text}
                   </Text>
+                  {item.repetitions > 3 && !done && (
+                    <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <Pressable
+                        onPress={() => handleDone(item)}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row', alignItems: 'center', gap: 5,
+                          paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10,
+                          backgroundColor: C.tint + '18', borderWidth: 1, borderColor: C.tint + '55',
+                          opacity: pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Ionicons name="checkmark-circle-outline" size={15} color={C.tint} />
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
+                          {(tr as any).done ?? 'Done'}
+                        </Text>
+                      </Pressable>
+                      <Pressable onPress={() => Alert.alert((tr as any).done ?? 'Done', (tr as any).done_help ?? '')} hitSlop={10}>
+                        <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+                      </Pressable>
+                    </View>
+                  )}
                 </Pressable>
               </Animated.View>
             );
