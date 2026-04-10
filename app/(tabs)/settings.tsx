@@ -1533,7 +1533,7 @@ export default function SettingsScreen() {
             {tr.notifications}
           </Text>
           <Pressable
-            onPress={() => Alert.alert(tr.notifHelpTitle, Platform.OS === 'ios' ? tr.notifHelpText + '\n\n' + (tr as any).notif_help_adhan_ios : tr.notifHelpText)}
+            onPress={() => Alert.alert(tr.notifHelpTitle, Platform.OS === 'ios' ? (tr as any).notif_help_adhan_ios : tr.notifHelpText)}
             hitSlop={8}
           >
             <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
