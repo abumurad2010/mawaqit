@@ -12,14 +12,14 @@ const IOS_MAX_NOTIFICATIONS = 64;
 
 /** Maps voice key → abbreviated .caf filename bundled in the iOS app */
 const IOS_CAF_SOUNDS: Record<string, string> = {
-  'makkah':      'adhan-makka-abb.caf',
-  'madinah':     'adhan-madinah-abb.caf',
-  'egypt':       'adhan-egypt-abb.caf',
-  'aqsa':        'adhan-alaqsa-abb.caf',
-  'halab':       'adhan-halab-abb.caf',
-  'hussaini':    'al-hussaini-abb.caf',
-  'bakir':       'bakir-bash-abb.caf',
-  'abdul-hakam': 'abdul-hakam-abb.caf',
+  'makkah':      'adhan_makka_abb.caf',
+  'madinah':     'adhan_madinah_abb.caf',
+  'egypt':       'adhan_egypt_abb.caf',
+  'aqsa':        'adhan_alaqsa_abb.caf',
+  'halab':       'adhan_halab_abb.caf',
+  'hussaini':    'al_hussaini_abb.caf',
+  'bakir':       'bakir_bash_abb.caf',
+  'abdul-hakam': 'abdul_hakam_abb.caf',
 };
 
 function getPrayerLabels(lang: Lang): Record<string, string> {
@@ -280,7 +280,7 @@ export async function schedulePrayerNotifications(params: {
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
       const sound: string | false = Platform.OS === 'ios'
-        ? (IOS_CAF_SOUNDS[athanVoice] ?? 'adhan-makka-abb.caf')
+        ? (IOS_CAF_SOUNDS[athanVoice] ?? 'adhan_makka_abb.caf')
         : 'default';
 
       try {

@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.mawaqit.app",
-      "versionCode": 29,
+      "versionCode": 25,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
@@ -62,14 +62,14 @@
           "icon": "./assets/images/notification-icon.png",
           "color": "#1a8c5b",
           "sounds": [
-            "./assets/sounds/caf/adhan-makka-abb.caf",
-            "./assets/sounds/caf/adhan-madinah-abb.caf",
-            "./assets/sounds/caf/adhan-egypt-abb.caf",
-            "./assets/sounds/caf/adhan-alaqsa-abb.caf",
-            "./assets/sounds/caf/adhan-halab-abb.caf",
-            "./assets/sounds/caf/al-hussaini-abb.caf",
-            "./assets/sounds/caf/bakir-bash-abb.caf",
-            "./assets/sounds/caf/abdul-hakam-abb.caf"
+            "./assets/sounds/caf/adhan_makka_abb.caf",
+            "./assets/sounds/caf/adhan_madinah_abb.caf",
+            "./assets/sounds/caf/adhan_egypt_abb.caf",
+            "./assets/sounds/caf/adhan_alaqsa_abb.caf",
+            "./assets/sounds/caf/adhan_halab_abb.caf",
+            "./assets/sounds/caf/al_hussaini_abb.caf",
+            "./assets/sounds/caf/bakir_bash_abb.caf",
+            "./assets/sounds/caf/abdul_hakam_abb.caf"
           ]
         }
       ],
