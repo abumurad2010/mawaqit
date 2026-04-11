@@ -22,6 +22,8 @@ const FAVS_KEY = 'athkar_favourites';
 const FAV_HINT_KEY = 'athkar_fav_hint_seen';
 const ATHKAR_FS_KEY = 'athkar_font_size';
 const PERSONAL_KEY = 'personal_athkar';
+const USER_CAT_KEY_PREFIX = 'user_thikr_category_';
+const COPY_HINT_KEY = 'athkar_copy_hint_shown';
 
 interface PersonalThikrItem {
   id: string;
@@ -78,6 +80,8 @@ export default function AthkarScreen() {
   const [highlightThikrIdx, setHighlightThikrIdx] = useState<number>(-1);
   const [highlightQuery, setHighlightQuery] = useState<string>('');
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [userCatItems, setUserCatItems] = useState<Record<string, PersonalThikrItem[]>>({});
+  const [copyHintShown, setCopyHintShown] = useState(true);
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
     (!lang || lang === 'ar') ? 'arabic' : 'full'
   );
@@ -115,6 +119,9 @@ export default function AthkarScreen() {
     }).catch(() => {});
     AsyncStorage.getItem(PERSONAL_KEY).then(raw => {
       if (raw) setPersonalItems(JSON.parse(raw));
+    }).catch(() => {});
+    AsyncStorage.getItem(COPY_HINT_KEY).then(val => {
+      setCopyHintShown(val === 'true');
     }).catch(() => {});
     AsyncStorage.getItem(ATHKAR_FS_KEY).then(val => {
       const migrated: Record<string, AthkarFontSize> = { small: 'sm', medium: 'md', large: 'lg' };
@@ -161,12 +168,25 @@ export default function AthkarScreen() {
     });
   }, [tr]);
 
+  const saveUserCatItems = useCallback((catId: string, items: PersonalThikrItem[]) => {
+    setUserCatItems(prev => ({ ...prev, [catId]: items }));
+    AsyncStorage.setItem(USER_CAT_KEY_PREFIX + catId, JSON.stringify(items)).catch(() => {});
+  }, []);
+
+  const dismissCopyHint = useCallback(() => {
+    setCopyHintShown(true);
+    AsyncStorage.setItem(COPY_HINT_KEY, 'true').catch(() => {});
+  }, []);
+
   const openCategory = useCallback((cat: AthkarCategory, hlIdx?: number, hlQuery?: string) => {
     Haptics.selectionAsync();
     setHighlightThikrIdx(hlIdx ?? -1);
     setHighlightQuery(hlQuery ?? '');
     setSelectedCategory(cat);
     setCounts({});
+    AsyncStorage.getItem(USER_CAT_KEY_PREFIX + cat.id).then(raw => {
+      if (raw) setUserCatItems(prev => ({ ...prev, [cat.id]: JSON.parse(raw) }));
+    }).catch(() => {});
   }, []);
 
   const savePersonalItems = useCallback((items: PersonalThikrItem[]) => {
@@ -258,6 +278,8 @@ export default function AthkarScreen() {
           items={personalItems}
           onSave={savePersonalItems}
           onBack={closeCategory}
+          copyHintShown={copyHintShown}
+          onCopyHintDismiss={dismissCopyHint}
         />
       ) : selectedCategory ? (
         <ReaderScreen
@@ -281,6 +303,10 @@ export default function AthkarScreen() {
           athkarFontSize={athkarFontSize}
           highlightIdx={highlightThikrIdx}
           highlightQuery={highlightQuery}
+          userCatItems={userCatItems[selectedCategory.id] ?? []}
+          onUserCatItemsSave={(items) => saveUserCatItems(selectedCategory.id, items)}
+          copyHintShown={copyHintShown}
+          onCopyHintDismiss={dismissCopyHint}
         />
       ) : (
         <GridScreen
@@ -844,6 +870,31 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   );
 }
 
+function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
+  const opacity = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      opacity.value = withTiming(0, { duration: 400 });
+      setTimeout(onDismiss, 400);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Animated.View style={[styles.favHintBanner, animStyle, { backgroundColor: C.tint + '18', borderWidth: StyleSheet.hairlineWidth, borderColor: C.tint + '55', marginBottom: 6 }]}>
+      <Ionicons name="copy-outline" size={16} color={C.tint} />
+      <Text style={[styles.favHintText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left' }]}>
+        {(tr as any).copy_hint ?? 'Hold any thikr to copy it'}
+      </Text>
+      <Pressable onPress={onDismiss} hitSlop={8}>
+        <Ionicons name="close" size={16} color={C.tint} />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 function PersonalGridCell({ isRtl, tr, C, onPress, personalItemCount, tileSize, tileHeight, labelFontSize }: {
   isRtl: boolean; tr: any; C: any;
   onPress: () => void; personalItemCount: number;
@@ -976,6 +1027,10 @@ interface ReaderProps {
   athkarFontSize: AthkarFontSize;
   highlightIdx?: number;
   highlightQuery?: string;
+  userCatItems: PersonalThikrItem[];
+  onUserCatItemsSave: (items: PersonalThikrItem[]) => void;
+  copyHintShown: boolean;
+  onCopyHintDismiss: () => void;
 }
 
 function ReaderScreen({
@@ -984,10 +1039,82 @@ function ReaderScreen({
   counts, getCount, isDone, onTap, onDone, onBack, onReset,
   displayMode, athkarLang, athkarFontSize,
   highlightIdx = -1, highlightQuery = '',
+  userCatItems, onUserCatItemsSave,
+  copyHintShown, onCopyHintDismiss,
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
   const [activeHighlight, setActiveHighlight] = useState(highlightQuery.length > 0);
+  const [userCounts, setUserCounts] = useState<Record<string, number>>({});
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUserItem, setEditingUserItem] = useState<PersonalThikrItem | null>(null);
+  const [formText, setFormText] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formReps, setFormReps] = useState('3');
+
+  const openAddUser = useCallback(() => {
+    setEditingUserItem(null);
+    setFormText('');
+    setFormName('');
+    setFormReps('3');
+    setShowUserForm(true);
+  }, []);
+
+  const openEditUser = useCallback((item: PersonalThikrItem) => {
+    setEditingUserItem(item);
+    setFormText(item.text);
+    setFormName(item.name ?? '');
+    setFormReps(String(item.repetitions));
+    setShowUserForm(true);
+  }, []);
+
+  const handleSaveUserForm = useCallback(() => {
+    const text = formText.trim();
+    if (!text) return;
+    const reps = Math.max(1, Math.min(999, parseInt(formReps, 10) || 1));
+    if (editingUserItem) {
+      onUserCatItemsSave(userCatItems.map(it => it.id === editingUserItem.id
+        ? { ...it, text, name: formName.trim() || undefined, repetitions: reps }
+        : it));
+    } else {
+      onUserCatItemsSave([...userCatItems, { id: String(Date.now()), text, name: formName.trim() || undefined, repetitions: reps }]);
+    }
+    setShowUserForm(false);
+  }, [formText, formName, formReps, editingUserItem, userCatItems, onUserCatItemsSave]);
+
+  const handleDeleteUser = useCallback((id: string) => {
+    Alert.alert(
+      (tr as any).delete ?? 'Delete',
+      undefined,
+      [
+        { text: (tr as any).btn_cancel ?? 'Cancel', style: 'cancel' },
+        {
+          text: (tr as any).delete ?? 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            onUserCatItemsSave(userCatItems.filter(it => it.id !== id));
+            setUserCounts(prev => { const n = { ...prev }; delete n[id]; return n; });
+          },
+        },
+      ],
+    );
+  }, [tr, userCatItems, onUserCatItemsSave]);
+
+  const handleUserTap = useCallback((item: PersonalThikrItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setUserCounts(prev => {
+      const cur = prev[item.id] ?? 0;
+      if (cur >= item.repetitions) return prev;
+      const next = cur + 1;
+      if (next >= item.repetitions) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return { ...prev, [item.id]: next };
+    });
+  }, []);
+
+  const handleUserDone = useCallback((item: PersonalThikrItem) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setUserCounts(prev => ({ ...prev, [item.id]: item.repetitions }));
+  }, []);
 
   // Auto-scroll to highlighted thikr on mount
   useEffect(() => {
@@ -1032,41 +1159,19 @@ function ReaderScreen({
     }, 1500);
   }, []);
 
-  const handleCopy = useCallback((thikr: Thikr, translation: string, index: number) => {
+  const handleCopy = useCallback(async (_thikr: Thikr, _translation: string, index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCopyHighlightIdx(index);
-    const copyText = async (text: string) => {
-      setCopyHighlightIdx(null);
-      await Clipboard.setStringAsync(text);
-      showToast();
-    };
-    const clearHighlight = () => setCopyHighlightIdx(null);
-    const tCopy = (key: string, fallback: string) => (tr as any)[key] ?? fallback;
-    if (displayMode === 'arabic') {
-      Alert.alert(
-        tCopy('copy_thikr_title', 'Copy Thikr'),
-        undefined,
-        [
-          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(thikr.arabic) },
-          { text: tCopy('btn_cancel', 'Cancel'), style: 'cancel', onPress: clearHighlight },
-        ],
-      );
-    } else {
-      Alert.alert(
-        tCopy('copy_thikr_title', 'Copy Thikr'),
-        undefined,
-        [
-          { text: tCopy('copy_arabic_only', 'Arabic text only'), onPress: () => copyText(thikr.arabic) },
-          { text: tCopy('copy_translit_only', 'Transliteration only'), onPress: () => copyText(thikr.transliteration) },
-          { text: tCopy('copy_translation_only', 'Translation only'), onPress: () => copyText(translation) },
-          { text: tCopy('copy_arabic_translit', 'Arabic + Transliteration'), onPress: () => copyText(thikr.arabic + '\n\n' + thikr.transliteration) },
-          { text: tCopy('copy_arabic_translation', 'Arabic + Translation'), onPress: () => copyText(thikr.arabic + '\n\n' + translation) },
-          { text: tCopy('copy_all', 'Copy all'), onPress: () => copyText(thikr.arabic + '\n\n' + thikr.transliteration + '\n\n' + translation) },
-          { text: tCopy('btn_cancel', 'Cancel'), style: 'cancel', onPress: clearHighlight },
-        ],
-      );
-    }
-  }, [displayMode, tr, showToast]);
+    await Clipboard.setStringAsync(_thikr.arabic);
+    setCopyHighlightIdx(null);
+    showToast();
+  }, [showToast]);
+
+  const handleCopyUserItem = useCallback(async (text: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Clipboard.setStringAsync(text);
+    showToast();
+  }, [showToast]);
 
   if (allDone) {
     return (
@@ -1126,6 +1231,12 @@ function ReaderScreen({
           >
             <Ionicons name="refresh-outline" size={18} color={C.textMuted} />
           </Pressable>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); openAddUser(); }}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.tint, opacity: pressed ? 0.8 : 1 }]}
+          >
+            <Ionicons name="add" size={20} color={C.tintText} />
+          </Pressable>
         </View>
       </View>
 
@@ -1140,11 +1251,86 @@ function ReaderScreen({
         ref={readerRef}
         data={category.adhkar}
         keyExtractor={(_, i) => String(i)}
-        extraData={[athkarLang, copyHighlightIdx, highlightQuery, activeHighlight]}
+        extraData={[athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
         contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={() => {}}
         onScrollBeginDrag={() => activeHighlight && setActiveHighlight(false)}
+        ListHeaderComponent={!copyHintShown ? (
+          <CopyHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onCopyHintDismiss} />
+        ) : null}
+        ListFooterComponent={userCatItems.length > 0 ? (
+          <View>
+            {userCatItems.map(item => {
+              const cur = userCounts[item.id] ?? 0;
+              const done = cur >= item.repetitions;
+              return (
+                <Animated.View key={item.id} entering={FadeIn.duration(250)} style={{ marginBottom: 10 }}>
+                  <Pressable
+                    onPress={() => handleUserTap(item)}
+                    onLongPress={() => handleCopyUserItem(item.text)}
+                    delayLongPress={400}
+                    style={({ pressed }) => [
+                      styles.card,
+                      {
+                        backgroundColor: done ? C.tint + '18' : C.backgroundCard,
+                        borderColor: done ? C.tint + '55' : C.separator,
+                        opacity: pressed && !done ? 0.88 : 1,
+                      },
+                    ]}
+                  >
+                    <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <View style={[styles.counterBadge, { backgroundColor: done ? C.tint : C.backgroundCard, borderColor: done ? C.tint : C.separator }]}>
+                        <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>{cur}/{item.repetitions}</Text>
+                      </View>
+                      {done && <Animated.View entering={ZoomIn.duration(200)}><Ionicons name="checkmark-circle" size={20} color={C.tint} /></Animated.View>}
+                      <View style={{ flex: 1 }}>
+                        <View style={[styles.personalAddBadge, { backgroundColor: C.tint + '22' }]}>
+                          <Text style={[styles.personalAddBadgeText, { color: C.tint }]}>{(tr as any).personal_addition ?? 'My addition'}</Text>
+                        </View>
+                      </View>
+                      <Pressable onPress={() => openEditUser(item)} hitSlop={8}>
+                        <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
+                      </Pressable>
+                      <Pressable onPress={() => handleDeleteUser(item.id)} hitSlop={8}>
+                        <Ionicons name="close-circle-outline" size={18} color={C.textMuted} />
+                      </Pressable>
+                    </View>
+                    {!!item.name && (
+                      <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left', marginBottom: 4 }}>
+                        {item.name}
+                      </Text>
+                    )}
+                    <Text style={{ fontFamily: 'Amiri_700Bold', fontSize: cardFS.arabic, lineHeight: cardFS.arabic * 1.75, textAlign: 'right', writingDirection: 'rtl', color: done ? C.tint : C.text }}>
+                      {item.text}
+                    </Text>
+                    {item.repetitions > 3 && !done && (
+                      <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                        <Pressable
+                          onPress={() => handleUserDone(item)}
+                          style={({ pressed }) => ({
+                            flexDirection: 'row', alignItems: 'center', gap: 5,
+                            paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10,
+                            backgroundColor: C.tint + '18', borderWidth: 1, borderColor: C.tint + '55',
+                            opacity: pressed ? 0.7 : 1,
+                          })}
+                        >
+                          <Ionicons name="checkmark-circle-outline" size={15} color={C.tint} />
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
+                            {(tr as any).done ?? 'Done'}
+                          </Text>
+                        </Pressable>
+                        <Pressable onPress={() => Alert.alert((tr as any).done ?? 'Done', (tr as any).done_help ?? '')} hitSlop={10}>
+                          <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+                        </Pressable>
+                      </View>
+                    )}
+                  </Pressable>
+                </Animated.View>
+              );
+            })}
+          </View>
+        ) : null}
         renderItem={({ item: thikr, index }) => {
           const done = isDone(category.id, index, thikr.count);
           const cur = getCount(category.id, index);
@@ -1179,9 +1365,84 @@ function ReaderScreen({
       {toastVisible && (
         <Animated.View style={[styles.toast, toastStyle, { backgroundColor: C.tint }]} pointerEvents="none">
           <Ionicons name="checkmark-circle" size={16} color={C.tintText} />
-          <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copied_toast ?? 'Copied'}</Text>
+          <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copy_thikr ?? (tr as any).copied_toast ?? 'Thikr copied'}</Text>
         </Animated.View>
       )}
+
+      {/* Add/Edit user thikr modal */}
+      <Modal visible={showUserForm} animationType="slide" transparent presentationStyle="pageSheet">
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+          <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', padding: 16, paddingTop: topInset + 12, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }}>
+            <Pressable onPress={() => setShowUserForm(false)} hitSlop={8}>
+              <Ionicons name="close" size={22} color={C.textSecond} />
+            </Pressable>
+            <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {editingUserItem ? ((tr as any).edit ?? 'Edit') : '+'}
+            </Text>
+            <Pressable
+              onPress={handleSaveUserForm}
+              style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 12, backgroundColor: C.tint }}
+            >
+              <Text style={{ color: C.tintText, fontWeight: '600', fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>
+                {(tr as any).save ?? 'Save'}
+              </Text>
+            </Pressable>
+          </View>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold' }}>
+                {(tr as any).thikr_text ?? 'Thikr text'}
+              </Text>
+              <TextInput
+                value={formText}
+                onChangeText={setFormText}
+                multiline
+                numberOfLines={4}
+                style={{ borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator, borderRadius: 12, padding: 12, fontSize: 20, fontFamily: 'Amiri_400Regular', color: C.text, backgroundColor: C.backgroundCard, textAlign: 'right', writingDirection: 'rtl', minHeight: 100 }}
+                placeholder="اكتب الذكر هنا..."
+                placeholderTextColor={C.textMuted}
+              />
+            </View>
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
+                {(tr as any).thikr_name ?? 'Name (optional)'}
+              </Text>
+              <TextInput
+                value={formName}
+                onChangeText={setFormName}
+                style={{ borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator, borderRadius: 12, padding: 12, fontSize: 15, fontFamily: 'Inter_400Regular', color: C.text, backgroundColor: C.backgroundCard, textAlign: isRtl ? 'right' : 'left' }}
+                placeholderTextColor={C.textMuted}
+                placeholder={(tr as any).thikr_name ?? 'Name (optional)'}
+              />
+            </View>
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
+                {(tr as any).repetitions ?? 'Repetitions'}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setFormReps(r => String(Math.max(1, (parseInt(r, 10) || 1) - 1))); }}
+                  style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: C.backgroundSecond, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="remove" size={18} color={C.tint} />
+                </Pressable>
+                <TextInput
+                  value={formReps}
+                  onChangeText={v => setFormReps(v.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  style={{ fontSize: 20, fontWeight: '700', color: C.text, fontFamily: 'Inter_700Bold', minWidth: 50, textAlign: 'center' }}
+                />
+                <Pressable
+                  onPress={() => { Haptics.selectionAsync(); setFormReps(r => String(Math.min(999, (parseInt(r, 10) || 1) + 1))); }}
+                  style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: C.backgroundSecond, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="add" size={18} color={C.tint} />
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1361,11 +1622,33 @@ interface PersonalReaderProps {
   items: PersonalThikrItem[];
   onSave: (items: PersonalThikrItem[]) => void;
   onBack: () => void;
+  copyHintShown: boolean;
+  onCopyHintDismiss: () => void;
 }
 
-function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items, onSave, onBack }: PersonalReaderProps) {
+function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items, onSave, onBack, copyHintShown, onCopyHintDismiss }: PersonalReaderProps) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [showForm, setShowForm] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastOpacity = useSharedValue(0);
+  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity.value }));
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showCopyToast = useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastVisible(true);
+    toastOpacity.value = withTiming(1, { duration: 200 });
+    toastTimerRef.current = setTimeout(() => {
+      toastOpacity.value = withTiming(0, { duration: 300 });
+      setTimeout(() => setToastVisible(false), 300);
+    }, 1500);
+  }, []);
+
+  const handleCopyItem = useCallback(async (text: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await Clipboard.setStringAsync(text);
+    showCopyToast();
+  }, [showCopyToast]);
   const [editingItem, setEditingItem] = useState<PersonalThikrItem | null>(null);
   const [formText, setFormText] = useState('');
   const [formName, setFormName] = useState('');
@@ -1483,6 +1766,9 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
           keyExtractor={it => it.id}
           contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={!copyHintShown ? (
+            <CopyHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onCopyHintDismiss} />
+          ) : null}
           renderItem={({ item }) => {
             const cur = counts[item.id] ?? 0;
             const done = cur >= item.repetitions;
@@ -1490,6 +1776,8 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
               <Animated.View entering={FadeIn.duration(250)} style={{ marginBottom: 10 }}>
                 <Pressable
                   onPress={() => handleTap(item)}
+                  onLongPress={() => handleCopyItem(item.text)}
+                  delayLongPress={400}
                   style={({ pressed }) => [
                     styles.card,
                     {
@@ -1509,7 +1797,7 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
                       <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
                     </Pressable>
                     <Pressable onPress={() => handleDelete(item.id)} hitSlop={8}>
-                      <Ionicons name="trash-outline" size={16} color={C.textMuted} />
+                      <Ionicons name="close-circle-outline" size={18} color={C.textMuted} />
                     </Pressable>
                   </View>
                   {!!item.name && (
@@ -1546,6 +1834,13 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
             );
           }}
         />
+      )}
+
+      {toastVisible && (
+        <Animated.View style={[styles.toast, toastStyle, { backgroundColor: C.tint }]} pointerEvents="none">
+          <Ionicons name="checkmark-circle" size={16} color={C.tintText} />
+          <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copy_thikr ?? 'Thikr copied'}</Text>
+        </Animated.View>
       )}
 
       {/* Add/Edit Modal */}
@@ -1731,6 +2026,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 17,
+  },
+  personalAddBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  personalAddBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter_600SemiBold',
+    fontWeight: '600',
   },
   cellLabel: {
     fontSize: 11,
