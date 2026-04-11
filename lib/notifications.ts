@@ -22,6 +22,18 @@ const IOS_CAF_SOUNDS: Record<string, string> = {
   'abdul-hakam': 'abdul_hakam_abb.caf',
 };
 
+/** Maps voice key → abbreviated .mp3 filename for Android notification sounds */
+const ANDROID_MP3_SOUNDS: Record<string, string> = {
+  'makkah':      'adhan_makka_abb.mp3',
+  'madinah':     'adhan_madinah_abb.mp3',
+  'egypt':       'adhan_egypt_abb.mp3',
+  'aqsa':        'adhan_alaqsa_abb.mp3',
+  'halab':       'adhan_halab_abb.mp3',
+  'hussaini':    'al_hussaini_abb.mp3',
+  'bakir':       'bakir_bash_abb.mp3',
+  'abdul-hakam': 'abdul_hakam_abb.mp3',
+};
+
 function getPrayerLabels(lang: Lang): Record<string, string> {
   const tr = t(lang);
   return {
@@ -279,9 +291,9 @@ export async function schedulePrayerNotifications(params: {
       if (!prayerTime || prayerTime <= now) continue;
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
-      const sound: string | false = Platform.OS === 'ios'
+      const sound = Platform.OS === 'ios'
         ? (IOS_CAF_SOUNDS[athanVoice] ?? 'adhan_makka_abb.caf')
-        : 'default';
+        : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3');
 
       try {
         await Notifications.scheduleNotificationAsync({

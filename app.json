@@ -61,16 +61,7 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#1a8c5b",
-          "sounds": [
-            "./assets/sounds/caf/adhan_makka_abb.caf",
-            "./assets/sounds/caf/adhan_madinah_abb.caf",
-            "./assets/sounds/caf/adhan_egypt_abb.caf",
-            "./assets/sounds/caf/adhan_alaqsa_abb.caf",
-            "./assets/sounds/caf/adhan_halab_abb.caf",
-            "./assets/sounds/caf/al_hussaini_abb.caf",
-            "./assets/sounds/caf/bakir_bash_abb.caf",
-            "./assets/sounds/caf/abdul_hakam_abb.caf"
-          ]
+          "sounds": []
         }
       ],
       [
