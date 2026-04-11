@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, useMemo, useLayoutEffe
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, FlatList, Alert, Modal, Dimensions, TextInput, useWindowDimensions,
 } from 'react-native';
+import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, ZoomIn, FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +25,8 @@ const ATHKAR_FS_KEY = 'athkar_font_size';
 const PERSONAL_KEY = 'personal_athkar';
 const USER_CAT_KEY_PREFIX = 'user_thikr_category_';
 const COPY_HINT_KEY = 'athkar_copy_hint_shown';
+const GRID_ORDER_KEY = 'athkar_grid_order';
+const GRID_REORDER_HINT_KEY = 'athkar_grid_reorder_hint_shown';
 
 interface PersonalThikrItem {
   id: string;
@@ -82,6 +85,8 @@ export default function AthkarScreen() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [userCatItems, setUserCatItems] = useState<Record<string, PersonalThikrItem[]>>({});
   const [copyHintShown, setCopyHintShown] = useState(true);
+  const [gridOrder, setGridOrder] = useState<string[]>([]);
+  const [gridReorderHintShown, setGridReorderHintShown] = useState(true);
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
     (!lang || lang === 'ar') ? 'arabic' : 'full'
   );
@@ -123,6 +128,12 @@ export default function AthkarScreen() {
     AsyncStorage.getItem(COPY_HINT_KEY).then(val => {
       setCopyHintShown(val === 'true');
     }).catch(() => {});
+    AsyncStorage.getItem(GRID_ORDER_KEY).then(raw => {
+      if (raw) setGridOrder(JSON.parse(raw));
+    }).catch(() => {});
+    AsyncStorage.getItem(GRID_REORDER_HINT_KEY).then(val => {
+      setGridReorderHintShown(val === 'true');
+    }).catch(() => {});
     AsyncStorage.getItem(ATHKAR_FS_KEY).then(val => {
       const migrated: Record<string, AthkarFontSize> = { small: 'sm', medium: 'md', large: 'lg' };
       const mapped = val ? (migrated[val] ?? val) : null;
@@ -143,7 +154,39 @@ export default function AthkarScreen() {
     }
   }, [lang]);
 
-  const sortedCategories = useMemo(() => ATHKAR_CATEGORIES, []);
+  const sortedCategories = useMemo(() => {
+    if (gridOrder.length === 0) return ATHKAR_CATEGORIES;
+    const ordered: AthkarCategory[] = [];
+    gridOrder.forEach(id => {
+      if (id === '__personal__') return;
+      const cat = ATHKAR_CATEGORIES.find(c => c.id === id);
+      if (cat) ordered.push(cat);
+    });
+    // Append any new categories not yet in gridOrder
+    ATHKAR_CATEGORIES.forEach(cat => {
+      if (!ordered.find(c => c.id === cat.id)) ordered.push(cat);
+    });
+    return ordered;
+  }, [gridOrder]);
+
+  // All grid items in order (including __personal__)
+  const orderedAllGridItems = useMemo((): Array<'__personal__' | AthkarCategory> => {
+    if (gridOrder.length === 0) return ['__personal__', ...ATHKAR_CATEGORIES];
+    const result: Array<'__personal__' | AthkarCategory> = [];
+    let personalAdded = false;
+    gridOrder.forEach(id => {
+      if (id === '__personal__') { result.push('__personal__'); personalAdded = true; }
+      else {
+        const cat = ATHKAR_CATEGORIES.find(c => c.id === id);
+        if (cat) result.push(cat);
+      }
+    });
+    if (!personalAdded) result.unshift('__personal__');
+    ATHKAR_CATEGORIES.forEach(cat => {
+      if (!result.find(it => it !== '__personal__' && (it as AthkarCategory).id === cat.id)) result.push(cat);
+    });
+    return result;
+  }, [gridOrder]);
 
   const toggleFavourite = useCallback((cat: AthkarCategory) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -167,6 +210,16 @@ export default function AthkarScreen() {
       return prev;
     });
   }, [tr]);
+
+  const saveGridOrder = useCallback((ids: string[]) => {
+    setGridOrder(ids);
+    AsyncStorage.setItem(GRID_ORDER_KEY, JSON.stringify(ids)).catch(() => {});
+  }, []);
+
+  const dismissGridReorderHint = useCallback(() => {
+    setGridReorderHintShown(true);
+    AsyncStorage.setItem(GRID_REORDER_HINT_KEY, 'true').catch(() => {});
+  }, []);
 
   const saveUserCatItems = useCallback((catId: string, items: PersonalThikrItem[]) => {
     setUserCatItems(prev => ({ ...prev, [catId]: items }));
@@ -324,6 +377,10 @@ export default function AthkarScreen() {
           favourites={favourites}
           onLongPress={toggleFavourite}
           sortedCategories={sortedCategories}
+          orderedAllGridItems={orderedAllGridItems}
+          onGridReorderSave={saveGridOrder}
+          gridReorderHintShown={gridReorderHintShown}
+          onGridReorderHintDismiss={dismissGridReorderHint}
           favHintSeen={favHintSeen}
           onFavHintDismiss={dismissFavHint}
           athkarLang={athkarLang}
@@ -350,8 +407,12 @@ interface GridProps {
   onOpenPersonal: () => void;
   personalItemCount: number;
   favourites: string[];
-  onLongPress: (cat: AthkarCategory) => void;
+  onLongPress: (cat: AthkarCategory) => void; // kept for favourites page compat
   sortedCategories: AthkarCategory[];
+  orderedAllGridItems: Array<'__personal__' | AthkarCategory>;
+  onGridReorderSave: (ids: string[]) => void;
+  gridReorderHintShown: boolean;
+  onGridReorderHintDismiss: () => void;
   favHintSeen: boolean;
   onFavHintDismiss: () => void;
   athkarLang: Lang;
@@ -360,10 +421,12 @@ interface GridProps {
   setAthkarFontSize: (fs: AthkarFontSize) => void;
 }
 
-function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, onOpenPersonal, personalItemCount, favourites, onLongPress, sortedCategories, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
+function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, onDisplayMode, onSelect, onOpenPersonal, personalItemCount, favourites, onLongPress, sortedCategories, orderedAllGridItems, onGridReorderSave, gridReorderHintShown, onGridReorderHintDismiss, favHintSeen, onFavHintDismiss, athkarLang, setAthkarLang, athkarFontSize, setAthkarFontSize }: GridProps) {
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [reorderMode, setReorderMode] = useState(false);
+  const [reorderData, setReorderData] = useState<Array<'__personal__' | AthkarCategory>>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const pageListRef = useRef<FlatList<any>>(null);
   const athkarRtl = isRtlLang(athkarLang);
@@ -381,7 +444,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
   const SIZE_LABELS: Record<AthkarFontSize, string> = { xs: 'XS', sm: 'S', md: 'M', lg: 'L', xl: 'XL' };
 
   type GridItem = AthkarCategory | null | '__personal__';
-  const allGridItems: GridItem[] = ['__personal__', ...sortedCategories];
+  const allGridItems: GridItem[] = orderedAllGridItems as GridItem[];
   const totalCategoryPages = Math.ceil(allGridItems.length / ITEMS_PER_PAGE);
   const totalPages = totalCategoryPages + 1;
 
@@ -419,6 +482,82 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
       });
     });
   }, [searchQuery, sortedCategories, athkarLang]);
+
+  const enterReorderMode = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setReorderData(orderedAllGridItems);
+    setReorderMode(true);
+  }, [orderedAllGridItems]);
+
+  if (reorderMode) {
+    return (
+      <View style={[styles.root, { backgroundColor: C.background }]}>
+        <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold' }}>
+              {(tr as any).reorder_hint ? (tr as any).reorder_hint.split(' ').slice(0, 3).join(' ') : 'Reorder'}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              onGridReorderSave(reorderData.map(it => it === '__personal__' ? '__personal__' : (it as AthkarCategory).id));
+              setReorderMode(false);
+            }}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.tint, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, width: 'auto' as any }]}
+          >
+            <Text style={{ color: C.tintText, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{(tr as any).btn_done ?? 'Done'}</Text>
+          </Pressable>
+        </View>
+        <DraggableFlatList
+          data={reorderData}
+          keyExtractor={item => item === '__personal__' ? '__personal__' : (item as AthkarCategory).id}
+          onDragEnd={({ data }) => setReorderData(data)}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 80, paddingTop: 8 }}
+          renderItem={({ item, drag, isActive }: RenderItemParams<'__personal__' | AthkarCategory>) => {
+            const isPersonal = item === '__personal__';
+            const cat = item as AthkarCategory;
+            const nameKey = isPersonal ? '' : cat.nameKey as any;
+            const name = isPersonal
+              ? ((tr as any).personal_athkar ?? 'My Athkar')
+              : displayMode === 'arabic'
+                ? (i18n['ar'] as any)[nameKey] ?? nameKey
+                : (i18n[athkarLang] as any)?.[nameKey] ?? nameKey;
+            const isFav = !isPersonal && favourites.includes(cat.id);
+            return (
+              <ScaleDecorator activeScale={1.02}>
+                <Pressable
+                  onLongPress={drag}
+                  delayLongPress={100}
+                  style={({ pressed }) => ({
+                    flexDirection: isRtl ? 'row-reverse' : 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    backgroundColor: isActive ? C.tint + '18' : C.backgroundCard,
+                    borderWidth: StyleSheet.hairlineWidth,
+                    borderColor: isActive ? C.tint + '66' : C.separator,
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 8,
+                    opacity: pressed ? 0.85 : 1,
+                  })}
+                >
+                  <Ionicons name="reorder-three-outline" size={22} color={C.textMuted} />
+                  {isPersonal
+                    ? <Ionicons name="create-outline" size={22} color={GOLD} style={{ marginRight: 4 }} />
+                    : <MaterialCommunityIcons name={cat.icon as any} size={22} color={isFav ? GOLD : C.tint} />
+                  }
+                  <Text style={{ flex: 1, fontSize: 14, color: isPersonal ? GOLD : (isFav ? GOLD : C.text), fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold', writingDirection: isRtlLang(athkarLang) ? 'rtl' : 'ltr' }}>
+                    {name}
+                  </Text>
+                </Pressable>
+              </ScaleDecorator>
+            );
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>
@@ -579,6 +718,9 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           </Pressable>
         </View>
       )}
+      {!gridReorderHintShown && (
+        <GridReorderHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onGridReorderHintDismiss} />
+      )}
 
       <View style={{ height: GRID_HEIGHT }}>
       <FlatList
@@ -633,7 +775,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                         C={C}
                         onPress={onSelect}
                         isFavourite={true}
-                        onLongPress={onLongPress}
+                        onLongPress={enterReorderMode}
                         displayMode={displayMode}
                         athkarLang={athkarLang}
                         tileSize={TILE_WIDTH}
@@ -673,6 +815,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                           tr={tr}
                           C={C}
                           onPress={onOpenPersonal}
+                          onLongPress={enterReorderMode}
                           personalItemCount={personalItemCount}
                           tileSize={TILE_WIDTH}
                           tileHeight={TILE_HEIGHT}
@@ -693,7 +836,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
                         C={C}
                         onPress={onSelect}
                         isFavourite={favourites.includes(item.id)}
-                        onLongPress={onLongPress}
+                        onLongPress={enterReorderMode}
                         displayMode={displayMode}
                         athkarLang={athkarLang}
                         tileSize={TILE_WIDTH}
@@ -895,14 +1038,41 @@ function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: b
   );
 }
 
-function PersonalGridCell({ isRtl, tr, C, onPress, personalItemCount, tileSize, tileHeight, labelFontSize }: {
+function GridReorderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
+  const opacity = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      opacity.value = withTiming(0, { duration: 400 });
+      setTimeout(onDismiss, 400);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Animated.View style={[styles.favHintBanner, animStyle, { backgroundColor: C.tint + '18', borderWidth: StyleSheet.hairlineWidth, borderColor: C.tint + '55', marginBottom: 4 }]}>
+      <Ionicons name="reorder-three-outline" size={16} color={C.tint} />
+      <Text style={[styles.favHintText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left' }]}>
+        {(tr as any).reorder_hint ?? 'Hold any category to reorder'}
+      </Text>
+      <Pressable onPress={onDismiss} hitSlop={8}>
+        <Ionicons name="close" size={16} color={C.tint} />
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function PersonalGridCell({ isRtl, tr, C, onPress, onLongPress, personalItemCount, tileSize, tileHeight, labelFontSize }: {
   isRtl: boolean; tr: any; C: any;
-  onPress: () => void; personalItemCount: number;
+  onPress: () => void; onLongPress: () => void; personalItemCount: number;
   tileSize: number; tileHeight: number; labelFontSize: number;
 }) {
   return (
     <Pressable
       onPress={() => { Haptics.selectionAsync(); onPress(); }}
+      onLongPress={onLongPress}
+      delayLongPress={400}
       style={({ pressed }) => [
         styles.cell,
         {
@@ -948,7 +1118,7 @@ interface CellProps {
   C: any;
   onPress: (cat: AthkarCategory) => void;
   isFavourite: boolean;
-  onLongPress: (cat: AthkarCategory) => void;
+  onLongPress: () => void;
   displayMode: 'arabic' | 'full';
   athkarLang: Lang;
   tileSize: number;
@@ -966,7 +1136,7 @@ function GridCell({ cat, lang, isRtl, tr, C, onPress, isFavourite, onLongPress, 
   return (
     <Pressable
       onPress={() => onPress(cat)}
-      onLongPress={() => onLongPress(cat)}
+      onLongPress={onLongPress}
       delayLongPress={400}
       style={({ pressed }) => [
         styles.cell,
@@ -1047,6 +1217,8 @@ function ReaderScreen({
   const [activeHighlight, setActiveHighlight] = useState(highlightQuery.length > 0);
   const [userCounts, setUserCounts] = useState<Record<string, number>>({});
   const [showUserForm, setShowUserForm] = useState(false);
+  const [showUserReorderModal, setShowUserReorderModal] = useState(false);
+  const [reorderUserData, setReorderUserData] = useState<PersonalThikrItem[]>([]);
   const [editingUserItem, setEditingUserItem] = useState<PersonalThikrItem | null>(null);
   const [formText, setFormText] = useState('');
   const [formName, setFormName] = useState('');
@@ -1280,6 +1452,14 @@ function ReaderScreen({
                     ]}
                   >
                     <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <Pressable
+                        onLongPress={() => { setReorderUserData([...userCatItems]); setShowUserReorderModal(true); }}
+                        delayLongPress={100}
+                        hitSlop={8}
+                        style={{ paddingRight: 4 }}
+                      >
+                        <Ionicons name="reorder-three-outline" size={20} color={C.textMuted} />
+                      </Pressable>
                       <View style={[styles.counterBadge, { backgroundColor: done ? C.tint : C.backgroundCard, borderColor: done ? C.tint : C.separator }]}>
                         <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>{cur}/{item.repetitions}</Text>
                       </View>
@@ -1441,6 +1621,57 @@ function ReaderScreen({
               </View>
             </View>
           </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Reorder user additions modal */}
+      <Modal visible={showUserReorderModal} animationType="slide" transparent presentationStyle="pageSheet">
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+          <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', padding: 16, paddingTop: topInset + 12, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }}>
+            <Pressable onPress={() => setShowUserReorderModal(false)} hitSlop={8}>
+              <Ionicons name="close" size={22} color={C.textSecond} />
+            </Pressable>
+            <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
+              {(tr as any).reorder_hint ?? 'Reorder'}
+            </Text>
+            <Pressable
+              onPress={() => { onUserCatItemsSave(reorderUserData); setShowUserReorderModal(false); }}
+              style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 12, backgroundColor: C.tint }}
+            >
+              <Text style={{ color: C.tintText, fontWeight: '600', fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>{(tr as any).btn_done ?? 'Done'}</Text>
+            </Pressable>
+          </View>
+          <DraggableFlatList
+            data={reorderUserData}
+            keyExtractor={it => it.id}
+            onDragEnd={({ data }) => setReorderUserData(data)}
+            contentContainerStyle={{ padding: 16 }}
+            renderItem={({ item, drag }: RenderItemParams<PersonalThikrItem>) => (
+              <ScaleDecorator activeScale={1.02}>
+                <Pressable
+                  onLongPress={drag}
+                  delayLongPress={100}
+                  style={({ pressed }) => ({
+                    flexDirection: isRtl ? 'row-reverse' : 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    backgroundColor: C.backgroundCard,
+                    borderWidth: StyleSheet.hairlineWidth,
+                    borderColor: C.separator,
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 8,
+                    opacity: pressed ? 0.85 : 1,
+                  })}
+                >
+                  <Ionicons name="reorder-three-outline" size={22} color={C.textMuted} />
+                  <Text style={{ flex: 1, fontSize: 16, fontFamily: 'Amiri_700Bold', color: C.text, textAlign: 'right', writingDirection: 'rtl' }}>
+                    {item.text}
+                  </Text>
+                </Pressable>
+              </ScaleDecorator>
+            )}
+          />
         </View>
       </Modal>
     </View>
@@ -1653,7 +1884,6 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
   const [formText, setFormText] = useState('');
   const [formName, setFormName] = useState('');
   const [formReps, setFormReps] = useState('3');
-  const listRef = useRef<FlatList<PersonalThikrItem>>(null);
 
   const openAdd = () => {
     setEditingItem(null);
@@ -1760,20 +1990,21 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
           </Pressable>
         </View>
       ) : (
-        <FlatList
-          ref={listRef}
+        <DraggableFlatList
           data={items}
           keyExtractor={it => it.id}
+          onDragEnd={({ data }) => onSave(data)}
           contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={!copyHintShown ? (
             <CopyHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onCopyHintDismiss} />
           ) : null}
-          renderItem={({ item }) => {
+          renderItem={({ item, drag }: RenderItemParams<PersonalThikrItem>) => {
             const cur = counts[item.id] ?? 0;
             const done = cur >= item.repetitions;
             return (
-              <Animated.View entering={FadeIn.duration(250)} style={{ marginBottom: 10 }}>
+              <ScaleDecorator activeScale={1.02}>
+              <View style={{ marginBottom: 10 }}>
                 <Pressable
                   onPress={() => handleTap(item)}
                   onLongPress={() => handleCopyItem(item.text)}
@@ -1788,6 +2019,9 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
                   ]}
                 >
                   <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <Pressable onLongPress={drag} delayLongPress={100} hitSlop={8} style={{ paddingRight: 4 }}>
+                      <Ionicons name="reorder-three-outline" size={20} color={C.textMuted} />
+                    </Pressable>
                     <View style={[styles.counterBadge, { backgroundColor: done ? C.tint : C.backgroundCard, borderColor: done ? C.tint : C.separator }]}>
                       <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>{cur}/{item.repetitions}</Text>
                     </View>
@@ -1830,7 +2064,8 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
                     </View>
                   )}
                 </Pressable>
-              </Animated.View>
+              </View>
+              </ScaleDecorator>
             );
           }}
         />
