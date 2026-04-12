@@ -2317,25 +2317,19 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
     setReorderMode(true);
   }, [items]);
 
-  const saveReorder = useCallback(() => {
-    Haptics.selectionAsync();
-    onSave(reorderData);
-    setReorderMode(false);
-  }, [reorderData, onSave]);
-
-  // ── Reorder mode — mirrors group reorder pattern exactly ──────────────────
+  // ── Reorder mode — identical structure to GridScreen group reorder ─────────
   if (reorderMode) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.background }}>
+      <View style={[styles.root, { backgroundColor: C.background }]}>
         <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
           <View style={{ flex: 1, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: C.text, fontFamily: 'Inter_600SemiBold' }}>
-              {(tr as any).drag_to_reorder ?? 'Reorder'}
+            <Text style={{ fontSize: 15, fontWeight: '600', color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold' }}>
+              {(tr as any).reorder_hint?.split(' ').slice(0, 3).join(' ') ?? 'Reorder'}
             </Text>
             <Pressable
               onPress={() => Alert.alert(
                 (tr as any).drag_to_reorder ?? 'Hold and drag to reorder',
-                'Long-press the ≡ handle beside each item, then drag to its new position.',
+                (tr as any).drag_to_reorder ?? 'Long-press the ≡ handle beside each item, then drag to its new position.',
               )}
               hitSlop={10}
             >
@@ -2343,7 +2337,11 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
             </Pressable>
           </View>
           <Pressable
-            onPress={saveReorder}
+            onPress={() => {
+              Haptics.selectionAsync();
+              onSave(reorderData);
+              setReorderMode(false);
+            }}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.tint, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, width: 'auto' as any }]}
           >
             <Text style={{ color: C.tintText, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{(tr as any).btn_done ?? 'Done'}</Text>
