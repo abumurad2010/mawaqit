@@ -22,16 +22,30 @@ const IOS_CAF_SOUNDS: Record<string, string> = {
   'abdul-hakam': 'abdul_hakam_abb.caf',
 };
 
-/** Maps voice key → abbreviated .mp3 filename for Android notification sounds */
+/**
+ * Maps voice key → notification sound filename for Android.
+ * Keys ending in '_full' use full-length mp3s (bundled via app.json sounds).
+ * Plain keys use abbreviated mp3s from assets/sounds/abb/.
+ */
 const ANDROID_MP3_SOUNDS: Record<string, string> = {
-  'makkah':      'adhan_makka_abb.mp3',
-  'madinah':     'adhan_madinah_abb.mp3',
-  'egypt':       'adhan_egypt_abb.mp3',
-  'aqsa':        'adhan_alaqsa_abb.mp3',
-  'halab':       'adhan_halab_abb.mp3',
-  'hussaini':    'al_hussaini_abb.mp3',
-  'bakir':       'bakir_bash_abb.mp3',
-  'abdul-hakam': 'abdul_hakam_abb.mp3',
+  // Abbreviated (short) versions
+  'makkah':           'adhan_makka_abb.mp3',
+  'madinah':          'adhan_madinah_abb.mp3',
+  'egypt':            'adhan_egypt_abb.mp3',
+  'aqsa':             'adhan_alaqsa_abb.mp3',
+  'halab':            'adhan_halab_abb.mp3',
+  'hussaini':         'al_hussaini_abb.mp3',
+  'bakir':            'bakir_bash_abb.mp3',
+  'abdul-hakam':      'abdul_hakam_abb.mp3',
+  // Full-length versions — bundled via app.json sounds array
+  'makkah_full':      'adhan_makkah.mp3',
+  'madinah_full':     'adhan_madinah.mp3',
+  'egypt_full':       'adhan_egypt.mp3',
+  'aqsa_full':        'adhan_alaqsa.mp3',
+  'halab_full':       'adhan_halab.mp3',
+  'hussaini_full':    'al_hussaini.mp3',
+  'bakir_full':       'bakir_bash.mp3',
+  'abdul-hakam_full': 'abdul_hakam.mp3',
 };
 
 function getPrayerLabels(lang: Lang): Record<string, string> {
@@ -225,7 +239,6 @@ export async function scheduleTestNotification(): Promise<void> {
       repeats: false,
     },
   });
-  console.log('[Notifications] Test notification scheduled for 5 seconds from now');
 }
 
 export async function schedulePrayerNotifications(params: {
@@ -254,8 +267,6 @@ export async function schedulePrayerNotifications(params: {
   const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
   let scheduledCount = 0;
-  console.log('[Notifications] schedulePrayerNotifications called — location:', params.location, 'daysAhead:', daysAhead, 'dstOffsetMs:', dstOffsetMs);
-
   for (let d = 0; d < daysAhead; d++) {
     const date = new Date();
     date.setDate(date.getDate() + d);
@@ -306,12 +317,10 @@ export async function schedulePrayerNotifications(params: {
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
         });
         scheduledCount++;
-        console.log(`[Notifications] Scheduled ${prayerKey} for ${prayerTime.toLocaleString()}`);
       } catch (err) {
         console.warn('[Notifications] Failed to schedule', prayerKey, err);
       }
     }
   }
-  console.log(`[Notifications] Total prayer notifications scheduled: ${scheduledCount}`);
   return scheduledCount;
 }

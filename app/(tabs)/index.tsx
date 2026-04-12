@@ -215,24 +215,19 @@ export default function PrayerTimesScreen() {
       asrMethod,
       maghribOffset,
     });
-    // Diagnostic: confirm todayTimes uses the correct local date and gives sane times.
-    console.log(
-      '[Mawaqit] todayTimes computed —',
-      `date=${todayNoon.getFullYear()}-${todayNoon.getMonth() + 1}-${todayNoon.getDate()}`,
-      `fajr=${result.fajr.getHours()}:${String(result.fajr.getMinutes()).padStart(2, '0')}`,
-      `asr=${result.asr.getHours()}:${String(result.asr.getMinutes()).padStart(2, '0')}`,
-      `isha=${result.isha.getHours()}:${String(result.isha.getMinutes()).padStart(2, '0')}`,
-      `(local 24h)`,
-    );
     return result;
   // _todayKey changes at local midnight, ensuring the memo refreshes for the new day
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, _todayKey, calcMethod, asrMethod, maghribOffset]);
 
+  // Minute-precision key — changes only once per minute so nextPrayer doesn't
+  // recalculate on every 1-second tick (prayer times are minute-granular).
+  const nowMinuteKey = Math.floor(now.getTime() / 60000);
+
   // nextPrayer uses todayTimes so it is never null due to a stale `times` state,
   // and never wrong because the user is browsing a different day.
-  // CRITICAL: pass `now` state so this uses the SAME timestamp as `iqamaStatus` —
-  // both must agree within one render cycle to avoid the iqama-transition race.
+  // Uses nowMinuteKey (not raw `now`) so it recalculates once per minute, not
+  // every second. The `now` value is still read from the outer scope for accuracy.
   // Also merges conditional prayers (Dhuha, Qiyam) into the candidate list so they
   // can appear as "next prayer" when they are visible and their time hasn't passed.
   const nextPrayer = useMemo<{ name: string; time: Date } | null>(() => {
@@ -269,7 +264,7 @@ export default function PrayerTimesScreen() {
     candidates.sort((a, b) => a.secs - b.secs);
     return { name: candidates[0].name, time: candidates[0].time };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todayTimes, now, showDhuha, dhuhaTimeSetting, showQiyam, tahajjudTimeSetting]);
+  }, [todayTimes, nowMinuteKey, showDhuha, dhuhaTimeSetting, showQiyam, tahajjudTimeSetting]);
 
   // ── tomorrowFajr: split into two steps to avoid stale-nowMs bug ──────────────
   //
@@ -332,33 +327,6 @@ export default function PrayerTimesScreen() {
   // Fires exactly once when iqamaStatus transitions from non-null → null.
   // Logs what nextPrayer resolved to (and why) so any remaining bug is immediately
   // visible in the Expo terminal without having to watch second-by-second logs.
-  const prevIqamaRef = useRef<typeof iqamaStatus>(iqamaStatus);
-  useEffect(() => {
-    const prev = prevIqamaRef.current;
-    prevIqamaRef.current = iqamaStatus;
-    if (prev !== null && iqamaStatus === null) {
-      // Iqama window just closed — log the full transition state.
-      const h = now.getHours();
-      const m = String(now.getMinutes()).padStart(2, '0');
-      const nowMod = now.getHours() * 60 + now.getMinutes();
-      console.log(
-        '[Mawaqit] iqama ended →',
-        `now=${h}:${m} (${nowMod} min-of-day)`,
-        `| prev prayer=${prev.name}`,
-        `| nextPrayer=${nextPrayer ? `${nextPrayer.name} at ${nextPrayer.time.getHours()}:${String(nextPrayer.time.getMinutes()).padStart(2, '0')}` : 'null'}`,
-        `| displayNext=${displayNext ? displayNext.name : 'null'}`,
-        `| tomorrowFajr=${tomorrowFajr ? `${tomorrowFajr.getHours()}:${String(tomorrowFajr.getMinutes()).padStart(2, '0')}` : 'null'}`,
-        `| countdownTarget=${countdownTarget ? countdownTarget.toISOString() : 'null'}`,
-      );
-      if (!nextPrayer) {
-        console.warn(
-          '[Mawaqit] ⚠ nextPrayer is null after iqama ended! Falling back to tomorrowFajr.',
-          `todayTimes=${todayTimes ? 'present' : 'null'}`,
-          `now (state)=${now.toISOString()}`,
-        );
-      }
-    }
-  }, [iqamaStatus]);
 
   // Countdown target — iqama time when in window, otherwise next prayer / tomorrow Fajr
   const countdownTarget = iqamaStatus?.iqamaTime ?? displayNext?.time ?? tomorrowFajr ?? null;

@@ -37,6 +37,7 @@ export default function SurahScreen() {
   const params = useLocalSearchParams<{ number: string; ayah?: string }>();
   const initialNum = parseInt(params.number ?? '1', 10);
   const targetAyah = params.ayah ? parseInt(params.ayah, 10) : null;
+  console.log('[SURAH_RENDER] params=', params, 'targetAyah=', targetAyah);
 
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, isBookmarked, addBookmark, removeBookmark, setLastReadSurah, colors } = useApp();
@@ -55,6 +56,7 @@ export default function SurahScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const ayahPositions = useRef<Record<number, number>>({});
   const ayahsBlockY = useRef(0);
+  const surahHeaderY = useRef(0);
   const scrolled = useRef(false);
   const flip = useSharedValue(0);
   const transitioningRef = useRef(false);
@@ -68,10 +70,12 @@ export default function SurahScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const loadSurah = useCallback(async (num: number) => {
+    console.log('[LOAD_SURAH] number=', num, 'targetAyah=', targetAyah);
     setPage(prev => ({ ...prev, surahNum: num, loading: true, error: null }));
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     ayahPositions.current = {};
     ayahsBlockY.current = 0;
+    surahHeaderY.current = 0;
     scrolled.current = false;
     try {
       const data = await fetchSurah(num);
@@ -87,17 +91,17 @@ export default function SurahScreen() {
     loadSurah(surahNum);
   }, [surahNum]);
 
+  // targetAyah === 1: scroll triggered from the surahHeader onLayout callback
+  // (fires after the banner renders, which is the correct moment — no timeout needed).
+  // targetAyah > 1: use a timeout so all ayah onLayout callbacks finish first.
   useEffect(() => {
-    if (targetAyah && page.ayahs.length > 0 && !scrolled.current) {
-      const pos = ayahPositions.current[targetAyah];
-      if (pos !== undefined) {
-        scrolled.current = true;
-        setTimeout(() => {
-          const scrollY = Math.max(0, ayahsBlockY.current + pos - 80);
-          scrollRef.current?.scrollTo({ y: scrollY, animated: true });
-        }, 400);
-      }
-    }
+    if (!targetAyah || targetAyah === 1 || page.ayahs.length === 0 || scrolled.current) return;
+    scrolled.current = true;
+    setTimeout(() => {
+      const pos = ayahPositions.current[targetAyah] ?? 0;
+      const scrollY = Math.max(0, ayahsBlockY.current + pos - 80);
+      scrollRef.current?.scrollTo({ y: scrollY, animated: true });
+    }, 500);
   }, [targetAyah, page.ayahs]);
 
   const flipStyle = useAnimatedStyle(() => ({
@@ -296,7 +300,22 @@ export default function SurahScreen() {
             scrollEventThrottle={16}
           >
             {/* Surah banner */}
-            <View style={[styles.surahHeader, { backgroundColor: C.tint }]}>
+            <View
+              style={[styles.surahHeader, { backgroundColor: C.tint }]}
+              onLayout={(e) => {
+                console.log('[BANNER_LAYOUT] fired, y=', e.nativeEvent.layout.y);
+                surahHeaderY.current = e.nativeEvent.layout.y;
+                if (targetAyah === 1 && !scrolled.current) {
+                  scrolled.current = true;
+                  const scrollY = Math.max(0, surahHeaderY.current - 16);
+                  console.log('[SurahScroll] targetAyah=', targetAyah, 'surahHeaderY=', surahHeaderY.current, 'scrollY=', scrollY);
+                  if (surahHeaderY.current === 0) {
+                    console.warn('[SurahScroll] surahHeaderY is 0 — banner may be at top or onLayout fired early');
+                  }
+                  scrollRef.current?.scrollTo({ y: scrollY, animated: true });
+                }
+              }}
+            >
               <Text style={[styles.surahArabicName, { fontFamily: 'Amiri_700Bold', color: C.tintText }]}>
                 {meta?.arabic ?? ''}
               </Text>
@@ -334,15 +353,7 @@ export default function SurahScreen() {
                     key={ayah.number}
                     onLongPress={() => handleLongPress(ayah)}
                     onLayout={(e) => {
-                      const y = e.nativeEvent.layout.y;
-                      ayahPositions.current[ayah.numberInSurah] = y;
-                      if (targetAyah && ayah.numberInSurah === targetAyah && !scrolled.current) {
-                        scrolled.current = true;
-                        setTimeout(() => {
-                          const scrollY = Math.max(0, ayahsBlockY.current + y - 80);
-                          scrollRef.current?.scrollTo({ y: scrollY, animated: true });
-                        }, 300);
-                      }
+                      ayahPositions.current[ayah.numberInSurah] = e.nativeEvent.layout.y;
                     }}
                     style={[
                       styles.ayahRow,

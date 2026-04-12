@@ -202,18 +202,6 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
     ishaUTC = maghribUTC + twilightDuration;
   }
 
-  if (__DEV__) {
-    const sunsetMs  = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) + sunsetUTC  * 3600 * 1000;
-    const maghribMs = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) + maghribUTC * 3600 * 1000;
-    const ishaMs    = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) + ishaUTC    * 3600 * 1000;
-    console.log('=== ISHA CALCULATION DEBUG ===');
-    console.log('sunset raw:        ', new Date(sunsetMs).toLocaleTimeString());
-    console.log('maghrib offset (min):', maghribOffset);
-    console.log('maghrib adjusted:  ', new Date(maghribMs).toLocaleTimeString());
-    console.log('isha duration (min):', m.ishaMins !== undefined ? m.ishaMins : ((ishaUTC - sunsetUTC) * 60).toFixed(1));
-    console.log('isha final:        ', new Date(ishaMs).toLocaleTimeString());
-  }
-
   return {
     fajr:    decimalToDate(fajrUTC,    date),
     sunrise: decimalToDate(sunriseUTC, date),
@@ -267,20 +255,6 @@ export function getNextPrayer(
 ): { name: keyof PrayerTimes; time: Date } | null {
   const order: (keyof PrayerTimes)[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-  // ── Diagnostic log — fires every second via the 1-second setInterval in the component ──
-  // nowMod should be 924 at exactly 3:24 PM (15 × 60 + 24 = 924).
-  // getHours() always returns 0-23 (24h) — never a 12h value.
-  const nowMod = now.getHours() * 60 + now.getMinutes();
-  const prayerMods: Record<string, number> = {};
-  for (const name of order) {
-    prayerMods[name] = times[name].getHours() * 60 + times[name].getMinutes();
-  }
-  console.log(
-    '[Mawaqit] getNextPrayer —',
-    `now: ${nowMod} (${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} local 24h)`,
-    '| prayers (min-of-day):', JSON.stringify(prayerMods),
-  );
-
   // ── Find the first prayer whose local time is still in the future ──
   //
   // COMPARISON STRATEGY — seconds-of-day only, no Date objects.
@@ -312,12 +286,6 @@ export function getNextPrayer(
     const t = times[name];
     const tSecs = t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds();
     const isFuture = tSecs > nowSecs;
-    if (__DEV__) {
-      console.log(
-        `  [Mawaqit]   ${name}: ${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`,
-        `(secs ${tSecs} vs now ${nowSecs}) →`, isFuture ? 'NEXT ✓' : 'past ✗',
-      );
-    }
     if (isFuture) return { name, time: t };
   }
 
