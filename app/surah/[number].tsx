@@ -34,6 +34,7 @@ type PageState = {
 };
 
 export default function SurahScreen() {
+  console.log('[TEST] Surah screen rendered');
   const params = useLocalSearchParams<{ number: string; ayah?: string }>();
   const initialNum = parseInt(params.number ?? '1', 10);
   const targetAyah = params.ayah ? parseInt(params.ayah, 10) : null;
