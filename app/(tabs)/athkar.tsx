@@ -301,7 +301,6 @@ function DragSortList<T>({
 }
 
 export default function AthkarScreen() {
-  console.log('[TEST] Athkar tab rendered');
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { lang, colors: C, isDark } = useApp();

@@ -34,11 +34,10 @@ type PageState = {
 };
 
 export default function SurahScreen() {
-  console.log('[TEST] Surah screen rendered');
-  const params = useLocalSearchParams<{ number: string; ayah?: string }>();
+  const params = useLocalSearchParams<{ number: string; ayah?: string; scrollToSurah?: string }>();
   const initialNum = parseInt(params.number ?? '1', 10);
   const targetAyah = params.ayah ? parseInt(params.ayah, 10) : null;
-  console.log('[SURAH_RENDER] params=', params, 'targetAyah=', targetAyah);
+  const scrollToSurah = params.scrollToSurah === 'true';
 
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, isBookmarked, addBookmark, removeBookmark, setLastReadSurah, colors } = useApp();
@@ -92,11 +91,19 @@ export default function SurahScreen() {
     loadSurah(surahNum);
   }, [surahNum]);
 
-  // targetAyah === 1: scroll triggered from the surahHeader onLayout callback
-  // (fires after the banner renders, which is the correct moment — no timeout needed).
-  // targetAyah > 1: use a timeout so all ayah onLayout callbacks finish first.
+  // When navigating from TOC, scroll to the very top (y=0) after content renders.
+  // 800ms gives the layout pass time to complete before scrolling.
   useEffect(() => {
-    if (!targetAyah || targetAyah === 1 || page.ayahs.length === 0 || scrolled.current) return;
+    if (!scrollToSurah || page.ayahs.length === 0) return;
+    const t = setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [scrollToSurah, page.ayahs]);
+
+  // For deep-link ayah navigation (e.g. from bookmarks or search).
+  useEffect(() => {
+    if (!targetAyah || page.ayahs.length === 0 || scrolled.current) return;
     scrolled.current = true;
     setTimeout(() => {
       const pos = ayahPositions.current[targetAyah] ?? 0;
@@ -304,17 +311,7 @@ export default function SurahScreen() {
             <View
               style={[styles.surahHeader, { backgroundColor: C.tint }]}
               onLayout={(e) => {
-                console.log('[BANNER_LAYOUT] fired, y=', e.nativeEvent.layout.y);
                 surahHeaderY.current = e.nativeEvent.layout.y;
-                if (targetAyah === 1 && !scrolled.current) {
-                  scrolled.current = true;
-                  const scrollY = Math.max(0, surahHeaderY.current - 16);
-                  console.log('[SurahScroll] targetAyah=', targetAyah, 'surahHeaderY=', surahHeaderY.current, 'scrollY=', scrollY);
-                  if (surahHeaderY.current === 0) {
-                    console.warn('[SurahScroll] surahHeaderY is 0 — banner may be at top or onLayout fired early');
-                  }
-                  scrollRef.current?.scrollTo({ y: scrollY, animated: true });
-                }
               }}
             >
               <Text style={[styles.surahArabicName, { fontFamily: 'Amiri_700Bold', color: C.tintText }]}>
