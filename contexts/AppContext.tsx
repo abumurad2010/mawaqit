@@ -229,7 +229,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const userLang: Lang = parsed.lang ?? DEFAULT_SETTINGS.lang;
             parsed.translitLang = BUNDLED_LANGS.includes(userLang) ? userLang : 'en';
           }
-          setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+          const merged = { ...DEFAULT_SETTINGS, ...parsed };
+          setSettings(merged);
         }
         if (b) setBookmarks(JSON.parse(b));
         if (lrp) setLastReadPageState(parseInt(lrp, 10));
