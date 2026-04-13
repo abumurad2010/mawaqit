@@ -106,6 +106,8 @@ interface AppContextValue extends AppSettings {
   setLocation: (loc: LocationData | null) => void;
   maghribBase: number;
   maghribOffset: number;
+  maghribUserAdj: number;
+  setMaghribUserAdj: (adj: number) => void;
   countryCode: string | null;
   locationUtcOffset: number | null;
   bookmarks: Bookmark[];
@@ -168,6 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [lastReadSurah, setLastReadSurahState] = useState(1);
   const [translitLastSurah, setTranslitLastSurahState] = useState(1);
   const [translitLastPage, setTranslitLastPageState] = useState(1);
+  const [maghribUserAdj, setMaghribUserAdjState] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -258,7 +261,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       : countryCode;
 
   const maghribBase = getMaghribOffset(effectiveCountryCode);
-  const maghribOffset = maghribBase + (settings.maghribAdjustment ?? 0);
+  const maghribOffset = maghribBase + maghribUserAdj;
 
   const locationUtcOffset: number | null =
     settings.locationMode === 'manual' && settings.manualLocation
@@ -280,6 +283,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isRtl = isRtlLang(settings.lang);
 
   const colors: ColorPalette = getColors(isDark, settings.accessibilityTheme ?? 'default');
+
+  // Load per-country Maghrib user adjustment whenever the active country changes.
+  useEffect(() => {
+    if (!effectiveCountryCode) { setMaghribUserAdjState(0); return; }
+    AsyncStorage.getItem(`maghribOffset_${effectiveCountryCode}`)
+      .then(v => setMaghribUserAdjState(v !== null ? parseInt(v, 10) : 0))
+      .catch(() => {});
+  }, [effectiveCountryCode]);
 
   useEffect(() => {
     if (!effectiveLocation) return;
@@ -383,6 +394,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await AsyncStorage.setItem('translitLastPage', String(page));
   };
 
+  const setMaghribUserAdj = async (adj: number) => {
+    setMaghribUserAdjState(adj);
+    if (effectiveCountryCode) {
+      await AsyncStorage.setItem(`maghribOffset_${effectiveCountryCode}`, String(adj));
+    }
+  };
+
   const value = useMemo<AppContextValue>(
     () => ({
       ...settings,
@@ -394,6 +412,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLocation,
       maghribBase,
       maghribOffset,
+      maghribUserAdj,
+      setMaghribUserAdj,
       countryCode: effectiveCountryCode,
       locationUtcOffset,
       bookmarks,
@@ -410,7 +430,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       translitLastPage,
       setTranslitLastPage,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage],
   );
 
   if (!loaded) return null;

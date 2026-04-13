@@ -31,7 +31,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
     isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
-    maghribAdjustment, hijriAdjustment, accessibilityTheme,
+    maghribUserAdj, setMaghribUserAdj, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
     iqamaOffsets, thikrRemindersEnabled, dstEnabled, defaultTab, fontSize,
@@ -58,7 +58,7 @@ export default function SettingsScreen() {
   // Local draft state — nothing is saved until the user taps Save
   const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
-  const [draftAdjustment, setDraftAdjustment] = useState(maghribAdjustment ?? 0);
+  const [draftAdjustment, setDraftAdjustment] = useState(maghribUserAdj);
   const [draftHijri, setDraftHijri] = useState(hijriAdjustment ?? 0);
   const [draftNotifications, setDraftNotifications] = useState<Record<string, PrayerNotifConfig>>(
     prayerNotifications ?? {}
@@ -100,6 +100,9 @@ export default function SettingsScreen() {
       stopAthan();
     };
   }, []);
+
+  // Keep draft in sync with per-country maghrib adjustment loaded from storage
+  useEffect(() => { setDraftAdjustment(maghribUserAdj); }, [maghribUserAdj]);
 
   useFocusEffect(
     useCallback(() => {
@@ -420,7 +423,7 @@ export default function SettingsScreen() {
   const hasChanges =
     draftCalcMethod !== calcMethod ||
     draftAsrMethod !== asrMethod ||
-    draftAdjustment !== (maghribAdjustment ?? 0) ||
+    draftAdjustment !== maghribUserAdj ||
     draftHijri !== (hijriAdjustment ?? 0) ||
     draftSecondLang !== (secondLang ?? 'auto') ||
     draftAccessibilityTheme !== (accessibilityTheme ?? 'default') ||
@@ -442,10 +445,10 @@ export default function SettingsScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const resolvedDraft = draftSecondLang === 'auto' ? detectSecondLang(countryCode) : draftSecondLang;
     const newLang = lang !== 'ar' ? resolvedDraft : lang;
+    setMaghribUserAdj(draftAdjustment);
     updateSettings({
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
-      maghribAdjustment: draftAdjustment,
       hijriAdjustment: draftHijri,
       prayerNotifications: draftNotifications,
       secondLang: draftSecondLang,
@@ -470,7 +473,7 @@ export default function SettingsScreen() {
     // Reset all drafts back to committed settings (discard changes)
     setDraftCalcMethod(calcMethod);
     setDraftAsrMethod(asrMethod);
-    setDraftAdjustment(maghribAdjustment ?? 0);
+    setDraftAdjustment(maghribUserAdj);
     setDraftHijri(hijriAdjustment ?? 0);
     setDraftNotifications(prayerNotifications ?? {});
     setDraftSecondLang(secondLang ?? 'auto');
@@ -526,16 +529,13 @@ export default function SettingsScreen() {
 
   const EMPTY_CFG: PrayerNotifConfig = { banner: false, athan: 'none' };
 
-  const ADHAN_OPTIONS = [
-    { key: 'makkah' },
-    { key: 'madinah' },
-    { key: 'egypt' },
-    { key: 'halab' },
-    { key: 'aqsa' },
-    { key: 'hussaini' },
-    { key: 'abdul-hakam' },
-    { key: 'bakir' },
-  ];
+  // iOS: abbreviated only (short .caf notification sounds).
+  // Android: full + abbreviated so users can choose longer call-to-prayer.
+  const BASE_VOICES = ['makkah', 'madinah', 'egypt', 'halab', 'aqsa', 'hussaini', 'abdul-hakam', 'bakir'];
+
+  const ADHAN_OPTIONS: { key: string }[] = Platform.OS === 'android'
+    ? BASE_VOICES.flatMap(v => [{ key: `${v}_full` }, { key: v }])
+    : BASE_VOICES.map(v => ({ key: v }));
 
   const ADHAN_NAME_MAP: Record<string, keyof typeof tr> = {
     'makkah':      'adhanName_makkah',
@@ -549,8 +549,13 @@ export default function SettingsScreen() {
   };
 
   const adhanLabel = (key: string): string => {
-    const trKey = ADHAN_NAME_MAP[key];
-    return trKey ? (tr[trKey] as string) : key;
+    const isFull = key.endsWith('_full');
+    const baseKey = isFull ? key.slice(0, -5) : key;
+    const trKey = ADHAN_NAME_MAP[baseKey];
+    const name = trKey ? (tr[trKey] as string) : baseKey;
+    if (Platform.OS !== 'android') return name;
+    const suffix = isFull ? ` (${tr.adhanFull ?? 'Full'})` : ` (${tr.adhanShort ?? 'Short'})`;
+    return name + suffix;
   };
 
   const requestNotifPermission = async (): Promise<boolean> => {

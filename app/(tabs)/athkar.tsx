@@ -2357,26 +2357,29 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 80, paddingTop: 8 }}
           itemGap={8}
           handleColor={C.tint}
-          renderItem={({ item, isActive, dragHandle }) => (
-            <View
-              style={{
-                flexDirection: isRtl ? 'row-reverse' : 'row',
-                alignItems: 'center',
-                gap: 12,
-                backgroundColor: isActive ? C.tint + '18' : C.backgroundCard,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: isActive ? C.tint + '66' : C.separator,
-                borderRadius: 12,
-                padding: 12,
-                marginBottom: 8,
-              }}
-            >
-              <Text style={{ flex: 1, fontSize: 18, fontFamily: 'Amiri_700Bold', color: C.text, textAlign: 'right', writingDirection: 'rtl' }} numberOfLines={2}>
-                {item.text}
-              </Text>
-              {dragHandle}
-            </View>
-          )}
+          renderItem={({ item, isActive, dragHandle }) => {
+            return (
+              <View
+                style={{
+                  flexDirection: isRtl ? 'row-reverse' : 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  backgroundColor: isActive ? C.tint + '18' : C.backgroundCard,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: isActive ? C.tint + '66' : C.separator,
+                  borderRadius: 12,
+                  padding: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="create-outline" size={22} color={C.textMuted} />
+                <Text style={{ flex: 1, fontSize: 16, fontFamily: 'Amiri_700Bold', color: C.text, writingDirection: 'rtl' }} numberOfLines={2}>
+                  {item.text}
+                </Text>
+                {dragHandle}
+              </View>
+            );
+          }}
         />
       </View>
     );

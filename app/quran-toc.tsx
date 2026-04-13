@@ -38,23 +38,10 @@ export default function QuranTOCScreen() {
       <Pressable
         onPress={() => {
           Haptics.selectionAsync();
-          let navParams: { pathname: string; params: Record<string, string> };
-          if (item.number === 1) {
-            navParams = { pathname: '/surah/[number]', params: { number: '1' } };
-          } else {
-            const prevNum = item.number - 1;
-            const lastAyahOfPrev = SURAH_META[item.number - 2]!.ayahs;
-            const prevLastPage = getAyahPage(prevNum, lastAyahOfPrev);
-            const thisFirstPage = getAyahPage(item.number, 1);
-            if (prevLastPage === thisFirstPage) {
-              navParams = { pathname: '/surah/[number]', params: { number: String(prevNum), ayah: String(lastAyahOfPrev) } };
-            } else {
-              navParams = { pathname: '/surah/[number]', params: { number: String(item.number), ayah: '1' } };
-            }
-          }
+          const navParams = { pathname: '/surah/[number]', params: { number: String(item.number), ayah: '1' } };
           // Dismiss the modal first; push must happen after it closes
           router.back();
-          setTimeout(() => router.push(navParams as any), 100);
+          setTimeout(() => router.push(navParams as any), 150);
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.8 : 1 }]}
       >
