@@ -118,7 +118,7 @@ export default function SurahTransliterationScreen() {
   useEffect(() => { isRtlSV.value = isRtl; }, [isRtl]);
 
   const slideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX.value }],
+    transform: [{ translateX: slideX }],
   }));
 
   const navigateSurah = useCallback((dir: 'next' | 'prev', goToLastPage = false) => {

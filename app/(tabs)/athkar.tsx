@@ -159,7 +159,7 @@ function DragSortRow<T>({
 
     if (isActiveItem) {
       return {
-        transform: [{ translateY: dragOffsetY.value }, { scale: 1.03 as number }],
+        transform: [{ translateY: dragOffsetY }, { scale: 1.03 as number }],
         zIndex: 100,
         opacity: 0.92,
         shadowOpacity: 0.25,
@@ -1279,7 +1279,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
 
 function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
   const opacity = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1304,7 +1304,7 @@ function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: b
 
 function ThikrReaderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
   const opacity = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1329,7 +1329,7 @@ function ThikrReaderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; i
 
 function GridReorderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
   const opacity = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1614,7 +1614,7 @@ function ReaderScreen({
   const [copyHighlightIdx, setCopyHighlightIdx] = useState<number | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastOpacity = useSharedValue(0);
-  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity.value }));
+  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity }));
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback(() => {
@@ -2220,7 +2220,7 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
   const [showForm, setShowForm] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const toastOpacity = useSharedValue(0);
-  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity.value }));
+  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity }));
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showCopyToast = useCallback(() => {
@@ -2324,7 +2324,7 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
         <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
           <View style={{ flex: 1, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
             <Text style={{ fontSize: 15, fontWeight: '600', color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold' }}>
-              {(tr as any).reorder_hint?.split(' ').slice(0, 3).join(' ') ?? 'Reorder'}
+              {(tr as any).btn_done ? ((tr as any).reorder_hint?.split(' ').slice(0, 3).join(' ') ?? 'Reorder') : 'Reorder'}
             </Text>
             <Pressable
               onPress={() => Alert.alert(

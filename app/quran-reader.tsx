@@ -199,7 +199,7 @@ export default function QuranReaderScreen() {
   useEffect(() => { pageNumRef.current = pageNum; }, [pageNum]);
 
   const slideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX.value }],
+    transform: [{ translateX: slideX }],
   }));
 
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;

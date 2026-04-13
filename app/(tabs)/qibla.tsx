@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { View, Text, StyleSheet, Platform, Pressable, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -108,37 +109,49 @@ export default function QiblaScreen() {
     })();
   }, []);
 
-  // Magnetometer — re-subscribes when resetKey changes (software reset)
-  useEffect(() => {
-    let sub: any;
-    let cancelled = false;
-    prevHeading.current = -1; // fresh start on each (re)mount or reset
-    (async () => {
-      const avail = await Magnetometer.isAvailableAsync();
-      if (!avail || cancelled) { setMagnetometerAvailable(false); return; }
-      Magnetometer.setUpdateInterval(16); // 60 Hz
-      sub = Magnetometer.addListener(({ x, y }) => {
-        let angle = Math.atan2(-x, y) * (180 / Math.PI);
-        angle = (angle + 360) % 360;
+  // Magnetometer — subscribes only while the Qibla tab is focused.
+  // When the user switches to another tab the subscription is removed immediately,
+  // stopping both heading updates and the alignment haptic vibration.
+  // useFocusEffect re-runs its callback whenever `resetKey` changes (software reset)
+  // OR when the tab regains focus — whichever happens first.
+  useFocusEffect(
+    useCallback(() => {
+      let sub: any;
+      let cancelled = false;
+      prevHeading.current = -1; // fresh start on each focus / reset
+      hapticFired.current = false; // allow haptic to re-fire on next alignment
+      (async () => {
+        const avail = await Magnetometer.isAvailableAsync();
+        if (!avail || cancelled) { setMagnetometerAvailable(false); return; }
+        // iOS handles 60 Hz fine; Android magnetometer at 16 ms causes
+        // burst-delivery lag on most hardware — 100 ms (10 Hz) is more reliable.
+        Magnetometer.setUpdateInterval(Platform.OS === 'android' ? 100 : 16);
+        sub = Magnetometer.addListener(({ x, y }) => {
+          let angle = Math.atan2(-x, y) * (180 / Math.PI);
+          angle = (angle + 360) % 360;
 
-        // Snap to first real reading so the compass starts correct immediately
-        if (prevHeading.current < 0) {
-          prevHeading.current = angle;
-          setHeading(angle);
-          return;
-        }
+          // Snap to first real reading so the compass starts correct immediately
+          if (prevHeading.current < 0) {
+            prevHeading.current = angle;
+            setHeading(angle);
+            return;
+          }
 
-        // α=0.7 at 60 Hz — responsive with minimal noise
-        let diff = angle - prevHeading.current;
-        if (diff > 180) diff -= 360;
-        if (diff < -180) diff += 360;
-        const smoothed = (prevHeading.current + diff * 0.7 + 360) % 360;
-        prevHeading.current = smoothed;
-        setHeading(smoothed);
-      });
-    })();
-    return () => { cancelled = true; sub?.remove(); };
-  }, [resetKey]);
+          // α=0.7 at 60 Hz — responsive with minimal noise
+          let diff = angle - prevHeading.current;
+          if (diff > 180) diff -= 360;
+          if (diff < -180) diff += 360;
+          const smoothed = (prevHeading.current + diff * 0.7 + 360) % 360;
+          prevHeading.current = smoothed;
+          setHeading(smoothed);
+        });
+      })();
+      return () => {
+        cancelled = true;
+        sub?.remove(); // stops heading updates → stops the alignment/haptic effect
+      };
+    }, [resetKey])
+  );
 
   // Animate compass rotation — shortest-path unwrapped to prevent spin-around
   useEffect(() => {
@@ -198,7 +211,7 @@ export default function QiblaScreen() {
       mecCardOpacity.value = withTiming(isNearlyAligned ? 1 : 0.35, { duration: 300 });
     }
   }, [showMecCard, isNearlyAligned]);
-  const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity.value }));
+  const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity }));
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;

@@ -89,7 +89,7 @@ export default function PrayerTimesScreen() {
 
   // Slide animation shared value — drives translateX on the prayer content
   const slideX = useSharedValue(0);
-  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slideX.value }] }));
+  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slideX }] }));
 
   // Track previous offset so useEffect knows which direction to animate the entry
   const prevOffsetRef = useRef(0);
@@ -147,7 +147,7 @@ export default function PrayerTimesScreen() {
       -1,
     );
   }, []);
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse }] }));
 
   const fetchAutoLocation = useCallback(async () => {
     setLoadingLoc(true);
