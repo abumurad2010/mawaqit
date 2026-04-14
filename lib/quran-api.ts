@@ -292,6 +292,31 @@ export function getQuranPage(pageNum: number): PageAyah[] {
 
 export const BISMILLAH_TEXT: string = (QURAN_DATA['1']?.[0]?.t) ?? 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 
+/** The 15 sajdah (prostration) ayahs according to the standard Islamic ruling. */
+export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number }> = [
+  { surah: 7,  ayah: 206 },
+  { surah: 13, ayah: 15  },
+  { surah: 16, ayah: 50  },
+  { surah: 17, ayah: 109 },
+  { surah: 19, ayah: 58  },
+  { surah: 22, ayah: 18  },
+  { surah: 22, ayah: 77  },
+  { surah: 25, ayah: 60  },
+  { surah: 27, ayah: 26  },
+  { surah: 32, ayah: 15  },
+  { surah: 38, ayah: 24  },
+  { surah: 41, ayah: 38  },
+  { surah: 53, ayah: 62  },
+  { surah: 84, ayah: 21  },
+  { surah: 96, ayah: 19  },
+];
+
+const _SAJDAH_SET = new Set(SAJDAH_AYAHS.map(s => `${s.surah}:${s.ayah}`));
+/** Returns true if the given surah+ayah is a sajdah ayah. */
+export function isSajdah(surahNum: number, ayahNum: number): boolean {
+  return _SAJDAH_SET.has(`${surahNum}:${ayahNum}`);
+}
+
 /** Returns the Quran page number for a given surah+ayah */
 export function getAyahPage(surahNum: number, ayahNum: number): number {
   const raw = QURAN_DATA[String(surahNum)];

@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, type PageAyah } from '@/lib/quran-api';
+import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, isSajdah, type PageAyah } from '@/lib/quran-api';
 
 const TOTAL_PAGES = 604;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -199,7 +199,7 @@ export default function QuranReaderScreen() {
   useEffect(() => { pageNumRef.current = pageNum; }, [pageNum]);
 
   const slideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX }],
+    transform: [{ translateX: slideX.value }],
   }));
 
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
@@ -477,6 +477,16 @@ export default function QuranReaderScreen() {
                           >
                             {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
                           </Text>
+                          {isSajdah(ayah.surahNum, ayah.ayahNum) && (
+                            <Text style={{
+                              color: C.tint,
+                              fontSize: arabicFontSize * 0.62,
+                              textDecorationLine: 'underline',
+                              fontFamily: 'Amiri_700Bold',
+                            }}>
+                              {'سجدة '}
+                            </Text>
+                          )}
                         </React.Fragment>
                       );
                     })}

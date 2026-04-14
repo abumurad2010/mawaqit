@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
-import { fetchSurah, SURAH_META, type Ayah } from '@/lib/quran-api';
+import { fetchSurah, SURAH_META, isSajdah, type Ayah } from '@/lib/quran-api';
 
 const BASE_FONT_SIZE = 26;
 const MIN_SCALE = 0.7;
@@ -367,6 +367,14 @@ export default function SurahScreen() {
                         ? <Text style={{ color: C.gold }}>{' ﴿'}{toArabicIndic(ayah.numberInSurah)}{'﴾'}</Text>
                         : <Text style={{ color: isDark ? '#4d8060' : '#1a7a4a', opacity: 0.7 }}>{' ﴿'}{toArabicIndic(ayah.numberInSurah)}{'﴾'}</Text>
                       }
+                      {isSajdah(surahNum, ayah.numberInSurah) && (
+                        <Text style={{
+                          color: C.tint,
+                          fontSize: arabicFontSize * 0.62,
+                          textDecorationLine: 'underline',
+                          fontFamily: 'Amiri_700Bold',
+                        }}>{' سجدة'}</Text>
+                      )}
                     </Text>
                   </Pressable>
                 );
