@@ -29,6 +29,7 @@ const GRID_ORDER_KEY = 'athkar_grid_order';
 const GRID_REORDER_HINT_KEY = 'athkar_grid_reorder_hint_shown';
 const THIKR_READER_HINT_KEY = 'athkar_thikr_reader_hint_shown';
 const THIKR_ORDER_KEY_PREFIX = 'thikr_order_';
+const THIKR_UNIFIED_ORDER_KEY_PREFIX = 'thikr_unified_order_';
 
 interface PersonalThikrItem {
   id: string;
@@ -223,8 +224,8 @@ function DragSortList<T>({
   showsVerticalScrollIndicator = true,
   itemGap = 8,
   handleColor = '#888',
-  autoscrollThreshold = 30,
-  autoscrollSpeed = 600,
+  autoscrollThreshold = 25,
+  autoscrollSpeed = 800,
 }: {
   data: T[];
   keyExtractor: (item: T, index: number) => string;
@@ -1574,6 +1575,8 @@ function ReaderScreen({
   }, [onReset]);
   const [sortMode, setSortMode] = useState(false);
   const [thikrOrder, setThikrOrder] = useState<number[]>([]);
+  type UnifiedOrderEntry = { kind: 'builtin'; originalIndex: number } | { kind: 'user'; id: string };
+  const [unifiedOrder, setUnifiedOrder] = useState<UnifiedOrderEntry[] | null>(null);
 
   const orderedAdhkar = useMemo(
     () => thikrOrder.length === category.adhkar.length
@@ -1582,10 +1585,42 @@ function ReaderScreen({
     [thikrOrder, category.adhkar],
   );
 
-  const combinedItems = useMemo<UnifiedThikrItem[]>(() => [
-    ...orderedAdhkar.map(({ thikr, originalIndex }) => ({ kind: 'builtin' as const, thikr, originalIndex })),
-    ...userCatItems.map(item => ({ kind: 'user' as const, item })),
-  ], [orderedAdhkar, userCatItems]);
+  const combinedItems = useMemo<UnifiedThikrItem[]>(() => {
+    if (unifiedOrder && unifiedOrder.length > 0) {
+      const builtinMap = new Map(orderedAdhkar.map(x => [x.originalIndex, x]));
+      const userMap = new Map(userCatItems.map(item => [item.id, item]));
+      const result: UnifiedThikrItem[] = [];
+      const seenBuiltin = new Set<number>();
+      const seenUser = new Set<string>();
+      for (const entry of unifiedOrder) {
+        if (entry.kind === 'builtin') {
+          const found = builtinMap.get(entry.originalIndex);
+          if (found && !seenBuiltin.has(entry.originalIndex)) {
+            seenBuiltin.add(entry.originalIndex);
+            result.push({ kind: 'builtin', thikr: found.thikr, originalIndex: found.originalIndex });
+          }
+        } else {
+          const found = userMap.get(entry.id);
+          if (found && !seenUser.has(entry.id)) {
+            seenUser.add(entry.id);
+            result.push({ kind: 'user', item: found });
+          }
+        }
+      }
+      // Append any items added after the saved order was written
+      for (const { thikr, originalIndex } of orderedAdhkar) {
+        if (!seenBuiltin.has(originalIndex)) result.push({ kind: 'builtin', thikr, originalIndex });
+      }
+      for (const item of userCatItems) {
+        if (!seenUser.has(item.id)) result.push({ kind: 'user', item });
+      }
+      return result;
+    }
+    return [
+      ...orderedAdhkar.map(({ thikr, originalIndex }) => ({ kind: 'builtin' as const, thikr, originalIndex })),
+      ...userCatItems.map(item => ({ kind: 'user' as const, item })),
+    ];
+  }, [orderedAdhkar, userCatItems, unifiedOrder]);
 
   useEffect(() => {
     AsyncStorage.getItem(THIKR_ORDER_KEY_PREFIX + category.id)
@@ -1595,6 +1630,12 @@ function ReaderScreen({
         if (saved.length === category.adhkar.length && saved.every(i => i >= 0 && i < category.adhkar.length)) {
           setThikrOrder(saved);
         }
+      })
+      .catch(() => {});
+    AsyncStorage.getItem(THIKR_UNIFIED_ORDER_KEY_PREFIX + category.id)
+      .then(raw => {
+        if (!raw) return;
+        setUnifiedOrder(JSON.parse(raw) as UnifiedOrderEntry[]);
       })
       .catch(() => {});
   }, [category.id]);
@@ -1819,9 +1860,16 @@ function ReaderScreen({
             const newUserOrder = newData
               .filter((i): i is Extract<UnifiedThikrItem, { kind: 'user' }> => i.kind === 'user')
               .map(i => i.item);
+            const newUnifiedOrder = newData.map(i =>
+              i.kind === 'builtin'
+                ? { kind: 'builtin' as const, originalIndex: i.originalIndex }
+                : { kind: 'user' as const, id: i.item.id }
+            );
             AsyncStorage.setItem(THIKR_ORDER_KEY_PREFIX + category.id, JSON.stringify(newBuiltinOrder)).catch(() => {});
+            AsyncStorage.setItem(THIKR_UNIFIED_ORDER_KEY_PREFIX + category.id, JSON.stringify(newUnifiedOrder)).catch(() => {});
             setTimeout(() => {
               setThikrOrder(newBuiltinOrder);
+              setUnifiedOrder(newUnifiedOrder);
               onUserCatItemsSave(newUserOrder);
             }, 0);
           }}

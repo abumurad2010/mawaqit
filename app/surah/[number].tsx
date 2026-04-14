@@ -34,10 +34,9 @@ type PageState = {
 };
 
 export default function SurahScreen() {
-  const params = useLocalSearchParams<{ number: string; ayah?: string; scrollToSurah?: string }>();
+  const params = useLocalSearchParams<{ number: string; ayah?: string }>();
   const initialNum = parseInt(params.number ?? '1', 10);
   const targetAyah = params.ayah ? parseInt(params.ayah, 10) : null;
-  const scrollToSurah = params.scrollToSurah === 'true';
 
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, isBookmarked, addBookmark, removeBookmark, setLastReadSurah, colors } = useApp();
@@ -93,7 +92,9 @@ export default function SurahScreen() {
 
   // Scroll to top (y=0) when ayah=1 (TOC navigation), or center a specific ayah
   // (bookmarks / search deep-links). 300ms lets the layout pass complete first.
+  // initialNum in deps ensures the guard resets on every new TOC navigation.
   useEffect(() => {
+    scrolled.current = false;
     if (!targetAyah || page.ayahs.length === 0 || scrolled.current) return;
     scrolled.current = true;
     if (targetAyah === 1) {
@@ -110,7 +111,7 @@ export default function SurahScreen() {
         scrollRef.current?.scrollTo({ y: scrollY, animated: true });
       }, 800);
     }
-  }, [targetAyah, page.ayahs]);
+  }, [targetAyah, page.ayahs, initialNum]);
 
   const flipStyle = useAnimatedStyle(() => ({
     transform: [
