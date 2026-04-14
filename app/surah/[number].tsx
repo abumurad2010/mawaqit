@@ -56,7 +56,7 @@ export default function SurahScreen() {
   const ayahPositions = useRef<Record<number, number>>({});
   const ayahsBlockY = useRef(0);
   const surahHeaderY = useRef(0);
-  const scrolled = useRef(false);
+  const lastScrolledNum = useRef<number | null>(null);
   const flip = useSharedValue(0);
   const transitioningRef = useRef(false);
   const surahNumRef = useRef(surahNum);
@@ -69,13 +69,11 @@ export default function SurahScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const loadSurah = useCallback(async (num: number) => {
-    console.log('[LOAD_SURAH] number=', num, 'targetAyah=', targetAyah);
     setPage(prev => ({ ...prev, surahNum: num, loading: true, error: null }));
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     ayahPositions.current = {};
     ayahsBlockY.current = 0;
     surahHeaderY.current = 0;
-    scrolled.current = false;
     try {
       const data = await fetchSurah(num);
       setPage({ surahNum: num, ayahs: data.ayahs, loading: false, error: null });
@@ -90,20 +88,15 @@ export default function SurahScreen() {
     loadSurah(surahNum);
   }, [surahNum]);
 
-  // Scroll to top (y=0) when ayah=1 (TOC navigation), or center a specific ayah
-  // (bookmarks / search deep-links). 300ms lets the layout pass complete first.
-  // initialNum in deps ensures the guard resets on every new TOC navigation.
   useEffect(() => {
-    scrolled.current = false;
-    if (!targetAyah || page.ayahs.length === 0 || scrolled.current) return;
-    scrolled.current = true;
+    if (!targetAyah || page.ayahs.length === 0) return;
+    if (lastScrolledNum.current === initialNum) return;
+    lastScrolledNum.current = initialNum;
     if (targetAyah === 1) {
-      // TOC always navigates with ayah:1 — surah header is the first element, scroll to top.
       setTimeout(() => {
         scrollRef.current?.scrollTo({ y: 0, animated: false });
       }, 300);
     } else {
-      // Deep-link to a specific ayah (bookmarks, search) — center it vertically.
       setTimeout(() => {
         const pos = ayahPositions.current[targetAyah] ?? 0;
         const screenH = Dimensions.get('window').height;
