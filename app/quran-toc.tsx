@@ -38,7 +38,23 @@ export default function QuranTOCScreen() {
       <Pressable
         onPress={() => {
           Haptics.selectionAsync();
-          const navParams = { pathname: '/surah/[number]', params: { number: String(item.number), ayah: '1' } };
+          let navParams: { pathname: string; params: { number: string; ayah: string } };
+          if (item.number === 1) {
+            navParams = { pathname: '/surah/[number]', params: { number: '1', ayah: '1' } };
+          } else {
+            const prevNum = item.number - 1;
+            const prevLastAyah = SURAH_META[prevNum - 1]!.ayahs;
+            const prevLastPage = getAyahPage(prevNum, prevLastAyah);
+            const thisFirstPage = getAyahPage(item.number, 1);
+            if (prevLastPage === thisFirstPage) {
+              // Last ayah of N-1 and first ayah of N are on the same page —
+              // navigate to surah N-1 at its last ayah so surah N's header appears at top.
+              navParams = { pathname: '/surah/[number]', params: { number: String(prevNum), ayah: String(prevLastAyah) } };
+            } else {
+              // Surah N starts at the top of a new page — navigate directly to ayah 1.
+              navParams = { pathname: '/surah/[number]', params: { number: String(item.number), ayah: '1' } };
+            }
+          }
           // Dismiss the modal first; push must happen after it closes
           router.back();
           setTimeout(() => router.push(navParams as any), 150);

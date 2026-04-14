@@ -28,6 +28,7 @@ const COPY_HINT_KEY = 'athkar_copy_hint_shown';
 const GRID_ORDER_KEY = 'athkar_grid_order';
 const GRID_REORDER_HINT_KEY = 'athkar_grid_reorder_hint_shown';
 const THIKR_READER_HINT_KEY = 'athkar_thikr_reader_hint_shown';
+const THIKR_ORDER_KEY_PREFIX = 'thikr_order_';
 
 interface PersonalThikrItem {
   id: string;
@@ -87,6 +88,8 @@ interface DragSortRowProps<T> {
   overIndexSV: ReturnType<typeof useSharedValue<number>>;
   dragOffsetY: ReturnType<typeof useSharedValue<number>>;
   itemHeightsSV: ReturnType<typeof useSharedValue<number[]>>;
+  dragStartContentYSV: ReturnType<typeof useSharedValue<number>>;
+  dragTranslationYSV: ReturnType<typeof useSharedValue<number>>;
   onLayout: (height: number) => void;
   isActive: boolean;
   handleColor: string;
@@ -99,6 +102,7 @@ interface DragSortRowProps<T> {
 function DragSortRow<T>({
   index,
   activeIndexSV, overIndexSV, dragOffsetY, itemHeightsSV,
+  dragStartContentYSV, dragTranslationYSV,
   onLayout, handleColor, itemGap,
   onStartDragRef, onFinishDragRef,
   renderContent,
@@ -106,13 +110,19 @@ function DragSortRow<T>({
   const pan = useMemo(() => Gesture.Pan()
     .activateAfterLongPress(200)
     .onStart(() => {
+      const heights = itemHeightsSV.value;
+      let off = 0;
+      for (let i = 0; i < index; i++) off += (heights[i] ?? 60) + itemGap;
+      dragStartContentYSV.value = off + (heights[index] ?? 60) / 2;
       dragOffsetY.value = 0;
+      dragTranslationYSV.value = 0;
       activeIndexSV.value = index;
       overIndexSV.value = index;
       runOnJS(onStartDragRef.current)(index);
     })
     .onChange((e) => {
       dragOffsetY.value = e.translationY;
+      dragTranslationYSV.value = e.translationY;
       const from = activeIndexSV.value;
       const heights = itemHeightsSV.value;
       // Build cumulative offsets on UI thread
@@ -209,6 +219,8 @@ function DragSortList<T>({
   showsVerticalScrollIndicator = true,
   itemGap = 8,
   handleColor = '#888',
+  autoscrollThreshold = 50,
+  autoscrollSpeed = 100,
 }: {
   data: T[];
   keyExtractor: (item: T, index: number) => string;
@@ -219,6 +231,8 @@ function DragSortList<T>({
   showsVerticalScrollIndicator?: boolean;
   itemGap?: number;
   handleColor?: string;
+  autoscrollThreshold?: number;
+  autoscrollSpeed?: number;
 }) {
   const [items, setItems] = useState<T[]>(data);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -228,6 +242,45 @@ function DragSortList<T>({
   const overIndexSV = useSharedValue(-1);
   const dragOffsetY = useSharedValue(0);
   const itemHeightsSV = useSharedValue<number[]>([]);
+  const dragStartContentYSV = useSharedValue(0);
+  const dragTranslationYSV = useSharedValue(0);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollYRef = useRef(0);
+  const listHeightRef = useRef(400);
+  const autoscrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (activeIndex >= 0) {
+      autoscrollIntervalRef.current = setInterval(() => {
+        const contentCenterY = dragStartContentYSV.value + dragTranslationYSV.value;
+        const visibleCenterY = contentCenterY - scrollYRef.current;
+        const listH = listHeightRef.current;
+        if (visibleCenterY < autoscrollThreshold) {
+          const delta = Math.max(1, (autoscrollThreshold - visibleCenterY) * autoscrollSpeed / autoscrollThreshold / 60);
+          const newY = Math.max(0, scrollYRef.current - delta);
+          scrollRef.current?.scrollTo({ y: newY, animated: false });
+          scrollYRef.current = newY;
+        } else if (visibleCenterY > listH - autoscrollThreshold) {
+          const delta = Math.max(1, (visibleCenterY - (listH - autoscrollThreshold)) * autoscrollSpeed / autoscrollThreshold / 60);
+          const newY = scrollYRef.current + delta;
+          scrollRef.current?.scrollTo({ y: newY, animated: false });
+          scrollYRef.current = newY;
+        }
+      }, 16);
+    } else {
+      if (autoscrollIntervalRef.current) {
+        clearInterval(autoscrollIntervalRef.current);
+        autoscrollIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (autoscrollIntervalRef.current) {
+        clearInterval(autoscrollIntervalRef.current);
+        autoscrollIntervalRef.current = null;
+      }
+    };
+  }, [activeIndex, autoscrollThreshold, autoscrollSpeed]);
 
   // Sync when external data changes (e.g. after add/delete)
   useEffect(() => { setItems([...data]); }, [data]);
@@ -267,9 +320,13 @@ function DragSortList<T>({
 
   return (
     <ScrollView
+      ref={scrollRef}
       contentContainerStyle={contentContainerStyle}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      scrollEnabled={activeIndex < 0} // lock scroll while dragging
+      scrollEnabled={activeIndex < 0} // lock scroll while dragging; autoscroll handles movement
+      onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
+      scrollEventThrottle={16}
+      onLayout={(e) => { listHeightRef.current = e.nativeEvent.layout.height; }}
     >
       {ListHeaderComponent}
       {items.map((item, index) => (
@@ -281,14 +338,13 @@ function DragSortList<T>({
           overIndexSV={overIndexSV}
           dragOffsetY={dragOffsetY}
           itemHeightsSV={itemHeightsSV}
+          dragStartContentYSV={dragStartContentYSV}
+          dragTranslationYSV={dragTranslationYSV}
           itemGap={itemGap}
           handleColor={handleColor}
           isActive={activeIndex === index}
           onLayout={(h) => {
             itemHeightsRef.current[index] = h;
-            // Keep shared value in sync so pan worklets always have current heights.
-            // This fires well before any gesture is possible, eliminating the race
-            // between onStartDragRef (JS thread) and the first onChange (UI thread).
             itemHeightsSV.value = [...itemHeightsRef.current];
           }}
           onStartDragRef={onStartDragRef}
@@ -770,7 +826,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         <DragSortList<'__personal__' | AthkarCategory>
           data={reorderData}
           keyExtractor={(item) => item === '__personal__' ? '__personal__' : (item as AthkarCategory).id}
-          onDragEnd={(data) => setReorderData(data)}
+          onDragEnd={(data) => setTimeout(() => setReorderData(data), 0)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 80, paddingTop: 8 }}
           itemGap={8}
           handleColor={C.tint}
@@ -1279,7 +1335,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
 
 function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
   const opacity = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1304,7 +1360,7 @@ function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: b
 
 function ThikrReaderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
   const opacity = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1329,7 +1385,7 @@ function ThikrReaderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; i
 
 function GridReorderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: boolean; onDismiss: () => void }) {
   const opacity = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity }));
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1512,6 +1568,28 @@ function ReaderScreen({
     setUserCounts({});
     onReset();
   }, [onReset]);
+  const [sortMode, setSortMode] = useState(false);
+  const [thikrOrder, setThikrOrder] = useState<number[]>([]);
+
+  const orderedAdhkar = useMemo(
+    () => thikrOrder.length === category.adhkar.length
+      ? thikrOrder.map(i => ({ thikr: category.adhkar[i]!, originalIndex: i }))
+      : category.adhkar.map((thikr, i) => ({ thikr, originalIndex: i })),
+    [thikrOrder, category.adhkar],
+  );
+
+  useEffect(() => {
+    AsyncStorage.getItem(THIKR_ORDER_KEY_PREFIX + category.id)
+      .then(raw => {
+        if (!raw) return;
+        const saved: number[] = JSON.parse(raw);
+        if (saved.length === category.adhkar.length && saved.every(i => i >= 0 && i < category.adhkar.length)) {
+          setThikrOrder(saved);
+        }
+      })
+      .catch(() => {});
+  }, [category.id]);
+
   const [showUserForm, setShowUserForm] = useState(false);
   const [showUserReorderModal, setShowUserReorderModal] = useState(false);
   const [reorderUserData, setReorderUserData] = useState<PersonalThikrItem[]>([]);
@@ -1588,7 +1666,8 @@ function ReaderScreen({
   useEffect(() => {
     if (highlightIdx >= 0 && highlightIdx < category.adhkar.length) {
       const timer = setTimeout(() => {
-        readerRef.current?.scrollToIndex({ index: highlightIdx, animated: true, viewPosition: 0.15 });
+        const visualIdx = orderedAdhkar.findIndex(item => item.originalIndex === highlightIdx);
+        readerRef.current?.scrollToIndex({ index: visualIdx >= 0 ? visualIdx : highlightIdx, animated: true, viewPosition: 0.15 });
       }, 400);
       return () => clearTimeout(timer);
     }
@@ -1614,7 +1693,7 @@ function ReaderScreen({
   const [copyHighlightIdx, setCopyHighlightIdx] = useState<number | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastOpacity = useSharedValue(0);
-  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity }));
+  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity.value }));
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback(() => {
@@ -1694,6 +1773,12 @@ function ReaderScreen({
         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
           <LangToggle />
           <Pressable
+            onPress={() => { Haptics.selectionAsync(); setSortMode(v => !v); }}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: sortMode ? C.tint : C.surface, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons name="reorder-three-outline" size={20} color={sortMode ? C.tintText : C.textMuted} />
+          </Pressable>
+          <Pressable
             onPress={handleReset}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 }]}
           >
@@ -1715,134 +1800,183 @@ function ReaderScreen({
         <Text style={[styles.progressLabel, { color: C.textMuted }]}>{doneCount}/{total}</Text>
       </View>
 
-      <FlatList
-        ref={readerRef}
-        data={category.adhkar}
-        keyExtractor={(_, i) => String(i)}
-        extraData={[athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
-        contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
-        showsVerticalScrollIndicator={false}
-        onScrollToIndexFailed={() => {}}
-        onScrollBeginDrag={() => activeHighlight && setActiveHighlight(false)}
-        ListHeaderComponent={(
-          <>
-            {!thikrReaderHintShown && (
-              <ThikrReaderHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onThikrReaderHintDismiss} />
-            )}
-            {!copyHintShown && (
-              <CopyHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onCopyHintDismiss} />
-            )}
-          </>
-        )}
-        ListFooterComponent={userCatItems.length > 0 ? (
-          <View>
-            {userCatItems.map(item => {
-              const cur = userCounts[item.id] ?? 0;
-              const done = cur >= item.repetitions;
-              return (
-                <Animated.View key={item.id} entering={FadeIn.duration(250)} style={{ marginBottom: 10 }}>
-                  <Pressable
-                    onPress={() => handleUserTap(item)}
-                    onLongPress={() => handleCopyUserItem(item.text)}
-                    delayLongPress={400}
-                    style={({ pressed }) => [
-                      styles.card,
-                      {
-                        backgroundColor: done ? C.tint + '18' : C.backgroundCard,
-                        borderColor: done ? C.tint + '55' : C.separator,
-                        opacity: pressed && !done ? 0.88 : 1,
-                      },
-                    ]}
-                  >
-                    <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <Pressable
-                        onPress={() => { Haptics.selectionAsync(); setReorderUserData([...userCatItems]); setShowUserReorderModal(true); }}
-                        hitSlop={8}
-                        style={{ paddingRight: 4 }}
-                      >
-                        <Ionicons name="reorder-three-outline" size={20} color={C.textMuted} />
-                      </Pressable>
-                      <View style={[styles.counterBadge, { backgroundColor: done ? C.tint : C.backgroundCard, borderColor: done ? C.tint : C.separator }]}>
-                        <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>{cur}/{item.repetitions}</Text>
-                      </View>
-                      {done && <Animated.View entering={ZoomIn.duration(200)}><Ionicons name="checkmark-circle" size={20} color={C.tint} /></Animated.View>}
-                      <View style={{ flex: 1 }}>
-                        <View style={[styles.personalAddBadge, { backgroundColor: C.tint + '22' }]}>
-                          <Text style={[styles.personalAddBadgeText, { color: C.tint }]}>{(tr as any).personal_addition ?? 'My addition'}</Text>
-                        </View>
-                      </View>
-                      <Pressable onPress={() => openEditUser(item)} hitSlop={8}>
-                        <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
-                      </Pressable>
-                      <Pressable onPress={() => handleDeleteUser(item.id)} hitSlop={8}>
-                        <Ionicons name="close-circle-outline" size={18} color={C.textMuted} />
-                      </Pressable>
-                    </View>
-                    {!!item.name && (
-                      <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left', marginBottom: 4 }}>
-                        {item.name}
-                      </Text>
-                    )}
-                    <Text style={{ fontFamily: 'Amiri_700Bold', fontSize: cardFS.arabic, lineHeight: cardFS.arabic * 1.75, textAlign: 'right', writingDirection: 'rtl', color: done ? C.tint : C.text }}>
-                      {item.text}
+      {sortMode ? (
+        <DragSortList<{ thikr: Thikr; originalIndex: number }>
+          data={orderedAdhkar}
+          keyExtractor={(item) => String(item.originalIndex)}
+          onDragEnd={(newData) => {
+            const newOrder = newData.map(item => item.originalIndex);
+            setThikrOrder(newOrder);
+            AsyncStorage.setItem(THIKR_ORDER_KEY_PREFIX + category.id, JSON.stringify(newOrder)).catch(() => {});
+          }}
+          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
+          itemGap={10}
+          handleColor={C.tint}
+          renderItem={({ item: { thikr, originalIndex }, index, isActive, dragHandle }) => {
+            const done = isDone(category.id, originalIndex, thikr.count);
+            return (
+              <View
+                style={{
+                  flexDirection: isRtl ? 'row-reverse' : 'row',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  backgroundColor: isActive ? C.tint + '18' : done ? C.tint + '18' : C.backgroundCard,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: isActive ? C.tint + '66' : done ? C.tint + '55' : C.separator,
+                  borderRadius: 14,
+                  padding: 12,
+                  marginBottom: 10,
+                }}
+              >
+                <View style={{ paddingTop: 4 }}>
+                  {dragHandle}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: 'Amiri_700Bold', fontSize: cardFS.arabic, lineHeight: cardFS.arabic * 1.75, textAlign: 'right', writingDirection: 'rtl', color: done ? C.tint : C.text }}>
+                    {thikr.arabic}
+                  </Text>
+                  {displayMode === 'full' && !!thikr.transliteration && (
+                    <Text style={{ fontSize: cardFS.translit, lineHeight: cardFS.translit * 1.5, color: C.textMuted, marginTop: 4 }}>
+                      {thikr.transliteration}
                     </Text>
-                    {item.repetitions > 3 && !done && (
-                      <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  )}
+                </View>
+                <Text style={{ fontSize: 11, color: C.textMuted, paddingTop: 6 }}>{index + 1}</Text>
+              </View>
+            );
+          }}
+        />
+      ) : (
+        <FlatList
+          ref={readerRef as any}
+          data={orderedAdhkar}
+          keyExtractor={(item) => String(item.originalIndex)}
+          extraData={[athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
+          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
+          showsVerticalScrollIndicator={false}
+          onScrollToIndexFailed={() => {}}
+          onScrollBeginDrag={() => activeHighlight && setActiveHighlight(false)}
+          ListHeaderComponent={(
+            <>
+              {!thikrReaderHintShown && (
+                <ThikrReaderHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onThikrReaderHintDismiss} />
+              )}
+              {!copyHintShown && (
+                <CopyHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onCopyHintDismiss} />
+              )}
+            </>
+          )}
+          ListFooterComponent={userCatItems.length > 0 ? (
+            <View>
+              {userCatItems.map(item => {
+                const cur = userCounts[item.id] ?? 0;
+                const done = cur >= item.repetitions;
+                return (
+                  <Animated.View key={item.id} entering={FadeIn.duration(250)} style={{ marginBottom: 10 }}>
+                    <Pressable
+                      onPress={() => handleUserTap(item)}
+                      onLongPress={() => handleCopyUserItem(item.text)}
+                      delayLongPress={400}
+                      style={({ pressed }) => [
+                        styles.card,
+                        {
+                          backgroundColor: done ? C.tint + '18' : C.backgroundCard,
+                          borderColor: done ? C.tint + '55' : C.separator,
+                          opacity: pressed && !done ? 0.88 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <Pressable
-                          onPress={() => handleUserDone(item)}
-                          style={({ pressed }) => ({
-                            flexDirection: 'row', alignItems: 'center', gap: 5,
-                            paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10,
-                            backgroundColor: C.tint + '18', borderWidth: 1, borderColor: C.tint + '55',
-                            opacity: pressed ? 0.7 : 1,
-                          })}
+                          onPress={() => { Haptics.selectionAsync(); setReorderUserData([...userCatItems]); setShowUserReorderModal(true); }}
+                          hitSlop={8}
+                          style={{ paddingRight: 4 }}
                         >
-                          <Ionicons name="checkmark-circle-outline" size={15} color={C.tint} />
-                          <Text style={{ fontSize: 12, fontWeight: '600', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
-                            {(tr as any).done ?? 'Done'}
-                          </Text>
+                          <Ionicons name="reorder-three-outline" size={20} color={C.textMuted} />
                         </Pressable>
-                        <Pressable onPress={() => Alert.alert((tr as any).done ?? 'Done', (tr as any).done_help ?? '')} hitSlop={10}>
-                          <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+                        <View style={[styles.counterBadge, { backgroundColor: done ? C.tint : C.backgroundCard, borderColor: done ? C.tint : C.separator }]}>
+                          <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>{cur}/{item.repetitions}</Text>
+                        </View>
+                        {done && <Animated.View entering={ZoomIn.duration(200)}><Ionicons name="checkmark-circle" size={20} color={C.tint} /></Animated.View>}
+                        <View style={{ flex: 1 }}>
+                          <View style={[styles.personalAddBadge, { backgroundColor: C.tint + '22' }]}>
+                            <Text style={[styles.personalAddBadgeText, { color: C.tint }]}>{(tr as any).personal_addition ?? 'My addition'}</Text>
+                          </View>
+                        </View>
+                        <Pressable onPress={() => openEditUser(item)} hitSlop={8}>
+                          <Ionicons name="pencil-outline" size={16} color={C.textMuted} />
+                        </Pressable>
+                        <Pressable onPress={() => handleDeleteUser(item.id)} hitSlop={8}>
+                          <Ionicons name="close-circle-outline" size={18} color={C.textMuted} />
                         </Pressable>
                       </View>
-                    )}
-                  </Pressable>
-                </Animated.View>
-              );
-            })}
-          </View>
-        ) : null}
-        renderItem={({ item: thikr, index }) => {
-          const done = isDone(category.id, index, thikr.count);
-          const cur = getCount(category.id, index);
-          const translation = (i18n[athkarLang] as any)?.[thikr.translationKey] ?? '';
+                      {!!item.name && (
+                        <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left', marginBottom: 4 }}>
+                          {item.name}
+                        </Text>
+                      )}
+                      <Text style={{ fontFamily: 'Amiri_700Bold', fontSize: cardFS.arabic, lineHeight: cardFS.arabic * 1.75, textAlign: 'right', writingDirection: 'rtl', color: done ? C.tint : C.text }}>
+                        {item.text}
+                      </Text>
+                      {item.repetitions > 3 && !done && (
+                        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                          <Pressable
+                            onPress={() => handleUserDone(item)}
+                            style={({ pressed }) => ({
+                              flexDirection: 'row', alignItems: 'center', gap: 5,
+                              paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10,
+                              backgroundColor: C.tint + '18', borderWidth: 1, borderColor: C.tint + '55',
+                              opacity: pressed ? 0.7 : 1,
+                            })}
+                          >
+                            <Ionicons name="checkmark-circle-outline" size={15} color={C.tint} />
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
+                              {(tr as any).done ?? 'Done'}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={() => Alert.alert((tr as any).done ?? 'Done', (tr as any).done_help ?? '')} hitSlop={10}>
+                            <Ionicons name="help-circle-outline" size={16} color={C.textMuted} />
+                          </Pressable>
+                        </View>
+                      )}
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          ) : null}
+          renderItem={({ item: { thikr, originalIndex }, index }) => {
+            const done = isDone(category.id, originalIndex, thikr.count);
+            const cur = getCount(category.id, originalIndex);
+            const translation = (i18n[athkarLang] as any)?.[thikr.translationKey] ?? '';
 
-          return (
-            <ThikrCard
-              thikr={thikr}
-              index={index}
-              done={done}
-              cur={cur}
-              translation={translation}
-              isRtl={isRtl}
-              translationRtl={athkarRtl}
-              C={C}
-              tr={tr}
-              displayMode={displayMode}
-              onTap={() => onTap(category, thikr, index)}
-              onDone={() => onDone(category, thikr, index)}
-              onCopy={(text) => handleCopy(text, index)}
-              highlighted={copyHighlightIdx === index}
-              arabicFontSize={cardFS.arabic}
-              translitFontSize={cardFS.translit}
-              translationFontSize={cardFS.translation}
-              searchHighlight={activeHighlight && highlightQuery.length > 0 && index === highlightIdx}
-              searchQuery={highlightQuery}
-            />
-          );
-        }}
-      />
+            return (
+              <ThikrCard
+                thikr={thikr}
+                index={index}
+                done={done}
+                cur={cur}
+                translation={translation}
+                isRtl={isRtl}
+                translationRtl={athkarRtl}
+                C={C}
+                tr={tr}
+                displayMode={displayMode}
+                athkarLang={athkarLang}
+                onTap={() => onTap(category, thikr, originalIndex)}
+                onDone={() => onDone(category, thikr, originalIndex)}
+                onCopy={(text) => handleCopy(text, originalIndex)}
+                highlighted={copyHighlightIdx === originalIndex}
+                arabicFontSize={cardFS.arabic}
+                translitFontSize={cardFS.translit}
+                translationFontSize={cardFS.translation}
+                searchHighlight={activeHighlight && highlightQuery.length > 0 && originalIndex === highlightIdx}
+                searchQuery={highlightQuery}
+              />
+            );
+          }}
+        />
+      )}
 
       {toastVisible && (
         <Animated.View style={[styles.toast, toastStyle, { backgroundColor: C.tint }]} pointerEvents="none">
@@ -2004,6 +2138,7 @@ interface CardProps {
   C: any;
   tr: any;
   displayMode: 'arabic' | 'full';
+  athkarLang: Lang;
   onTap: () => void;
   onDone: () => void;
   onCopy: (text: string) => void;
@@ -2055,48 +2190,29 @@ function inlineHighlight(text: string, query: string, tintColor: string): React.
   return parts;
 }
 
-function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, tr, displayMode, onTap, onDone, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
+function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, tr, displayMode, athkarLang, onTap, onDone, onCopy, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
   const showDoneButton = thikr.count > 3 && !done;
+  const [showInlinePicker, setShowInlinePicker] = useState(false);
 
-  const showCopyOptions = useCallback(() => {
+  const handleCopyPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const hasTranslit = !!thikr.transliteration;
-    const hasTranslation = !!translation;
-    const buttons: any[] = [
-      { text: (tr as any).btn_cancel ?? 'Cancel', style: 'cancel' },
-      {
-        text: (tr as any).copy_arabic_only ?? 'Arabic only',
-        onPress: () => onCopy(thikr.arabic),
-      },
-    ];
-    if (hasTranslit) {
-      buttons.push({
-        text: (tr as any).copy_translit_only ?? 'Transliteration',
-        onPress: () => onCopy(thikr.transliteration),
-      });
+    if (displayMode === 'arabic') {
+      onCopy(thikr.arabic);
+      return;
     }
-    if (hasTranslation) {
-      buttons.push({
-        text: (tr as any).copy_translation_only ?? 'Translation',
-        onPress: () => onCopy(translation),
-      });
-    }
-    buttons.push({
-      text: (tr as any).copy_all ?? 'Copy all',
-      onPress: () => {
-        const parts = [thikr.arabic];
-        if (hasTranslit) parts.push(thikr.transliteration);
-        if (hasTranslation) parts.push(translation);
-        onCopy(parts.join('\n\n'));
-      },
-    });
-    Alert.alert((tr as any).copy_thikr_title ?? 'Copy Thikr', undefined, buttons);
-  }, [thikr, translation, tr, onCopy]);
+    // Full mode: toggle inline picker
+    setShowInlinePicker(prev => !prev);
+  }, [displayMode, thikr.arabic, onCopy]);
+
+  const pickAndCopy = useCallback((text: string) => {
+    setShowInlinePicker(false);
+    onCopy(text);
+  }, [onCopy]);
 
   return (
     <Animated.View entering={FadeIn.delay(index * 30).duration(300)} style={{ marginBottom: 10 }}>
       <Pressable
-        onPress={onTap}
+        onPress={() => { setShowInlinePicker(false); onTap(); }}
         style={({ pressed }) => [
           styles.card,
           {
@@ -2109,32 +2225,61 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
           },
         ]}
       >
-        <View style={[styles.cardTop, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+        {/* Fixed header: Left=number | Center=counter | Right=copy */}
+        <View style={styles.cardTop}>
           <Text style={[styles.cardIndex, { color: C.textMuted }]}>{index + 1}</Text>
-          <View style={[
-            styles.counterBadge,
-            {
-              backgroundColor: done ? C.tint : C.backgroundCard,
-              borderColor: done ? C.tint : C.separator,
-            },
-          ]}>
-            <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>
-              {cur}/{thikr.count}
-            </Text>
+          <View style={styles.cardCenter}>
+            <View style={[
+              styles.counterBadge,
+              {
+                backgroundColor: done ? C.tint : C.backgroundCard,
+                borderColor: done ? C.tint : C.separator,
+              },
+            ]}>
+              <Text style={[styles.counterText, { color: done ? C.tintText : C.text }]}>
+                {cur}/{thikr.count}
+              </Text>
+            </View>
+            {done && (
+              <Animated.View entering={ZoomIn.duration(200)}>
+                <Ionicons name="checkmark-circle" size={20} color={C.tint} style={{ marginLeft: 4 }} />
+              </Animated.View>
+            )}
           </View>
-          {done && (
-            <Animated.View entering={ZoomIn.duration(200)}>
-              <Ionicons name="checkmark-circle" size={20} color={C.tint} style={{ marginLeft: 4 }} />
-            </Animated.View>
-          )}
           <Pressable
-            onPress={showCopyOptions}
+            onPress={handleCopyPress}
             hitSlop={8}
-            style={{ marginLeft: 'auto', padding: 4 }}
+            style={{ padding: 4 }}
           >
-            <Ionicons name="copy-outline" size={15} color={C.textMuted} />
+            <Ionicons
+              name="copy-outline"
+              size={15}
+              color={showInlinePicker ? C.tint : C.textMuted}
+            />
           </Pressable>
         </View>
+
+        {/* Inline copy picker — shown in full mode when copy icon tapped */}
+        {showInlinePicker && (
+          <View style={[styles.inlinePicker, { borderColor: C.separator, backgroundColor: C.backgroundSecond ?? C.surface }]}>
+            <Pressable
+              onPress={() => pickAndCopy(thikr.arabic)}
+              style={({ pressed }) => [styles.inlinePickerBtn, { opacity: pressed ? 0.7 : 1, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: C.separator }]}
+            >
+              <Text style={[styles.inlinePickerLabel, { color: C.text }]}>
+                {(tr as any).copy_arabic_only ?? 'Arabic'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => pickAndCopy(thikr.transliteration || thikr.arabic)}
+              style={({ pressed }) => [styles.inlinePickerBtn, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={[styles.inlinePickerLabel, { color: C.text }]}>
+                {LANG_META[athkarLang]?.native ?? LANG_META[athkarLang]?.label ?? athkarLang}
+              </Text>
+            </Pressable>
+          </View>
+        )}
 
         <Text style={[styles.arabicText, { fontSize: arabicFontSize, lineHeight: arabicFontSize * 1.75, color: done ? C.tint : C.text }]}>
           {searchHighlight ? inlineHighlight(thikr.arabic, searchQuery, C.tint) : thikr.arabic}
@@ -2220,7 +2365,7 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
   const [showForm, setShowForm] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const toastOpacity = useSharedValue(0);
-  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity }));
+  const toastStyle = useAnimatedStyle(() => ({ opacity: toastOpacity.value }));
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showCopyToast = useCallback(() => {
@@ -2757,14 +2902,39 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTop: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginBottom: 4,
   },
+  cardCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cardIndex: {
     fontSize: 12,
     fontWeight: '600',
-    marginRight: 'auto',
+    minWidth: 20,
+    textAlign: 'center',
+  },
+  inlinePicker: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  inlinePickerBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  inlinePickerLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
   counterBadge: {
     paddingHorizontal: 10,
