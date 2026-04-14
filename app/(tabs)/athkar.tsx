@@ -173,7 +173,7 @@ function DragSortRow<T>({
 
     if (isActiveItem) {
       return {
-        transform: [{ translateY: dragOffsetY }, { scale: 1.03 as number }],
+        transform: [{ translateY: dragOffsetY.value }, { scale: 1.03 }],
         zIndex: 100,
         opacity: 0.92,
         shadowOpacity: 0.25,
@@ -224,7 +224,7 @@ function DragSortList<T>({
   itemGap = 8,
   handleColor = '#888',
   autoscrollThreshold = 50,
-  autoscrollSpeed = 100,
+  autoscrollSpeed = 300,
 }: {
   data: T[];
   keyExtractor: (item: T, index: number) => string;
@@ -335,7 +335,7 @@ function DragSortList<T>({
       {ListHeaderComponent}
       {items.map((item, index) => (
         <DragSortRow<T>
-          key={keyExtractor(item, index)}
+          key={String(index)}
           item={item}
           index={index}
           activeIndexSV={activeIndexSV}
@@ -1874,7 +1874,7 @@ function ReaderScreen({
           ref={readerRef as any}
           data={combinedItems}
           keyExtractor={(item) => item.kind === 'builtin' ? `b-${item.originalIndex}` : `u-${item.item.id}`}
-          extraData={[athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
+          extraData={[displayMode, athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
           contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
           onScrollToIndexFailed={() => {}}
@@ -2158,20 +2158,25 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
                 {cur}/{thikr.count}
               </Text>
             </View>
-            {done && (
-              <Animated.View entering={ZoomIn.duration(200)}>
-                <Ionicons name="checkmark-circle" size={20} color={C.tint} style={{ marginLeft: 4 }} />
-              </Animated.View>
-            )}
+            {/* Always present, invisible when not done — keeps layout stable */}
+            <Animated.View
+              entering={ZoomIn.duration(200)}
+              style={{ marginLeft: 4, opacity: done ? 1 : 0 }}
+            >
+              <Ionicons name="checkmark-circle" size={20} color={C.tint} />
+            </Animated.View>
           </View>
-          <View style={{ flexDirection: 'row', gap: 2 }}>
+          {/* Fixed-width right slot: always same size whether 1 or 2 icons */}
+          <View style={styles.cardActions}>
             <Pressable onPress={handleCopyPress} hitSlop={8} style={{ padding: 4 }}>
               <Ionicons name="copy-outline" size={15} color={showInlinePicker ? C.tint : C.textMuted} />
             </Pressable>
-            {onEdit && (
+            {onEdit ? (
               <Pressable onPress={onEdit} hitSlop={8} style={{ padding: 4 }}>
                 <Ionicons name="pencil-outline" size={15} color={C.textMuted} />
               </Pressable>
+            ) : (
+              <View style={{ width: 23 }} />
             )}
           </View>
         </View>
@@ -2829,6 +2834,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+    // Fixed width = copy icon (23px) + pencil icon or spacer (23px)
+    width: 46,
+    justifyContent: 'flex-end',
   },
   cardIndex: {
     fontSize: 12,

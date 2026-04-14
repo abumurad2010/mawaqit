@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform,
   ActivityIndicator, ScrollView, Modal,
-  PanResponder,
+  PanResponder, Dimensions,
 } from 'react-native';
 import Animated, {
   useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
@@ -101,15 +101,19 @@ export default function SurahScreen() {
     return () => clearTimeout(t);
   }, [scrollToSurah, page.ayahs]);
 
-  // For deep-link ayah navigation (e.g. from bookmarks or search).
+  // For deep-link ayah navigation (e.g. from bookmarks, search, or TOC).
+  // 800ms gives layout passes time to complete and ayahPositions to be populated.
+  // Centers the target ayah vertically on screen.
   useEffect(() => {
     if (!targetAyah || page.ayahs.length === 0 || scrolled.current) return;
     scrolled.current = true;
     setTimeout(() => {
       const pos = ayahPositions.current[targetAyah] ?? 0;
-      const scrollY = Math.max(0, ayahsBlockY.current + pos - 80);
+      const screenH = Dimensions.get('window').height;
+      // Center the ayah: offset = position of ayah in content minus half screen height
+      const scrollY = Math.max(0, ayahsBlockY.current + pos - screenH * 0.4);
       scrollRef.current?.scrollTo({ y: scrollY, animated: true });
-    }, 500);
+    }, 800);
   }, [targetAyah, page.ayahs]);
 
   const flipStyle = useAnimatedStyle(() => ({
