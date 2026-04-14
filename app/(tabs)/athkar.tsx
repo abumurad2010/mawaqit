@@ -223,8 +223,8 @@ function DragSortList<T>({
   showsVerticalScrollIndicator = true,
   itemGap = 8,
   handleColor = '#888',
-  autoscrollThreshold = 50,
-  autoscrollSpeed = 300,
+  autoscrollThreshold = 30,
+  autoscrollSpeed = 600,
 }: {
   data: T[];
   keyExtractor: (item: T, index: number) => string;
@@ -1812,13 +1812,17 @@ function ReaderScreen({
           data={combinedItems}
           keyExtractor={(item) => item.kind === 'builtin' ? `b-${item.originalIndex}` : `u-${item.item.id}`}
           onDragEnd={(newData) => {
-            const builtins = newData.filter(i => i.kind === 'builtin') as Extract<UnifiedThikrItem, { kind: 'builtin' }>[];
-            const users = newData.filter(i => i.kind === 'user') as Extract<UnifiedThikrItem, { kind: 'user' }>[];
-            const newOrder = builtins.map(i => i.originalIndex);
-            AsyncStorage.setItem(THIKR_ORDER_KEY_PREFIX + category.id, JSON.stringify(newOrder)).catch(() => {});
+            // Rebuild orders from the full post-drop list, preserving interleaved positions.
+            const newBuiltinOrder = newData
+              .filter((i): i is Extract<UnifiedThikrItem, { kind: 'builtin' }> => i.kind === 'builtin')
+              .map(i => i.originalIndex);
+            const newUserOrder = newData
+              .filter((i): i is Extract<UnifiedThikrItem, { kind: 'user' }> => i.kind === 'user')
+              .map(i => i.item);
+            AsyncStorage.setItem(THIKR_ORDER_KEY_PREFIX + category.id, JSON.stringify(newBuiltinOrder)).catch(() => {});
             setTimeout(() => {
-              setThikrOrder(newOrder);
-              onUserCatItemsSave(users.map(i => i.item));
+              setThikrOrder(newBuiltinOrder);
+              onUserCatItemsSave(newUserOrder);
             }, 0);
           }}
           contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}

@@ -91,29 +91,25 @@ export default function SurahScreen() {
     loadSurah(surahNum);
   }, [surahNum]);
 
-  // When navigating from TOC, scroll to the very top (y=0) after content renders.
-  // 800ms gives the layout pass time to complete before scrolling.
-  useEffect(() => {
-    if (!scrollToSurah || page.ayahs.length === 0) return;
-    const t = setTimeout(() => {
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-    }, 800);
-    return () => clearTimeout(t);
-  }, [scrollToSurah, page.ayahs]);
-
-  // For deep-link ayah navigation (e.g. from bookmarks, search, or TOC).
-  // 800ms gives layout passes time to complete and ayahPositions to be populated.
-  // Centers the target ayah vertically on screen.
+  // Scroll to top (y=0) when ayah=1 (TOC navigation), or center a specific ayah
+  // (bookmarks / search deep-links). 300ms lets the layout pass complete first.
   useEffect(() => {
     if (!targetAyah || page.ayahs.length === 0 || scrolled.current) return;
     scrolled.current = true;
-    setTimeout(() => {
-      const pos = ayahPositions.current[targetAyah] ?? 0;
-      const screenH = Dimensions.get('window').height;
-      // Center the ayah: offset = position of ayah in content minus half screen height
-      const scrollY = Math.max(0, ayahsBlockY.current + pos - screenH * 0.4);
-      scrollRef.current?.scrollTo({ y: scrollY, animated: true });
-    }, 800);
+    if (targetAyah === 1) {
+      // TOC always navigates with ayah:1 — surah header is the first element, scroll to top.
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+      }, 300);
+    } else {
+      // Deep-link to a specific ayah (bookmarks, search) — center it vertically.
+      setTimeout(() => {
+        const pos = ayahPositions.current[targetAyah] ?? 0;
+        const screenH = Dimensions.get('window').height;
+        const scrollY = Math.max(0, ayahsBlockY.current + pos - screenH * 0.4);
+        scrollRef.current?.scrollTo({ y: scrollY, animated: true });
+      }, 800);
+    }
   }, [targetAyah, page.ayahs]);
 
   const flipStyle = useAnimatedStyle(() => ({
