@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, Pressable, Platform,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';import { getAyahPage } from '@/lib/quran-api';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -33,9 +33,14 @@ export default function BookmarksScreen() {
           params: { number: String(item.surahNumber) },
         });
       } else {
+        const page = getAyahPage(item.surahNumber, item.ayahNumber);
         router.push({
-          pathname: '/surah/[number]',
-          params: { number: String(item.surahNumber), ayah: String(item.ayahNumber) },
+          pathname: '/quran-reader',
+          params: {
+            page: String(page),
+            highlightSurah: String(item.surahNumber),
+            highlightAyah: String(item.ayahNumber),
+          },
         });
       }
     };

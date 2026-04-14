@@ -14,6 +14,14 @@ import { t } from '@/constants/i18n';
 import { searchQuran, SURAH_META, getAyahPage } from '@/lib/quran-api';
 import { getTransliteration, getTranslation } from '@/lib/quran-translations';
 
+interface SurahResult {
+  type: 'surah';
+  number: number;
+  arabic: string;
+  transliteration: string;
+  english: string;
+}
+
 interface ArabicResult {
   surahNum: number;
   ayahNum: number;
@@ -34,6 +42,34 @@ function getSnippet(text: string, term: string): string {
   const start = Math.max(0, idx - 40);
   const end = Math.min(text.length, idx + term.length + 40);
   return (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
+}
+
+/** Strip Arabic diacritics (harakat, shadda, etc.) for fuzzy matching. */
+const ARABIC_DIACRITIC_RE = /[\u064B-\u065F\u0670\u0610-\u061A]/g;
+function stripDiacritics(s: string): string {
+  return s.replace(ARABIC_DIACRITIC_RE, '');
+}
+
+function searchSurahNames(query: string): SurahResult[] {
+  const q = query.trim();
+  if (!q) return [];
+  const qLow = q.toLowerCase();
+  const qStripped = stripDiacritics(q);
+  return SURAH_META
+    .filter(s =>
+      // Arabic: compare after stripping diacritics from both sides
+      stripDiacritics(s.arabic).includes(qStripped) ||
+      s.transliteration.toLowerCase().includes(qLow) ||
+      s.english.toLowerCase().includes(qLow) ||
+      String(s.number) === q
+    )
+    .map(s => ({
+      type: 'surah' as const,
+      number: s.number,
+      arabic: s.arabic,
+      transliteration: s.transliteration,
+      english: s.english,
+    }));
 }
 
 function searchTransliteration(query: string, translitLang: string): TranslitResult[] {
@@ -73,7 +109,7 @@ export default function SearchScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<(ArabicResult | TranslitResult)[]>([]);
+  const [results, setResults] = useState<(SurahResult | ArabicResult | TranslitResult)[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -82,11 +118,11 @@ export default function SearchScreen() {
     setLoading(true);
     setSearched(true);
     try {
-      if (searchMode === 'transliteration') {
-        setResults(searchTransliteration(q, translitLang));
-      } else {
-        setResults(searchQuran(q) as ArabicResult[]);
-      }
+      const surahMatches = searchSurahNames(q);
+      const ayahMatches: (ArabicResult | TranslitResult)[] = searchMode === 'transliteration'
+        ? searchTransliteration(q, translitLang)
+        : (searchQuran(q) as ArabicResult[]);
+      setResults([...surahMatches, ...ayahMatches]);
     } catch {
       setResults([]);
     }
@@ -96,6 +132,42 @@ export default function SearchScreen() {
   const placeholder = searchMode === 'transliteration'
     ? (tr.search_quran_translit ?? 'Search transliteration...')
     : (tr.search_quran_arabic ?? tr.searchPlaceholder ?? 'Search in Quran...');
+
+  const renderSurahItem = ({ item, index }: { item: SurahResult; index: number }) => (
+    <Animated.View entering={FadeInDown.delay(index * 30).duration(300)}>
+      <Pressable
+        onPress={() => {
+          Haptics.selectionAsync();
+          const page = getAyahPage(item.number, 1);
+          router.push({
+            pathname: '/quran-reader',
+            params: { page: String(page), highlightSurah: String(item.number), highlightAyah: '1' },
+          });
+        }}
+        style={[styles.result, styles.surahResult, { backgroundColor: C.tint + '15', borderColor: C.tint + '55' }]}
+      >
+        <View style={[styles.surahBadge, { backgroundColor: C.tint }]}>
+          <Text style={[styles.badgeNum, { color: C.tintText }]}>{item.number}</Text>
+        </View>
+        <View style={styles.resultInfo}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <View style={[styles.surahTypePill, { backgroundColor: C.tint }]}>
+              <Text style={[styles.surahTypePillText, { color: C.tintText }]}>
+                {tr.surah ?? 'Surah'}
+              </Text>
+            </View>
+            <Text style={[styles.resultSurah, { color: C.text, fontFamily: 'Amiri_700Bold', fontSize: 16 }]}>
+              {item.arabic}
+            </Text>
+          </View>
+          <Text style={[styles.resultText, { color: C.textMuted, fontSize: 12 }]} numberOfLines={1}>
+            {item.transliteration}{item.english !== item.transliteration ? ` · ${item.english}` : ''}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={C.tint} />
+      </Pressable>
+    </Animated.View>
+  );
 
   const renderArabicItem = ({ item, index }: { item: ArabicResult; index: number }) => {
     const meta = SURAH_META[item.surahNum - 1];
@@ -174,7 +246,10 @@ export default function SearchScreen() {
     );
   };
 
-  const renderItem = ({ item, index }: { item: ArabicResult | TranslitResult; index: number }) => {
+  const renderItem = ({ item, index }: { item: SurahResult | ArabicResult | TranslitResult; index: number }) => {
+    if ('type' in item && item.type === 'surah') {
+      return renderSurahItem({ item: item as SurahResult, index });
+    }
     if (searchMode === 'transliteration') {
       return renderTranslitItem({ item: item as TranslitResult, index });
     }
@@ -283,6 +358,15 @@ const styles = StyleSheet.create({
   result: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12,
     borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 8,
+  },
+  surahResult: {
+    alignItems: 'center',
+  },
+  surahTypePill: {
+    paddingHorizontal: 7, paddingVertical: 2, borderRadius: 8,
+  },
+  surahTypePillText: {
+    fontSize: 10, fontWeight: '700',
   },
   surahBadge: {
     width: 32, height: 32, borderRadius: 16,

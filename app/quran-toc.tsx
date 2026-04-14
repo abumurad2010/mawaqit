@@ -13,7 +13,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { SURAH_META } from '@/lib/quran-api';
+import { SURAH_META, getAyahPage } from '@/lib/quran-api';
 
 export default function QuranTOCScreen() {
   const insets = useSafeAreaInsets();
@@ -38,9 +38,10 @@ export default function QuranTOCScreen() {
       <Pressable
         onPress={() => {
           Haptics.selectionAsync();
+          const page = getAyahPage(item.number, 1);
           router.push({
-            pathname: '/surah/[number]',
-            params: { number: String(item.number), ayah: '1' },
+            pathname: '/quran-reader',
+            params: { page: String(page), highlightSurah: String(item.number), highlightAyah: '1' },
           });
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.8 : 1 }]}
