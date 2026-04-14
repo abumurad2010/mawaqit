@@ -26,6 +26,26 @@ function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 }
 
+function MihrabIcon({ color, size }: { color: string; size: number }) {
+  const w = Math.round(size * 0.85);
+  const archH = Math.round(size * 0.65);
+  const stemH = Math.round(size * 0.38);
+  return (
+    <View style={{ width: w, height: archH + stemH }}>
+      <View style={{
+        width: w, height: archH,
+        borderTopLeftRadius: w / 2, borderTopRightRadius: w / 2,
+        borderWidth: 1.5, borderColor: color, borderBottomWidth: 0,
+      }} />
+      <View style={{
+        width: w, height: stemH,
+        borderLeftWidth: 1.5, borderRightWidth: 1.5,
+        borderBottomWidth: 1.5, borderColor: color,
+      }} />
+    </View>
+  );
+}
+
 type PageState = {
   surahNum: number;
   ayahs: Ayah[];
@@ -362,18 +382,15 @@ export default function SurahScreen() {
                         writingDirection: 'rtl',
                       }}
                     >
-                      {ayah.text}
+                        {isSajdah(surahNum, ayah.numberInSurah)
+                        ? <Text style={{ textDecorationLine: 'underline' }}>{ayah.text}</Text>
+                        : ayah.text}
                       {bookmarked
                         ? <Text style={{ color: C.gold }}>{' ﴿'}{toArabicIndic(ayah.numberInSurah)}{'﴾'}</Text>
                         : <Text style={{ color: isDark ? '#4d8060' : '#1a7a4a', opacity: 0.7 }}>{' ﴿'}{toArabicIndic(ayah.numberInSurah)}{'﴾'}</Text>
                       }
                       {isSajdah(surahNum, ayah.numberInSurah) && (
-                        <Text style={{
-                          color: C.tint,
-                          fontSize: arabicFontSize * 0.62,
-                          textDecorationLine: 'underline',
-                          fontFamily: 'Amiri_700Bold',
-                        }}>{' سجدة'}</Text>
+                        <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />
                       )}
                     </Text>
                   </Pressable>

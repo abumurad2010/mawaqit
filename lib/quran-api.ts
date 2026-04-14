@@ -305,7 +305,7 @@ export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number }> = [
   { surah: 27, ayah: 26  },
   { surah: 32, ayah: 15  },
   { surah: 38, ayah: 24  },
-  { surah: 41, ayah: 38  },
+  { surah: 41, ayah: 37  },
   { surah: 53, ayah: 62  },
   { surah: 84, ayah: 21  },
   { surah: 96, ayah: 19  },

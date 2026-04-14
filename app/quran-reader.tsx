@@ -27,6 +27,26 @@ function stripBismillah(text: string): string {
   return text.slice(BISMILLAH_TEXT.length).trimStart();
 }
 
+function MihrabIcon({ color, size }: { color: string; size: number }) {
+  const w = Math.round(size * 0.85);
+  const archH = Math.round(size * 0.65);
+  const stemH = Math.round(size * 0.38);
+  return (
+    <View style={{ width: w, height: archH + stemH }}>
+      <View style={{
+        width: w, height: archH,
+        borderTopLeftRadius: w / 2, borderTopRightRadius: w / 2,
+        borderWidth: 1.5, borderColor: color, borderBottomWidth: 0,
+      }} />
+      <View style={{
+        width: w, height: stemH,
+        borderLeftWidth: 1.5, borderRightWidth: 1.5,
+        borderBottomWidth: 1.5, borderColor: color,
+      }} />
+    </View>
+  );
+}
+
 function SurahBanner({ surahNum, color, textColor, mutedColor }: {
   surahNum: number; color: string; textColor: string; mutedColor: string;
 }) {
@@ -462,9 +482,12 @@ export default function QuranReaderScreen() {
                       const ayahContent = (isHighlighted && highlightTerm)
                         ? highlightArabicInline(text, highlightTerm, C.tint)
                         : [text];
+                      const sajdah = isSajdah(ayah.surahNum, ayah.ayahNum);
                       return (
                         <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
-                          {ayahContent}
+                          {sajdah
+                            ? <Text style={{ textDecorationLine: 'underline' }}>{ayahContent}</Text>
+                            : ayahContent}
                           <Text
                             suppressHighlighting
                             onLongPress={() => handleLongPressAyah(ayah)}
@@ -477,16 +500,7 @@ export default function QuranReaderScreen() {
                           >
                             {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
                           </Text>
-                          {isSajdah(ayah.surahNum, ayah.ayahNum) && (
-                            <Text style={{
-                              color: C.tint,
-                              fontSize: arabicFontSize * 0.62,
-                              textDecorationLine: 'underline',
-                              fontFamily: 'Amiri_700Bold',
-                            }}>
-                              {'سجدة '}
-                            </Text>
-                          )}
+                          {sajdah && <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />}
                         </React.Fragment>
                       );
                     })}

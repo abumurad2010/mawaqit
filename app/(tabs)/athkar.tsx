@@ -328,7 +328,7 @@ function DragSortList<T>({
       ref={scrollRef}
       contentContainerStyle={contentContainerStyle}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      scrollEnabled={activeIndex < 0} // lock scroll while dragging; autoscroll handles movement
+      scrollEnabled // always enabled — GestureDetector's activateAfterLongPress handles drag/scroll conflict
       onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
       scrollEventThrottle={16}
       onLayout={(e) => { listHeightRef.current = e.nativeEvent.layout.height; }}
@@ -2001,6 +2001,7 @@ function ReaderScreen({
                 onDone={() => handleUserDone(userItem)}
                 onCopy={(text) => handleCopyUserItem(text)}
                 onEdit={() => openEditUser(userItem)}
+                onDelete={() => handleDeleteUser(userItem.id)}
                 highlighted={false}
                 arabicFontSize={cardFS.arabic}
                 translitFontSize={cardFS.translit}
@@ -2113,6 +2114,7 @@ interface CardProps {
   onDone: () => void;
   onCopy: (text: string) => void;
   onEdit?: () => void;
+  onDelete?: () => void;
   highlighted: boolean;
   arabicFontSize: number;
   translitFontSize: number;
@@ -2161,7 +2163,7 @@ function inlineHighlight(text: string, query: string, tintColor: string): React.
   return parts;
 }
 
-function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, tr, displayMode, athkarLang, onTap, onDone, onCopy, onEdit, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
+function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl, C, tr, displayMode, athkarLang, onTap, onDone, onCopy, onEdit, onDelete, highlighted, arabicFontSize, translitFontSize, translationFontSize, searchHighlight = false, searchQuery = '' }: CardProps) {
   const showDoneButton = thikr.count > 3 && !done;
   const [showInlinePicker, setShowInlinePicker] = useState(false);
 
@@ -2220,7 +2222,7 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
               <Ionicons name="checkmark-circle" size={20} color={C.tint} />
             </Animated.View>
           </View>
-          {/* Fixed-width right slot: always same size whether 1 or 2 icons */}
+          {/* Fixed-width right slot: copy + edit/spacer + delete/spacer */}
           <View style={styles.cardActions}>
             <Pressable onPress={handleCopyPress} hitSlop={8} style={{ padding: 4 }}>
               <Ionicons name="copy-outline" size={15} color={showInlinePicker ? C.tint : C.textMuted} />
@@ -2228,6 +2230,13 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
             {onEdit ? (
               <Pressable onPress={onEdit} hitSlop={8} style={{ padding: 4 }}>
                 <Ionicons name="pencil-outline" size={15} color={C.textMuted} />
+              </Pressable>
+            ) : (
+              <View style={{ width: 23 }} />
+            )}
+            {onDelete ? (
+              <Pressable onPress={onDelete} hitSlop={8} style={{ padding: 4 }}>
+                <Ionicons name="minus-circle-outline" size={15} color={C.danger} />
               </Pressable>
             ) : (
               <View style={{ width: 23 }} />
@@ -2894,8 +2903,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 0,
-    // Fixed width = copy icon (23px) + pencil icon or spacer (23px)
-    width: 46,
+    // Fixed width = copy (23px) + edit/spacer (23px) + delete/spacer (23px)
+    width: 69,
     justifyContent: 'flex-end',
   },
   cardIndex: {
