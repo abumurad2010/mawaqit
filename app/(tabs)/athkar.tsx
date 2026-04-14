@@ -1815,9 +1815,11 @@ function ReaderScreen({
             const builtins = newData.filter(i => i.kind === 'builtin') as Extract<UnifiedThikrItem, { kind: 'builtin' }>[];
             const users = newData.filter(i => i.kind === 'user') as Extract<UnifiedThikrItem, { kind: 'user' }>[];
             const newOrder = builtins.map(i => i.originalIndex);
-            setThikrOrder(newOrder);
             AsyncStorage.setItem(THIKR_ORDER_KEY_PREFIX + category.id, JSON.stringify(newOrder)).catch(() => {});
-            onUserCatItemsSave(users.map(i => i.item));
+            setTimeout(() => {
+              setThikrOrder(newOrder);
+              onUserCatItemsSave(users.map(i => i.item));
+            }, 0);
           }}
           contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
           itemGap={10}
@@ -2420,7 +2422,7 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
         <DragSortList<PersonalThikrItem>
           data={reorderData}
           keyExtractor={(it) => it.id}
-          onDragEnd={(data) => setReorderData(data)}
+          onDragEnd={(data) => setTimeout(() => setReorderData(data), 0)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 80, paddingTop: 8 }}
           itemGap={8}
           handleColor={C.tint}
