@@ -1715,10 +1715,10 @@ function ReaderScreen({
 
   const handleCopy = useCallback((text: string, index: number) => {
     setCopyHighlightIdx(index);
-    Clipboard.setStringAsync(text).then(() => {
-      setCopyHighlightIdx(null);
-      showToast();
-    }).catch(() => setCopyHighlightIdx(null));
+    showToast();  // fire immediately — don't wait for async clipboard write
+    Clipboard.setStringAsync(text)
+      .then(() => { setCopyHighlightIdx(null); })
+      .catch(() => { setCopyHighlightIdx(null); });
   }, [showToast]);
 
   const handleCopyUserItem = useCallback(async (text: string) => {
@@ -2830,6 +2830,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTop: {
+    direction: 'ltr',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
