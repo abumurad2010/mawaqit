@@ -6,7 +6,6 @@ import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getAyahPage } from '@/lib/quran-api';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
@@ -34,14 +33,9 @@ export default function BookmarksScreen() {
           params: { number: String(item.surahNumber) },
         });
       } else {
-        const page = getAyahPage(item.surahNumber, item.ayahNumber);
         router.push({
-          pathname: '/quran-reader',
-          params: {
-            page: String(page),
-            highlightSurah: String(item.surahNumber),
-            highlightAyah: String(item.ayahNumber),
-          },
+          pathname: '/surah/[number]',
+          params: { number: String(item.surahNumber), ayah: String(item.ayahNumber) },
         });
       }
     };

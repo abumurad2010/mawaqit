@@ -38,11 +38,10 @@ export default function QuranTOCScreen() {
       <Pressable
         onPress={() => {
           Haptics.selectionAsync();
-          router.back();
-          setTimeout(() => router.push({
+          router.push({
             pathname: '/surah/[number]',
             params: { number: String(item.number), ayah: '1' },
-          } as any), 200);
+          });
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.8 : 1 }]}
       >
