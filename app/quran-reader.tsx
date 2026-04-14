@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, isSajdah, type PageAyah } from '@/lib/quran-api';
+import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, getSajdahWord, splitForSajdahUnderline, type PageAyah } from '@/lib/quran-api';
 
 const TOTAL_PAGES = 604;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -479,15 +479,17 @@ export default function QuranReaderScreen() {
                       }
                       const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
                       const isHighlighted = highlightTarget?.surah === ayah.surahNum && highlightTarget?.ayah === ayah.ayahNum;
+                      const sajdahWord = getSajdahWord(ayah.surahNum, ayah.ayahNum);
+                      const wordParts = sajdahWord ? splitForSajdahUnderline(text, sajdahWord) : null;
                       const ayahContent = (isHighlighted && highlightTerm)
                         ? highlightArabicInline(text, highlightTerm, C.tint)
-                        : [text];
-                      const sajdah = isSajdah(ayah.surahNum, ayah.ayahNum);
+                        : wordParts
+                          ? [wordParts.before, <Text key="u" style={{ textDecorationLine: 'underline' }}>{wordParts.match}</Text>, wordParts.after]
+                          : [text];
                       return (
                         <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
-                          {sajdah
-                            ? <Text style={{ textDecorationLine: 'underline' }}>{ayahContent}</Text>
-                            : ayahContent}
+                          {ayahContent}
+                          {sajdahWord && <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />}
                           <Text
                             suppressHighlighting
                             onLongPress={() => handleLongPressAyah(ayah)}
@@ -500,7 +502,6 @@ export default function QuranReaderScreen() {
                           >
                             {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
                           </Text>
-                          {sajdah && <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />}
                         </React.Fragment>
                       );
                     })}

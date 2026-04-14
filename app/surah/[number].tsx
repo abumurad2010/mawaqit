@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
-import { fetchSurah, SURAH_META, isSajdah, type Ayah } from '@/lib/quran-api';
+import { fetchSurah, SURAH_META, getSajdahWord, splitForSajdahUnderline, type Ayah } from '@/lib/quran-api';
 
 const BASE_FONT_SIZE = 26;
 const MIN_SCALE = 0.7;
@@ -360,6 +360,8 @@ export default function SurahScreen() {
             >
               {page.ayahs.map((ayah) => {
                 const bookmarked = isBookmarked(surahNum, ayah.numberInSurah);
+                const sajdahWord = getSajdahWord(surahNum, ayah.numberInSurah);
+                const wordParts = sajdahWord ? splitForSajdahUnderline(ayah.text, sajdahWord) : null;
                 return (
                   <Pressable
                     key={ayah.number}
@@ -382,16 +384,14 @@ export default function SurahScreen() {
                         writingDirection: 'rtl',
                       }}
                     >
-                        {isSajdah(surahNum, ayah.numberInSurah)
-                        ? <Text style={{ textDecorationLine: 'underline' }}>{ayah.text}</Text>
+                      {wordParts
+                        ? [wordParts.before, <Text key="u" style={{ textDecorationLine: 'underline' }}>{wordParts.match}</Text>, wordParts.after]
                         : ayah.text}
+                      {sajdahWord && <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />}
                       {bookmarked
                         ? <Text style={{ color: C.gold }}>{' ﴿'}{toArabicIndic(ayah.numberInSurah)}{'﴾'}</Text>
                         : <Text style={{ color: isDark ? '#4d8060' : '#1a7a4a', opacity: 0.7 }}>{' ﴿'}{toArabicIndic(ayah.numberInSurah)}{'﴾'}</Text>
                       }
-                      {isSajdah(surahNum, ayah.numberInSurah) && (
-                        <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />
-                      )}
                     </Text>
                   </Pressable>
                 );

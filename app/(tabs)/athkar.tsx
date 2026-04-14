@@ -224,8 +224,8 @@ function DragSortList<T>({
   showsVerticalScrollIndicator = true,
   itemGap = 8,
   handleColor = '#888',
-  autoscrollThreshold = 25,
-  autoscrollSpeed = 800,
+  autoscrollThreshold = 40,
+  autoscrollSpeed = 400,
 }: {
   data: T[];
   keyExtractor: (item: T, index: number) => string;
@@ -2236,7 +2236,7 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
             )}
             {onDelete ? (
               <Pressable onPress={onDelete} hitSlop={8} style={{ padding: 4 }}>
-                <Ionicons name="minus-circle-outline" size={15} color={C.danger} />
+                <Text style={{ color: C.danger, fontSize: 12, fontWeight: '600' }}>{(tr as any).delete_label ?? 'Delete'}</Text>
               </Pressable>
             ) : (
               <View style={{ width: 23 }} />

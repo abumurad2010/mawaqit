@@ -292,29 +292,72 @@ export function getQuranPage(pageNum: number): PageAyah[] {
 
 export const BISMILLAH_TEXT: string = (QURAN_DATA['1']?.[0]?.t) ?? 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 
-/** The 15 sajdah (prostration) ayahs according to the standard Islamic ruling. */
-export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number }> = [
-  { surah: 7,  ayah: 206 },
-  { surah: 13, ayah: 15  },
-  { surah: 16, ayah: 50  },
-  { surah: 17, ayah: 109 },
-  { surah: 19, ayah: 58  },
-  { surah: 22, ayah: 18  },
-  { surah: 22, ayah: 77  },
-  { surah: 25, ayah: 60  },
-  { surah: 27, ayah: 26  },
-  { surah: 32, ayah: 15  },
-  { surah: 38, ayah: 24  },
-  { surah: 41, ayah: 37  },
-  { surah: 53, ayah: 62  },
-  { surah: 84, ayah: 21  },
-  { surah: 96, ayah: 19  },
+/** The 15 sajdah (prostration) ayahs. `word` is the specific Arabic word to underline. */
+export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number; word: string }> = [
+  { surah: 7,  ayah: 206, word: 'يسجدون'       },
+  { surah: 13, ayah: 15,  word: 'يسجد'          },
+  { surah: 16, ayah: 49,  word: 'يسجد'          },
+  { surah: 17, ayah: 107, word: 'سجداً'         },
+  { surah: 19, ayah: 58,  word: 'سجداً'         },
+  { surah: 22, ayah: 18,  word: 'يَسْجُدُ'     },
+  { surah: 22, ayah: 77,  word: 'وَاسْجُدُوا'  },
+  { surah: 25, ayah: 60,  word: 'اسْجُدُوا'    },
+  { surah: 27, ayah: 25,  word: 'يَسْجُدُوا'   },
+  { surah: 32, ayah: 15,  word: 'سُجَّدًا'     },
+  { surah: 38, ayah: 24,  word: 'وَخَرَّ رَاكِعًا' },
+  { surah: 41, ayah: 37,  word: 'وَاسْجُدُوا'  },
+  { surah: 53, ayah: 62,  word: 'فاسجدوا'       },
+  { surah: 84, ayah: 21,  word: 'يسجدون'        },
+  { surah: 96, ayah: 19,  word: 'واسجد'         },
 ];
 
-const _SAJDAH_SET = new Set(SAJDAH_AYAHS.map(s => `${s.surah}:${s.ayah}`));
-/** Returns true if the given surah+ayah is a sajdah ayah. */
-export function isSajdah(surahNum: number, ayahNum: number): boolean {
-  return _SAJDAH_SET.has(`${surahNum}:${ayahNum}`);
+const _SAJDAH_MAP = new Map(SAJDAH_AYAHS.map(s => [`${s.surah}:${s.ayah}`, s.word]));
+
+/** Returns the sajdah word to underline, or null if not a sajdah ayah. */
+export function getSajdahWord(surahNum: number, ayahNum: number): string | null {
+  return _SAJDAH_MAP.get(`${surahNum}:${ayahNum}`) ?? null;
+}
+
+function _isDiacriticCode(code: number): boolean {
+  return (code >= 0x064B && code <= 0x065F) || code === 0x0670 || (code >= 0x0610 && code <= 0x061A);
+}
+
+/**
+ * Splits `text` into {before, match, after} where `match` is the substring
+ * corresponding to `word` after stripping Arabic diacritics for comparison.
+ * Returns null if the word is not found.
+ */
+export function splitForSajdahUnderline(
+  text: string,
+  word: string,
+): { before: string; match: string; after: string } | null {
+  let stripped = '';
+  let strippedWord = '';
+  const strippedToOrig: number[] = [];
+
+  for (let i = 0; i < text.length; i++) {
+    if (!_isDiacriticCode(text.charCodeAt(i))) {
+      strippedToOrig.push(i);
+      stripped += text[i];
+    }
+  }
+  for (let i = 0; i < word.length; i++) {
+    if (!_isDiacriticCode(word.charCodeAt(i))) strippedWord += word[i];
+  }
+
+  if (!strippedWord) return null;
+  const idx = stripped.indexOf(strippedWord);
+  if (idx === -1) return null;
+
+  const origStart = strippedToOrig[idx] ?? 0;
+  const endIdx = idx + strippedWord.length;
+  const origEnd = endIdx < strippedToOrig.length ? strippedToOrig[endIdx] : text.length;
+
+  return {
+    before: text.slice(0, origStart),
+    match: text.slice(origStart, origEnd),
+    after: text.slice(origEnd),
+  };
 }
 
 /** Returns the Quran page number for a given surah+ayah */
