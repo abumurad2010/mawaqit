@@ -319,12 +319,28 @@ export function getSajdahWord(surahNum: number, ayahNum: number): string | null 
 }
 
 function _isDiacriticCode(code: number): boolean {
-  return (code >= 0x064B && code <= 0x065F) || code === 0x0670 || (code >= 0x0610 && code <= 0x061A);
+  return (
+    (code >= 0x0610 && code <= 0x061A) ||  // Arabic extended signs
+    (code >= 0x064B && code <= 0x065F) ||  // Harakat, shadda, sukun, etc.
+    code === 0x0670 ||                      // Arabic superscript alef
+    (code >= 0x06D6 && code <= 0x06DC) ||  // Uthmani small high ligatures
+    (code >= 0x06DF && code <= 0x06E4) ||  // Uthmani small marks (incl. 06DF ۟)
+    (code >= 0x06E7 && code <= 0x06E8) ||  // Arabic small high marks
+    (code >= 0x06EA && code <= 0x06ED)     // Uthmani small low marks (incl. 06EB ۭ)
+  );
+}
+
+/** Normalize alef variants (ٱ أ إ آ) → plain alef ا for comparison only. */
+function _normalizeArabicChar(ch: string): string {
+  const code = ch.charCodeAt(0);
+  if (code === 0x0671 || code === 0x0622 || code === 0x0623 || code === 0x0625) return '\u0627';
+  return ch;
 }
 
 /**
  * Splits `text` into {before, match, after} where `match` is the substring
- * corresponding to `word` after stripping Arabic diacritics for comparison.
+ * corresponding to `word` after stripping all Arabic diacritics and normalizing
+ * alef variants for comparison. The returned `match` preserves original diacritics.
  * Returns null if the word is not found.
  */
 export function splitForSajdahUnderline(
@@ -336,13 +352,15 @@ export function splitForSajdahUnderline(
   const strippedToOrig: number[] = [];
 
   for (let i = 0; i < text.length; i++) {
-    if (!_isDiacriticCode(text.charCodeAt(i))) {
+    const code = text.charCodeAt(i);
+    if (!_isDiacriticCode(code)) {
       strippedToOrig.push(i);
-      stripped += text[i];
+      stripped += _normalizeArabicChar(text[i]);
     }
   }
   for (let i = 0; i < word.length; i++) {
-    if (!_isDiacriticCode(word.charCodeAt(i))) strippedWord += word[i];
+    const code = word.charCodeAt(i);
+    if (!_isDiacriticCode(code)) strippedWord += _normalizeArabicChar(word[i]);
   }
 
   if (!strippedWord) return null;
