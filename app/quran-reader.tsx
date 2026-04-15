@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQuranPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, getSajdahWord, splitForSajdahUnderline, type PageAyah } from '@/lib/quran-api';
+import { getQuranPage, getAyahPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, getSajdahWord, splitForSajdahUnderline, type PageAyah } from '@/lib/quran-api';
 
 const TOTAL_PAGES = 604;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -222,6 +222,7 @@ export default function QuranReaderScreen() {
   const isTransitioning = useSharedValue(false);
   const pageNumRef = useRef(pageNum);
   const scrollRef = useRef<ScrollView>(null);
+  const highlightScrolled = useRef(false);
   const surahHeaderPositions = useRef<Record<number, number>>({});
   const ayahPositions = useRef<Record<string, number>>({});
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -246,6 +247,17 @@ export default function QuranReaderScreen() {
   useEffect(() => {
     setLastReadPage(pageNum);
   }, [pageNum]);
+
+  // Re-apply highlight + navigate to page when params change (e.g. TOC navigating to already-mounted screen)
+  useEffect(() => {
+    if (!highlightSurahParam || !highlightAyahParam) return;
+    setHighlightTarget({ surah: highlightSurahParam, ayah: highlightAyahParam });
+    highlightScrolled.current = false;
+    const newPage = getAyahPage(highlightSurahParam, highlightAyahParam);
+    if (newPage !== pageNum) {
+      setPageNum(newPage);
+    }
+  }, [highlightSurahParam, highlightAyahParam]);
 
   // Scroll to highlighted or scroll-target ayah/surah header once layout positions are available
   useEffect(() => {
