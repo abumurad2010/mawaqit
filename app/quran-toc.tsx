@@ -38,15 +38,18 @@ export default function QuranTOCScreen() {
       <Pressable
         onPress={() => {
           Haptics.selectionAsync();
-          const page = getAyahPage(item.number, 1);
-          router.push({
-            pathname: '/quran-reader',
-            params: {
-              page: String(page),
-              highlightSurah: String(item.number),
-              highlightAyah: String(1),
-            },
-          });
+          router.back();
+          setTimeout(() => {
+            const page = getAyahPage(item.number, 1);
+            router.push({
+              pathname: '/quran-reader',
+              params: {
+                page: String(page),
+                highlightSurah: String(item.number),
+                highlightAyah: String(1),
+              },
+            });
+          }, 300);
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.8 : 1 }]}
       >
