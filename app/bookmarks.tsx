@@ -38,8 +38,8 @@ export default function BookmarksScreen() {
           pathname: '/quran-reader',
           params: {
             page: String(page),
-            highlightSurah: String(item.surahNumber),
-            highlightAyah: String(item.ayahNumber),
+            scrollSurah: String(item.surahNumber),
+            scrollAyah: String(item.ayahNumber),
           },
         });
       }

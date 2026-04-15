@@ -188,11 +188,13 @@ function highlightArabicInline(
 }
 
 export default function QuranReaderScreen() {
-  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; highlight?: string }>();
+  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; highlight?: string; scrollSurah?: string; scrollAyah?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
   const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
   const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
   const highlightTerm = params.highlight ?? '';
+  const scrollSurahParam = parseInt(params.scrollSurah ?? '0', 10);
+  const scrollAyahParam  = parseInt(params.scrollAyah  ?? '0', 10);
 
   const insets = useSafeAreaInsets();
   const { isDark, lang, fontSize, setLastReadPage,
@@ -208,6 +210,11 @@ export default function QuranReaderScreen() {
   const [highlightTarget, setHighlightTarget] = useState<{ surah: number; ayah: number } | null>(
     highlightSurahParam && highlightAyahParam
       ? { surah: highlightSurahParam, ayah: highlightAyahParam }
+      : null
+  );
+  const [scrollTarget, setScrollTarget] = useState<{ surah: number; ayah: number } | null>(
+    scrollSurahParam
+      ? { surah: scrollSurahParam, ayah: scrollAyahParam || 1 }
       : null
   );
 
@@ -240,9 +247,10 @@ export default function QuranReaderScreen() {
     setLastReadPage(pageNum);
   }, [pageNum]);
 
-  // Scroll to highlighted ayah or surah header once layout positions are available
+  // Scroll to highlighted or scroll-target ayah/surah header once layout positions are available
   useEffect(() => {
-    if (!highlightTarget) return;
+    const target = highlightTarget ?? scrollTarget;
+    if (!target) return;
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
@@ -250,9 +258,9 @@ export default function QuranReaderScreen() {
     let attempts = 0;
     pollRef.current = setInterval(() => {
       attempts++;
-      const y = highlightTarget.ayah === 1
-        ? surahHeaderPositions.current[highlightTarget.surah]
-        : ayahPositions.current[`${highlightTarget.surah}:${highlightTarget.ayah}`];
+      const y = target.ayah === 1
+        ? surahHeaderPositions.current[target.surah]
+        : ayahPositions.current[`${target.surah}:${target.ayah}`];
       if (y !== undefined && y > 0) {
         clearInterval(pollRef.current!);
         pollRef.current = null;
@@ -268,7 +276,7 @@ export default function QuranReaderScreen() {
         pollRef.current = null;
       }
     };
-  }, [highlightTarget]);
+  }, [highlightTarget, scrollTarget]);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
     if (isTransitioning.value) return;
@@ -281,6 +289,7 @@ export default function QuranReaderScreen() {
     const doSwap = () => {
       setPageNum(newPage);
       setHighlightTarget(null);
+      setScrollTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       surahHeaderPositions.current = {};
       ayahPositions.current = {};
@@ -305,6 +314,7 @@ export default function QuranReaderScreen() {
     if (newPage >= 1 && newPage <= TOTAL_PAGES) {
       setPageNum(newPage);
       setHighlightTarget(null);
+      setScrollTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       surahHeaderPositions.current = {};
       ayahPositions.current = {};
@@ -465,7 +475,7 @@ export default function QuranReaderScreen() {
           contentContainerStyle={[styles.pageContent, { paddingBottom: bottomInset + 90 }]}
           showsVerticalScrollIndicator={false}
           scrollEnabled
-          onScrollBeginDrag={() => highlightTarget && setHighlightTarget(null)}
+          onScrollBeginDrag={() => { if (highlightTarget) setHighlightTarget(null); if (scrollTarget) setScrollTarget(null); }}
         >
           {pageAyahs.length === 0 ? (
             <Text style={{ color: C.textMuted, textAlign: 'center', marginTop: 60, fontFamily: 'Amiri_400Regular', fontSize: 18 }}>
