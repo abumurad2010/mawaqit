@@ -43,8 +43,8 @@ export default function QuranTOCScreen() {
             pathname: '/quran-reader',
             params: {
               page: String(page),
-              scrollSurah: String(item.number),
-              scrollAyah: String(1),
+              highlightSurah: String(item.number),
+              highlightAyah: String(1),
             },
           });
         }}
