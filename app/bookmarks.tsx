@@ -87,7 +87,7 @@ export default function BookmarksScreen() {
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeBookmark(item.surahNumber, item.ayahNumber); }}
           style={({ pressed }) => [styles.deleteBtn, { opacity: pressed ? 0.6 : 1 }]}
         >
-          <Ionicons name="minus-circle-outline" size={18} color={C.danger} />
+          <Text style={{ color: C.danger, fontSize: 13, fontWeight: '600' }}>{(tr as any).delete_label ?? 'Delete'}</Text>
         </Pressable>
     </View>
   );
