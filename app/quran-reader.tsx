@@ -215,6 +215,9 @@ export default function QuranReaderScreen() {
   const isTransitioning = useSharedValue(false);
   const pageNumRef = useRef(pageNum);
   const scrollRef = useRef<ScrollView>(null);
+  const surahHeaderPositions = useRef<Record<number, number>>({});
+  const ayahPositions = useRef<Record<string, number>>({});
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { pageNumRef.current = pageNum; }, [pageNum]);
 
@@ -237,6 +240,36 @@ export default function QuranReaderScreen() {
     setLastReadPage(pageNum);
   }, [pageNum]);
 
+  // Scroll to highlighted ayah or surah header once layout positions are available
+  useEffect(() => {
+    if (!highlightTarget) return;
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    let attempts = 0;
+    pollRef.current = setInterval(() => {
+      attempts++;
+      const y = highlightTarget.ayah === 1
+        ? surahHeaderPositions.current[highlightTarget.surah]
+        : ayahPositions.current[`${highlightTarget.surah}:${highlightTarget.ayah}`];
+      if (y !== undefined && y > 0) {
+        clearInterval(pollRef.current!);
+        pollRef.current = null;
+        scrollRef.current?.scrollTo({ y: Math.max(0, y - 20), animated: true });
+      } else if (attempts >= 20) {
+        clearInterval(pollRef.current!);
+        pollRef.current = null;
+      }
+    }, 100);
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [highlightTarget]);
+
   const navigate = useCallback((direction: 'prev' | 'next') => {
     if (isTransitioning.value) return;
     const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
@@ -249,6 +282,8 @@ export default function QuranReaderScreen() {
       setPageNum(newPage);
       setHighlightTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
+      surahHeaderPositions.current = {};
+      ayahPositions.current = {};
     };
 
     slideX.value = withTiming(exitX, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
@@ -271,6 +306,8 @@ export default function QuranReaderScreen() {
       setPageNum(newPage);
       setHighlightTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
+      surahHeaderPositions.current = {};
+      ayahPositions.current = {};
       slideX.value = -exitX;
       slideX.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
         if (done) { isTransitioning.value = false; }
@@ -441,7 +478,18 @@ export default function QuranReaderScreen() {
               const showBismillah = group.showHeader && hasBismillah && group.surahNum !== 1;
 
               return (
-                <View key={`g-${group.surahNum}-${gi}`}>
+                <View
+                  key={`g-${group.surahNum}-${gi}`}
+                  onLayout={(e) => {
+                    const y = e.nativeEvent.layout.y;
+                    if (group.showHeader) {
+                      surahHeaderPositions.current[group.surahNum] = y;
+                    }
+                    for (const ayah of group.ayahs) {
+                      ayahPositions.current[`${ayah.surahNum}:${ayah.ayahNum}`] = y;
+                    }
+                  }}
+                >
 
                   {/* ── Surah banner ── */}
                   {group.showHeader && (
