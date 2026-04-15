@@ -41,7 +41,11 @@ export default function QuranTOCScreen() {
           const page = getAyahPage(item.number, 1);
           router.push({
             pathname: '/quran-reader',
-            params: { page: String(page), scrollSurah: String(item.number) },
+            params: {
+              page: String(page),
+              scrollSurah: String(item.number),
+              scrollAyah: String(1),
+            },
           });
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.8 : 1 }]}
