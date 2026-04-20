@@ -3,11 +3,13 @@ import {
   View, Text, FlatList, Platform, StyleSheet,
   type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 const ITEM_H = 36;
 const VISIBLE = 5;
 const SIDE = Math.floor(VISIBLE / 2); // 2 items above/below center
 const COPIES = 3; // prev, current, next cycle for infinite wrapping
+const CONTAINER_PADDING_V = 6; // must match paddingVertical in styles.container
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
@@ -32,6 +34,8 @@ function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps
   const listRef = useRef<FlatList>(null);
   // displayRawIdx tracks our position in the extended array; starts at middle copy
   const [displayRawIdx, setDisplayRawIdx] = useState(N + selectedIdx);
+  // Track last item index that triggered haptic so we only fire once per item
+  const lastHapticIdxRef = useRef(N + selectedIdx);
 
   useEffect(() => {
     const ms = Platform.OS === 'android' ? 150 : 50;
@@ -43,6 +47,19 @@ function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps
     }, ms);
     return () => clearTimeout(t);
   }, []);
+
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (Platform.OS === 'web') return;
+      const rawY = e.nativeEvent.contentOffset.y;
+      const rawIdx = Math.max(0, Math.min(Math.round(rawY / ITEM_H), extended.length - 1));
+      if (rawIdx !== lastHapticIdxRef.current) {
+        lastHapticIdxRef.current = rawIdx;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      }
+    },
+    [extended.length],
+  );
 
   const commit = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -63,6 +80,7 @@ function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps
 
       // Update highlight instantly — no parent round-trip delay
       setDisplayRawIdx(centeredRawIdx);
+      lastHapticIdxRef.current = centeredRawIdx;
       onSelect(actualIdx);
     },
     [N, extended.length, onSelect],
@@ -78,6 +96,7 @@ function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps
         snapToInterval={ITEM_H}
         decelerationRate="fast"
         scrollEventThrottle={16}
+        onScroll={onScroll}
         onMomentumScrollEnd={commit}
         onScrollEndDrag={Platform.OS === 'web' ? commit : undefined}
         contentContainerStyle={{ paddingVertical: ITEM_H * SIDE }}
@@ -96,7 +115,7 @@ function Wheel({ data, selectedIdx, onSelect, tintColor, textColor }: WheelProps
                   styles.itemText,
                   {
                     color: dist === 0 ? tintColor : textColor,
-                    fontSize: dist === 0 ? 26 : dist === 1 ? 20 : 15,
+                    fontSize: dist === 0 ? 20 : dist === 1 ? 16 : 12,
                     fontWeight: dist === 0 ? '700' : '400',
                     opacity: dist === 0 ? 1 : dist === 1 ? 0.55 : 0.2,
                   },
@@ -148,7 +167,7 @@ export default function TimeRoller({
         style={[
           styles.highlight,
           {
-            top: ITEM_H * SIDE,
+            top: ITEM_H * SIDE + CONTAINER_PADDING_V,
             height: ITEM_H,
             borderColor: tintColor + '50',
             backgroundColor: tintColor + '14',
@@ -185,5 +204,5 @@ const styles = StyleSheet.create({
   },
   item: { height: ITEM_H, alignItems: 'center', justifyContent: 'center' },
   itemText: { fontVariant: ['tabular-nums'] },
-  colon: { fontSize: 24, fontWeight: '700', marginTop: -4, alignSelf: 'center' },
+  colon: { fontSize: 20, fontWeight: '700', marginTop: -4, alignSelf: 'center' },
 });

@@ -62,6 +62,7 @@ export interface LocationData {
   lat: number;
   lng: number;
   city?: string;
+  localName?: string; // Localized city name from reverse geocoding (in app language)
   country?: string;
   countryCode?: string;
 }
@@ -123,6 +124,8 @@ interface AppContextValue extends AppSettings {
   setTranslitLastSurah: (surah: number) => void;
   translitLastPage: number;
   setTranslitLastPage: (page: number) => void;
+  quranNavTarget: { surah: number; ayah: number; timestamp: number } | null;
+  setQuranNavTarget: (target: { surah: number; ayah: number; timestamp: number } | null) => void;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -172,6 +175,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [translitLastPage, setTranslitLastPageState] = useState(1);
   const [maghribUserAdj, setMaghribUserAdjState] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [quranNavTarget, setQuranNavTarget] = useState<{ surah: number; ayah: number; timestamp: number } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -429,8 +433,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTranslitLastSurah,
       translitLastPage,
       setTranslitLastPage,
+      quranNavTarget,
+      setQuranNavTarget,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
   );
 
   if (!loaded) return null;

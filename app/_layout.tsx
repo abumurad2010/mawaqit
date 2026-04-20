@@ -110,6 +110,10 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_600SemiBold,
     Inter_700Bold,
+    'KFGQPCHafs': require('../assets/fonts/KFGQPC-HAFS.otf'),
+    'ScheherazadeNew': require('../assets/fonts/ScheherazadeNew-Regular.ttf'),
+    'AmiriRegular': require('../assets/fonts/Amiri-Regular.ttf'),
+    'AmiriQuran': require('../assets/fonts/AmiriQuran-Regular.ttf'),
   });
 
   useEffect(() => {

@@ -76,6 +76,7 @@ export default function SettingsScreen() {
   const [draftShowDhuha, setDraftShowDhuha] = useState(showDhuha !== false);
   const [draftShowQiyam, setDraftShowQiyam] = useState(showQiyam !== false);
   const [draftEidPrayerTime, setDraftEidPrayerTime] = useState(eidPrayerTime ?? '07:30');
+  const [draftThikrRemindersEnabled, setDraftThikrRemindersEnabled] = useState(thikrRemindersEnabled ?? false);
   const [tempDhuhaTime, setTempDhuhaTime] = useState(dhuhaTime ?? '07:30');
   const [tempTahajjudTime, setTempTahajjudTime] = useState(tahajjudTime ?? '03:00');
   const [tempEidPrayerTime, setTempEidPrayerTime] = useState(eidPrayerTime ?? '07:30');
@@ -431,7 +432,13 @@ export default function SettingsScreen() {
     JSON.stringify(draftIqamaOffsets) !== JSON.stringify({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) }) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {}) ||
     draftAdhan !== (selectedAdhan ?? 'makkah') ||
-    JSON.stringify(draftPrayerAdhan) !== JSON.stringify(prayerAdhan ?? {});
+    JSON.stringify(draftPrayerAdhan) !== JSON.stringify(prayerAdhan ?? {}) ||
+    draftDhuhaTime !== (dhuhaTime ?? '07:30') ||
+    draftTahajjudTime !== (tahajjudTime ?? '03:00') ||
+    draftShowDhuha !== (showDhuha !== false) ||
+    draftShowQiyam !== (showQiyam !== false) ||
+    draftEidPrayerTime !== (eidPrayerTime ?? '07:30') ||
+    draftThikrRemindersEnabled !== (thikrRemindersEnabled ?? false);
 
   const TAB_ROUTES: Record<string, string> = {
     index: '/',
@@ -446,11 +453,17 @@ export default function SettingsScreen() {
     const resolvedDraft = draftSecondLang === 'auto' ? detectSecondLang(countryCode) : draftSecondLang;
     const newLang = lang !== 'ar' ? resolvedDraft : lang;
     setMaghribUserAdj(draftAdjustment);
+    // When a nafl prayer is disabled, immediately clear its notification config
+    const finalNotifications = { ...draftNotifications };
+    if (draftFirstAdhanOffset === 0) finalNotifications['fajrFirst'] = { banner: false, athan: 'none' };
+    if (!draftShowDhuha) finalNotifications['dhuha'] = { banner: false, athan: 'none' };
+    if (!draftShowQiyam) finalNotifications['qiyam'] = { banner: false, athan: 'none' };
+
     updateSettings({
       calcMethod: draftCalcMethod,
       asrMethod: draftAsrMethod,
       hijriAdjustment: draftHijri,
-      prayerNotifications: draftNotifications,
+      prayerNotifications: finalNotifications,
       secondLang: draftSecondLang,
       lang: newLang,
       accessibilityTheme: draftAccessibilityTheme,
@@ -463,6 +476,7 @@ export default function SettingsScreen() {
       eidPrayerTime: draftEidPrayerTime,
       selectedAdhan: draftAdhan,
       prayerAdhan: draftPrayerAdhan,
+      thikrRemindersEnabled: draftThikrRemindersEnabled,
     });
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
@@ -490,6 +504,7 @@ export default function SettingsScreen() {
     setTempEidPrayerTime(eidPrayerTime ?? '07:30');
     setDraftAdhan(selectedAdhan ?? 'makkah');
     setDraftPrayerAdhan(prayerAdhan ?? {});
+    setDraftThikrRemindersEnabled(thikrRemindersEnabled ?? false);
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
   };
@@ -504,12 +519,12 @@ export default function SettingsScreen() {
 
   const handleThikrToggle = async () => {
     Haptics.selectionAsync();
-    const newVal = !thikrRemindersEnabled;
+    const newVal = !draftThikrRemindersEnabled;
     if (newVal) {
       const granted = await requestNotifPermission();
       if (!granted) return;
     }
-    await updateSettings({ thikrRemindersEnabled: newVal });
+    setDraftThikrRemindersEnabled(newVal);
     if (newVal) {
       setThikrToast(true);
       setTimeout(() => setThikrToast(false), 2500);
@@ -517,6 +532,7 @@ export default function SettingsScreen() {
   };
 
   const NOTIF_PRAYERS: { key: string; ar: string; en: string }[] = [
+    { key: 'fajrFirst', ar: 'الأذان الأول', en: 'First Adhan' },
     { key: 'fajr',    ar: 'الفجر',       en: 'Fajr' },
     { key: 'dhuha',   ar: 'الضحى',       en: 'Dhuha' },
     { key: 'dhuhr',   ar: 'الظهر',       en: 'Dhuhr' },
@@ -584,9 +600,7 @@ export default function SettingsScreen() {
     if (finalStatus !== 'granted') {
       Alert.alert(
         tr.notificationsDisabled,
-        isAr
-          ? 'يرجى تفعيل الإشعارات لتطبيق مواقيت من إعدادات جهازك.'
-          : 'Please enable notifications for Mawaqit in your iPhone Settings.',
+        tr.enable_notif_body,
         [
           { text: tr.btn_cancel, style: 'cancel' },
           {
@@ -1517,10 +1531,10 @@ export default function SettingsScreen() {
               </View>
             </View>
             <Switch
-              value={thikrRemindersEnabled}
+              value={draftThikrRemindersEnabled}
               onValueChange={handleThikrToggle}
               trackColor={{ false: C.backgroundSecond, true: C.tint + '80' }}
-              thumbColor={thikrRemindersEnabled ? C.tint : C.textMuted}
+              thumbColor={draftThikrRemindersEnabled ? C.tint : C.textMuted}
             />
           </View>
           {thikrToast && (
@@ -1549,15 +1563,15 @@ export default function SettingsScreen() {
               if (!granted) return;
               try {
                 await scheduleTestNotification();
-                Alert.alert('Test Scheduled', 'You should receive a notification in 5 seconds.');
+                Alert.alert(tr.test_scheduled, tr.test_scheduled_body);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               } catch (e) {
-                Alert.alert('Error', String(e));
+                Alert.alert(tr.invalid_input, String(e));
               }
             }}
             style={{ marginLeft: 'auto', backgroundColor: C.tint + '20', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 }}
           >
-            <Text style={{ color: C.tint, fontSize: 12, fontFamily: SANS }}>Test 5s</Text>
+            <Text style={{ color: C.tint, fontSize: 12, fontFamily: SANS }}>{tr.test_notification}</Text>
           </Pressable>
         </View>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -1567,6 +1581,7 @@ export default function SettingsScreen() {
             const hasAthan = cfg.athan !== 'none';
             const isLast = idx === NOTIF_PRAYERS.length - 1;
             const isDisabled =
+              (prayer.key === 'fajrFirst' && draftFirstAdhanOffset === 0) ||
               (prayer.key === 'dhuha' && !draftShowDhuha) ||
               (prayer.key === 'qiyam' && !draftShowQiyam);
 
@@ -1586,7 +1601,7 @@ export default function SettingsScreen() {
                     styles.notifLabel,
                     { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }
                   ]}>
-                    {(tr as any)[prayer.key] ?? prayer.en}
+                    {prayer.key === 'fajrFirst' ? tr.firstAdhan : ((tr as any)[prayer.key] ?? prayer.en)}
                   </Text>
                   <View style={styles.notifChips}>
 

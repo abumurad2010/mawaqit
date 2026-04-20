@@ -1,12 +1,9 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform, Alert,
-  ScrollView, Dimensions,
+  ScrollView, PanResponder, Animated, useWindowDimensions,
 } from 'react-native';
-import Animated, {
-  useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
-} from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +14,7 @@ import { t } from '@/constants/i18n';
 import { getQuranPage, getAyahPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, getSajdahWord, splitForSajdahUnderline, type PageAyah } from '@/lib/quran-api';
 
 const TOTAL_PAGES = 604;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = 55;
 
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -27,25 +24,7 @@ function stripBismillah(text: string): string {
   return text.slice(BISMILLAH_TEXT.length).trimStart();
 }
 
-function MihrabIcon({ color, size }: { color: string; size: number }) {
-  const w = Math.round(size * 0.85);
-  const archH = Math.round(size * 0.65);
-  const stemH = Math.round(size * 0.38);
-  return (
-    <View style={{ width: w, height: archH + stemH }}>
-      <View style={{
-        width: w, height: archH,
-        borderTopLeftRadius: w / 2, borderTopRightRadius: w / 2,
-        borderWidth: 1.5, borderColor: color, borderBottomWidth: 0,
-      }} />
-      <View style={{
-        width: w, height: stemH,
-        borderLeftWidth: 1.5, borderRightWidth: 1.5,
-        borderBottomWidth: 1.5, borderColor: color,
-      }} />
-    </View>
-  );
-}
+
 
 function SurahBanner({ surahNum, color, textColor, mutedColor }: {
   surahNum: number; color: string; textColor: string; mutedColor: string;
@@ -68,7 +47,7 @@ function SurahBanner({ surahNum, color, textColor, mutedColor }: {
 
           <View style={banner.center}>
             <Text style={[banner.surahWord, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
-              {toArabicIndic(surahNum)} · سُورَةُ
+              سُورَةُ
             </Text>
             <Text style={[banner.surahName, { color: textColor, fontFamily: 'Amiri_700Bold' }]}>
               {meta.arabic}
@@ -122,83 +101,16 @@ const banner = StyleSheet.create({
   ornLine: { width: 1, height: 20 },
 });
 
-// Must mirror stripArabicDiacritics + normalizeForSearch from lib/quran-api.ts exactly.
-// Diacritics range includes \u0670 (Arabic superscript Alef, common in Quran text).
-const ARABIC_DIACRITIC_RE = /[\u064B-\u065F\u0670\u0610-\u061A]/;
-
-function normalizeArabic(s: string): string {
-  // Apply char-by-char: same logic as normalizeForSearch so matches are consistent
-  let out = '';
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-    if (ARABIC_DIACRITIC_RE.test(ch)) continue;        // skip diacritics
-    out += /[أإآٱ]/.test(ch) ? 'ا' : ch.toLowerCase(); // normalize Alef + lowercase
-  }
-  return out;
-}
-
-function highlightArabicInline(
-  text: string,
-  term: string,
-  tintColor: string,
-): React.ReactNode[] {
-  if (!term || !text) return [text];
-
-  const normTerm = normalizeArabic(term);
-  if (!normTerm) return [text];
-
-  // Build position map: normPos → origPos (skip diacritics, Alef is 1:1 mapped)
-  const normToOrig: number[] = [];
-  let normStr = '';
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ARABIC_DIACRITIC_RE.test(ch)) continue;
-    normStr += /[أإآٱ]/.test(ch) ? 'ا' : ch.toLowerCase();
-    normToOrig.push(i);
-  }
-
-  if (!normStr.includes(normTerm)) return [text];
-
-  const parts: React.ReactNode[] = [];
-  let normIdx = 0;
-  let lastOrigIdx = 0;
-
-  while (normIdx <= normStr.length - normTerm.length) {
-    const mi = normStr.indexOf(normTerm, normIdx);
-    if (mi === -1) break;
-    const origStart = normToOrig[mi];
-    const normEnd = mi + normTerm.length;
-    const origEnd = normEnd < normToOrig.length ? normToOrig[normEnd] : text.length;
-    if (origStart > lastOrigIdx) {
-      parts.push(text.slice(lastOrigIdx, origStart));
-    }
-    parts.push(
-      <Text
-        key={`hl-${mi}`}
-        style={{ backgroundColor: tintColor + '33', color: tintColor, borderRadius: 2 }}
-      >
-        {text.slice(origStart, origEnd)}
-      </Text>
-    );
-    lastOrigIdx = origEnd;
-    normIdx = normEnd || normIdx + 1;
-  }
-  if (lastOrigIdx < text.length) parts.push(text.slice(lastOrigIdx));
-  return parts;
-}
-
 export default function QuranReaderScreen() {
-  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; highlight?: string; scrollSurah?: string; scrollAyah?: string }>();
+  const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; timestamp?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
   const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
   const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
-  const highlightTerm = params.highlight ?? '';
-  const scrollSurahParam = parseInt(params.scrollSurah ?? '0', 10);
-  const scrollAyahParam  = parseInt(params.scrollAyah  ?? '0', 10);
 
+  const { width: W } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { isDark, lang, fontSize, setLastReadPage,
-          addBookmark, removeBookmark, isBookmarked, colors, updateSettings } = useApp();
+  const { isDark, lang, setLastReadPage,
+          addBookmark, removeBookmark, isBookmarked, colors } = useApp();
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -207,169 +119,130 @@ export default function QuranReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [pageNum, setPageNum] = useState(initialPage);
+  const [quranFontStep, setQuranFontStepState] = useState(2); // 0-4, default 2
+
+  useEffect(() => {
+    AsyncStorage.getItem('quran_font_step').then(val => {
+      const n = parseInt(val ?? '', 10);
+      if (!isNaN(n) && n >= 0 && n <= 4) setQuranFontStepState(n);
+    }).catch(() => {});
+  }, []);
+
+  const setQuranFontStep = useCallback((step: number) => {
+    const clamped = Math.max(0, Math.min(4, step));
+    setQuranFontStepState(clamped);
+    AsyncStorage.setItem('quran_font_step', String(clamped)).catch(() => {});
+  }, []);
   const [highlightTarget, setHighlightTarget] = useState<{ surah: number; ayah: number } | null>(
     highlightSurahParam && highlightAyahParam
       ? { surah: highlightSurahParam, ayah: highlightAyahParam }
       : null
   );
-  const [scrollTarget, setScrollTarget] = useState<{ surah: number; ayah: number } | null>(
-    scrollSurahParam
-      ? { surah: scrollSurahParam, ayah: scrollAyahParam || 1 }
-      : null
-  );
 
-  const slideX = useSharedValue(0);
-  const isTransitioning = useSharedValue(false);
-  const pageNumRef = useRef(pageNum);
+  // Auto-clear highlight after 2.5 s
+  useEffect(() => {
+    if (!highlightTarget) return;
+    const t = setTimeout(() => setHighlightTarget(null), 2500);
+    return () => clearTimeout(t);
+  }, [highlightTarget]);
+
+  // Navigate to highlighted ayah: change page if needed, then scroll once onLayout fires
+  useEffect(() => {
+    if (!params.highlightSurah || !params.highlightAyah) return;
+    const targetKey = params.highlightSurah + ':' + params.highlightAyah;
+    const surah = parseInt(params.highlightSurah, 10);
+    const ayah = parseInt(params.highlightAyah, 10);
+    setHighlightTarget({ surah, ayah });
+    const newPage = getAyahPage(surah, ayah);
+    pendingScrollTargetRef.current = targetKey;
+    if (newPage !== pageNum) {
+      ayahPositions.current = {};
+      surahHeaderPositions.current = {};
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      setPageNum(newPage);
+    } else {
+      // Same page — positions may already be recorded; try scrolling immediately
+      const pos = ayahPositions.current[targetKey];
+      if (pos !== undefined) {
+        pendingScrollTargetRef.current = null;
+        scrollRef.current?.scrollTo({ y: Math.max(0, pos - 20), animated: true });
+      }
+      // else: onLayout will fire the scroll when positions become available
+    }
+  }, [params.highlightSurah, params.highlightAyah, params.timestamp]);
+
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const navigating = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
-  const highlightScrolled = useRef(false);
   const surahHeaderPositions = useRef<Record<number, number>>({});
   const ayahPositions = useRef<Record<string, number>>({});
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingScrollTargetRef = useRef<string | null>(null);
+  const highlightScrolled = useRef(false);
+  const scrollYRef = useRef(0);
+  const [visibleSurahNum, setVisibleSurahNum] = useState(0);
 
-  useEffect(() => { pageNumRef.current = pageNum; }, [pageNum]);
+  const QURAN_FONT_SIZES = [16, 19, 22, 26, 30];
+  const arabicFontSize = QURAN_FONT_SIZES[quranFontStep] ?? 22;
 
-  const slideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX.value }],
-  }));
-
-  const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
-  const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
-  const fontScale = [0.80, 1.0, 1.22, 1.45, 1.70][fsIdx] ?? 1.0;
-  const arabicFontSize = 22 * fontScale;
-  const changeFontSize = (dir: 1 | -1) => {
-    const next = fsIdx + dir;
-    if (next < 0 || next >= FONT_STEPS.length) return;
-    Haptics.selectionAsync();
-    updateSettings({ fontSize: FONT_STEPS[next] });
-  };
+  const handleScroll = useCallback((e: any) => {
+    const sy = e.nativeEvent.contentOffset.y;
+    scrollYRef.current = sy;
+    const entries = Object.entries(surahHeaderPositions.current);
+    let bestSurah = 0;
+    let bestY = -1;
+    for (const [k, y] of entries) {
+      if (y <= sy + 150 && y > bestY) {
+        bestY = y;
+        bestSurah = Number(k);
+      }
+    }
+    setVisibleSurahNum(n => n === bestSurah ? n : bestSurah);
+  }, []);
 
   useEffect(() => {
     setLastReadPage(pageNum);
   }, [pageNum]);
 
-  // Re-apply highlight + navigate to page when params change (e.g. TOC navigating to already-mounted screen)
+  // TOC navigation: no highlightSurah param → scroll to the last surah header on the page
+  // so that the surah's content starts near the top (handles pages where a previous surah ends first).
   useEffect(() => {
-    if (!highlightSurahParam || !highlightAyahParam) return;
-    setHighlightTarget({ surah: highlightSurahParam, ayah: highlightAyahParam });
-    highlightScrolled.current = false;
-    const newPage = getAyahPage(highlightSurahParam, highlightAyahParam);
-    if (newPage !== pageNum) {
-      setPageNum(newPage);
-    }
-  }, [highlightSurahParam, highlightAyahParam]);
-
-  // Scroll to highlighted or scroll-target ayah/surah header once layout positions are available
-  useEffect(() => {
-    const target = highlightTarget ?? scrollTarget;
-    if (!target) return;
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-    let attempts = 0;
-    pollRef.current = setInterval(() => {
-      attempts++;
-      const y = target.ayah === 1
-        ? surahHeaderPositions.current[target.surah]
-        : ayahPositions.current[`${target.surah}:${target.ayah}`];
-      if (y !== undefined && y > 0) {
-        clearInterval(pollRef.current!);
-        pollRef.current = null;
-        scrollRef.current?.scrollTo({ y: Math.max(0, y - 20), animated: true });
-      } else if (attempts >= 20) {
-        clearInterval(pollRef.current!);
-        pollRef.current = null;
+    if (params.highlightSurah) return;
+    const timer = setTimeout(() => {
+      const values = Object.values(surahHeaderPositions.current);
+      if (values.length === 0) return;
+      const maxY = Math.max(...values);
+      if (maxY > 0) {
+        scrollRef.current?.scrollTo({ y: Math.max(0, maxY - 20), animated: false });
       }
-    }, 100);
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, [highlightTarget, scrollTarget]);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [pageNum, params.highlightSurah]);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
-    if (isTransitioning.value) return;
+    if (navigating.current) return;
     const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
     if (newPage < 1 || newPage > TOTAL_PAGES) return;
-    isTransitioning.value = true;
-    // Mushaf RTL: next = swipe right (+), prev = swipe left (-)
-    const exitX = direction === 'next' ? SCREEN_WIDTH : -SCREEN_WIDTH;
-
-    const doSwap = () => {
+    navigating.current = true;
+    // Swipe right-to-left (next): current slides out left, new slides in from right
+    // Swipe left-to-right (prev): current slides out right, new slides in from left
+    const toX = direction === 'next' ? W : -W;
+    Animated.timing(slideAnim, { toValue: toX, duration: 180, useNativeDriver: true }).start(() => {
       setPageNum(newPage);
-      setHighlightTarget(null);
-      setScrollTarget(null);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       surahHeaderPositions.current = {};
       ayahPositions.current = {};
-    };
-
-    slideX.value = withTiming(exitX, { duration: 200, easing: Easing.in(Easing.ease) }, (done) => {
-      if (done) {
-        runOnJS(doSwap)();
-        slideX.value = -exitX;
-        slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done2) => {
-          if (done2) { isTransitioning.value = false; }
-        });
-      }
+      highlightScrolled.current = false;
+      setVisibleSurahNum(0);
+      slideAnim.setValue(-toX);
+      Animated.timing(slideAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
+        navigating.current = false;
+      });
     });
     Haptics.selectionAsync();
-  }, [pageNum, slideX, isTransitioning]);
+  }, [pageNum, W, slideAnim]);
 
-  // Stable callback for gesture-driven page swaps (runs on JS thread via runOnJS)
-  const onGestureSwap = useCallback((dir: 'next' | 'prev', exitX: number) => {
-    const cur = pageNumRef.current;
-    const newPage = dir === 'next' ? cur + 1 : cur - 1;
-    if (newPage >= 1 && newPage <= TOTAL_PAGES) {
-      setPageNum(newPage);
-      setHighlightTarget(null);
-      setScrollTarget(null);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-      surahHeaderPositions.current = {};
-      ayahPositions.current = {};
-      slideX.value = -exitX;
-      slideX.value = withTiming(0, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
-        if (done) { isTransitioning.value = false; }
-      });
-      Haptics.selectionAsync();
-    } else {
-      slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) }, (done) => {
-        if (done) { isTransitioning.value = false; }
-      });
-    }
-  }, []); // stable: reads only refs and shared values
-
-  // Slide gesture (Mushaf RTL: right drag = next page)
-  const pan = useMemo(() => Gesture.Pan()
-    .activeOffsetX([-12, 12])
-    .failOffsetY([-20, 20])
-    .onUpdate((e) => {
-      if (isTransitioning.value) return;
-      slideX.value = e.translationX;
-    })
-    .onEnd(() => {
-      const tx = slideX.value;
-      const threshold = SCREEN_WIDTH * 0.4;
-      if (tx > threshold) {
-        // Right drag = next page (RTL Mushaf)
-        isTransitioning.value = true;
-        slideX.value = withTiming(SCREEN_WIDTH, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
-          if (done) runOnJS(onGestureSwap)('next', SCREEN_WIDTH);
-        });
-      } else if (tx < -threshold) {
-        // Left drag = prev page (RTL Mushaf)
-        isTransitioning.value = true;
-        slideX.value = withTiming(-SCREEN_WIDTH, { duration: 150, easing: Easing.out(Easing.ease) }, (done) => {
-          if (done) runOnJS(onGestureSwap)('prev', -SCREEN_WIDTH);
-        });
-      } else {
-        slideX.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) });
-      }
-    })
-  , [onGestureSwap, isTransitioning, slideX]);
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
 
   const handleLongPressAyah = useCallback((ayah: PageAyah) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -377,7 +250,7 @@ export default function QuranReaderScreen() {
     const surahName = SURAH_META[ayah.surahNum - 1];
     const label = isAr
       ? `${surahName?.arabic ?? ''} — آية ${toArabicIndic(ayah.ayahNum)}`
-      : `${surahName?.transliteration ?? ''} — Ayah ${ayah.ayahNum}`;
+      : `${surahName?.transliteration ?? ''} — ${tr.ayah} ${ayah.ayahNum}`;
     Alert.alert(
       bookmarked ? tr.removeBookmark : tr.addBookmark,
       label,
@@ -404,6 +277,18 @@ export default function QuranReaderScreen() {
     );
   }, [isBookmarked, addBookmark, removeBookmark, isAr]);
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > Math.abs(g.dy) && Math.abs(g.dx) > 12,
+      onPanResponderRelease: (_, g) => {
+        // RTL Quran: swipe right (dx > 0) = next page, swipe left (dx < 0) = prev page
+        if (g.dx > SWIPE_THRESHOLD) navigateRef.current('next');
+        else if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('prev');
+      },
+    })
+  ).current;
+
   const pageAyahs = getQuranPage(pageNum);
 
   const groups: Array<{ surahNum: number; ayahs: PageAyah[]; showHeader: boolean }> = [];
@@ -417,9 +302,10 @@ export default function QuranReaderScreen() {
 
   const juzNum = pageAyahs[0]?.juz ?? 1;
 
-  const firstSurahOnPage = SURAH_META[pageAyahs[0]?.surahNum - 1];
-  const surahLabel = firstSurahOnPage
-    ? (isAr ? firstSurahOnPage.arabic : firstSurahOnPage.transliteration)
+  const displaySurahNum = visibleSurahNum || (pageAyahs[0]?.surahNum ?? 1);
+  const displaySurahMeta = SURAH_META[displaySurahNum - 1];
+  const surahLabel = displaySurahMeta
+    ? (isAr ? displaySurahMeta.arabic : displaySurahMeta.transliteration)
     : '';
 
   const bgColor = isDark ? '#0D0D0D' : '#FAF6EE';
@@ -428,7 +314,7 @@ export default function QuranReaderScreen() {
     <View style={[styles.root, { backgroundColor: bgColor }]}>
 
       {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator, zIndex: 10, elevation: 10 }]}>
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
@@ -449,23 +335,23 @@ export default function QuranReaderScreen() {
 
         <View style={styles.headerRight}>
           <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-            <Pressable
-              onPress={() => changeFontSize(-1)}
-              disabled={fsIdx === 0}
-              style={[styles.fontPill, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : 1 }]}
-            >
-              <Text style={{ color: C.textMuted, fontSize: 11, fontWeight: '700', fontFamily: 'Inter_600SemiBold' }}>A−</Text>
-            </Pressable>
-            <Text style={{ fontSize: 11, color: C.textMuted, minWidth: 24, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
-              {(['XS','S','M','L','XL'] as const)[fsIdx] ?? 'M'}
-            </Text>
-            <Pressable
-              onPress={() => changeFontSize(1)}
-              disabled={fsIdx === FONT_STEPS.length - 1}
-              style={[styles.fontPill, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : 1 }]}
-            >
-              <Text style={{ color: C.textMuted, fontSize: 13, fontWeight: '700', fontFamily: 'Inter_600SemiBold' }}>A+</Text>
-            </Pressable>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep - 1); }}
+            disabled={quranFontStep <= 0}
+            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep <= 0) ? 0.4 : 1 }]}
+          >
+            <Text style={[styles.fontStepLabel, { color: C.textSecond }]}>A−</Text>
+          </Pressable>
+          <Text style={[styles.fontSizeStepName, { color: C.textMuted }]}>
+            {(['XS', 'S', 'M', 'L', 'XL'] as const)[quranFontStep]}
+          </Text>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep + 1); }}
+            disabled={quranFontStep >= 4}
+            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep >= 4) ? 0.4 : 1 }]}
+          >
+            <Text style={[styles.fontStepLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
+          </Pressable>
           </View>
           <Pressable
             onPress={() => router.push('/bookmarks')}
@@ -477,9 +363,9 @@ export default function QuranReaderScreen() {
       </View>
 
       {/* ── Page content with swipe ── */}
-      <GestureDetector gesture={pan}>
       <Animated.View
-        style={[{ flex: 1, overflow: 'hidden' }, slideStyle]}
+        style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]}
+        {...panResponder.panHandlers}
       >
         <ScrollView
           ref={scrollRef}
@@ -487,7 +373,8 @@ export default function QuranReaderScreen() {
           contentContainerStyle={[styles.pageContent, { paddingBottom: bottomInset + 90 }]}
           showsVerticalScrollIndicator={false}
           scrollEnabled
-          onScrollBeginDrag={() => { if (highlightTarget) setHighlightTarget(null); if (scrollTarget) setScrollTarget(null); }}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         >
           {pageAyahs.length === 0 ? (
             <Text style={{ color: C.textMuted, textAlign: 'center', marginTop: 60, fontFamily: 'Amiri_400Regular', fontSize: 18 }}>
@@ -509,6 +396,15 @@ export default function QuranReaderScreen() {
                     }
                     for (const ayah of group.ayahs) {
                       ayahPositions.current[`${ayah.surahNum}:${ayah.ayahNum}`] = y;
+                    }
+                    // Scroll to pending target as soon as its group is laid out
+                    const pending = pendingScrollTargetRef.current;
+                    console.log('LAYOUT CHECK', `g-${group.surahNum}-${gi}`, 'pending:', pending, 'y:', y);
+                    if (pending !== null && ayahPositions.current[pending] !== undefined) {
+                      pendingScrollTargetRef.current = null;
+                      const pos = ayahPositions.current[pending]!;
+                      console.log('SCROLL FIRING for', pending, 'at y=', pos);
+                      scrollRef.current?.scrollTo({ y: Math.max(0, pos - 20), animated: true });
                     }
                   }}
                 >
@@ -551,15 +447,11 @@ export default function QuranReaderScreen() {
                       const isHighlighted = highlightTarget?.surah === ayah.surahNum && highlightTarget?.ayah === ayah.ayahNum;
                       const sajdahWord = getSajdahWord(ayah.surahNum, ayah.ayahNum);
                       const wordParts = sajdahWord ? splitForSajdahUnderline(text, sajdahWord) : null;
-                      const ayahContent = (isHighlighted && highlightTerm)
-                        ? highlightArabicInline(text, highlightTerm, C.tint)
-                        : wordParts
-                          ? [wordParts.before, <Text key="u" style={{ textDecorationLine: 'underline' }}>{wordParts.match}</Text>, wordParts.after]
-                          : [text];
                       return (
                         <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
-                          {ayahContent}
-                          {sajdahWord && <MihrabIcon color={C.tint} size={arabicFontSize * 0.75} />}
+                          {wordParts
+                            ? [wordParts.before, <Text key="u" style={{ textDecorationLine: 'underline' }}>{wordParts.match}</Text>, wordParts.after]
+                            : text}
                           <Text
                             suppressHighlighting
                             onLongPress={() => handleLongPressAyah(ayah)}
@@ -591,32 +483,13 @@ export default function QuranReaderScreen() {
           </View>
         </ScrollView>
       </Animated.View>
-      </GestureDetector>
 
       {/* ── Bottom navigation ── */}
       <View style={[styles.bottomNav, {
         paddingBottom: bottomInset + 14,
         borderTopColor: C.separator,
         backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
-        zIndex: 10,
-        elevation: 10,
       }]}>
-        <Pressable
-          onPress={() => navigate('prev')}
-          disabled={pageNum <= 1}
-          style={({ pressed }) => [
-            styles.navBtn,
-            { backgroundColor: C.backgroundCard, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Ionicons name="chevron-back" size={16} color={C.tint} />
-          <Text style={[styles.navBtnText, { color: C.tint }]}>
-            {tr.prev}
-          </Text>
-        </Pressable>
-
-        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{tr.page} {pageNum} / {TOTAL_PAGES}</Text>
-
         <Pressable
           onPress={() => navigate('next')}
           disabled={pageNum >= TOTAL_PAGES}
@@ -625,8 +498,22 @@ export default function QuranReaderScreen() {
             { backgroundColor: C.backgroundCard, opacity: pageNum >= TOTAL_PAGES ? 0.3 : pressed ? 0.7 : 1 },
           ]}
         >
+          <Ionicons name="chevron-back" size={16} color={C.tint} />
           <Text style={[styles.navBtnText, { color: C.tint }]}>
             {tr.next}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigate('prev')}
+          disabled={pageNum <= 1}
+          style={({ pressed }) => [
+            styles.navBtn,
+            { backgroundColor: C.backgroundCard, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={[styles.navBtnText, { color: C.tint }]}>
+            {tr.prev}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={C.tint} />
         </Pressable>
@@ -647,11 +534,26 @@ const styles = StyleSheet.create({
   headerSurah: { fontSize: 17, letterSpacing: 0.5 },
   headerJuz: { fontSize: 11, marginTop: 1 },
   iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  fontPill: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  fontStepBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  fontStepLabel: { fontSize: 11, fontWeight: '700' },
+  fontSizeStepName: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, minWidth: 28, textAlign: 'center' },
+
+  fontPanel: {
+    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  fontOption: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 8, gap: 4,
+  },
+  fontOptionLetter: { fontFamily: 'Amiri_700Bold' },
+  fontOptionLabel: { fontSize: 10, fontWeight: '600' },
+
   pageContent: { paddingHorizontal: 16, paddingTop: 4 },
 
   bismillah: {
-    fontFamily: 'Amiri_400Regular',
+    fontFamily: 'AmiriQuran',
     textAlign: 'center',
     marginTop: 4,
     marginBottom: 4,
@@ -659,7 +561,7 @@ const styles = StyleSheet.create({
   },
 
   ayahText: {
-    fontFamily: 'Amiri_400Regular',
+    fontFamily: 'AmiriQuran',
     textAlign: 'justify',
     writingDirection: 'rtl',
     marginBottom: 10,
@@ -681,6 +583,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
   },
-  pageCounter: { fontSize: 12 },
   navBtnText: { fontSize: 13, fontWeight: '600' },
 });

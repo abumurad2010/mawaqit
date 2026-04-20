@@ -263,6 +263,9 @@ export async function schedulePrayerNotifications(params: {
 
   const { prayerNotifications, lang } = params;
   const labels = getPrayerLabels(lang);
+  const tr = t(lang);
+  const prayerBody = tr.its_time_to_pray;
+  const firstAdhanBody = tr.its_time_for_first_adhan;
   const daysAhead = params.daysAhead ?? 7;
   const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
@@ -310,7 +313,7 @@ export async function schedulePrayerNotifications(params: {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: labels[prayerKey] ?? prayerKey,
-            body: lang === 'ar' ? 'حان وقت الصلاة' : "It's time to pray",
+            body: prayerKey === 'fajrFirst' ? firstAdhanBody : prayerBody,
             data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan, athanVoice },
             sound,
           },

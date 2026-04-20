@@ -12,8 +12,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
-import { t } from '@/constants/i18n';
-import { SURAH_META, getAyahPage } from '@/lib/quran-api';
+import { t, isRtlLang } from '@/constants/i18n';
+import { SURAH_META, SURAH_START_PAGES } from '@/lib/quran-api';
+import { fetchSurahNamesByLang } from '@/lib/quran-transliteration';
+import { useQuery } from '@tanstack/react-query';
 
 export default function QuranTOCScreen() {
   const insets = useSafeAreaInsets();
@@ -24,12 +26,20 @@ export default function QuranTOCScreen() {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
+  const { data: surahNamesMap } = useQuery<Record<number, string>>({
+    queryKey: ['/surah-names', lang],
+    queryFn: () => fetchSurahNamesByLang(lang),
+    enabled: !isAr,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   const [filter, setFilter] = useState('');
 
   const filtered = SURAH_META.filter(s =>
     s.arabic.includes(filter) ||
     s.transliteration.toLowerCase().includes(filter.toLowerCase()) ||
     s.english.toLowerCase().includes(filter.toLowerCase()) ||
+    (surahNamesMap?.[s.number] ?? '').toLowerCase().includes(filter.toLowerCase()) ||
     String(s.number).includes(filter)
   );
 
@@ -38,25 +48,23 @@ export default function QuranTOCScreen() {
       <Pressable
         onPress={() => {
           Haptics.selectionAsync();
-          router.back();
-          setTimeout(() => {
-            const page = getAyahPage(item.number, 1);
-            router.push({
-              pathname: '/quran-reader',
-              params: {
-                page: String(page),
-                highlightSurah: String(item.number),
-                highlightAyah: String(1),
-              },
-            });
-          }, 300);
+          const page = SURAH_START_PAGES[item.number] ?? 1;
+          router.push({
+            pathname: '/quran-reader',
+            params: { page: String(page) },
+          });
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator, opacity: pressed ? 0.8 : 1 }]}
       >
         <Text style={[styles.num, { color: C.textMuted }]}>{item.number}</Text>
         <View style={styles.rowInfo}>
           <Text style={[styles.arabic, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>{item.arabic}</Text>
-          <Text style={[styles.translit, { color: C.textMuted }]}>{item.transliteration}</Text>
+          <Text style={[styles.translit, { color: C.textMuted, fontFamily: SERIF_EN }]}>
+            {item.transliteration}
+            {!isAr && surahNamesMap?.[item.number]
+              ? <Text style={{ fontFamily: isRtlLang(lang) ? 'Amiri_400Regular' : SERIF_EN }}>{` · ${surahNamesMap[item.number]}`}</Text>
+              : null}
+          </Text>
         </View>
         <Text style={[styles.tag, { color: C.tint, backgroundColor: C.surface }]}>
           {item.type === 'Meccan' ? tr.makkiyyaAbbr : tr.madaniyyaAbbr}

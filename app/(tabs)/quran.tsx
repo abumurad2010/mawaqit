@@ -2,14 +2,14 @@ import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import PageBackground from '@/components/PageBackground';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable, Platform, Modal, ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SERIF_EN } from '@/constants/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -87,6 +87,12 @@ export default function QuranScreen() {
     Haptics.selectionAsync();
     updateSettings({ translitLang: l });
   };
+
+  // Sync translitLang to app language on every focus
+  useFocusEffect(useCallback(() => {
+    const targetLang: Lang = SUPPORTED_TRANSLIT_LANGS.includes(lang as Lang) ? (lang as Lang) : 'en';
+    updateSettings({ translitLang: targetLang });
+  }, [lang]));
 
   // Mushaf-specific row — never reads `mode`, so the mushaf FlatList is fully isolated
   const renderMushafItem = ({ item, index }: { item: typeof SURAH_META[0]; index: number }) => (

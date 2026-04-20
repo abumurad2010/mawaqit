@@ -25,8 +25,7 @@ const SPRING = { mass: 0.08, damping: 12, stiffness: 180 };
 const NEEDLE_LENGTH = COMPASS_SIZE / 2 - 20;
 const CENTER = COMPASS_SIZE / 2;
 
-const DIRECTIONS_AR = ['ش', 'شرق', 'ج', 'غرب'];
-const DIRECTIONS_EN = ['N', 'E', 'S', 'W'];
+
 
 type QiblaFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 const Q_STEP_ORDER: QiblaFontSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
@@ -83,6 +82,9 @@ export default function QiblaScreen() {
   const hapticFired = useRef(false);
   const lockedRef = useRef(false);
   const qiblaAnchor = useRef<{ lat: number; lng: number } | null>(null);
+  // Ref so the magnetometer listener always reads the latest bearing without
+  // needing to be recreated (avoids closing over stale state).
+  const qiblaBearingRef = useRef<number | null>(null);
 
   // Compute Qibla — anchored: only recompute if user has moved > 1 km from
   // the location where the bearing was last established. This prevents GPS
@@ -97,7 +99,9 @@ export default function QiblaScreen() {
       if (approxKm < 1.0) return; // GPS jitter — ignore
     }
     qiblaAnchor.current = { lat: location.lat, lng: location.lng };
-    setQiblaBearing(getQiblaBearing(location.lat, location.lng));
+    const bearing = getQiblaBearing(location.lat, location.lng);
+    setQiblaBearing(bearing);
+    qiblaBearingRef.current = bearing;
     setDistance(getDistanceToMecca(location.lat, location.lng));
   }, [location]);
 
@@ -143,6 +147,45 @@ export default function QiblaScreen() {
           if (diff < -180) diff += 360;
           const smoothed = (prevHeading.current + diff * 0.7 + 360) % 360;
           prevHeading.current = smoothed;
+
+          // Compass rose animation (inline — avoids cascading useEffect at 60 Hz)
+          const targetCompass = -smoothed;
+          let cDelta = targetCompass - prevCompassRot.current;
+          if (cDelta > 180) cDelta -= 360;
+          if (cDelta < -180) cDelta += 360;
+          prevCompassRot.current += cDelta;
+          rotation.value = withSpring(prevCompassRot.current, SPRING);
+
+          // Qibla needle + alignment (reads ref so listener never needs recreating)
+          const bearing = qiblaBearingRef.current;
+          if (bearing !== null) {
+            const targetQibla = bearing - smoothed;
+            let qDelta = targetQibla - prevQiblaRot.current;
+            if (qDelta > 180) qDelta -= 360;
+            if (qDelta < -180) qDelta += 360;
+            prevQiblaRot.current += qDelta;
+            qiblaRotation.value = withSpring(prevQiblaRot.current, SPRING);
+
+            const alignDiff = Math.abs(((bearing - smoothed + 180 + 360) % 360) - 180);
+            const wasLocked = lockedRef.current;
+            const isAligned = wasLocked ? alignDiff <= 6 : alignDiff <= 2;
+            lockedRef.current = isAligned;
+            // Batch these with setHeading so React does a single re-render
+            setHeading(smoothed);
+            setIsAlignedState(isAligned);
+            setIsNearlyAligned(alignDiff < 25);
+            aligned.value = withTiming(isAligned ? 1 : 0, { duration: 300 });
+
+            if (isAligned && !hapticFired.current) {
+              hapticFired.current = true;
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else if (!isAligned) {
+              hapticFired.current = false;
+            }
+            return;
+          }
+
+          // No bearing yet — just update heading display
           setHeading(smoothed);
         });
       })();
@@ -153,42 +196,6 @@ export default function QiblaScreen() {
     }, [resetKey])
   );
 
-  // Animate compass rotation — shortest-path unwrapped to prevent spin-around
-  useEffect(() => {
-    // Compass rose: always rotates opposite to heading
-    const targetCompass = -heading;
-    let cDelta = targetCompass - prevCompassRot.current;
-    if (cDelta > 180) cDelta -= 360;
-    if (cDelta < -180) cDelta += 360;
-    prevCompassRot.current += cDelta;
-    rotation.value = withSpring(prevCompassRot.current, SPRING);
-
-    if (qiblaBearing !== null) {
-      // Qibla needle: absolute angle = qiblaBearing - heading
-      const targetQibla = qiblaBearing - heading;
-      let qDelta = targetQibla - prevQiblaRot.current;
-      if (qDelta > 180) qDelta -= 360;
-      if (qDelta < -180) qDelta += 360;
-      prevQiblaRot.current += qDelta;
-      qiblaRotation.value = withSpring(prevQiblaRot.current, SPRING);
-
-      // Check alignment with hysteresis: lock at ≤2°, unlock at >6°
-      const diff = Math.abs(((qiblaBearing - heading + 180 + 360) % 360) - 180);
-      const wasLocked = lockedRef.current;
-      const isAligned = wasLocked ? diff <= 6 : diff <= 2;
-      lockedRef.current = isAligned;
-      setIsAlignedState(isAligned);
-      setIsNearlyAligned(diff < 25);
-      aligned.value = withTiming(isAligned ? 1 : 0, { duration: 300 });
-
-      if (isAligned && !hapticFired.current) {
-        hapticFired.current = true;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } else if (!isAligned) {
-        hapticFired.current = false;
-      }
-    }
-  }, [heading, qiblaBearing]);
 
   const compassStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
@@ -211,7 +218,7 @@ export default function QiblaScreen() {
       mecCardOpacity.value = withTiming(isNearlyAligned ? 1 : 0.35, { duration: 300 });
     }
   }, [showMecCard, isNearlyAligned]);
-  const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity }));
+  const mecCardAnimStyle = useAnimatedStyle(() => ({ opacity: mecCardOpacity.value }));
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -232,7 +239,7 @@ export default function QiblaScreen() {
     );
   }
 
-  const dirs = isAr ? DIRECTIONS_AR : DIRECTIONS_EN;
+  const dirs = [tr.compass_n, tr.compass_e, tr.compass_s, tr.compass_w];
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]}>

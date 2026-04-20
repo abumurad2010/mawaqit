@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mawaqit | مواقيت",
     "slug": "mawaqit",
-    "version": "1.2.5",
+    "version": "1.3.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
-      "buildNumber": "29",
+      "buildNumber": "30",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction for your city.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction for your city.",
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.mawaqit.app",
-      "versionCode": 25,
+      "versionCode": 26,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
@@ -61,7 +61,24 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#1a8c5b",
-          "sounds": []
+          "sounds": [
+            "./assets/sounds/abb/adhan_makka_abb.mp3",
+            "./assets/sounds/abb/adhan_madinah_abb.mp3",
+            "./assets/sounds/abb/adhan_egypt_abb.mp3",
+            "./assets/sounds/abb/adhan_alaqsa_abb.mp3",
+            "./assets/sounds/abb/adhan_halab_abb.mp3",
+            "./assets/sounds/abb/al_hussaini_abb.mp3",
+            "./assets/sounds/abb/bakir_bash_abb.mp3",
+            "./assets/sounds/abb/abdul_hakam_abb.mp3",
+            "./assets/sounds/Adhan-Makkah.mp3",
+            "./assets/sounds/Adhan-Madinah.mp3",
+            "./assets/sounds/Adhan-Egypt.mp3",
+            "./assets/sounds/Adhan-Alaqsa.mp3",
+            "./assets/sounds/Adhan-Halab.mp3",
+            "./assets/sounds/Al-Hussaini.mp3",
+            "./assets/sounds/Bakir-Bash.mp3",
+            "./assets/sounds/Abdul-Hakam.mp3"
+          ]
         }
       ],
       [
@@ -71,6 +88,12 @@
           "locationWhenInUsePermission": "Mawaqit uses your location to calculate accurate prayer times and Qibla direction."
         }
       ]
+    ],
+    "fonts": [
+      "assets/fonts/KFGQPC-HAFS.otf",
+      "assets/fonts/ScheherazadeNew-Regular.ttf",
+      "assets/fonts/Amiri-Regular.ttf",
+      "assets/fonts/AmiriQuran-Regular.ttf"
     ],
     "experiments": {
       "typedRoutes": true

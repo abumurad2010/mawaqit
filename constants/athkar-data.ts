@@ -133,16 +133,16 @@ const MORNING_ADHKAR: Thikr[] = [
     count: 3,
   },
   {
-    arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
-    transliteration: "Allāhumma ṣalli wa sallim wa bārik ʿalā nabiyyinā Muḥammad.",
-    translationKey: "athkar_morning_19",
-    count: 10,
-  },
-  {
     arabic: "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
     transliteration: "Ḥasbiyallāhu lā ilāha illā huwa, ʿalayhi tawakkaltu wa huwa rabbul-ʿarshil-ʿaẓīm.",
     translationKey: "athkar_morning_20",
     count: 7,
+  },
+  {
+    arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
+    transliteration: "Allāhumma ṣalli wa sallim wa bārik ʿalā nabiyyinā Muḥammad.",
+    translationKey: "athkar_morning_19",
+    count: 10,
   },
 ];
 

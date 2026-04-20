@@ -277,7 +277,7 @@ for (let s = 1; s <= 114; s++) {
   for (const a of raw) {
     const pi = a.p - 1;
     if (pi >= 0 && pi < 604) {
-      PAGE_INDEX_RAW[pi].push({ surahNum: s, ayahNum: a.n, text: a.t, juz: a.j });
+      PAGE_INDEX_RAW[pi].push({ surahNum: s, ayahNum: a.n, text: a.t.replace(/\uFEFF/g, ''), juz: a.j });
     }
   }
 }
@@ -290,7 +290,7 @@ export function getQuranPage(pageNum: number): PageAyah[] {
   return PAGE_INDEX[pageNum - 1];
 }
 
-export const BISMILLAH_TEXT: string = (QURAN_DATA['1']?.[0]?.t) ?? 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+export const BISMILLAH_TEXT: string = ((QURAN_DATA['1']?.[0]?.t) ?? 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ').replace(/\uFEFF/g, '');
 
 /** The 15 sajdah (prostration) ayahs. `word` is the specific Arabic word to underline. */
 export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number; word: string }> = [

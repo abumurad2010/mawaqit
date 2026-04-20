@@ -212,25 +212,25 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
   };
 }
 
-export function formatTime(date: Date, use24h = false): string {
+export function formatTime(date: Date, use24h = false, amStr = 'AM', pmStr = 'PM'): string {
   const h = date.getHours();
   const m = date.getMinutes().toString().padStart(2, '0');
   if (use24h) return `${h.toString().padStart(2, '0')}:${m}`;
-  const period = h >= 12 ? 'PM' : 'AM';
+  const period = h >= 12 ? pmStr : amStr;
   const h12 = h % 12 || 12;
   return `${h12}:${m} ${period}`;
 }
 
 /** Format time at a specific UTC offset (for manual locations).
  *  Pass null to fall back to device local time. */
-export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, use24h = false): string {
-  if (utcOffsetHours === null) return formatTime(date, use24h);
+export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, use24h = false, amStr = 'AM', pmStr = 'PM'): string {
+  if (utcOffsetHours === null) return formatTime(date, use24h, amStr, pmStr);
   const utcMin = date.getUTCHours() * 60 + date.getUTCMinutes();
   const localMin = ((utcMin + Math.round(utcOffsetHours) * 60) % 1440 + 1440) % 1440;
   const h = Math.floor(localMin / 60);
   const m = (localMin % 60).toString().padStart(2, '0');
   if (use24h) return `${h.toString().padStart(2, '0')}:${m}`;
-  const period = h >= 12 ? 'PM' : 'AM';
+  const period = h >= 12 ? pmStr : amStr;
   const h12 = h % 12 || 12;
   return `${h12}:${m} ${period}`;
 }

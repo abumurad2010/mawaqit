@@ -10,7 +10,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useFocusEffect } from 'expo-router';
 import { useApp } from '@/contexts/AppContext';
 import i18n, { t, isRtlLang, LANG_META, LANG_FLAG } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
@@ -28,6 +28,7 @@ const COPY_HINT_KEY = 'athkar_copy_hint_shown';
 const GRID_ORDER_KEY = 'athkar_grid_order';
 const GRID_REORDER_HINT_KEY = 'athkar_grid_reorder_hint_shown';
 const THIKR_READER_HINT_KEY = 'athkar_thikr_reader_hint_shown';
+const THIKR_GROUP_HINT_KEY = 'athkar_thikr_group_hint_shown';
 const THIKR_ORDER_KEY_PREFIX = 'thikr_order_';
 const THIKR_UNIFIED_ORDER_KEY_PREFIX = 'thikr_unified_order_';
 
@@ -326,6 +327,7 @@ function DragSortList<T>({
   return (
     <ScrollView
       ref={scrollRef}
+      style={{ flex: 1 }}
       contentContainerStyle={contentContainerStyle}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
       scrollEnabled // always enabled — GestureDetector's activateAfterLongPress handles drag/scroll conflict
@@ -380,6 +382,7 @@ export default function AthkarScreen() {
   const [userCatItems, setUserCatItems] = useState<Record<string, PersonalThikrItem[]>>({});
   const [copyHintShown, setCopyHintShown] = useState(true);
   const [thikrReaderHintShown, setThikrReaderHintShown] = useState(true);
+  const [thikrGroupHintShown, setThikrGroupHintShown] = useState(true);
   const [gridOrder, setGridOrder] = useState<string[]>([]);
   const [gridReorderHintShown, setGridReorderHintShown] = useState(true);
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
@@ -426,6 +429,9 @@ export default function AthkarScreen() {
     AsyncStorage.getItem(THIKR_READER_HINT_KEY).then(val => {
       setThikrReaderHintShown(val === 'true');
     }).catch(() => {});
+    AsyncStorage.getItem(THIKR_GROUP_HINT_KEY).then(val => {
+      setThikrGroupHintShown(val === 'true');
+    }).catch(() => {});
     AsyncStorage.getItem(GRID_ORDER_KEY).then(raw => {
       if (raw) setGridOrder(JSON.parse(raw));
     }).catch(() => {});
@@ -451,6 +457,17 @@ export default function AthkarScreen() {
       setAthkarLang(lang as Lang);
     }
   }, [lang]);
+
+  // Reset transliteration language to app language every time the tab is focused
+  useFocusEffect(useCallback(() => {
+    if (!lang || lang === 'ar') {
+      setDisplayMode('arabic');
+      setAthkarLang('ar');
+    } else {
+      setDisplayMode('full');
+      setAthkarLang(lang as Lang);
+    }
+  }, [lang]));
 
   const sortedCategories = useMemo(() => {
     if (gridOrder.length === 0) return ATHKAR_CATEGORIES;
@@ -532,6 +549,11 @@ export default function AthkarScreen() {
   const dismissThikrReaderHint = useCallback(() => {
     setThikrReaderHintShown(true);
     AsyncStorage.setItem(THIKR_READER_HINT_KEY, 'true').catch(() => {});
+  }, []);
+
+  const dismissThikrGroupHint = useCallback(() => {
+    setThikrGroupHintShown(true);
+    AsyncStorage.setItem(THIKR_GROUP_HINT_KEY, 'true').catch(() => {});
   }, []);
 
   const openCategory = useCallback((cat: AthkarCategory, hlIdx?: number, hlQuery?: string) => {
@@ -667,6 +689,8 @@ export default function AthkarScreen() {
           onCopyHintDismiss={dismissCopyHint}
           thikrReaderHintShown={thikrReaderHintShown}
           onThikrReaderHintDismiss={dismissThikrReaderHint}
+          thikrGroupHintShown={thikrGroupHintShown}
+          onThikrGroupHintDismiss={dismissThikrGroupHint}
         />
       ) : (
         <GridScreen
@@ -835,6 +859,8 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 80, paddingTop: 8 }}
           itemGap={8}
           handleColor={C.tint}
+          autoscrollThreshold={60}
+          autoscrollSpeed={200}
           renderItem={({ item, isActive, dragHandle }) => {
             const isPersonal = item === '__personal__';
             const cat = item as AthkarCategory;
@@ -1552,6 +1578,8 @@ interface ReaderProps {
   onCopyHintDismiss: () => void;
   thikrReaderHintShown: boolean;
   onThikrReaderHintDismiss: () => void;
+  thikrGroupHintShown: boolean;
+  onThikrGroupHintDismiss: () => void;
 }
 
 function ReaderScreen({
@@ -1563,6 +1591,7 @@ function ReaderScreen({
   userCatItems, onUserCatItemsSave,
   copyHintShown, onCopyHintDismiss,
   thikrReaderHintShown, onThikrReaderHintDismiss,
+  thikrGroupHintShown, onThikrGroupHintDismiss,
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
@@ -1586,21 +1615,24 @@ function ReaderScreen({
   );
 
   const combinedItems = useMemo<UnifiedThikrItem[]>(() => {
+    let result: UnifiedThikrItem[];
     if (unifiedOrder && unifiedOrder.length > 0) {
       const builtinMap = new Map(orderedAdhkar.map(x => [x.originalIndex, x]));
       const userMap = new Map(userCatItems.map(item => [item.id, item]));
-      const result: UnifiedThikrItem[] = [];
+      result = [];
       const seenBuiltin = new Set<number>();
       const seenUser = new Set<string>();
       for (const entry of unifiedOrder) {
         if (entry.kind === 'builtin') {
           const found = builtinMap.get(entry.originalIndex);
+          // Silently skip stale entries that no longer exist in orderedAdhkar
           if (found && !seenBuiltin.has(entry.originalIndex)) {
             seenBuiltin.add(entry.originalIndex);
             result.push({ kind: 'builtin', thikr: found.thikr, originalIndex: found.originalIndex });
           }
         } else {
           const found = userMap.get(entry.id);
+          // Silently skip stale user entries that no longer exist in userCatItems
           if (found && !seenUser.has(entry.id)) {
             seenUser.add(entry.id);
             result.push({ kind: 'user', item: found });
@@ -1614,12 +1646,14 @@ function ReaderScreen({
       for (const item of userCatItems) {
         if (!seenUser.has(item.id)) result.push({ kind: 'user', item });
       }
-      return result;
+    } else {
+      result = [
+        ...orderedAdhkar.map(({ thikr, originalIndex }) => ({ kind: 'builtin' as const, thikr, originalIndex })),
+        ...userCatItems.map(item => ({ kind: 'user' as const, item })),
+      ];
     }
-    return [
-      ...orderedAdhkar.map(({ thikr, originalIndex }) => ({ kind: 'builtin' as const, thikr, originalIndex })),
-      ...userCatItems.map(item => ({ kind: 'user' as const, item })),
-    ];
+    console.log('[athkar] combinedItems:', result.length, '| orderedAdhkar:', orderedAdhkar.length, '| userCatItems:', userCatItems.length);
+    return result;
   }, [orderedAdhkar, userCatItems, unifiedOrder]);
 
   useEffect(() => {
@@ -1747,11 +1781,11 @@ function ReaderScreen({
   const showToast = useCallback(() => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastVisible(true);
-    toastOpacity.value = withTiming(1, { duration: 200 });
+    toastOpacity.value = withTiming(1, { duration: 150 });
     toastTimerRef.current = setTimeout(() => {
-      toastOpacity.value = withTiming(0, { duration: 300 });
-      setTimeout(() => setToastVisible(false), 300);
-    }, 1500);
+      toastOpacity.value = withTiming(0, { duration: 250 });
+      setTimeout(() => setToastVisible(false), 250);
+    }, 1000);
   }, []);
 
   const handleCopy = useCallback((text: string, index: number) => {
@@ -1852,6 +1886,8 @@ function ReaderScreen({
         <DragSortList<UnifiedThikrItem>
           data={combinedItems}
           keyExtractor={(item) => item.kind === 'builtin' ? `b-${item.originalIndex}` : `u-${item.item.id}`}
+          autoscrollThreshold={60}
+          autoscrollSpeed={300}
           onDragEnd={(newData) => {
             // Rebuild orders from the full post-drop list, preserving interleaved positions.
             const newBuiltinOrder = newData
@@ -1928,13 +1964,26 @@ function ReaderScreen({
           ref={readerRef as any}
           data={combinedItems}
           keyExtractor={(item) => item.kind === 'builtin' ? `b-${item.originalIndex}` : `u-${item.item.id}`}
-          extraData={[displayMode, athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
+          extraData={[combinedItems, displayMode, athkarLang, copyHighlightIdx, highlightQuery, activeHighlight, userCatItems, userCounts]}
+          initialNumToRender={100}
+          windowSize={21}
           contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: bottomInset + 80, paddingTop: 4 }}
           showsVerticalScrollIndicator={false}
           onScrollToIndexFailed={() => {}}
           onScrollBeginDrag={() => activeHighlight && setActiveHighlight(false)}
           ListHeaderComponent={(
             <>
+              {!thikrGroupHintShown && (
+                <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard, marginBottom: 8 }]}>
+                  <Ionicons name="information-circle-outline" size={16} color={C.textMuted} />
+                  <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', flex: 1 }]}>
+                    {(tr as any).thikr_reader_hint ?? 'Tap copy icon to copy • Hold ≡ to reorder'}
+                  </Text>
+                  <Pressable onPress={onThikrGroupHintDismiss} hitSlop={12}>
+                    <Ionicons name="close" size={16} color={C.textMuted} />
+                  </Pressable>
+                </View>
+              )}
               {!thikrReaderHintShown && (
                 <ThikrReaderHintBanner tr={tr} C={C} isRtl={isRtl} onDismiss={onThikrReaderHintDismiss} />
               )}
@@ -2013,9 +2062,11 @@ function ReaderScreen({
       )}
 
       {toastVisible && (
-        <Animated.View style={[styles.toast, toastStyle, { backgroundColor: C.tint }]} pointerEvents="none">
-          <Ionicons name="checkmark-circle" size={16} color={C.tintText} />
-          <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copy_thikr ?? (tr as any).copied_toast ?? 'Thikr copied'}</Text>
+        <Animated.View style={[styles.toast, toastStyle]} pointerEvents="none">
+          <View style={[styles.toastBox, { backgroundColor: C.tint }]}>
+            <Ionicons name="checkmark-circle" size={18} color={C.tintText} />
+            <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copied_successfully ?? (tr as any).copied_toast ?? 'Copied'}</Text>
+          </View>
         </Animated.View>
       )}
 
@@ -2356,11 +2407,11 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
   const showCopyToast = useCallback(() => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastVisible(true);
-    toastOpacity.value = withTiming(1, { duration: 200 });
+    toastOpacity.value = withTiming(1, { duration: 150 });
     toastTimerRef.current = setTimeout(() => {
-      toastOpacity.value = withTiming(0, { duration: 300 });
-      setTimeout(() => setToastVisible(false), 300);
-    }, 1500);
+      toastOpacity.value = withTiming(0, { duration: 250 });
+      setTimeout(() => setToastVisible(false), 250);
+    }, 1000);
   }, []);
 
   const [editingItem, setEditingItem] = useState<PersonalThikrItem | null>(null);
@@ -2487,6 +2538,8 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 80, paddingTop: 8 }}
           itemGap={8}
           handleColor={C.tint}
+          autoscrollThreshold={60}
+          autoscrollSpeed={200}
           renderItem={({ item, isActive, dragHandle }) => {
             return (
               <View
@@ -2634,9 +2687,11 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
       )}
 
       {toastVisible && (
-        <Animated.View style={[styles.toast, toastStyle, { backgroundColor: C.tint }]} pointerEvents="none">
-          <Ionicons name="checkmark-circle" size={16} color={C.tintText} />
-          <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copy_thikr ?? 'Thikr copied'}</Text>
+        <Animated.View style={[styles.toast, toastStyle]} pointerEvents="none">
+          <View style={[styles.toastBox, { backgroundColor: C.tint }]}>
+            <Ionicons name="checkmark-circle" size={18} color={C.tintText} />
+            <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copied_successfully ?? (tr as any).copied_toast ?? 'Copied'}</Text>
+          </View>
         </Animated.View>
       )}
 
@@ -3099,23 +3154,26 @@ const styles = StyleSheet.create({
   },
   toast: {
     position: 'absolute',
-    bottom: 40,
-    alignSelf: 'center',
+    top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toastBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
   },
   toastText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     fontFamily: 'Inter_600SemiBold',
   },
 });

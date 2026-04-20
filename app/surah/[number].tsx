@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
@@ -71,6 +72,20 @@ export default function SurahScreen() {
   const [bookmarkModal, setBookmarkModal] = useState(false);
   const [selectedAyah, setSelectedAyah] = useState<Ayah | null>(null);
   const [transitioning, setTransitioning] = useState(false);
+  const [copyToastVisible, setCopyToastVisible] = useState(false);
+  const copyToastOpacity = useSharedValue(0);
+  const copyToastStyle = useAnimatedStyle(() => ({ opacity: copyToastOpacity.value }));
+  const copyToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showCopyToast = useCallback(() => {
+    if (copyToastTimer.current) clearTimeout(copyToastTimer.current);
+    setCopyToastVisible(true);
+    copyToastOpacity.value = withTiming(1, { duration: 150 });
+    copyToastTimer.current = setTimeout(() => {
+      copyToastOpacity.value = withTiming(0, { duration: 250 });
+      setTimeout(() => setCopyToastVisible(false), 250);
+    }, 1000);
+  }, []);
 
   const scrollRef = useRef<ScrollView>(null);
   const ayahPositions = useRef<Record<number, number>>({});
@@ -428,6 +443,15 @@ export default function SurahScreen() {
         )}
       </Animated.View>
 
+      {copyToastVisible && (
+        <Animated.View style={[styles.copyToastOverlay, copyToastStyle]} pointerEvents="none">
+          <View style={[styles.copyToastBox, { backgroundColor: C.tint }]}>
+            <Ionicons name="checkmark-circle" size={18} color={C.tintText} />
+            <Text style={[styles.copyToastText, { color: C.tintText }]}>{(tr as any).copied_successfully ?? (tr as any).copied_toast ?? 'Copied'}</Text>
+          </View>
+        </Animated.View>
+      )}
+
       {/* Bookmark modal */}
       <Modal visible={bookmarkModal} transparent animationType="fade" onRequestClose={() => setBookmarkModal(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setBookmarkModal(false)}>
@@ -450,6 +474,22 @@ export default function SurahScreen() {
                 {selectedAyah && isBookmarked(surahNum, selectedAyah.numberInSurah)
                   ? tr.removeBookmark
                   : tr.addBookmark}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (selectedAyah) {
+                  Clipboard.setStringAsync(selectedAyah.text).catch(() => {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setBookmarkModal(false);
+                  showCopyToast();
+                }
+              }}
+              style={[styles.modalBtn, { backgroundColor: C.backgroundSecond ?? C.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator }]}
+            >
+              <Ionicons name="copy-outline" size={18} color={C.tint} />
+              <Text style={[styles.modalBtnText, { color: C.tint }]}>
+                {(tr as any).copy_thikr_title ?? 'Copy'}
               </Text>
             </Pressable>
           </View>
@@ -513,6 +553,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12,
   },
   navBtnText: { fontSize: 16, fontWeight: '600', flex: 1 },
+  copyToastOverlay: {
+    position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  copyToastBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 10, elevation: 8,
+  },
+  copyToastText: { fontSize: 15, fontWeight: '700', fontFamily: 'Inter_600SemiBold' },
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center', alignItems: 'center', padding: 24,

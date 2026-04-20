@@ -89,7 +89,7 @@ export default function PrayerTimesScreen() {
 
   // Slide animation shared value — drives translateX on the prayer content
   const slideX = useSharedValue(0);
-  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slideX }] }));
+  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slideX.value }] }));
 
   // Track previous offset so useEffect knows which direction to animate the entry
   const prevOffsetRef = useRef(0);
@@ -147,7 +147,7 @@ export default function PrayerTimesScreen() {
       -1,
     );
   }, []);
-  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse }] }));
+  const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   const fetchAutoLocation = useCallback(async () => {
     setLoadingLoc(true);
@@ -184,6 +184,30 @@ export default function PrayerTimesScreen() {
       setLocation(manualLocation);
     }
   }, [locationMode, manualLocation]);
+
+  // Effective coordinates — whichever source is active
+  const effectiveLat = locationMode === 'manual' ? manualLocation?.lat : location?.lat;
+  const effectiveLng = locationMode === 'manual' ? manualLocation?.lng : location?.lng;
+
+  // Localized city name — re-fetched from Nominatim whenever lang or coordinates change
+  const [localizedCity, setLocalizedCity] = useState<string | undefined>();
+  useEffect(() => {
+    if (effectiveLat == null || effectiveLng == null) { setLocalizedCity(undefined); return; }
+    let cancelled = false;
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${effectiveLat}&lon=${effectiveLng}&format=json&zoom=10`,
+      { headers: { 'Accept-Language': lang === 'en' ? 'en' : `${lang}, en;q=0.8`, 'User-Agent': 'Mawaqit/1.0' } },
+    )
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { address?: Record<string, string>; display_name?: string } | null) => {
+        if (cancelled || !d) return;
+        const a = d.address;
+        const name = a?.city ?? a?.town ?? a?.village ?? a?.county ?? d.display_name?.split(',')[0];
+        if (name) setLocalizedCity(name);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [lang, effectiveLat, effectiveLng]);
 
   useEffect(() => {
     if (!location) return;
@@ -382,12 +406,12 @@ export default function PrayerTimesScreen() {
         .filter(key => todayTimes[key])
         .map(key => ({
           name: prayerLabel(key),
-          time: formatTime(todayTimes[key] as Date),
+          time: formatTime(todayTimes[key] as Date, false, tr.am, tr.pm),
         }));
 
       mawaqitWidget.updateSnapshot({
         nextPrayerName: prayerLabel(nextPrayer.name),
-        nextPrayerTime: formatTime(nextPrayer.time),
+        nextPrayerTime: formatTime(nextPrayer.time, false, tr.am, tr.pm),
         countdown,
         upcomingPrayers,
       });
@@ -592,8 +616,8 @@ export default function PrayerTimesScreen() {
           <Text style={[styles.metaText, { color: pageMuted, fontWeight: fw, flexShrink: 1, fontSize: hFS }]} numberOfLines={1}>
             {loadingLoc
               ? tr.searching
-              : location
-                ? (location.city ?? `${location.lat.toFixed(2)}°, ${location.lng.toFixed(2)}°`)
+              : effectiveLat != null
+                ? (localizedCity ?? (locationMode === 'manual' ? (manualLocation?.city) : (location?.city)) ?? `${effectiveLat.toFixed(2)}°, ${effectiveLng?.toFixed(2)}°`)
                 : tr.locationPermission}
           </Text>
         </View>
@@ -711,7 +735,7 @@ export default function PrayerTimesScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.prayerTime, { color: passed ? C.textMuted : C.text, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                  {formatTimeAtOffset(firstAdhanTime, locationUtcOffset)}
+                  {formatTimeAtOffset(firstAdhanTime, locationUtcOffset, false, tr.am, tr.pm)}
                 </Text>
               </View>
               <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -753,7 +777,7 @@ export default function PrayerTimesScreen() {
                     styles.prayerTime,
                     { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw, fontSize: pFS, lineHeight: pLH }
                   ]}>
-                    {times ? formatTimeAtOffset(times[key], locationUtcOffset) : '—'}
+                    {times ? formatTimeAtOffset(times[key], locationUtcOffset, false, tr.am, tr.pm) : '—'}
                   </Text>
                 </View>
                 <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -780,7 +804,7 @@ export default function PrayerTimesScreen() {
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: eidTime < now ? C.textMuted : C.tint, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                      {formatTimeAtOffset(eidTime, locationUtcOffset)}
+                      {formatTimeAtOffset(eidTime, locationUtcOffset, false, tr.am, tr.pm)}
                     </Text>
                   </View>
                   <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -808,7 +832,7 @@ export default function PrayerTimesScreen() {
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: dhuhaTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                      {formatTimeAtOffset(dhuhaTime, locationUtcOffset)}
+                      {formatTimeAtOffset(dhuhaTime, locationUtcOffset, false, tr.am, tr.pm)}
                     </Text>
                   </View>
                   <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -836,7 +860,7 @@ export default function PrayerTimesScreen() {
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: tahajjudTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                      {formatTimeAtOffset(tahajjudTime, locationUtcOffset)}
+                      {formatTimeAtOffset(tahajjudTime, locationUtcOffset, false, tr.am, tr.pm)}
                     </Text>
                   </View>
                 </View>

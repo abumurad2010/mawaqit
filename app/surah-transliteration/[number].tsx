@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal,
   Dimensions,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import Animated, {
   useSharedValue, withTiming, useAnimatedStyle, Easing, runOnJS,
 } from 'react-native-reanimated';
@@ -24,6 +25,30 @@ import type { Bookmark } from '@/contexts/AppContext';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BISMILLAH = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const BISMILLAH_TRANSLIT = 'Bismi Allāhi l-raḥmāni l-raḥīm';
+
+/** Pronunciation guide entries: symbol + Arabic letter + examples per language */
+type PronuncEntry = {
+  symbol: string;
+  arabic: string;
+  examples: Partial<Record<import('@/constants/i18n').Lang, string>> & { en: string };
+};
+
+const PRONUNCIATION_DATA: PronuncEntry[] = [
+  { symbol: 'ā', arabic: 'ا', examples: { en: '"a" in father', ar: 'كـ"ا" في باب', fr: '"a" de pâte', tr: '"a" uzun', ur: '"آ" جیسے باب', id: '"a" panjang', fa: 'مانند "آ" در باب', ms: '"a" panjang', ru: '"а" долгое', pt: '"a" em "pai"', es: '"a" larga' } },
+  { symbol: 'ī', arabic: 'ي', examples: { en: '"ee" in meet', ar: 'كـ"ي" في بيت', fr: '"i" de vie', tr: '"i" uzun', ur: '"ی" جیسے بیت', id: '"i" panjang', fa: 'مانند "ی" در بیت', ms: '"i" panjang', ru: '"и" долгое', pt: '"i" em "vir"', es: '"i" larga' } },
+  { symbol: 'ū', arabic: 'و', examples: { en: '"oo" in moon', ar: 'كـ"و" في نور', fr: '"ou" de loup', tr: '"u" uzun', ur: '"و" جیسے نور', id: '"u" panjang', fa: 'مانند "و" در نور', ms: '"u" panjang', ru: '"у" долгое', pt: '"u" em "lua"', es: '"u" larga' } },
+  { symbol: 'ḥ', arabic: 'ح', examples: { en: 'breathy "h" from throat', ar: 'الحاء المهموسة', fr: '"h" soufflé de la gorge', tr: 'boğazdan "h"', ur: 'ح گلے سے', id: '"h" dari tenggorokan', fa: 'ح گلویی', ms: '"h" dari tekak', ru: '"х" придыхательное', pt: '"h" gutural', es: '"h" gutural' } },
+  { symbol: 'kh', arabic: 'خ', examples: { en: '"ch" in Bach', ar: 'كالخاء', fr: '"ch" allemand (Bach)', tr: 'Almanca "ch"', ur: 'جیسے خان', id: '"kh" seperti Khalid', fa: 'مانند "خ"', ms: '"kh" seperti Khalid', ru: '"х" как в хлеб', pt: '"j" em espanhol', es: '"j" en jefe' } },
+  { symbol: 'gh', arabic: 'غ', examples: { en: 'French "r" (gargling)', ar: 'الغين', fr: '"r" parisien', tr: 'Fransız "r"si', ur: 'غنہ جیسے غار', id: 'seperti "r" Prancis', fa: 'مانند "غ"', ms: 'seperti "r" Perancis', ru: 'грассирующее "р"', pt: '"r" francês', es: '"r" francesa' } },
+  { symbol: 'ʿ', arabic: 'ع', examples: { en: 'deep throat constriction (ayin)', ar: 'العين', fr: 'constriction pharyngale', tr: 'boğaz sıkışması (ayın)', ur: 'ع گلے کی آواز', id: 'kontriksi tenggorokan', fa: 'مانند "ع"', ms: 'sekatan tekak', ru: 'сжатие горла (айн)', pt: 'constrição faríngea', es: 'constricción faríngea' } },
+  { symbol: 'ʾ', arabic: 'ء', examples: { en: 'glottal stop (like "uh-oh")', ar: 'الهمزة', fr: 'coup de glotte', tr: 'gırtlak tıkayışı', ur: 'ہمزہ', id: 'hentian glotal', fa: 'همزه', ms: 'hentian glotal', ru: 'гортанная смычка', pt: 'oclusiva glotal', es: 'oclusiva glotal' } },
+  { symbol: 'ṣ', arabic: 'ص', examples: { en: 'emphatic "s" (tongue pressed)', ar: 'الصاد المفخمة', fr: '"s" emphatique', tr: 'vurgulu "s"', ur: 'ص مفخم', id: '"s" emfatik', fa: 'صاد تفخیم', ms: '"s" emfatik', ru: 'эмфатическое "с"', pt: '"s" enfático', es: '"s" enfática' } },
+  { symbol: 'ḍ', arabic: 'ض', examples: { en: 'emphatic "d"', ar: 'الضاد المفخمة', fr: '"d" emphatique', tr: 'vurgulu "d"', ur: 'ض مفخم', id: '"d" emfatik', fa: 'ضاد تفخیم', ms: '"d" emfatik', ru: 'эмфатическое "д"', pt: '"d" enfático', es: '"d" enfática' } },
+  { symbol: 'ṭ', arabic: 'ط', examples: { en: 'emphatic "t"', ar: 'الطاء المفخمة', fr: '"t" emphatique', tr: 'vurgulu "t"', ur: 'ط مفخم', id: '"t" emfatik', fa: 'طا تفخیم', ms: '"t" emfatik', ru: 'эмфатическое "т"', pt: '"t" enfático', es: '"t" enfática' } },
+  { symbol: 'ẓ', arabic: 'ظ', examples: { en: 'emphatic "z"', ar: 'الظاء المفخمة', fr: '"z" emphatique', tr: 'vurgulu "z"', ur: 'ظ مفخم', id: '"z" emfatik', fa: 'ظا تفخیم', ms: '"z" emfatik', ru: 'эмфатическое "з"', pt: '"z" enfático', es: '"z" enfática' } },
+  { symbol: 'th', arabic: 'ث', examples: { en: '"th" in think', ar: 'كـ"ث" في ثلاثة', fr: '"th" anglais (think)', tr: 'İngilizce "th"', ur: 'ث جیسے ثلاثہ', id: '"th" seperti think', fa: 'مانند "ث"', ms: '"th" seperti think', ru: '"тh" как в think', pt: '"th" em inglês', es: '"th" en inglés' } },
+  { symbol: 'sh', arabic: 'ش', examples: { en: '"sh" in ship', ar: 'كـ"ش" في شمس', fr: '"ch" de chat', tr: '"ş" sesi', ur: 'ش جیسے شمس', id: '"sy" seperti syukur', fa: 'مانند "ش"', ms: '"sh" seperti shin', ru: '"ш" как в шёлк', pt: '"ch" em chá', es: '"ch" en chico' } },
+];
 const AYAHS_PER_PAGE = 5;
 
 function highlightLatinInline(
@@ -61,7 +86,11 @@ export default function SurahTransliterationScreen() {
   const startAyahNum = Number(startAyah ?? '0');
   const highlightTerm = highlight ?? '';
   const insets = useSafeAreaInsets();
-  const { isDark, lang, translitLang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings, setTranslitLastSurah, setTranslitLastPage } = useApp();
+  const { isDark, lang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings, setTranslitLastSurah, setTranslitLastPage } = useApp();
+  // Local session state — defaults to app language on every open; user can change within the session.
+  // Not persisted: next open always resets to app language.
+  const defaultTranslitLang: Lang = SUPPORTED_TRANSLIT_LANGS.includes(lang as Lang) ? (lang as Lang) : 'en';
+  const [translitLang, setTranslitLangState] = useState<Lang>(defaultTranslitLang);
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
   const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
   const changeFontSize = (dir: 1 | -1) => {
@@ -93,6 +122,26 @@ export default function SurahTransliterationScreen() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [copyToastVisible, setCopyToastVisible] = useState(false);
+  const copyToastOpacity = useSharedValue(0);
+  const copyToastStyle = useAnimatedStyle(() => ({ opacity: copyToastOpacity.value }));
+  const copyToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showCopyToast = useCallback(() => {
+    if (copyToastTimer.current) clearTimeout(copyToastTimer.current);
+    setCopyToastVisible(true);
+    copyToastOpacity.value = withTiming(1, { duration: 150 });
+    copyToastTimer.current = setTimeout(() => {
+      copyToastOpacity.value = withTiming(0, { duration: 250 });
+      setTimeout(() => setCopyToastVisible(false), 250);
+    }, 1000);
+  }, []);
+
+  const handleCopyAyah = useCallback((text: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Clipboard.setStringAsync(text).catch(() => {});
+    showCopyToast();
+  }, [showCopyToast]);
   const scrollRef = useRef<ScrollView>(null);
 
   // Global mushaf page for this position (for FIX 2 and FIX 3)
@@ -118,7 +167,7 @@ export default function SurahTransliterationScreen() {
   useEffect(() => { isRtlSV.value = isRtl; }, [isRtl]);
 
   const slideStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: slideX }],
+    transform: [{ translateX: slideX.value }],
   }));
 
   const navigateSurah = useCallback((dir: 'next' | 'prev', goToLastPage = false) => {
@@ -300,6 +349,7 @@ export default function SurahTransliterationScreen() {
 
 
   const [showHighlight, setShowHighlight] = useState(highlightTerm.length > 0);
+  const [showPronunciation, setShowPronunciation] = useState(false);
 
   const pageAyahs = arabicData.ayahs.slice(
     (currentPage - 1) * AYAHS_PER_PAGE,
@@ -310,9 +360,9 @@ export default function SurahTransliterationScreen() {
 
   const setTranslitLang = useCallback((l: Lang) => {
     Haptics.selectionAsync();
-    updateSettings({ translitLang: l });
+    setTranslitLangState(l);
     setShowLangPicker(false);
-  }, [updateSettings]);
+  }, []);
 
   const toggleBookmark = useCallback((ayahNum: number, ayahText: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -381,22 +431,31 @@ export default function SurahTransliterationScreen() {
                 borderColor: isTarget ? C.tint + '55' : C.separator,
               }]}
             >
-              {/* Top row: badge + bookmark */}
+              {/* Top row: badge + copy + bookmark */}
               <View style={styles.ayahTopRow}>
                 <View style={[styles.numBadge, { backgroundColor: C.tint }]}>
                   <Text style={[styles.numText, { color: C.tintText }]}>{ayahNum}</Text>
                 </View>
-                <Pressable
-                  onPress={() => toggleBookmark(ayahNum, item.text)}
-                  hitSlop={8}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-                >
-                  <Ionicons
-                    name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-                    size={18}
-                    color={bookmarked ? C.gold : C.textMuted}
-                  />
-                </Pressable>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Pressable
+                    onPress={() => handleCopyAyah(item.text)}
+                    hitSlop={8}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  >
+                    <Ionicons name="copy-outline" size={16} color={C.textMuted} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => toggleBookmark(ayahNum, item.text)}
+                    hitSlop={8}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                  >
+                    <Ionicons
+                      name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                      size={18}
+                      color={bookmarked ? C.gold : C.textMuted}
+                    />
+                  </Pressable>
+                </View>
               </View>
 
               <View style={styles.ayahContent}>
@@ -452,25 +511,36 @@ export default function SurahTransliterationScreen() {
           </View>
 
           <View style={styles.headerRight}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); changeFontSize(-1); }}
               disabled={fsIdx === 0}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
+              style={({ pressed }) => [styles.fontPill, { backgroundColor: C.backgroundCard, opacity: fsIdx === 0 ? 0.3 : pressed ? 0.6 : 1 }]}
             >
-              <Text style={{ color: C.tint, fontSize: 12, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A−</Text>
+              <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>A−</Text>
             </Pressable>
+            <Text style={{ color: C.textMuted, fontSize: 11, fontWeight: '600', letterSpacing: 0.5, minWidth: 18, textAlign: 'center' }}>
+              {(['XS', 'S', 'M', 'L', 'XL'] as const)[fsIdx]}
+            </Text>
             <Pressable
               onPress={() => { Haptics.selectionAsync(); changeFontSize(1); }}
               disabled={fsIdx === FONT_STEPS.length - 1}
-              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
+              style={({ pressed }) => [styles.fontPill, { backgroundColor: C.backgroundCard, opacity: fsIdx === FONT_STEPS.length - 1 ? 0.3 : pressed ? 0.6 : 1 }]}
             >
-              <Text style={{ color: C.tint, fontSize: 16, fontWeight: '700', fontFamily: 'Amiri_700Bold' }}>A+</Text>
+              <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>A+</Text>
             </Pressable>
+            </View>
             <View style={[styles.pageIndicator, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
               <Text style={{ color: C.tint, fontSize: 11, fontWeight: '700', fontFamily: SERIF_EN }}>
                 {globalPage} / 604
               </Text>
             </View>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowPronunciation(true); }}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Ionicons name="help-circle-outline" size={18} color={C.tint} />
+            </Pressable>
           </View>
         </View>
 
@@ -546,6 +616,60 @@ export default function SurahTransliterationScreen() {
         </Pressable>
       </Modal>
 
+      {/* ── Pronunciation guide modal ── */}
+      <Modal
+        visible={showPronunciation}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPronunciation(false)}
+      >
+        <Pressable style={styles.pickerBackdrop} onPress={() => setShowPronunciation(false)}>
+          <Pressable
+            style={[styles.pickerSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator, maxHeight: '80%' }]}
+            onPress={e => e.stopPropagation()}
+          >
+            <View style={[styles.pickerHeader, { borderBottomColor: C.separator, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+              <Text style={[styles.pickerTitle, { color: C.text, fontFamily: SERIF_EN }]}>
+                {(tr as any).pronunciation_guide ?? 'Pronunciation Guide'}
+              </Text>
+              <Pressable onPress={() => setShowPronunciation(false)} hitSlop={8}>
+                <Ionicons name="close" size={20} color={C.textMuted} />
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 12 }}>
+              {PRONUNCIATION_DATA.map((entry) => {
+                const example = entry.examples[lang as keyof typeof entry.examples] ?? entry.examples.en;
+                return (
+                  <View
+                    key={entry.symbol}
+                    style={[styles.pickerRow, { borderBottomColor: C.separator, flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }]}
+                  >
+                    <Text style={{ color: C.tint, fontSize: 20, fontWeight: '700', fontFamily: SERIF_EN, width: 36 }}>
+                      {entry.symbol}
+                    </Text>
+                    <Text style={{ color: C.textMuted, fontSize: 17, fontFamily: 'Amiri_400Regular', width: 30 }}>
+                      {entry.arabic}
+                    </Text>
+                    <Text style={{ color: C.text, fontSize: 13, fontFamily: isRtlLang(lang) ? 'Amiri_400Regular' : SERIF_EN, flex: 1, flexWrap: 'wrap' }}>
+                      {example}
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {copyToastVisible && (
+        <Animated.View style={[styles.copyToastOverlay, copyToastStyle]} pointerEvents="none">
+          <View style={[styles.copyToastBox, { backgroundColor: C.tint }]}>
+            <Ionicons name="checkmark-circle" size={18} color={C.tintText} />
+            <Text style={[styles.copyToastText, { color: C.tintText }]}>{(tr as any).copied_successfully ?? 'Copied'}</Text>
+          </View>
+        </Animated.View>
+      )}
+
       {/* ── Bottom navigation ── */}
       <View style={[styles.bottomNav, { paddingBottom: bottomInset + 14, borderTopColor: C.separator, backgroundColor: C.background + 'F0', zIndex: 10, elevation: 10 }]}>
         <Pressable
@@ -556,7 +680,7 @@ export default function SurahTransliterationScreen() {
           <Ionicons name="chevron-back" size={16} color={C.tint} />
           <Text style={[styles.navBtnText, { color: C.tint }]}>{tr.prev}</Text>
         </Pressable>
-        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{tr.page} {globalPage} / 604</Text>
+        <Text style={[styles.pageCounter, { color: C.textMuted }]}>{(tr.page_of ?? 'Page {current} / {total}').replace('{current}', String(globalPage)).replace('{total}', '604')}</Text>
         <Pressable
           onPress={() => navigatePage('next')}
           disabled={currentPage === totalPages && nextSurah === null}
@@ -588,6 +712,10 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   iconBtn: {
     width: 34, height: 34, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  fontPill: {
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
     alignItems: 'center', justifyContent: 'center',
   },
   pageIndicator: {
@@ -647,6 +775,17 @@ const styles = StyleSheet.create({
   translitText: { fontSize: 14, fontStyle: 'italic', lineHeight: 20 },
   translationText: { fontSize: 13, lineHeight: 20, opacity: 0.85 },
 
+  copyToastOverlay: {
+    position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  copyToastBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25, shadowRadius: 10, elevation: 8,
+  },
+  copyToastText: { fontSize: 15, fontWeight: '700', fontFamily: 'Inter_600SemiBold' },
   bottomNav: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 12,

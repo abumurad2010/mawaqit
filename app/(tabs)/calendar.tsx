@@ -51,6 +51,8 @@ const GREGORIAN_MONTHS_AR = [
 
 const DAYS_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAYS_AR = ['أح','إث','ثل','أر','خم','جم','سب'];
+// Swahili: Intl.DateTimeFormat produces long names (all start with "Juma") — use 3-char abbreviations
+const DAYS_SW = ['Jpi','Jtt','Jnn','Jtn','Alh','Iju','Jmo'];
 
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -274,6 +276,7 @@ export default function CalendarScreen() {
     }
   })();
   const dayNames = (() => {
+    if (lang === 'sw') return DAYS_SW;
     try {
       // Sunday = Jan 3 2021, iterate Sun–Sat
       return Array.from({ length: 7 }, (_, i) =>
@@ -343,9 +346,10 @@ export default function CalendarScreen() {
         </View>
 
         {/* Month navigation */}
-        <View style={[styles.monthNav, { paddingHorizontal: 16, flexDirection: isAr ? 'row-reverse' : 'row' }]}>
+        {/* Arrows always point outward (left = ‹, right = ›) regardless of language */}
+        <View style={[styles.monthNav, { paddingHorizontal: 16, flexDirection: 'row' }]}>
           <Pressable onPress={goToPrevMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
-            <Ionicons name={isAr ? 'chevron-forward' : 'chevron-back'} size={20} color={C.tint} />
+            <Ionicons name="chevron-back" size={20} color={C.tint} />
           </Pressable>
           <View style={styles.monthCenter}>
             <Text style={[styles.monthName, { color: C.text, fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, fontSize: cFS.month }]}>
@@ -367,7 +371,7 @@ export default function CalendarScreen() {
             </Text>
           </View>
           <Pressable onPress={goToNextMonth} style={[styles.arrowBtn, { backgroundColor: C.backgroundCard }]}>
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={20} color={C.tint} />
+            <Ionicons name="chevron-forward" size={20} color={C.tint} />
           </Pressable>
         </View>
 
@@ -493,7 +497,7 @@ export default function CalendarScreen() {
                         </Text>
                       </View>
                       <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw, fontSize: cFS.prayer }]}>
-                        {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset) : '—'}
+                        {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset, false, tr.am, tr.pm) : '—'}
                       </Text>
                     </View>
                     <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />
@@ -529,7 +533,23 @@ export default function CalendarScreen() {
             </View>
             <Text style={styles.modalEmoji}>{selectedMoon.emoji}</Text>
             <Text style={[styles.modalPhaseName, { color: C.text }]}>
-              {isAr ? selectedMoon.nameAr : selectedMoon.name}
+              {selectedMoon.phase < 0.033 || selectedMoon.phase > 0.967
+                ? tr.moon_name_conjunction
+                : selectedMoon.phase < 0.10
+                ? tr.moon_name_new_crescent
+                : selectedMoon.phase < 0.225
+                ? tr.moon_name_waxing_crescent
+                : selectedMoon.phase < 0.275
+                ? tr.moon_name_first_quarter
+                : selectedMoon.phase < 0.475
+                ? tr.moon_name_waxing_gibbous
+                : selectedMoon.phase < 0.525
+                ? tr.moon_name_full
+                : selectedMoon.phase < 0.725
+                ? tr.moon_name_waning_gibbous
+                : selectedMoon.phase < 0.775
+                ? tr.moon_name_last_quarter
+                : tr.moon_name_waning_crescent}
             </Text>
             <View style={[styles.modalDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)' }]} />
 
@@ -560,7 +580,7 @@ export default function CalendarScreen() {
               }] : []),
               ...(crescentWindow ? [{
                 label: tr.crescentVisibility,
-                value: `${formatTimeAtOffset(crescentWindow.sunset, locationUtcOffset)} – ${formatTimeAtOffset(crescentWindow.moonset, locationUtcOffset)}`,
+                value: `${formatTimeAtOffset(crescentWindow.sunset, locationUtcOffset, false, tr.am, tr.pm)} – ${formatTimeAtOffset(crescentWindow.moonset, locationUtcOffset, false, tr.am, tr.pm)}`,
                 icon: 'eye-outline',
               }] : []),
               {
@@ -585,20 +605,20 @@ export default function CalendarScreen() {
             <View style={[styles.significanceBox, { backgroundColor: C.tint + '14' }]}>
               <Text style={[styles.significanceText, { color: C.textSecond, fontFamily: isAr ? 'Amiri_400Regular' : SERIF_EN }]}>
                 {selectedMoon.phase < 0.033 || selectedMoon.phase > 0.967
-                  ? (isAr ? '🌑 المحاق — القمر في الاقتران، غير مرئي، يبدأ الشهر الهجري' : '🌑 Conjunction — moon invisible (Astronomical New Moon), Hijri month begins')
+                  ? tr.moon_conjunction
                   : selectedMoon.phase < 0.10
-                  ? (isAr ? '🌒 هلال جديد — أول ظهور للقمر بعد المحاق، يُرى عند الغروب' : '🌒 New Crescent — first visible after conjunction, seen just after sunset')
+                  ? tr.moon_new_crescent
                   : selectedMoon.phase < 0.275
-                  ? (isAr ? '🌒 الهلال — القمر في طور التزايد المبكر' : '🌒 Waxing Crescent — moon growing in early phase')
+                  ? tr.moon_waxing_crescent
                   : selectedMoon.phase < 0.475
-                  ? (isAr ? '🌔 الأحدب المتزايد — القمر يكتمل تدريجيًا' : '🌔 Waxing Gibbous — moon filling up toward full')
+                  ? tr.moon_waxing_gibbous
                   : selectedMoon.phase < 0.525
-                  ? (isAr ? '🌕 البدر — ليالي البيض (١٣–١٤–١٥)' : '🌕 Full Moon — the White Nights (13–14–15)')
+                  ? tr.moon_full
                   : selectedMoon.phase < 0.725
-                  ? (isAr ? '🌖 الأحدب المتناقص — القمر يتناقص تدريجيًا' : '🌖 Waning Gibbous — moon decreasing after full')
+                  ? tr.moon_waning_gibbous
                   : selectedMoon.phase < 0.775
-                  ? (isAr ? '🌗 التربيع الثاني — نصف القمر مضيء في المرحلة الأخيرة' : '🌗 Last Quarter — half moon in final phase')
-                  : (isAr ? '🌘 هلال آخر الشهر — اقتراب المحاق' : '🌘 Waning Crescent — approaching conjunction')}
+                  ? tr.moon_last_quarter
+                  : tr.moon_waning_crescent}
               </Text>
             </View>
 
@@ -676,9 +696,7 @@ export default function CalendarScreen() {
                         <View style={[styles.nmTimeChip, { backgroundColor: C.tint + '22', marginBottom: 12 }]}>
                           <Ionicons name="eye-outline" size={13} color={C.tint} />
                           <Text style={[styles.nmTimeText, { color: C.tint }]}>
-                            {isAr
-                              ? `نافذة الرصد: ${formatTimeAtOffset(info.sunset, locationUtcOffset)} – ${formatTimeAtOffset(info.moonset, locationUtcOffset)}`
-                              : `Look: ${formatTimeAtOffset(info.sunset, locationUtcOffset)} – ${formatTimeAtOffset(info.moonset, locationUtcOffset)}`}
+                            {`${tr.observation_window}: ${formatTimeAtOffset(info.sunset, locationUtcOffset, false, tr.am, tr.pm)} – ${formatTimeAtOffset(info.moonset, locationUtcOffset, false, tr.am, tr.pm)}`}
                           </Text>
                         </View>
                       ) : null}
@@ -687,9 +705,7 @@ export default function CalendarScreen() {
                       <View style={[styles.nmConjRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
                         <Text style={{ fontSize: 13 }}>🌑</Text>
                         <Text style={[styles.nmConjLabel, { color: C.textMuted }]}>
-                          {isAr
-                            ? `الاقتران الفلكي: ${formatNewMoonDate(info.conjunction, locationUtcOffset)} — ${formatNewMoonLocal(info.conjunction, locationUtcOffset)}`
-                            : `Conjunction (ref): ${formatNewMoonDate(info.conjunction, locationUtcOffset)}, ${formatNewMoonLocal(info.conjunction, locationUtcOffset)}`}
+                          {`${tr.conjunction_ref}: ${formatNewMoonDate(info.conjunction, locationUtcOffset)}, ${formatNewMoonLocal(info.conjunction, locationUtcOffset)}`}
                         </Text>
                       </View>
                     </View>
