@@ -3,22 +3,22 @@ import type { AudioPlayer } from 'expo-audio';
 
 const ADHAN_FILES: Record<string, any> = {
   'abdul-hakam': require('@/assets/sounds/Abdul-Hakam.mp3'),
-  'aqsa':        require('@/assets/sounds/Adhan-Alaqsa.mp3'),
-  'egypt':       require('@/assets/sounds/Adhan-Egypt.mp3'),
-  'halab':       require('@/assets/sounds/Adhan-Halab.mp3'),
-  'madinah':     require('@/assets/sounds/Adhan-Madinah.mp3'),
-  'makkah':      require('@/assets/sounds/Adhan-Makkah.mp3'),
+  'aqsa':        require('@/assets/sounds/adhan_alaqsa.mp3'),
+  'egypt':       require('@/assets/sounds/adhan_egypt.mp3'),
+  'halab':       require('@/assets/sounds/adhan_halab.mp3'),
+  'madinah':     require('@/assets/sounds/adhan_madinah.mp3'),
+  'makkah':      require('@/assets/sounds/adhan_makkah.mp3'),
   'hussaini':    require('@/assets/sounds/Al-Hussaini.mp3'),
   'bakir':       require('@/assets/sounds/Bakir-Bash.mp3'),
 };
 
 const ADHAN_FILES_ABB: Record<string, any> = {
   'abdul-hakam': require('@/assets/sounds/Abdul-Hakam-Abb.m4a'),
-  'aqsa':        require('@/assets/sounds/Adhan-Alaqsa-Abb.m4a'),
-  'egypt':       require('@/assets/sounds/Adhan-Egypt-Abb.m4a'),
-  'halab':       require('@/assets/sounds/Adhan-Halab-Abb.m4a'),
-  'madinah':     require('@/assets/sounds/Adhan-Madinah-Abb.m4a'),
-  'makkah':      require('@/assets/sounds/Adhan-Makka-Abb.m4a'),
+  'aqsa':        require('@/assets/sounds/adhan_alaqsa_abb.m4a'),
+  'egypt':       require('@/assets/sounds/adhan_egypt_abb.m4a'),
+  'halab':       require('@/assets/sounds/adhan_halab_abb.m4a'),
+  'madinah':     require('@/assets/sounds/adhan_madinah_abb.m4a'),
+  'makkah':      require('@/assets/sounds/adhan_makka_abb.m4a'),
   'hussaini':    require('@/assets/sounds/Al-Hussaini-Abb.m4a'),
   'bakir':       require('@/assets/sounds/Bakir-Bash-Abb.m4a'),
 };
