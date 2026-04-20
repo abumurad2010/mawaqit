@@ -75,9 +75,9 @@
             "./assets/sounds/adhan_egypt.mp3",
             "./assets/sounds/adhan_alaqsa.mp3",
             "./assets/sounds/adhan_halab.mp3",
-            "./assets/sounds/Al-Hussaini.mp3",
-            "./assets/sounds/Bakir-Bash.mp3",
-            "./assets/sounds/Abdul-Hakam.mp3"
+            "./assets/sounds/al_hussaini.mp3",
+            "./assets/sounds/bakir_bash.mp3",
+            "./assets/sounds/abdul_hakam.mp3"
           ]
         }
       ],
