@@ -13,6 +13,24 @@ private struct PrayerWidgetData: Codable {
   var nextPrayerTime2: String
   var updatedAt: Double
 
+  // Explicit memberwise init — required because the custom Decodable init below
+  // would otherwise suppress the compiler-synthesised one.
+  init(
+    nextPrayerName: String,
+    nextPrayerTime: String,
+    countdown: String,
+    nextPrayerName2: String,
+    nextPrayerTime2: String,
+    updatedAt: Double
+  ) {
+    self.nextPrayerName  = nextPrayerName
+    self.nextPrayerTime  = nextPrayerTime
+    self.countdown       = countdown
+    self.nextPrayerName2 = nextPrayerName2
+    self.nextPrayerTime2 = nextPrayerTime2
+    self.updatedAt       = updatedAt
+  }
+
   // Graceful decode for data written before name2/time2 were added.
   init(from decoder: Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)

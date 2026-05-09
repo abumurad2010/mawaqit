@@ -728,7 +728,7 @@
 				PRODUCT_NAME = MawaqitWidget;
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -752,7 +752,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mawaqit.app.widget;
 				PRODUCT_NAME = MawaqitWidget;
 				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
