@@ -1,6 +1,6 @@
 #import <React/RCTBridgeModule.h>
 
-RCT_EXTERN_MODULE(WidgetDataModule, NSObject)
+@interface RCT_EXTERN_MODULE(WidgetDataModule, NSObject)
 
 RCT_EXTERN_METHOD(
   updateWidgetData:(NSString *)prayerName
@@ -9,3 +9,5 @@ RCT_EXTERN_METHOD(
   prayerName2:(NSString *)prayerName2
   prayerTime2:(NSString *)prayerTime2
 )
+
+@end
