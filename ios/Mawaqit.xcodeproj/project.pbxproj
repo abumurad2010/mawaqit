@@ -1,0 +1,793 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		065BF623A9454F05B9C64A7D /* adhan_madinah.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B2C932BC84E74C02A83D3961 /* adhan_madinah.mp3 */; };
+		08E7D637A993439999DEC9DD /* al_hussaini.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B9A04903652E4B04958C0413 /* al_hussaini.mp3 */; };
+		1191A41A78EFCA13447D979E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A8CF5116C3914B47DA2E16A3 /* PrivacyInfo.xcprivacy */; };
+		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		15351584E4DF4AB1A7F76E70 /* adhan_alaqsa_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1E2B0C7550D34F7997DC4BE1 /* adhan_alaqsa_abb.mp3 */; };
+		1C73B5D9A2F4E8067C3B5D9A /* SharedPrayerData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D84C6EAB3F507178D4C6EAB /* SharedPrayerData.swift */; };
+		26CD3D2A7ACB400EA2A978DA /* al_hussaini_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8786C94AD3CD46998FF90537 /* al_hussaini_abb.mp3 */; };
+		29AA6FDD673A47B89999CBAF /* adhan_egypt.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 67D47D0CBFF44BDAB1F0B540 /* adhan_egypt.mp3 */; };
+		3B725BBDD889B3C193712AD7 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A7D1D347BCFF7C9CD0F138B /* ExpoModulesProvider.swift */; };
+		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		3E95D7FBC4A618289E5D7FBC /* WidgetDataModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FA6E8ACD5B72939AF6E8ACD /* WidgetDataModule.m */; };
+		4AF7A972C0F34CCF87FD6251 /* adhan_alaqsa.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1A4FAB34BE6F4F0B80380E92 /* adhan_alaqsa.mp3 */; };
+		50EE3F54C80A4D4FA1BEF306 /* adhan_halab_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 22F39C4969EB46BDAA50387B /* adhan_halab_abb.mp3 */; };
+		515302A18AF7458FB0C49497 /* bakir_bash_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8EA198064294435A9A511F44 /* bakir_bash_abb.mp3 */; };
+		5AB7F9BDE6C83A4AB07F9BDE /* WidgetDataModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BC8AACEF7D94B5BC18AACEF /* WidgetDataModule.swift */; };
+		5C1FFC3928F34D059FF7F567 /* adhan_egypt_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 99A1310969264DC0922B918F /* adhan_egypt_abb.mp3 */; };
+		77C1283EC9CE42BDB239FFBB /* adhan_makka_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A4A849ED632A4319A87AA760 /* adhan_makka_abb.mp3 */; };
+		79F7B3F19AA6CE9298705067 /* libPods-Mawaqit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8495AA3CAD4FF81830B3E060 /* libPods-Mawaqit.a */; };
+		8CADF193672E4AF0863405FD /* adhan_madinah_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 46AA937CE9FC42B196ABA5B0 /* adhan_madinah_abb.mp3 */; };
+		8DEACCEFA9FB6D7DE3ACCEFA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CD9BBDFA8EA5C6CD29BBDFA /* WidgetKit.framework */; };
+		8E98C622E97C40FCB6105054 /* abdul_hakam_abb.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DC5D2E135F644636BFF67F69 /* abdul_hakam_abb.mp3 */; };
+		962EC526EE7347818A328803 /* bakir_bash.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 08991B41E2A8460C8BA9B55C /* bakir_bash.mp3 */; };
+		A71E413186714FD3A4B7A348 /* adhan_makkah.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7E7B56053C2145DDACBC16E1 /* adhan_makkah.mp3 */; };
+		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		C616CBAEF0DD4AF3968CCD4E /* abdul_hakam.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 34EAC8E8B95C4518A04E899E /* abdul_hakam.mp3 */; };
+		CE7A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE6A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.swift */; };
+		CEBA2B3C4D5E6F70A182B3C4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CEAA2B3C4D5E6F70A182B3C4 /* SwiftUI.framework */; };
+		CECA2B3C4D5E6F70A182B3C4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7CD9BBDFA8EA5C6CD29BBDFA /* WidgetKit.framework */; };
+		CF2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E122632F9FC2482EAA198DA2 /* adhan_halab.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C60860A1745B4ACD9CC1DE55 /* adhan_halab.mp3 */; };
+		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CF4A2B3C4D5E6F70A182B3C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE1A2B3C4D5E6F70A182B3C4;
+			remoteInfo = MawaqitWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CF1A2B3C4D5E6F70A182B3C4 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CF2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		08564945EDC4FF96C57C145E /* Pods-Mawaqit.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mawaqit.release.xcconfig"; path = "Target Support Files/Pods-Mawaqit/Pods-Mawaqit.release.xcconfig"; sourceTree = "<group>"; };
+		08991B41E2A8460C8BA9B55C /* bakir_bash.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = bakir_bash.mp3; path = Mawaqit/bakir_bash.mp3; sourceTree = "<group>"; };
+		0AA3D34C6A54DDE77A4902CD /* Pods-Mawaqit.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mawaqit.debug.xcconfig"; path = "Target Support Files/Pods-Mawaqit/Pods-Mawaqit.debug.xcconfig"; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* Mawaqit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mawaqit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Mawaqit/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mawaqit/Info.plist; sourceTree = "<group>"; };
+		1A4FAB34BE6F4F0B80380E92 /* adhan_alaqsa.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_alaqsa.mp3; path = Mawaqit/adhan_alaqsa.mp3; sourceTree = "<group>"; };
+		1E2B0C7550D34F7997DC4BE1 /* adhan_alaqsa_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_alaqsa_abb.mp3; path = Mawaqit/adhan_alaqsa_abb.mp3; sourceTree = "<group>"; };
+		22F39C4969EB46BDAA50387B /* adhan_halab_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_halab_abb.mp3; path = Mawaqit/adhan_halab_abb.mp3; sourceTree = "<group>"; };
+		2D84C6EAB3F507178D4C6EAB /* SharedPrayerData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SharedPrayerData.swift; path = Mawaqit/SharedPrayerData.swift; sourceTree = "<group>"; };
+		34EAC8E8B95C4518A04E899E /* abdul_hakam.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = abdul_hakam.mp3; path = Mawaqit/abdul_hakam.mp3; sourceTree = "<group>"; };
+		3A7D1D347BCFF7C9CD0F138B /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Mawaqit/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		46AA937CE9FC42B196ABA5B0 /* adhan_madinah_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_madinah_abb.mp3; path = Mawaqit/adhan_madinah_abb.mp3; sourceTree = "<group>"; };
+		4FA6E8ACD5B72939AF6E8ACD /* WidgetDataModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = WidgetDataModule.m; path = Mawaqit/WidgetDataModule.m; sourceTree = "<group>"; };
+		67D47D0CBFF44BDAB1F0B540 /* adhan_egypt.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_egypt.mp3; path = Mawaqit/adhan_egypt.mp3; sourceTree = "<group>"; };
+		6BC8AACEF7D94B5BC18AACEF /* WidgetDataModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetDataModule.swift; path = Mawaqit/WidgetDataModule.swift; sourceTree = "<group>"; };
+		7CD9BBDFA8EA5C6CD29BBDFA /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		7E7B56053C2145DDACBC16E1 /* adhan_makkah.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_makkah.mp3; path = Mawaqit/adhan_makkah.mp3; sourceTree = "<group>"; };
+		8495AA3CAD4FF81830B3E060 /* libPods-Mawaqit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Mawaqit.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8786C94AD3CD46998FF90537 /* al_hussaini_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = al_hussaini_abb.mp3; path = Mawaqit/al_hussaini_abb.mp3; sourceTree = "<group>"; };
+		8EA198064294435A9A511F44 /* bakir_bash_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = bakir_bash_abb.mp3; path = Mawaqit/bakir_bash_abb.mp3; sourceTree = "<group>"; };
+		99A1310969264DC0922B918F /* adhan_egypt_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_egypt_abb.mp3; path = Mawaqit/adhan_egypt_abb.mp3; sourceTree = "<group>"; };
+		A4A849ED632A4319A87AA760 /* adhan_makka_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_makka_abb.mp3; path = Mawaqit/adhan_makka_abb.mp3; sourceTree = "<group>"; };
+		A8CF5116C3914B47DA2E16A3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Mawaqit/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Mawaqit/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B2C932BC84E74C02A83D3961 /* adhan_madinah.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_madinah.mp3; path = Mawaqit/adhan_madinah.mp3; sourceTree = "<group>"; };
+		B9A04903652E4B04958C0413 /* al_hussaini.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = al_hussaini.mp3; path = Mawaqit/al_hussaini.mp3; sourceTree = "<group>"; };
+		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		C60860A1745B4ACD9CC1DE55 /* adhan_halab.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_halab.mp3; path = Mawaqit/adhan_halab.mp3; sourceTree = "<group>"; };
+		CE2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MawaqitWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE6A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MawaqitWidget.swift; path = MawaqitWidget/MawaqitWidget.swift; sourceTree = "<group>"; };
+		CE8A2B3C4D5E6F70A182B3C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = MawaqitWidget/Info.plist; sourceTree = "<group>"; };
+		CE9A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = MawaqitWidget.entitlements; path = MawaqitWidget/MawaqitWidget.entitlements; sourceTree = "<group>"; };
+		CEAA2B3C4D5E6F70A182B3C4 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		DC5D2E135F644636BFF67F69 /* abdul_hakam_abb.mp3 */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = abdul_hakam_abb.mp3; path = Mawaqit/abdul_hakam_abb.mp3; sourceTree = "<group>"; };
+		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Mawaqit/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* Mawaqit-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Mawaqit-Bridging-Header.h"; path = "Mawaqit/Mawaqit-Bridging-Header.h"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DEACCEFA9FB6D7DE3ACCEFA /* WidgetKit.framework in Frameworks */,
+				79F7B3F19AA6CE9298705067 /* libPods-Mawaqit.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CEEA2B3C4D5E6F70A182B3C4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CEBA2B3C4D5E6F70A182B3C4 /* SwiftUI.framework in Frameworks */,
+				CECA2B3C4D5E6F70A182B3C4 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		13B07FAE1A68108700A75B9A /* Mawaqit */ = {
+			isa = PBXGroup;
+			children = (
+				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
+				2D84C6EAB3F507178D4C6EAB /* SharedPrayerData.swift */,
+				4FA6E8ACD5B72939AF6E8ACD /* WidgetDataModule.m */,
+				6BC8AACEF7D94B5BC18AACEF /* WidgetDataModule.swift */,
+				F11748442D0722820044C1D9 /* Mawaqit-Bridging-Header.h */,
+				BB2F792B24A3F905000567C9 /* Supporting */,
+				13B07FB51A68108700A75B9A /* Images.xcassets */,
+				13B07FB61A68108700A75B9A /* Info.plist */,
+				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
+				A4A849ED632A4319A87AA760 /* adhan_makka_abb.mp3 */,
+				46AA937CE9FC42B196ABA5B0 /* adhan_madinah_abb.mp3 */,
+				99A1310969264DC0922B918F /* adhan_egypt_abb.mp3 */,
+				1E2B0C7550D34F7997DC4BE1 /* adhan_alaqsa_abb.mp3 */,
+				22F39C4969EB46BDAA50387B /* adhan_halab_abb.mp3 */,
+				8786C94AD3CD46998FF90537 /* al_hussaini_abb.mp3 */,
+				8EA198064294435A9A511F44 /* bakir_bash_abb.mp3 */,
+				DC5D2E135F644636BFF67F69 /* abdul_hakam_abb.mp3 */,
+				7E7B56053C2145DDACBC16E1 /* adhan_makkah.mp3 */,
+				B2C932BC84E74C02A83D3961 /* adhan_madinah.mp3 */,
+				67D47D0CBFF44BDAB1F0B540 /* adhan_egypt.mp3 */,
+				1A4FAB34BE6F4F0B80380E92 /* adhan_alaqsa.mp3 */,
+				C60860A1745B4ACD9CC1DE55 /* adhan_halab.mp3 */,
+				B9A04903652E4B04958C0413 /* al_hussaini.mp3 */,
+				08991B41E2A8460C8BA9B55C /* bakir_bash.mp3 */,
+				34EAC8E8B95C4518A04E899E /* abdul_hakam.mp3 */,
+				A8CF5116C3914B47DA2E16A3 /* PrivacyInfo.xcprivacy */,
+			);
+			name = Mawaqit;
+			sourceTree = "<group>";
+		};
+		2584A3DDD1A5C1F6C6194704 /* Mawaqit */ = {
+			isa = PBXGroup;
+			children = (
+				3A7D1D347BCFF7C9CD0F138B /* ExpoModulesProvider.swift */,
+			);
+			name = Mawaqit;
+			sourceTree = "<group>";
+		};
+		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
+				7CD9BBDFA8EA5C6CD29BBDFA /* WidgetKit.framework */,
+				CEAA2B3C4D5E6F70A182B3C4 /* SwiftUI.framework */,
+				8495AA3CAD4FF81830B3E060 /* libPods-Mawaqit.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		339753192F77CC1BD3783687 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0AA3D34C6A54DDE77A4902CD /* Pods-Mawaqit.debug.xcconfig */,
+				08564945EDC4FF96C57C145E /* Pods-Mawaqit.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Libraries;
+			sourceTree = "<group>";
+		};
+		83CBB9F61A601CBA00E9B192 = {
+			isa = PBXGroup;
+			children = (
+				13B07FAE1A68108700A75B9A /* Mawaqit */,
+				CF0A2B3C4D5E6F70A182B3C4 /* MawaqitWidget */,
+				832341AE1AAA6A7D00B99B32 /* Libraries */,
+				83CBBA001A601CBA00E9B192 /* Products */,
+				2D16E6871FA4F8E400B85C8A /* Frameworks */,
+				339753192F77CC1BD3783687 /* Pods */,
+				D30DB6284551CAE36A0E7BB7 /* ExpoModulesProviders */,
+			);
+			indentWidth = 2;
+			sourceTree = "<group>";
+			tabWidth = 2;
+			usesTabs = 0;
+		};
+		83CBBA001A601CBA00E9B192 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				13B07F961A680F5B00A75B9A /* Mawaqit.app */,
+				CE2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BB2F792B24A3F905000567C9 /* Supporting */ = {
+			isa = PBXGroup;
+			children = (
+				BB2F792C24A3F905000567C9 /* Expo.plist */,
+			);
+			name = Supporting;
+			path = Mawaqit/Supporting;
+			sourceTree = "<group>";
+		};
+		CF0A2B3C4D5E6F70A182B3C4 /* MawaqitWidget */ = {
+			isa = PBXGroup;
+			children = (
+				CE6A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.swift */,
+				CE8A2B3C4D5E6F70A182B3C4 /* Info.plist */,
+				CE9A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.entitlements */,
+			);
+			name = MawaqitWidget;
+			path = MawaqitWidget;
+			sourceTree = "<group>";
+		};
+		D30DB6284551CAE36A0E7BB7 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				2584A3DDD1A5C1F6C6194704 /* Mawaqit */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		13B07F861A680F5B00A75B9A /* Mawaqit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Mawaqit" */;
+			buildPhases = (
+				14B2A1CA5B0D10EFDDFC9B17 /* [CP] Check Pods Manifest.lock */,
+				99B603E4E74C3D397993CD36 /* [Expo] Configure project */,
+				13B07F871A680F5B00A75B9A /* Sources */,
+				13B07F8C1A680F5B00A75B9A /* Frameworks */,
+				13B07F8E1A680F5B00A75B9A /* Resources */,
+				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
+				CF1A2B3C4D5E6F70A182B3C4 /* Embed Foundation Extensions */,
+				A922163B964A125BC48F1516 /* [CP] Embed Pods Frameworks */,
+				B0235D58E2C9D5F78059E39E /* [CP] Copy Pods Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF3A2B3C4D5E6F70A182B3C4 /* PBXTargetDependency */,
+			);
+			name = Mawaqit;
+			productName = Mawaqit;
+			productReference = 13B07F961A680F5B00A75B9A /* Mawaqit.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CE1A2B3C4D5E6F70A182B3C4 /* MawaqitWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CE3A2B3C4D5E6F70A182B3C4 /* Build configuration list for PBXNativeTarget "MawaqitWidget" */;
+			buildPhases = (
+				CEDA2B3C4D5E6F70A182B3C4 /* Sources */,
+				CEEA2B3C4D5E6F70A182B3C4 /* Frameworks */,
+				CEFA2B3C4D5E6F70A182B3C4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MawaqitWidget;
+			productName = MawaqitWidget;
+			productReference = CE2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		83CBB9F71A601CBA00E9B192 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1130;
+				TargetAttributes = {
+					13B07F861A680F5B00A75B9A = {
+						LastSwiftMigration = 1250;
+					};
+					CE1A2B3C4D5E6F70A182B3C4 = {
+						CreatedOnToolsVersion = 15.1;
+					};
+				};
+			};
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Mawaqit" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 83CBB9F61A601CBA00E9B192;
+			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				13B07F861A680F5B00A75B9A /* Mawaqit */,
+				CE1A2B3C4D5E6F70A182B3C4 /* MawaqitWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		13B07F8E1A680F5B00A75B9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
+				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
+				77C1283EC9CE42BDB239FFBB /* adhan_makka_abb.mp3 in Resources */,
+				8CADF193672E4AF0863405FD /* adhan_madinah_abb.mp3 in Resources */,
+				5C1FFC3928F34D059FF7F567 /* adhan_egypt_abb.mp3 in Resources */,
+				15351584E4DF4AB1A7F76E70 /* adhan_alaqsa_abb.mp3 in Resources */,
+				50EE3F54C80A4D4FA1BEF306 /* adhan_halab_abb.mp3 in Resources */,
+				26CD3D2A7ACB400EA2A978DA /* al_hussaini_abb.mp3 in Resources */,
+				515302A18AF7458FB0C49497 /* bakir_bash_abb.mp3 in Resources */,
+				8E98C622E97C40FCB6105054 /* abdul_hakam_abb.mp3 in Resources */,
+				A71E413186714FD3A4B7A348 /* adhan_makkah.mp3 in Resources */,
+				065BF623A9454F05B9C64A7D /* adhan_madinah.mp3 in Resources */,
+				29AA6FDD673A47B89999CBAF /* adhan_egypt.mp3 in Resources */,
+				4AF7A972C0F34CCF87FD6251 /* adhan_alaqsa.mp3 in Resources */,
+				E122632F9FC2482EAA198DA2 /* adhan_halab.mp3 in Resources */,
+				08E7D637A993439999DEC9DD /* al_hussaini.mp3 in Resources */,
+				962EC526EE7347818A328803 /* bakir_bash.mp3 in Resources */,
+				C616CBAEF0DD4AF3968CCD4E /* abdul_hakam.mp3 in Resources */,
+				1191A41A78EFCA13447D979E /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CEFA2B3C4D5E6F70A182B3C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+			);
+			name = "Bundle React Native code and images";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
+		};
+		14B2A1CA5B0D10EFDDFC9B17 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Mawaqit-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		99B603E4E74C3D397993CD36 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/Mawaqit/Mawaqit.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-Mawaqit/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-Mawaqit/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Mawaqit/expo-configure-project.sh\"\n";
+		};
+		A922163B964A125BC48F1516 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mawaqit/Pods-Mawaqit-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mawaqit/Pods-Mawaqit-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B0235D58E2C9D5F78059E39E /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Mawaqit/Pods-Mawaqit-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXNotifications/ExpoNotifications_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNCAsyncStorage/RNCAsyncStorage_resources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNSVG/RNSVGFilters.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoApplication_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNCAsyncStorage_resources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNSVGFilters.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Mawaqit/Pods-Mawaqit-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		13B07F871A680F5B00A75B9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
+				1C73B5D9A2F4E8067C3B5D9A /* SharedPrayerData.swift in Sources */,
+				3E95D7FBC4A618289E5D7FBC /* WidgetDataModule.m in Sources */,
+				5AB7F9BDE6C83A4AB07F9BDE /* WidgetDataModule.swift in Sources */,
+				3B725BBDD889B3C193712AD7 /* ExpoModulesProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CEDA2B3C4D5E6F70A182B3C4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE7A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CF3A2B3C4D5E6F70A182B3C4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE1A2B3C4D5E6F70A182B3C4 /* MawaqitWidget */;
+			targetProxy = CF4A2B3C4D5E6F70A182B3C4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		13B07F941A680F5B00A75B9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0AA3D34C6A54DDE77A4902CD /* Pods-Mawaqit.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Mawaqit/Mawaqit.entitlements;
+				CURRENT_PROJECT_VERSION = 30;
+				DEVELOPMENT_TEAM = V7A6L6J2Y3;
+				ENABLE_BITCODE = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"FB_SONARKIT_ENABLED=1",
+				);
+				INFOPLIST_FILE = Mawaqit/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mawaqit.app;
+				PRODUCT_NAME = Mawaqit;
+				SWIFT_OBJC_BRIDGING_HEADER = "Mawaqit/Mawaqit-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		13B07F951A680F5B00A75B9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 08564945EDC4FF96C57C145E /* Pods-Mawaqit.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Mawaqit/Mawaqit.entitlements;
+				CURRENT_PROJECT_VERSION = 30;
+				DEVELOPMENT_TEAM = V7A6L6J2Y3;
+				INFOPLIST_FILE = Mawaqit/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+					"-lc++",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mawaqit.app;
+				PRODUCT_NAME = Mawaqit;
+				SWIFT_OBJC_BRIDGING_HEADER = "Mawaqit/Mawaqit-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		83CBBA201A601CBA00E9B192 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					/usr/lib/swift,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
+				USE_HERMES = true;
+			};
+			name = Debug;
+		};
+		83CBBA211A601CBA00E9B192 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					/usr/lib/swift,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
+				SDKROOT = iphoneos;
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
+				USE_HERMES = true;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CE4A2B3C4D5E6F70A182B3C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MawaqitWidget/MawaqitWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 30;
+				DEVELOPMENT_TEAM = V7A6L6J2Y3;
+				INFOPLIST_FILE = MawaqitWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mawaqit.app.widget;
+				PRODUCT_NAME = MawaqitWidget;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		CE5A2B3C4D5E6F70A182B3C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MawaqitWidget/MawaqitWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 30;
+				DEVELOPMENT_TEAM = V7A6L6J2Y3;
+				INFOPLIST_FILE = MawaqitWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = com.mawaqit.app.widget;
+				PRODUCT_NAME = MawaqitWidget;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Mawaqit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				13B07F941A680F5B00A75B9A /* Debug */,
+				13B07F951A680F5B00A75B9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Mawaqit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				83CBBA201A601CBA00E9B192 /* Debug */,
+				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CE3A2B3C4D5E6F70A182B3C4 /* Build configuration list for PBXNativeTarget "MawaqitWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE4A2B3C4D5E6F70A182B3C4 /* Debug */,
+				CE5A2B3C4D5E6F70A182B3C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
+}
