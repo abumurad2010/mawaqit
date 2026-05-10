@@ -69,8 +69,8 @@ struct PrayerProvider: TimelineProvider {
   func placeholder(in context: Context) -> PrayerEntry {
     PrayerEntry(
       date: .now,
-      nextPrayerName: "Asr", nextPrayerTime: "15:45", countdown: "in 43 min",
-      nextPrayerName2: "Maghrib", nextPrayerTime2: "18:12"
+      nextPrayerName: "ASR", nextPrayerTime: "15:45", countdown: "in 43 min",
+      nextPrayerName2: "MGB", nextPrayerTime2: "18:12"
     )
   }
 
@@ -207,23 +207,19 @@ struct AccessoryRectangularView: View {
 struct AccessoryCircularView: View {
   let entry: PrayerEntry
 
-  // "in 43 min" → "43m"
-  private var minutesBadge: String {
-    let numbers = entry.countdown
-      .components(separatedBy: .whitespaces)
-      .filter { Int($0) != nil }
-    return numbers.first.map { "\($0)m" } ?? "—"
-  }
-
   var body: some View {
     ZStack {
       AccessoryWidgetBackground()
       VStack(spacing: 1) {
-        Image(systemName: "moon.stars.fill")
-          .font(.system(size: 10))
+        Text(entry.nextPrayerName)
+          .font(.system(size: 12, weight: .bold))
           .widgetAccentable()
-        Text(minutesBadge)
-          .font(.system(size: 14, weight: .bold, design: .monospaced))
+          .minimumScaleFactor(0.7)
+          .lineLimit(1)
+        Text(entry.nextPrayerTime)
+          .font(.system(size: 11, weight: .semibold, design: .monospaced))
+          .minimumScaleFactor(0.7)
+          .lineLimit(1)
       }
     }
   }

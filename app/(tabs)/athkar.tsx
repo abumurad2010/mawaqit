@@ -18,6 +18,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
 import AppLogo from '@/components/AppLogo';
 import ATHKAR_CATEGORIES, { AthkarCategory, Thikr } from '@/constants/athkar-data';
+import { transliterateToScript } from '@/lib/quran-transliteration';
 
 const FAVS_KEY = 'athkar_favourites';
 const FAV_HINT_KEY = 'athkar_fav_hint_seen';
@@ -1946,7 +1947,7 @@ function ReaderScreen({
                   </Text>
                   {displayMode === 'full' && !!thikr.transliteration && (
                     <Text style={{ fontSize: cardFS.translit, lineHeight: cardFS.translit * 1.5, color: C.textMuted, marginTop: 4 }}>
-                      {thikr.transliteration}
+                      {transliterateToScript(thikr.transliteration, athkarLang)}
                     </Text>
                   )}
                 </View>
@@ -2324,7 +2325,7 @@ function ThikrCard({ thikr, index, done, cur, translation, isRtl, translationRtl
 
         {displayMode === 'full' && (
           <Text style={[styles.translitText, { fontSize: translitFontSize, lineHeight: translitFontSize * 1.5, color: C.textMuted }]}>
-            {searchHighlight ? inlineHighlight(thikr.transliteration, searchQuery, C.tint) : thikr.transliteration}
+            {searchHighlight ? inlineHighlight(transliterateToScript(thikr.transliteration, athkarLang), searchQuery, C.tint) : transliterateToScript(thikr.transliteration, athkarLang)}
           </Text>
         )}
 

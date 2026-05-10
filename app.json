@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
-      "buildNumber": "45",
+      "buildNumber": "46",
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.mawaqit.app.widget"]
       },

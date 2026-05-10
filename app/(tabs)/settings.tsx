@@ -20,6 +20,7 @@ import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import { scheduleTestNotification } from '@/lib/notifications';
 import { getPreviousTab } from '@/lib/prev-tab';
+import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import AppLogo from '@/components/AppLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import LangToggle from '@/components/LangToggle';
@@ -469,6 +470,10 @@ export default function SettingsScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const resolvedDraft = draftSecondLang === 'auto' ? detectSecondLang(countryCode) : draftSecondLang;
     const newLang = lang !== 'ar' ? resolvedDraft : lang;
+    // Sync transliteration language to app language when the app language changes.
+    // fa and ur are excluded (Arabic script is native — no Latin transliteration needed);
+    // ar is excluded (transliteration is hidden for Arabic speakers).
+    const newTranslitLang = SUPPORTED_TRANSLIT_LANGS.includes(newLang) ? newLang : 'en';
     setMaghribUserAdj(draftAdjustment);
     // When a nafl prayer is disabled, immediately clear its notification config
     const finalNotifications = { ...draftNotifications };
@@ -483,6 +488,7 @@ export default function SettingsScreen() {
       prayerNotifications: finalNotifications,
       secondLang: draftSecondLang,
       lang: newLang,
+      translitLang: newTranslitLang,
       accessibilityTheme: draftAccessibilityTheme,
       firstAdhanOffset: draftFirstAdhanOffset,
       iqamaOffsets: draftIqamaOffsets,

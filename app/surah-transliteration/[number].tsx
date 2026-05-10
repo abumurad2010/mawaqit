@@ -17,7 +17,7 @@ import { useApp } from '@/contexts/AppContext';
 import { t, LANG_META, isRtlLang } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
 import { SURAH_META, getSurah, getAyahPage } from '@/lib/quran-api';
-import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
+import { SUPPORTED_TRANSLIT_LANGS, transliterateToScript } from '@/lib/quran-transliteration';
 import { getTranslation, getTransliteration } from '@/lib/quran-translations';
 import PageBackground from '@/components/PageBackground';
 import type { Bookmark } from '@/contexts/AppContext';
@@ -401,7 +401,7 @@ export default function SurahTransliterationScreen() {
               {BISMILLAH}
             </Text>
             <Text style={[styles.bismillahTranslit, { color: C.textSecond, fontFamily: SERIF_EN, fontSize: 12 * fontScale }]}>
-              {BISMILLAH_TRANSLIT}
+              {transliterateToScript(BISMILLAH_TRANSLIT, translitLang)}
             </Text>
           </View>
         )}
@@ -410,7 +410,7 @@ export default function SurahTransliterationScreen() {
         {pageAyahs.map((item) => {
           const ayahNum = item.numberInSurah;
           const bookmarked = isBookmarked(surahNum, ayahNum);
-          const translitText = getTransliteration(surahNum, ayahNum);
+          const translitText = transliterateToScript(getTransliteration(surahNum, ayahNum), translitLang);
           const translationText = getTranslation(translitLang, surahNum, ayahNum);
           const isTarget = showHighlight && highlightTerm.length > 0 && ayahNum === startAyahNum;
 
