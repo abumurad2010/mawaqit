@@ -14,7 +14,7 @@ import { updateWidgetFromPrayerTimes } from '@/lib/widget';
 
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
-import { BUNDLED_LANGS } from '@/lib/quran-transliteration';
+import { BUNDLED_LANGS, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications, cancelThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
@@ -239,10 +239,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!parsed.secondLang) {
             parsed.secondLang = 'auto';
           }
-          // Derive translitLang from app language for new installs
+          // Derive translitLang from app language for new installs.
+          // Use SUPPORTED_TRANSLIT_LANGS (excludes fa/ur which use Arabic script natively).
           if (!parsed.translitLang) {
             const userLang: Lang = parsed.lang ?? DEFAULT_SETTINGS.lang;
-            parsed.translitLang = BUNDLED_LANGS.includes(userLang) ? userLang : 'en';
+            parsed.translitLang = SUPPORTED_TRANSLIT_LANGS.includes(userLang) ? userLang : 'en';
           }
           const merged = { ...DEFAULT_SETTINGS, ...parsed };
           setSettings(merged);

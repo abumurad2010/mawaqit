@@ -52,7 +52,58 @@ private func readWidgetData() -> PrayerWidgetData? {
 }
 
 // MARK: - Palette
-private let mawaqitGreen = Color(red: 0x1a / 255.0, green: 0x8c / 255.0, blue: 0x5b / 255.0)
+private let mawaqitGreen = Color(red: 0x22 / 255.0, green: 0xaa / 255.0, blue: 0x70 / 255.0) // slightly brighter on dark bg
+private let bgDeep       = Color(red: 0x0a / 255.0, green: 0x0a / 255.0, blue: 0x0a / 255.0)
+private let bgGreenTint  = Color(red: 0x0f / 255.0, green: 0x1f / 255.0, blue: 0x15 / 255.0)
+private let goldAccent   = Color(red: 0xb8 / 255.0, green: 0x86 / 255.0, blue: 0x0b / 255.0)
+
+// MARK: - Geometric decorations
+
+/// Two families of 45° diagonal lines that cross to form a diamond lattice.
+private struct IslamicLattice: Shape {
+  func path(in rect: CGRect) -> Path {
+    var p = Path()
+    let step: CGFloat = 18
+    // NW→SE family
+    var x: CGFloat = -rect.height
+    while x <= rect.width {
+      p.move(to: CGPoint(x: x, y: 0))
+      p.addLine(to: CGPoint(x: x + rect.height, y: rect.height))
+      x += step
+    }
+    // NE→SW family
+    x = 0
+    while x <= rect.width + rect.height {
+      p.move(to: CGPoint(x: x, y: 0))
+      p.addLine(to: CGPoint(x: x - rect.height, y: rect.height))
+      x += step
+    }
+    return p
+  }
+}
+
+/// Simple mosque arch outline — two vertical stems joined by a semicircular arch at the top.
+private struct ArchSilhouette: Shape {
+  func path(in rect: CGRect) -> Path {
+    var p = Path()
+    let cx      = rect.midX
+    let archR   = rect.width * 0.38
+    let springY = rect.height - rect.height * 0.34   // Y of the arch spring line
+
+    p.move(to: CGPoint(x: cx + archR, y: rect.height))
+    p.addLine(to: CGPoint(x: cx + archR, y: springY))
+    // Counterclockwise in screen coords (Y-down) → arc goes upward over the top
+    p.addArc(
+      center: CGPoint(x: cx, y: springY),
+      radius: archR,
+      startAngle: .degrees(0),
+      endAngle:   .degrees(180),
+      clockwise:  false
+    )
+    p.addLine(to: CGPoint(x: cx - archR, y: rect.height))
+    return p
+  }
+}
 
 // MARK: - Entry
 struct PrayerEntry: TimelineEntry {
@@ -109,18 +160,68 @@ struct SmallWidgetView: View {
 
   var body: some View {
     ZStack {
-      Color.black.ignoresSafeArea()
-      VStack(spacing: 4) {
+      // ── Background layers ──────────────────────────────────────────
+      LinearGradient(
+        colors: [bgDeep, bgGreenTint],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+      )
+      .ignoresSafeArea()
+
+      // Copper-gold glow in the bottom-leading corner
+      RadialGradient(
+        colors: [goldAccent.opacity(0.22), .clear],
+        center: .bottomLeading,
+        startRadius: 0,
+        endRadius: 88
+      )
+      .ignoresSafeArea()
+
+      // ── Geometric overlay ──────────────────────────────────────────
+      IslamicLattice()
+        .stroke(Color.white, lineWidth: 0.5)
+        .opacity(0.07)
+        .ignoresSafeArea()
+
+      // Partial arch peeking from the bottom-trailing corner
+      ArchSilhouette()
+        .stroke(Color.white, lineWidth: 0.85)
+        .opacity(0.09)
+        .frame(width: 66, height: 72)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        .offset(x: 14, y: 10)
+
+      // ── Content ────────────────────────────────────────────────────
+      VStack(alignment: .leading, spacing: 0) {
+        // Wordmark
+        Text("مواقيت  Mawaqit")
+          .font(.system(size: 7.5, weight: .medium))
+          .foregroundColor(.white.opacity(0.22))
+
+        Spacer()
+
+        // Prayer name
         Text(entry.nextPrayerName)
-          .font(.system(size: 20, weight: .bold))
+          .font(.system(size: 13, weight: .bold))
           .foregroundColor(mawaqitGreen)
+          .tracking(1.6)
+
+        // Prayer time
         Text(entry.nextPrayerTime)
-          .font(.system(size: 28, weight: .semibold, design: .monospaced))
+          .font(.system(size: 30, weight: .heavy, design: .monospaced))
           .foregroundColor(.white)
+          .minimumScaleFactor(0.72)
+          .lineLimit(1)
+          .padding(.top, 1)
+
+        // Countdown
         Text(entry.countdown)
-          .font(.system(size: 13, weight: .medium))
-          .foregroundColor(.white.opacity(0.65))
+          .font(.system(size: 10.5, weight: .regular))
+          .italic()
+          .foregroundColor(.white.opacity(0.58))
+          .padding(.top, 3)
       }
+      .padding(14)
     }
   }
 }
@@ -131,53 +232,103 @@ struct MediumWidgetView: View {
 
   var body: some View {
     ZStack {
-      Color.black.ignoresSafeArea()
-      HStack(spacing: 0) {
-        // Left: next prayer
-        VStack(spacing: 4) {
-          Text(entry.nextPrayerName)
-            .font(.system(size: 20, weight: .bold))
-            .foregroundColor(mawaqitGreen)
-          Text(entry.nextPrayerTime)
-            .font(.system(size: 28, weight: .semibold, design: .monospaced))
-            .foregroundColor(.white)
-          Text(entry.countdown)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundColor(.white.opacity(0.65))
-        }
-        .frame(maxWidth: .infinity)
+      // ── Background layers ──────────────────────────────────────────
+      LinearGradient(
+        colors: [bgDeep, bgGreenTint],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+      )
+      .ignoresSafeArea()
 
-        Rectangle()
-          .fill(Color.white.opacity(0.12))
-          .frame(width: 1)
-          .padding(.vertical, 14)
+      // Gold glow — anchored to the bottom-leading corner
+      RadialGradient(
+        colors: [goldAccent.opacity(0.20), .clear],
+        center: .bottomLeading,
+        startRadius: 0,
+        endRadius: 110
+      )
+      .ignoresSafeArea()
 
-        // Right: next 2 upcoming prayers
-        VStack(alignment: .leading, spacing: 10) {
-          Text("Coming up")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundColor(.white.opacity(0.4))
-          if !entry.nextPrayerName2.isEmpty {
-            prayerRow(entry.nextPrayerName2, entry.nextPrayerTime2)
+      // ── Geometric overlay ──────────────────────────────────────────
+      IslamicLattice()
+        .stroke(Color.white, lineWidth: 0.5)
+        .opacity(0.07)
+        .ignoresSafeArea()
+
+      // ── Content ────────────────────────────────────────────────────
+      VStack(alignment: .leading, spacing: 0) {
+        // Wordmark strip
+        Text("مواقيت  Mawaqit")
+          .font(.system(size: 7.5, weight: .medium))
+          .foregroundColor(.white.opacity(0.22))
+          .padding(.bottom, 6)
+
+        HStack(spacing: 0) {
+          // ── Left: next prayer ──────────────────────────────────────
+          VStack(alignment: .leading, spacing: 2) {
+            Text(entry.nextPrayerName)
+              .font(.system(size: 13, weight: .bold))
+              .foregroundColor(mawaqitGreen)
+              .tracking(1.6)
+
+            Text(entry.nextPrayerTime)
+              .font(.system(size: 28, weight: .heavy, design: .monospaced))
+              .foregroundColor(.white)
+              .minimumScaleFactor(0.72)
+              .lineLimit(1)
+              .padding(.top, 1)
+
+            Text(entry.countdown)
+              .font(.system(size: 10.5, weight: .regular))
+              .italic()
+              .foregroundColor(.white.opacity(0.58))
+              .padding(.top, 3)
           }
+          .frame(maxWidth: .infinity, alignment: .leading)
+
+          // ── Divider ────────────────────────────────────────────────
+          Rectangle()
+            .fill(LinearGradient(
+              colors: [.clear, Color.white.opacity(0.16), .clear],
+              startPoint: .top,
+              endPoint: .bottom
+            ))
+            .frame(width: 1)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 12)
+
+          // ── Right: upcoming prayers ────────────────────────────────
+          VStack(alignment: .leading, spacing: 10) {
+            Text("NEXT")
+              .font(.system(size: 9, weight: .semibold))
+              .foregroundColor(.white.opacity(0.35))
+              .tracking(1.4)
+
+            if !entry.nextPrayerName2.isEmpty {
+              upcomingRow(entry.nextPrayerName2, entry.nextPrayerTime2)
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.leading, 14)
       }
       .padding(.horizontal, 16)
+      .padding(.vertical, 14)
     }
   }
 
   @ViewBuilder
-  private func prayerRow(_ name: String, _ time: String) -> some View {
-    HStack {
+  private func upcomingRow(_ name: String, _ time: String) -> some View {
+    HStack(alignment: .center, spacing: 6) {
       Text(name)
-        .font(.system(size: 14, weight: .semibold))
-        .foregroundColor(.white.opacity(0.8))
-      Spacer()
+        .font(.system(size: 13, weight: .bold))
+        .foregroundColor(mawaqitGreen.opacity(0.88))
+        .tracking(0.8)
+      Text("·")
+        .font(.system(size: 11))
+        .foregroundColor(.white.opacity(0.28))
       Text(time)
-        .font(.system(size: 14, weight: .regular, design: .monospaced))
-        .foregroundColor(.white.opacity(0.55))
+        .font(.system(size: 13, weight: .regular, design: .monospaced))
+        .foregroundColor(.white.opacity(0.68))
     }
   }
 }
@@ -270,10 +421,16 @@ struct MawaqitPrayerWidget: Widget {
     StaticConfiguration(kind: kind, provider: PrayerProvider()) { entry in
       if #available(iOSApplicationExtension 17.0, *) {
         MawaqitWidgetEntryView(entry: entry)
-          .containerBackground(.black, for: .widget)
+          .containerBackground(for: .widget) {
+            LinearGradient(
+              colors: [bgDeep, bgGreenTint],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+          }
       } else {
         MawaqitWidgetEntryView(entry: entry)
-          .background(Color.black)
+          .background(bgDeep)
       }
     }
     .configurationDisplayName("Mawaqit")

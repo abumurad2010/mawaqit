@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/contexts/AppContext';
 import { LANG_META, LANG_FLAG } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
+import { SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 
 const ALL_LANGS: Lang[] = ['ar','en','fr','es','ru','zh','tr','ur','id','bn','fa','ms','pt','sw','ha'];
 
@@ -16,7 +17,8 @@ export default function LangToggle() {
 
   const select = (l: Lang) => {
     Haptics.selectionAsync();
-    updateSettings({ lang: l });
+    const newTranslitLang: Lang = SUPPORTED_TRANSLIT_LANGS.includes(l) ? l : 'en';
+    updateSettings({ lang: l, translitLang: newTranslitLang });
     setOpen(false);
   };
 
