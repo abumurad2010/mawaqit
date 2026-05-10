@@ -182,15 +182,86 @@ struct MediumWidgetView: View {
   }
 }
 
+// MARK: - Accessory Rectangular view (lock screen wide, iOS 16+)
+@available(iOSApplicationExtension 16.0, *)
+struct AccessoryRectangularView: View {
+  let entry: PrayerEntry
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(entry.nextPrayerName)
+        .font(.system(size: 14, weight: .semibold))
+        .widgetAccentable()
+      Text(entry.nextPrayerTime)
+        .font(.system(size: 17, weight: .bold, design: .monospaced))
+      Text(entry.countdown)
+        .font(.system(size: 12, weight: .medium))
+        .opacity(0.7)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+// MARK: - Accessory Circular view (lock screen badge, iOS 16+)
+@available(iOSApplicationExtension 16.0, *)
+struct AccessoryCircularView: View {
+  let entry: PrayerEntry
+
+  // "in 43 min" → "43m"
+  private var minutesBadge: String {
+    let numbers = entry.countdown
+      .components(separatedBy: .whitespaces)
+      .filter { Int($0) != nil }
+    return numbers.first.map { "\($0)m" } ?? "—"
+  }
+
+  var body: some View {
+    ZStack {
+      AccessoryWidgetBackground()
+      VStack(spacing: 1) {
+        Image(systemName: "moon.stars.fill")
+          .font(.system(size: 10))
+          .widgetAccentable()
+        Text(minutesBadge)
+          .font(.system(size: 14, weight: .bold, design: .monospaced))
+      }
+    }
+  }
+}
+
+// MARK: - Accessory Inline view (lock screen single-line, iOS 16+)
+@available(iOSApplicationExtension 16.0, *)
+struct AccessoryInlineView: View {
+  let entry: PrayerEntry
+
+  var body: some View {
+    Label {
+      Text("Mawaqit · \(entry.nextPrayerName) \(entry.nextPrayerTime)")
+    } icon: {
+      Image(systemName: "moon.stars.fill")
+    }
+  }
+}
+
 // MARK: - Entry view (routes by family)
 struct MawaqitWidgetEntryView: View {
   @Environment(\.widgetFamily) var family
   let entry: PrayerEntry
 
   var body: some View {
-    switch family {
-    case .systemMedium: MediumWidgetView(entry: entry)
-    default:            SmallWidgetView(entry: entry)
+    if #available(iOSApplicationExtension 16.0, *) {
+      switch family {
+      case .systemMedium:         MediumWidgetView(entry: entry)
+      case .accessoryRectangular: AccessoryRectangularView(entry: entry)
+      case .accessoryCircular:    AccessoryCircularView(entry: entry)
+      case .accessoryInline:      AccessoryInlineView(entry: entry)
+      default:                    SmallWidgetView(entry: entry)
+      }
+    } else {
+      switch family {
+      case .systemMedium: MediumWidgetView(entry: entry)
+      default:            SmallWidgetView(entry: entry)
+      }
     }
   }
 }
@@ -211,7 +282,17 @@ struct MawaqitPrayerWidget: Widget {
     }
     .configurationDisplayName("Mawaqit")
     .description("Next prayer time at a glance.")
-    .supportedFamilies([.systemSmall, .systemMedium])
+    .supportedFamilies(supportedFamilies)
+  }
+
+  private var supportedFamilies: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) {
+      return [
+        .systemSmall, .systemMedium,
+        .accessoryRectangular, .accessoryCircular, .accessoryInline,
+      ]
+    }
+    return [.systemSmall, .systemMedium]
   }
 }
 
