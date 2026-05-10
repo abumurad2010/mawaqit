@@ -1,9 +1,10 @@
 # OSX
+#
 .DS_Store
 
 # Android/IntelliJ
+#
 build/
-app/build/
 .idea
 .gradle
 local.properties
