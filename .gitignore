@@ -9,8 +9,7 @@ web-build/
 expo-env.d.ts
 
 # Native
-# ios/ is committed (bare workflow) — required so EAS finds the MawaqitWidget Xcode target
-android/
+# ios/ and android/ are both committed (bare workflow)
 *.orig.*
 *.jks
 *.p8
