@@ -26,6 +26,7 @@ import {
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate, LANG_LOCALE } from '@/lib/hijri';
 import { mawaqitWidget } from '@/widgets_disabled/MawaqitWidget';
+import { updateWidget } from '@/lib/widget';
 
 /**
  * Parse "HH:MM" → Date on today (or tomorrow) at that local time.
@@ -59,6 +60,7 @@ export default function PrayerTimesScreen() {
     locationMode, manualLocation, location, setLocation,
     updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
+    jumuahTime: jumuahTimeSetting,
     showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
     iqamaOffsets, countryCode,
   } = useApp();
@@ -375,11 +377,16 @@ export default function PrayerTimesScreen() {
 
   const PRAYER_ORDER: (keyof PrayerTimesType)[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
+  const isFriday = viewingDate.getDay() === 5;
+  const jumuahDisplayTime: Date | null = isFriday && jumuahTimeSetting
+    ? parseHHMM(jumuahTimeSetting)
+    : null;
+
   const prayerLabel = (key: string) => {
     const map: Record<string, string> = {
       fajr: tr.fajr,
       sunrise: tr.sunrise,
-      dhuhr: tr.dhuhr,
+      dhuhr: isFriday ? ((tr as any).jumuah ?? tr.dhuhr) : tr.dhuhr,
       asr: tr.asr,
       maghrib: tr.maghrib,
       isha: tr.isha,
@@ -389,36 +396,57 @@ export default function PrayerTimesScreen() {
     return map[key] ?? key;
   };
 
-  // Push live prayer data to the home-screen widget once per minute.
+  // Push live prayer data to the WidgetKit home-screen widget once per minute.
   // Throttled via prevWidgetMinuteRef so it doesn't fire every second.
   // All failures are caught silently — a widget update must never crash the app.
   useEffect(() => {
-    if (!mawaqitWidget || !nextPrayer || !todayTimes || Platform.OS === 'web') return;
+    if (!nextPrayer || Platform.OS === 'web') return;
     const currentMinute = now.getHours() * 60 + now.getMinutes();
     if (currentMinute === prevWidgetMinuteRef.current) return;
     prevWidgetMinuteRef.current = currentMinute;
 
     try {
-      const FARDH_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
-      const idx = FARDH_ORDER.indexOf(nextPrayer.name as typeof FARDH_ORDER[number]);
-      const upcomingPrayers = FARDH_ORDER
-        .slice(Math.max(idx + 1, 0), idx + 4)
-        .filter(key => todayTimes[key])
-        .map(key => ({
-          name: prayerLabel(key),
-          time: formatTime(todayTimes[key] as Date, false, tr.am, tr.pm),
-        }));
+      const fmt = (d: Date) =>
+        `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      const widgetTime = fmt(nextPrayer.time);
+      const diffMin = countdownTarget
+        ? Math.round((countdownTarget.getTime() - Date.now()) / 60000)
+        : 0;
+      const widgetCountdown = diffMin > 0 ? `in ${diffMin} min` : '';
 
-      mawaqitWidget.updateSnapshot({
-        nextPrayerName: prayerLabel(nextPrayer.name),
-        nextPrayerTime: formatTime(nextPrayer.time, false, tr.am, tr.pm),
-        countdown,
-        upcomingPrayers,
-      });
+      // Find the 2nd next fardh prayer for the medium widget's right column.
+      const FARDH = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+      const idx2 = FARDH.indexOf(nextPrayer.name as typeof FARDH[number]);
+      const next2Key = idx2 >= 0 && idx2 < FARDH.length - 1 ? FARDH[idx2 + 1] : null;
+      const next2Time = next2Key && todayTimes ? todayTimes[next2Key] : null;
+      const widgetName2 = next2Key ? prayerLabel(next2Key) : '';
+      const widgetTime2 = next2Time ? fmt(next2Time) : '';
+
+      updateWidget(prayerLabel(nextPrayer.name), widgetTime, widgetCountdown, widgetName2, widgetTime2);
     } catch {
       // Widget update is non-critical — silently ignore
     }
-  }, [now, nextPrayer, todayTimes, countdown, prayerLabel]);
+
+    if (mawaqitWidget && todayTimes) {
+      try {
+        const FARDH_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+        const idx = FARDH_ORDER.indexOf(nextPrayer.name as typeof FARDH_ORDER[number]);
+        const upcomingPrayers = FARDH_ORDER
+          .slice(Math.max(idx + 1, 0), idx + 4)
+          .filter(key => todayTimes[key])
+          .map(key => ({
+            name: prayerLabel(key),
+            time: formatTime(todayTimes[key] as Date, false, tr.am, tr.pm),
+          }));
+        (mawaqitWidget as any).updateSnapshot({
+          nextPrayerName: prayerLabel(nextPrayer.name),
+          nextPrayerTime: formatTime(nextPrayer.time, false, tr.am, tr.pm),
+          countdown,
+          upcomingPrayers,
+        });
+      } catch { /* non-critical */ }
+    }
+  }, [now, nextPrayer, todayTimes, countdown, countdownTarget, prayerLabel]);
 
   // Nafl prayer times — user-set exact daily alarms
   const dhuhaTime = times ? parseHHMM(dhuhaTimeSetting ?? '07:30') : null;
@@ -533,12 +561,13 @@ export default function PrayerTimesScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: C.background }]} {...panResponder.panHandlers}>
-      <Image
-        source={require('@/assets/images/bg-prayer.png')}
-        style={[styles.bgPrayer, { opacity: isDark ? 0.22 : 0.18 }]}
-        resizeMode="cover"
-        pointerEvents="none"
-      />
+      <View style={[styles.bgPrayer, { opacity: isDark ? 0.22 : 0.18 }]} pointerEvents="none">
+        <Image
+          source={require('@/assets/images/bg-prayer.png')}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+      </View>
 
       {/* ── Header ── */}
       <View style={[styles.headerWrap, { paddingTop: topInset + 10, paddingHorizontal: 20 }]}>
@@ -777,7 +806,10 @@ export default function PrayerTimesScreen() {
                     styles.prayerTime,
                     { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw, fontSize: pFS, lineHeight: pLH }
                   ]}>
-                    {times ? formatTimeAtOffset(times[key], locationUtcOffset, false, tr.am, tr.pm) : '—'}
+                    {times ? formatTimeAtOffset(
+                      (key === 'dhuhr' && jumuahDisplayTime) ? jumuahDisplayTime : times[key],
+                      locationUtcOffset, false, tr.am, tr.pm
+                    ) : '—'}
                   </Text>
                 </View>
                 <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />

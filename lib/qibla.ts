@@ -6,9 +6,9 @@ export const KAABA_LNG = 39.82233056;
 const WGS84_A = 6378137.0;
 const WGS84_B = 6356752.314245;
 const WGS84_F = 1 / 298.257223563;
-function toRad(d) { return d * Math.PI / 180; }
-function toDeg(r) { return r * 180 / Math.PI; }
-export function getQiblaBearing(lat, lng) {
+function toRad(d: number) { return d * Math.PI / 180; }
+function toDeg(r: number) { return r * 180 / Math.PI; }
+export function getQiblaBearing(lat: number, lng: number) {
   const phi1=toRad(lat),phi2=toRad(KAABA_LAT),L=toRad(KAABA_LNG-lng);
   const U1=Math.atan((1-WGS84_F)*Math.tan(phi1)),U2=Math.atan((1-WGS84_F)*Math.tan(phi2));
   const sU1=Math.sin(U1),cU1=Math.cos(U1),sU2=Math.sin(U2),cU2=Math.cos(U2);
@@ -27,7 +27,7 @@ export function getQiblaBearing(lat, lng) {
   const a1=Math.atan2(cU2*sl,cU1*sU2-sU1*cU2*cl);
   return(toDeg(a1)+360)%360;
 }
-export function getDistanceToMecca(lat, lng) {
+export function getDistanceToMecca(lat: number, lng: number) {
   const phi1=toRad(lat),phi2=toRad(KAABA_LAT),L=toRad(KAABA_LNG-lng);
   const U1=Math.atan((1-WGS84_F)*Math.tan(phi1)),U2=Math.atan((1-WGS84_F)*Math.tan(phi2));
   const sU1=Math.sin(U1),cU1=Math.cos(U1),sU2=Math.sin(U2),cU2=Math.cos(U2);
@@ -70,7 +70,7 @@ export function getDestinationPoint(lat: number, lng: number, bearingDeg: number
   return { lat: toDeg(lat2), lng: ((toDeg(lng2) + 540) % 360) - 180 };
 }
 
-export function formatDistance(km, lang) {
+export function formatDistance(km: number, lang: string) {
   if(km<1000) return Math.round(km)+' km';
   return (km/1000).toFixed(1)+'k km';
 }

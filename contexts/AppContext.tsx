@@ -8,7 +8,9 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
+import { calculatePrayerTimes } from '@/lib/prayer-times';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import { updateWidgetFromPrayerTimes } from '@/lib/widget';
 
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
@@ -87,6 +89,7 @@ interface AppSettings {
   prayerNotifications: Record<string, PrayerNotifType>;
   dhuhaTime: string;     // "HH:MM" exact local time for Dhuha
   tahajjudTime: string;  // "HH:MM" exact local time for Tahajjud/Qiyam
+  jumuahTime: string | null; // "HH:MM" custom Jumu'ah time on Fridays, null = use calculated Dhuhr
   showDhuha: boolean;    // whether to show Dhuha row on timings tab
   showQiyam: boolean;    // whether to show Qiyam row on timings tab
   eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
@@ -96,6 +99,8 @@ interface AppSettings {
   defaultTab: string;
   selectedAdhan: string;
   prayerAdhan: Record<string, string>;
+  adhanLength: 'full' | 'short';
+  prePrayerReminder: number;
 }
 
 interface AppContextValue extends AppSettings {
@@ -154,6 +159,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultTab: 'index',
   selectedAdhan: 'makkah',
   prayerAdhan: {},
+  adhanLength: 'short',
+  prePrayerReminder: 0,
+  jumuahTime: null,
 };
 
 const VALID_CALC_METHODS = [
@@ -321,6 +329,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             selectedAdhan: settings.selectedAdhan ?? 'makkah',
             prayerAdhan: settings.prayerAdhan ?? {},
             dstOffsetMs,
+            prePrayerReminder: settings.prePrayerReminder ?? 0,
+            jumuahTime: settings.jumuahTime ?? null,
           });
         } else {
           await cancelAllPrayerNotifications();
@@ -340,10 +350,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           await cancelThikrNotifications();
         }
       } catch { /* notifications unavailable on this platform */ }
+
+      // Update the WidgetKit widget with today's next prayer time.
+      try {
+        const todayNoon = new Date();
+        todayNoon.setHours(12, 0, 0, 0);
+        const todayPrayerTimes = calculatePrayerTimes({
+          lat: effectiveLocation.lat,
+          lng: effectiveLocation.lng,
+          date: todayNoon,
+          method: calcMethod,
+          asrMethod,
+          maghribOffset,
+        });
+        updateWidgetFromPrayerTimes(todayPrayerTimes, lang);
+      } catch { /* non-critical */ }
     };
 
     rescheduleAll();
-  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.dstEnabled, settings.selectedAdhan, settings.prayerAdhan]);
+  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.dstEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

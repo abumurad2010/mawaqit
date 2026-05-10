@@ -307,6 +307,116 @@ export const THIKR_ITEMS: ThikrItem[] = [
       ha: 'Na yarda da Allah a matsayin Ubangijina, Musulunci a matsayin addinin na da kuma Muhammad a matsayin Annabina',
     },
   },
+  {
+    ar: 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ',
+    transliteration: 'Bismillāhir Raḥmānir Raḥīm',
+    translations: {},
+  },
+  {
+    ar: 'تَوَكَّلْتُ عَلَى اللَّهِ',
+    transliteration: 'Tawakkaltu ʿalallāh',
+    translations: {},
+  },
+  {
+    ar: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ',
+    transliteration: 'Subḥānallāhi wa biḥamdihī, subḥānallāhil ʿaẓīm',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ',
+    transliteration: 'Allāhumma aʿinnī ʿalā dhikrika wa shukrika wa ḥusni ʿibādatik',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ',
+    transliteration: 'Allāhumma innī aʿūdhu bika minal-hammi wal-ḥazan',
+    translations: {},
+  },
+  {
+    ar: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً',
+    transliteration: 'Rabbanā ātinā fid-dunyā ḥasanatan wa fil-ākhirati ḥasanah',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ اهْدِنِي وَسَدِّدْنِي',
+    transliteration: 'Allāhumma ihdinī wa saddidnī',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ أَصْلِحْ لِي دِينِي الَّذِي هُوَ عِصْمَةُ أَمْرِي',
+    transliteration: 'Allāhumma aṣliḥ lī dīniyal-ladhī huwa ʿiṣmatu amrī',
+    translations: {},
+  },
+  {
+    ar: 'يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ',
+    transliteration: 'Yā Muqallibal-qulūb thabbit qalbī ʿalā dīnik',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى',
+    transliteration: 'Allāhumma innī asʾalukal-hudā wat-tuqā',
+    translations: {},
+  },
+  {
+    ar: 'رَبِّ زِدْنِي عِلْمًا',
+    transliteration: 'Rabbi zidnī ʿilmā',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ إِنِّي ظَلَمْتُ نَفْسِي فَاغْفِرْ لِي',
+    transliteration: 'Allāhumma innī ẓalamtu nafsī faghfir lī',
+    translations: {},
+  },
+  {
+    ar: 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ',
+    transliteration: 'Aʿūdhu billāhi minash-shayṭānir rajīm',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ',
+    transliteration: 'Allāhumma antas-salāmu wa minkas-salām',
+    translations: {},
+  },
+  {
+    ar: 'رَبَّنَا اغْفِرْ لَنَا ذُنُوبَنَا وَكَفِّرْ عَنَّا سَيِّئَاتِنَا',
+    transliteration: 'Rabbanā ghfir lanā dhunūbanā wa kaffir ʿannā sayyiātinā',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ اجْعَلْنِي مِنَ التَّوَّابِينَ وَاجْعَلْنِي مِنَ الْمُتَطَهِّرِينَ',
+    transliteration: 'Allāhummajalʿalnī minal-tawwābīna wajʿalnī minal-mutaṭahhirīn',
+    translations: {},
+  },
+  {
+    ar: 'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ',
+    transliteration: 'Ḥasbunallāhu wa niʿmal wakīl',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي',
+    transliteration: 'Allāhumma innaka ʿafuwwun tuḥibbul-ʿafwa faʿfu ʿannī',
+    translations: {},
+  },
+  {
+    ar: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',
+    transliteration: 'Lā ilāha illallāhu waḥdahu lā sharīka lah',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ',
+    transliteration: 'Allāhummaghfir lī wa liwālidayya wa lil-muʾminīn',
+    translations: {},
+  },
+  {
+    ar: 'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي',
+    transliteration: 'Rabbi shraḥ lī ṣadrī wa yassir lī amrī',
+    translations: {},
+  },
+  {
+    ar: 'اللَّهُمَّ آتِنَا مِنْ لَدُنْكَ رَحْمَةً',
+    transliteration: 'Allāhumma ātinā min ladunka raḥmah',
+    translations: {},
+  },
 ];
 
 export const THIKR_TIMES = ['07:00', '10:00', '13:30', '16:30', '20:00'];

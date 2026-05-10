@@ -10,6 +10,7 @@ const ADHAN_FILES: Record<string, any> = {
   'makkah':      require('@/assets/sounds/adhan_makkah.mp3'),
   'hussaini':    require('@/assets/sounds/al_hussaini.mp3'),
   'bakir':       require('@/assets/sounds/bakir_bash.mp3'),
+  'athan-midi':  require('@/assets/sounds/athan_midi.mp3'),
 };
 
 const ADHAN_FILES_ABB: Record<string, any> = {
@@ -21,6 +22,7 @@ const ADHAN_FILES_ABB: Record<string, any> = {
   'makkah':      require('@/assets/sounds/adhan_makka_abb.m4a'),
   'hussaini':    require('@/assets/sounds/al_hussaini_abb.m4a'),
   'bakir':       require('@/assets/sounds/bakir_bash_abb.m4a'),
+  'athan-midi':  require('@/assets/sounds/athan_midi_abb.m4a'),
 };
 
 let sessionId = 0;

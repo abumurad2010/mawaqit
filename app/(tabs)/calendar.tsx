@@ -51,6 +51,10 @@ const GREGORIAN_MONTHS_AR = [
 
 const DAYS_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const DAYS_AR = ['أح','إث','ثل','أر','خم','جم','سب'];
+// Persian: Intl produces full names (يكشنبه etc.) — use short forms
+const DAYS_FA = ['یک‌ش','دوش','سه‌ش','چهار','پنج‌ش','جمعه','شنبه'];
+// Urdu: Intl produces natural short names but جمعرات (Thu) is long — trim to جمعر
+const DAYS_UR = ['اتوار','پیر','منگل','بدھ','جمعر','جمعہ','ہفتہ'];
 // Swahili: Intl.DateTimeFormat produces long names (all start with "Juma") — use 3-char abbreviations
 const DAYS_SW = ['Jpi','Jtt','Jnn','Jtn','Alh','Iju','Jmo'];
 
@@ -277,13 +281,21 @@ export default function CalendarScreen() {
   })();
   const dayNames = (() => {
     if (lang === 'sw') return DAYS_SW;
+    if (lang === 'ar') return DAYS_AR;
+    if (lang === 'fa') return DAYS_FA;
+    if (lang === 'ur') return DAYS_UR;
     try {
-      // Sunday = Jan 3 2021, iterate Sun–Sat
+      // Anchor = Jan 3 2021 12:00 UTC (definitively Sunday in UTC).
+      // Using UTC noon + timeZone:'UTC' prevents Hermes from resolving the
+      // weekday in UTC from a local-midnight Date, which shifts headers by
+      // one day on UTC+ devices (e.g. UTC+8: midnight Jan 3 local = Jan 2 UTC
+      // = Saturday, producing a Saturday-first header row).
       return Array.from({ length: 7 }, (_, i) =>
-        new Intl.DateTimeFormat(_calLocale, { weekday: 'short' }).format(new Date(2021, 0, 3 + i))
+        new Intl.DateTimeFormat(_calLocale, { weekday: 'short', timeZone: 'UTC' })
+          .format(new Date(Date.UTC(2021, 0, 3 + i, 12)))
       );
     } catch {
-      return isAr ? DAYS_AR : DAYS_EN;
+      return DAYS_EN;
     }
   })();
 

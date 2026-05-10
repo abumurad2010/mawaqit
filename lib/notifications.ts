@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePrayerTimes } from './prayer-times';
 import type { CalcMethod, AsrMethod } from './prayer-times';
 import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
@@ -12,6 +13,7 @@ const IOS_MAX_NOTIFICATIONS = 64;
 
 /** Maps voice key → abbreviated .caf filename bundled in the iOS app */
 const IOS_CAF_SOUNDS: Record<string, string> = {
+  'system':      '',
   'makkah':      'adhan_makka_abb.caf',
   'madinah':     'adhan_madinah_abb.caf',
   'egypt':       'adhan_egypt_abb.caf',
@@ -20,6 +22,7 @@ const IOS_CAF_SOUNDS: Record<string, string> = {
   'hussaini':    'al_hussaini_abb.caf',
   'bakir':       'bakir_bash_abb.caf',
   'abdul-hakam': 'abdul_hakam_abb.caf',
+  'athan-midi':  'athan_midi_abb.caf',
 };
 
 /**
@@ -28,6 +31,7 @@ const IOS_CAF_SOUNDS: Record<string, string> = {
  * Plain keys use abbreviated mp3s from assets/sounds/abb/.
  */
 const ANDROID_MP3_SOUNDS: Record<string, string> = {
+  'system':           'default',
   // Abbreviated (short) versions
   'makkah':           'adhan_makka_abb.mp3',
   'madinah':          'adhan_madinah_abb.mp3',
@@ -37,6 +41,7 @@ const ANDROID_MP3_SOUNDS: Record<string, string> = {
   'hussaini':         'al_hussaini_abb.mp3',
   'bakir':            'bakir_bash_abb.mp3',
   'abdul-hakam':      'abdul_hakam_abb.mp3',
+  'athan-midi':       'athan_midi_abb.mp3',
   // Full-length versions — bundled via app.json sounds array
   'makkah_full':      'adhan_makkah.mp3',
   'madinah_full':     'adhan_madinah.mp3',
@@ -46,6 +51,7 @@ const ANDROID_MP3_SOUNDS: Record<string, string> = {
   'hussaini_full':    'al_hussaini.mp3',
   'bakir_full':       'bakir_bash.mp3',
   'abdul-hakam_full': 'abdul_hakam.mp3',
+  'athan-midi_full':  'athan_midi.mp3',
 };
 
 function getPrayerLabels(lang: Lang): Record<string, string> {
@@ -134,9 +140,9 @@ export async function cancelThikrNotifications() {
   } catch { /* ignore */ }
 }
 
-const THIKR_DAILY_COUNT = 18;
-const THIKR_IOS_DAILY_COUNT = 8;
-const THIKR_IOS_DAYS = 3;
+const THIKR_DAILY_COUNT = 25;
+const THIKR_IOS_DAILY_COUNT = 12;
+const THIKR_IOS_DAYS = 5;
 const THIKR_WINDOW_AFTER_ISHA_MS = 5 * 60 * 60 * 1000; // 5 hours after Isha
 
 export async function scheduleThikrNotifications(params: {
@@ -163,6 +169,19 @@ export async function scheduleThikrNotifications(params: {
   const title = tr.thikr_reminder_title;
   const now = new Date();
 
+  // Read or generate a persistent device-unique salt so each device gets
+  // a different daily schedule even on the same calendar day.
+  let deviceSalt = 0;
+  try {
+    const stored = await AsyncStorage.getItem('thikr_device_salt');
+    if (stored !== null) {
+      deviceSalt = parseInt(stored, 10) || 0;
+    } else {
+      deviceSalt = Math.floor(Math.random() * 0x7fffffff);
+      await AsyncStorage.setItem('thikr_device_salt', String(deviceSalt));
+    }
+  } catch { /* salt stays 0; schedule still works, just not device-unique */ }
+
   for (let d = 0; d < daysAhead; d++) {
     const baseDate = new Date();
     baseDate.setDate(baseDate.getDate() + d);
@@ -181,20 +200,21 @@ export async function scheduleThikrNotifications(params: {
     // Window ends 5 hours after Isha
     const ishaMs = times.isha.getTime() + dstOffsetMs + THIKR_WINDOW_AFTER_ISHA_MS;
 
-    // Unique seed per calendar day (YYYYMMDD integer)
+    // Unique seed per calendar day (YYYYMMDD integer) XORed with device salt
     const daySeed =
       baseDate.getFullYear() * 10000 +
       (baseDate.getMonth() + 1) * 100 +
       baseDate.getDate();
+    const effectiveSeed = daySeed ^ deviceSalt;
 
-    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, dailyCount, daySeed);
+    const thikrTimes = generateThikrTimes(fajrMs, ishaMs, dailyCount, effectiveSeed);
 
     // Deterministically shuffle thikr items for today
     const shuffled = [...THIKR_ITEMS].sort((a, b) => {
       const ia = THIKR_ITEMS.indexOf(a);
       const ib = THIKR_ITEMS.indexOf(b);
-      const ha = Math.abs(Math.sin(daySeed * 6271 + ia * 28657 + 3)) % 1;
-      const hb = Math.abs(Math.sin(daySeed * 6271 + ib * 28657 + 3)) % 1;
+      const ha = Math.abs(Math.sin(effectiveSeed * 6271 + ia * 28657 + 3)) % 1;
+      const hb = Math.abs(Math.sin(effectiveSeed * 6271 + ib * 28657 + 3)) % 1;
       return ha - hb;
     });
 
@@ -214,6 +234,8 @@ export async function scheduleThikrNotifications(params: {
             body,
             data: { type: 'thikr_reminder' },
             sound: false,
+            sticky: false,
+            autoDismiss: true,
           },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notifTime },
         });
@@ -257,6 +279,8 @@ export async function schedulePrayerNotifications(params: {
   selectedAdhan?: string;
   prayerAdhan?: Record<string, string>;
   dstOffsetMs?: number;
+  prePrayerReminder?: number;
+  jumuahTime?: string | null;
 }): Promise<number> {
   await cancelAllPrayerNotifications();
   if (!isNative) return 0;
@@ -274,6 +298,8 @@ export async function schedulePrayerNotifications(params: {
     const date = new Date();
     date.setDate(date.getDate() + d);
 
+    const isFriday = date.getDay() === 5;
+
     const times = calculatePrayerTimes({
       lat: params.location.lat,
       lng: params.location.lng,
@@ -284,12 +310,15 @@ export async function schedulePrayerNotifications(params: {
     });
 
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;
+    const jumuahTimeStr = isFriday ? (params.jumuahTime ?? null) : null;
 
     const prayerTimeMap: Record<string, Date | null> = {
       fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs + dstOffsetMs) : null,
       fajr: new Date(times.fajr.getTime() + dstOffsetMs),
       dhuha: new Date(parseExactTime(params.dhuhaTime ?? '07:30', date).getTime() + dstOffsetMs),
-      dhuhr: new Date(times.dhuhr.getTime() + dstOffsetMs),
+      dhuhr: jumuahTimeStr
+        ? new Date(parseExactTime(jumuahTimeStr, date).getTime() + dstOffsetMs)
+        : new Date(times.dhuhr.getTime() + dstOffsetMs),
       asr: new Date(times.asr.getTime() + dstOffsetMs),
       maghrib: new Date(times.maghrib.getTime() + dstOffsetMs),
       isha: new Date(times.isha.getTime() + dstOffsetMs),
@@ -305,14 +334,23 @@ export async function schedulePrayerNotifications(params: {
       if (!prayerTime || prayerTime <= now) continue;
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
-      const sound = Platform.OS === 'ios'
-        ? (IOS_CAF_SOUNDS[athanVoice] ?? 'adhan_makka_abb.caf')
-        : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3');
+      let sound: boolean | string;
+      if (athanVoice === 'system') {
+        sound = Platform.OS === 'ios' ? true : 'default';
+      } else {
+        sound = Platform.OS === 'ios'
+          ? (IOS_CAF_SOUNDS[athanVoice] ?? 'adhan_makka_abb.caf')
+          : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3');
+      }
+
+      const effectiveTitle = (prayerKey === 'dhuhr' && jumuahTimeStr)
+        ? (tr.jumuah as string ?? labels[prayerKey])
+        : (labels[prayerKey] ?? prayerKey);
 
       try {
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: labels[prayerKey] ?? prayerKey,
+            title: effectiveTitle,
             body: prayerKey === 'fajrFirst' ? firstAdhanBody : prayerBody,
             data: { prayerKey, playAthan: hasAthan, athanType: cfg.athan, athanVoice },
             sound,
@@ -322,6 +360,29 @@ export async function schedulePrayerNotifications(params: {
         scheduledCount++;
       } catch (err) {
         console.warn('[Notifications] Failed to schedule', prayerKey, err);
+      }
+
+      // Pre-prayer reminder (silent banner only)
+      const prePrayerReminder = params.prePrayerReminder ?? 0;
+      if (prePrayerReminder > 0 && hasBanner && prayerKey !== 'fajrFirst') {
+        const reminderTime = new Date(prayerTime.getTime() - prePrayerReminder * 60 * 1000);
+        if (reminderTime > now) {
+          const reminderBody = `${effectiveTitle} ${tr.prayerReminderIn.replace('{n}', String(prePrayerReminder))}`;
+          try {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: labels[prayerKey] ?? prayerKey,
+                body: reminderBody,
+                data: { prayerKey, playAthan: false },
+                sound: false,
+              },
+              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminderTime },
+            });
+            scheduledCount++;
+          } catch (err) {
+            console.warn('[Notifications] Failed to schedule pre-prayer reminder', prayerKey, err);
+          }
+        }
       }
     }
   }

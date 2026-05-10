@@ -35,7 +35,8 @@ export default function SettingsScreen() {
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
     iqamaOffsets, thikrRemindersEnabled, dstEnabled, defaultTab, fontSize,
-    selectedAdhan, prayerAdhan,
+    selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
+    jumuahTime,
     updateSettings,
   } = useApp();
   const C = colors;
@@ -88,8 +89,17 @@ export default function SettingsScreen() {
   const [showAdhanModal, setShowAdhanModal] = useState(false);
   const [thikrToast, setThikrToast] = useState(false);
   const [previewing, setPreviewing] = useState<string | null>(null);
-  const [draftAdhan, setDraftAdhan] = useState(selectedAdhan ?? 'makkah');
+  const [draftAdhan, setDraftAdhan] = useState(() => {
+    const s = selectedAdhan ?? 'makkah';
+    return s.endsWith('_full') ? s.slice(0, -5) : s;
+  });
+  const [draftAdhanLength, setDraftAdhanLength] = useState<'full' | 'short'>(adhanLength ?? 'short');
   const [draftPrayerAdhan, setDraftPrayerAdhan] = useState<Record<string, string>>(prayerAdhan ?? {});
+  const [draftPrePrayerReminder, setDraftPrePrayerReminder] = useState<number>(prePrayerReminder ?? 0);
+  const [showPrePrayerPicker, setShowPrePrayerPicker] = useState(false);
+  const [draftJumuahTime, setDraftJumuahTime] = useState<string | null>(jumuahTime ?? null);
+  const [tempJumuahTime, setTempJumuahTime] = useState(jumuahTime ?? '12:30');
+  const [showJumuahRoller, setShowJumuahRoller] = useState(false);
   const [activePrayerAdhanKey, setActivePrayerAdhanKey] = useState<string | null>(null);
   const isMountedRef = useRef(true);
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
@@ -406,13 +416,17 @@ export default function SettingsScreen() {
 
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const voice = draftPrayerAdhan[key] ?? draftAdhan;
+    if (voice === 'system') {
+      Alert.alert('', tr.systemSoundPreviewNotAvailable as string);
+      return;
+    }
     if (previewing === key) {
       await stopAthan();
       if (isMountedRef.current) setPreviewing(null);
     } else {
       await stopAthan();
       const type = Platform.OS === 'ios' ? 'abbreviated' : (draftNotifications[key]?.athan === 'abbreviated' ? 'abbreviated' : 'full');
-      const voice = draftPrayerAdhan[key] ?? draftAdhan;
       if (isMountedRef.current) setPreviewing(key);
       playAthan(type, () => { if (isMountedRef.current) setPreviewing(null); }, voice);
     }
@@ -431,14 +445,17 @@ export default function SettingsScreen() {
     draftFirstAdhanOffset !== (firstAdhanOffset ?? 0) ||
     JSON.stringify(draftIqamaOffsets) !== JSON.stringify({ ...getDefaultIqamaOffsets(countryCode), ...(iqamaOffsets ?? {}) }) ||
     normNotif(draftNotifications) !== normNotif(prayerNotifications ?? {}) ||
-    draftAdhan !== (selectedAdhan ?? 'makkah') ||
+    draftAdhan !== (() => { const s = selectedAdhan ?? 'makkah'; return s.endsWith('_full') ? s.slice(0, -5) : s; })() ||
+    draftAdhanLength !== (adhanLength ?? 'short') ||
     JSON.stringify(draftPrayerAdhan) !== JSON.stringify(prayerAdhan ?? {}) ||
     draftDhuhaTime !== (dhuhaTime ?? '07:30') ||
     draftTahajjudTime !== (tahajjudTime ?? '03:00') ||
     draftShowDhuha !== (showDhuha !== false) ||
     draftShowQiyam !== (showQiyam !== false) ||
     draftEidPrayerTime !== (eidPrayerTime ?? '07:30') ||
-    draftThikrRemindersEnabled !== (thikrRemindersEnabled ?? false);
+    draftThikrRemindersEnabled !== (thikrRemindersEnabled ?? false) ||
+    draftPrePrayerReminder !== (prePrayerReminder ?? 0) ||
+    draftJumuahTime !== (jumuahTime ?? null);
 
   const TAB_ROUTES: Record<string, string> = {
     index: '/',
@@ -474,9 +491,14 @@ export default function SettingsScreen() {
       showDhuha: draftShowDhuha,
       showQiyam: draftShowQiyam,
       eidPrayerTime: draftEidPrayerTime,
-      selectedAdhan: draftAdhan,
+      selectedAdhan: (Platform.OS === 'android' && draftAdhanLength === 'full' && draftAdhan !== 'system')
+        ? `${draftAdhan}_full`
+        : draftAdhan,
+      adhanLength: draftAdhanLength,
       prayerAdhan: draftPrayerAdhan,
       thikrRemindersEnabled: draftThikrRemindersEnabled,
+      prePrayerReminder: draftPrePrayerReminder,
+      jumuahTime: draftJumuahTime,
     });
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
@@ -502,9 +524,14 @@ export default function SettingsScreen() {
     setTempDhuhaTime(dhuhaTime ?? '07:30');
     setTempTahajjudTime(tahajjudTime ?? '03:00');
     setTempEidPrayerTime(eidPrayerTime ?? '07:30');
-    setDraftAdhan(selectedAdhan ?? 'makkah');
+    const s = selectedAdhan ?? 'makkah';
+    setDraftAdhan(s.endsWith('_full') ? s.slice(0, -5) : s);
+    setDraftAdhanLength(adhanLength ?? 'short');
     setDraftPrayerAdhan(prayerAdhan ?? {});
     setDraftThikrRemindersEnabled(thikrRemindersEnabled ?? false);
+    setDraftPrePrayerReminder(prePrayerReminder ?? 0);
+    setDraftJumuahTime(jumuahTime ?? null);
+    setTempJumuahTime(jumuahTime ?? '12:30');
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
   };
@@ -547,13 +574,12 @@ export default function SettingsScreen() {
 
   // iOS: abbreviated only (short .caf notification sounds).
   // Android: full + abbreviated so users can choose longer call-to-prayer.
-  const BASE_VOICES = ['makkah', 'madinah', 'egypt', 'halab', 'aqsa', 'hussaini', 'abdul-hakam', 'bakir'];
+  const BASE_VOICES = ['system', 'makkah', 'madinah', 'egypt', 'halab', 'aqsa', 'hussaini', 'abdul-hakam', 'bakir', 'athan-midi'];
 
-  const ADHAN_OPTIONS: { key: string }[] = Platform.OS === 'android'
-    ? BASE_VOICES.flatMap(v => [{ key: `${v}_full` }, { key: v }])
-    : BASE_VOICES.map(v => ({ key: v }));
+  const ADHAN_OPTIONS: { key: string }[] = BASE_VOICES.map(v => ({ key: v }));
 
   const ADHAN_NAME_MAP: Record<string, keyof typeof tr> = {
+    'system':      'defaultNotificationSound',
     'makkah':      'adhanName_makkah',
     'madinah':     'adhanName_madinah',
     'egypt':       'adhanName_egypt',
@@ -562,16 +588,14 @@ export default function SettingsScreen() {
     'hussaini':    'adhanName_hussaini',
     'abdul-hakam': 'adhanName_abdulhakam',
     'bakir':       'adhanName_bakir',
+    'athan-midi':  'adhanName_athanMidi',
   };
 
   const adhanLabel = (key: string): string => {
-    const isFull = key.endsWith('_full');
-    const baseKey = isFull ? key.slice(0, -5) : key;
+    if (key === 'system') return (tr.defaultNotificationSound as string) ?? 'Default Sound';
+    const baseKey = key.endsWith('_full') ? key.slice(0, -5) : key;
     const trKey = ADHAN_NAME_MAP[baseKey];
-    const name = trKey ? (tr[trKey] as string) : baseKey;
-    if (Platform.OS !== 'android') return name;
-    const suffix = isFull ? ` (${tr.adhanFull ?? 'Full'})` : ` (${tr.adhanShort ?? 'Short'})`;
-    return name + suffix;
+    return trKey ? (tr[trKey] as string) : baseKey;
   };
 
   const requestNotifPermission = async (): Promise<boolean> => {
@@ -910,9 +934,7 @@ export default function SettingsScreen() {
               </Text>
               {draftHijri !== 0 && (
                 <Pressable onPress={() => { Haptics.selectionAsync(); setDraftHijri(0); }}>
-                  <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600' }}>
-                    {tr.reset}
-                  </Text>
+                  <Ionicons name="refresh" size={16} color={C.tint} />
                 </Pressable>
               )}
             </View>
@@ -1015,6 +1037,14 @@ export default function SettingsScreen() {
                   <Ionicons name="close" size={22} color={C.textSecond} />
                 </Pressable>
               </View>
+              {Platform.OS === 'android' && (
+                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', justifyContent: 'center', padding: 12, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }}>
+                  <View style={styles.chips}>
+                    <Chip value={tr.adhanFull as string ?? 'Full'} selected={draftAdhanLength === 'full'} onPress={() => setDraftAdhanLength('full')} />
+                    <Chip value={tr.adhanShort as string ?? 'Short'} selected={draftAdhanLength === 'short'} onPress={() => setDraftAdhanLength('short')} />
+                  </View>
+                </View>
+              )}
               <ScrollView>
                 {ADHAN_OPTIONS.map((opt, idx) => {
                   const isSelected = draftAdhan === opt.key;
@@ -1222,21 +1252,19 @@ export default function SettingsScreen() {
               {/* Total */}
               <View style={[styles.totalBadge, { backgroundColor: C.tint, paddingHorizontal: 8, paddingVertical: 4 }]}>
                 <Text style={[styles.totalBadgeText, { color: C.tintText, fontSize: 12 }]}>
-                  {`= ${maghribBase + draftAdjustment} ${tr.minutes}`}
+                  {`= ${maghribBase + draftAdjustment} ${(lang === 'ar' || lang === 'fa') ? 'د' : tr.minutes}`}
                 </Text>
               </View>
               {draftAdjustment !== 0 && (
                 <Pressable onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(0); }}>
-                  <Text style={{ color: C.tint, fontSize: 11, fontWeight: '600' }}>
-                    {tr.reset}
-                  </Text>
+                  <Ionicons name="refresh" size={16} color={C.tint} />
                 </Pressable>
               )}
             </View>
           </View>
 
           {/* First Adhan */}
-          <View style={[styles.compactRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+          <View style={[styles.compactRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
               <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                 {tr.firstAdhanSetting}
@@ -1258,6 +1286,22 @@ export default function SettingsScreen() {
                 <Ionicons name="chevron-down" size={13} color={C.tint} />
               </Pressable>
             </View>
+          </View>
+
+          {/* Pre-Prayer Reminder */}
+          <View style={[styles.compactRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+              {tr.prePrayerReminder as string}
+            </Text>
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowPrePrayerPicker(true); }}
+              style={[styles.dropdownBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+            >
+              <Text style={[styles.dropdownBtnText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
+                {draftPrePrayerReminder === 0 ? tr.off : `${draftPrePrayerReminder} ${tr.minBefore}`}
+              </Text>
+              <Ionicons name="chevron-down" size={13} color={C.tint} />
+            </Pressable>
           </View>
         </View>
 
@@ -1356,6 +1400,27 @@ export default function SettingsScreen() {
             />
           </View>
 
+          {/* ── Jumu'ah Time row ── */}
+          <View style={[styles.compactRow, { borderBottomWidth: isNearEid ? 1 : 0, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+              {tr.jumuahTimeSetting as string}
+            </Text>
+            <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, draftJumuahTime === null && { opacity: 0.38 }]} pointerEvents={draftJumuahTime !== null ? 'auto' : 'none'}>
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); setTempJumuahTime(draftJumuahTime ?? '12:30'); setShowJumuahRoller(true); }}
+                style={[styles.timeBtn, { backgroundColor: C.tint + '1A', borderColor: C.tint + '40' }]}
+              >
+                <Text style={[styles.timeBtnText, { color: C.tint }]}>{draftJumuahTime ?? '12:30'}</Text>
+              </Pressable>
+            </View>
+            <Switch
+              value={draftJumuahTime !== null}
+              onValueChange={v => { Haptics.selectionAsync(); setDraftJumuahTime(v ? (draftJumuahTime ?? '12:30') : null); }}
+              trackColor={{ false: C.separator, true: C.tint + '88' }}
+              thumbColor={draftJumuahTime !== null ? C.tint : C.textMuted}
+            />
+          </View>
+
           {/* ── Eid Prayer row — only visible near Eid ── */}
           {isNearEid && (
             <View style={[styles.compactRow, { flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
@@ -1430,6 +1495,22 @@ export default function SettingsScreen() {
           </View>
         </Modal>
 
+        {/* Jumu'ah Time Roller Modal */}
+        <Modal visible={showJumuahRoller} transparent animationType="slide">
+          <View style={styles.rollerOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowJumuahRoller(false)} />
+            <View style={[styles.rollerSheet, { backgroundColor: C.backgroundCard }]}>
+              <Text style={[styles.rollerTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS_MD }]}>
+                {tr.jumuahTimeSetting as string}
+              </Text>
+              <TimeRoller value={tempJumuahTime} onChange={setTempJumuahTime} tintColor={C.tint} textColor={C.text} bgColor={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} />
+              <Pressable onPress={() => { setDraftJumuahTime(tempJumuahTime); setShowJumuahRoller(false); }} style={[styles.rollerDone, { backgroundColor: C.tint }]}>
+                <Text style={[styles.rollerDoneText, { color: C.tintText }]}>{tr.btn_done}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
         {/* First Adhan Picker Modal */}
         <Modal visible={showFirstAdhanPicker} transparent animationType="fade">
           <Pressable style={styles.dropdownOverlay} onPress={() => setShowFirstAdhanPicker(false)}>
@@ -1456,6 +1537,41 @@ export default function SettingsScreen() {
                   >
                     <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
                       {mins === 0 ? tr.off : `${mins} ${tr.minutes}`}
+                    </Text>
+                    {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Modal>
+
+        {/* Pre-Prayer Reminder Picker Modal */}
+        <Modal visible={showPrePrayerPicker} transparent animationType="fade">
+          <Pressable style={styles.dropdownOverlay} onPress={() => setShowPrePrayerPicker(false)}>
+            <View style={[styles.dropdownSheet, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
+              <Text style={[styles.dropdownTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>
+                {tr.prePrayerReminder as string}
+              </Text>
+              {([0, 5, 10, 15, 20, 30] as const).map((mins, idx, arr) => {
+                const isSelected = draftPrePrayerReminder === mins;
+                const isLast = idx === arr.length - 1;
+                return (
+                  <Pressable
+                    key={mins}
+                    onPress={() => { Haptics.selectionAsync(); setDraftPrePrayerReminder(mins); setShowPrePrayerPicker(false); }}
+                    style={[
+                      styles.dropdownOption,
+                      {
+                        borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+                        borderBottomColor: C.separator,
+                        backgroundColor: isSelected ? C.tint + '14' : 'transparent',
+                        flexDirection: isRtl ? 'row-reverse' : 'row',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.dropdownOptionText, { color: isSelected ? C.tint : C.text, fontWeight: isSelected ? '700' : '500', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }]}>
+                      {mins === 0 ? tr.off : `${mins} ${tr.minBefore}`}
                     </Text>
                     {isSelected && <Ionicons name="checkmark" size={16} color={C.tint} />}
                   </Pressable>

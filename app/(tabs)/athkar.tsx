@@ -597,11 +597,11 @@ export default function AthkarScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         pendingAdvance.current = setTimeout(() => {
           const nextIncompleteIdx = cat.adhkar.findIndex((d, i) => {
+            if (i <= idx) return false;
             const k = getKey(cat.id, i);
-            const c = (i === idx) ? next : (prev[k] ?? 0);
-            return c < d.count;
+            return (prev[k] ?? 0) < d.count;
           });
-          if (nextIncompleteIdx !== -1 && nextIncompleteIdx !== idx) {
+          if (nextIncompleteIdx !== -1) {
             readerRef.current?.scrollToIndex({ index: nextIncompleteIdx, animated: true, viewPosition: 0.1 });
           }
         }, 600);
@@ -626,6 +626,7 @@ export default function AthkarScreen() {
       if ((prev[key] ?? 0) >= thikr.count) return prev;
       const updated = { ...prev, [key]: thikr.count };
       const nextIncompleteIdx = cat.adhkar.findIndex((d, i) => {
+        if (i <= idx) return false;
         const k = getKey(cat.id, i);
         return (updated[k] ?? 0) < d.count;
       });
@@ -1821,18 +1822,18 @@ function ReaderScreen({
           <Text style={[styles.completionArabic, { color: C.tint }]}>الحمد لله</Text>
           <Text style={[styles.completionSub, { color: C.textMuted, marginTop: 12, fontFamily: catNameRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold', writingDirection: catNameRtl ? 'rtl' : 'ltr' }]}>{catName}</Text>
           <Pressable
-            onPress={onBack}
+            onPress={handleReset}
             style={({ pressed }) => [styles.doneBtn, { backgroundColor: C.tint, opacity: pressed ? 0.85 : 1, marginTop: 32 }]}
           >
-            <Text style={[styles.doneBtnText, { color: C.tintText }]}>{(tr as any).retry ?? 'Back'}</Text>
+            <Text style={[styles.doneBtnText, { color: C.tintText }]}>{(tr as any).athkarRepeat ?? 'Repeat'}</Text>
           </Pressable>
           <Pressable
-            onPress={handleReset}
+            onPress={onBack}
             style={({ pressed }) => [styles.resetCompletionBtn, { borderColor: C.tint, opacity: pressed ? 0.7 : 1, marginTop: 12 }]}
           >
-            <Ionicons name="refresh-outline" size={16} color={C.tint} />
+            <Ionicons name="list-outline" size={16} color={C.tint} />
             <Text style={[styles.resetCompletionText, { color: C.tint }]}>
-              {(tr as any).retry ?? 'Reset'}
+              {(tr as any).athkarAllAthkar ?? 'All Athkar'}
             </Text>
           </Pressable>
         </Animated.View>

@@ -1,16 +1,17 @@
 import React from 'react';
-import { Image, StyleSheet, useColorScheme } from 'react-native';
+import { Image, StyleSheet, View, useColorScheme } from 'react-native';
 
 export default function PageBackground() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   return (
-    <Image
-      source={require('@/assets/images/bg-prayer.png')}
-      style={[styles.bg, { opacity: isDark ? 0.22 : 0.18 }]}
-      resizeMode="cover"
-      pointerEvents="none"
-    />
+    <View style={[styles.bg, { opacity: isDark ? 0.22 : 0.18 }]} pointerEvents="none">
+      <Image
+        source={require('@/assets/images/bg-prayer.png')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
+    </View>
   );
 }
 
