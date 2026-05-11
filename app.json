@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
-      "buildNumber": "47",
+      "buildNumber": "48",
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.mawaqit.app.widget"]
       },
@@ -63,14 +63,6 @@
           "icon": "./assets/images/notification-icon.png",
           "color": "#1a8c5b",
           "sounds": [
-            "./assets/sounds/caf/adhan_makka_abb.caf",
-            "./assets/sounds/caf/adhan_madinah_abb.caf",
-            "./assets/sounds/caf/adhan_egypt_abb.caf",
-            "./assets/sounds/caf/adhan_alaqsa_abb.caf",
-            "./assets/sounds/caf/adhan_halab_abb.caf",
-            "./assets/sounds/caf/al_hussaini_abb.caf",
-            "./assets/sounds/caf/bakir_bash_abb.caf",
-            "./assets/sounds/caf/abdul_hakam_abb.caf",
             "./assets/sounds/abb/adhan_makka_abb.mp3",
             "./assets/sounds/abb/adhan_madinah_abb.mp3",
             "./assets/sounds/abb/adhan_egypt_abb.mp3",
@@ -79,7 +71,6 @@
             "./assets/sounds/abb/al_hussaini_abb.mp3",
             "./assets/sounds/abb/bakir_bash_abb.mp3",
             "./assets/sounds/abb/abdul_hakam_abb.mp3",
-            "./assets/sounds/caf/athan_midi_abb.caf",
             "./assets/sounds/abb/athan_midi_abb.mp3",
             "./assets/sounds/athan_midi.mp3",
             "./assets/sounds/adhan_makkah.mp3",

@@ -38,6 +38,15 @@
 		CF2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CE2A2B3C4D5E6F70A182B3C4 /* MawaqitWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E122632F9FC2482EAA198DA2 /* adhan_halab.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C60860A1745B4ACD9CC1DE55 /* adhan_halab.mp3 */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		CAF1001BB1B2C3D4E5F60001 /* adhan_makka_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF1001AA1B2C3D4E5F60001 /* adhan_makka_abb.caf */; };
+		CAF2001BB1B2C3D4E5F60002 /* adhan_madinah_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF2001AA1B2C3D4E5F60002 /* adhan_madinah_abb.caf */; };
+		CAF3001BB1B2C3D4E5F60003 /* adhan_egypt_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF3001AA1B2C3D4E5F60003 /* adhan_egypt_abb.caf */; };
+		CAF4001BB1B2C3D4E5F60004 /* adhan_alaqsa_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF4001AA1B2C3D4E5F60004 /* adhan_alaqsa_abb.caf */; };
+		CAF5001BB1B2C3D4E5F60005 /* adhan_halab_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF5001AA1B2C3D4E5F60005 /* adhan_halab_abb.caf */; };
+		CAF6001BB1B2C3D4E5F60006 /* al_hussaini_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF6001AA1B2C3D4E5F60006 /* al_hussaini_abb.caf */; };
+		CAF7001BB1B2C3D4E5F60007 /* bakir_bash_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF7001AA1B2C3D4E5F60007 /* bakir_bash_abb.caf */; };
+		CAF8001BB1B2C3D4E5F60008 /* abdul_hakam_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF8001AA1B2C3D4E5F60008 /* abdul_hakam_abb.caf */; };
+		CAF9001BB1B2C3D4E5F60009 /* athan_midi_abb.caf in Resources */ = {isa = PBXBuildFile; fileRef = CAF9001AA1B2C3D4E5F60009 /* athan_midi_abb.caf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -103,6 +112,15 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Mawaqit/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Mawaqit-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Mawaqit-Bridging-Header.h"; path = "Mawaqit/Mawaqit-Bridging-Header.h"; sourceTree = "<group>"; };
+		CAF1001AA1B2C3D4E5F60001 /* adhan_makka_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_makka_abb.caf; path = Mawaqit/adhan_makka_abb.caf; sourceTree = "<group>"; };
+		CAF2001AA1B2C3D4E5F60002 /* adhan_madinah_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_madinah_abb.caf; path = Mawaqit/adhan_madinah_abb.caf; sourceTree = "<group>"; };
+		CAF3001AA1B2C3D4E5F60003 /* adhan_egypt_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_egypt_abb.caf; path = Mawaqit/adhan_egypt_abb.caf; sourceTree = "<group>"; };
+		CAF4001AA1B2C3D4E5F60004 /* adhan_alaqsa_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_alaqsa_abb.caf; path = Mawaqit/adhan_alaqsa_abb.caf; sourceTree = "<group>"; };
+		CAF5001AA1B2C3D4E5F60005 /* adhan_halab_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = adhan_halab_abb.caf; path = Mawaqit/adhan_halab_abb.caf; sourceTree = "<group>"; };
+		CAF6001AA1B2C3D4E5F60006 /* al_hussaini_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = al_hussaini_abb.caf; path = Mawaqit/al_hussaini_abb.caf; sourceTree = "<group>"; };
+		CAF7001AA1B2C3D4E5F60007 /* bakir_bash_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = bakir_bash_abb.caf; path = Mawaqit/bakir_bash_abb.caf; sourceTree = "<group>"; };
+		CAF8001AA1B2C3D4E5F60008 /* abdul_hakam_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = abdul_hakam_abb.caf; path = Mawaqit/abdul_hakam_abb.caf; sourceTree = "<group>"; };
+		CAF9001AA1B2C3D4E5F60009 /* athan_midi_abb.caf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = athan_midi_abb.caf; path = Mawaqit/athan_midi_abb.caf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,6 +173,15 @@
 				B9A04903652E4B04958C0413 /* al_hussaini.mp3 */,
 				08991B41E2A8460C8BA9B55C /* bakir_bash.mp3 */,
 				34EAC8E8B95C4518A04E899E /* abdul_hakam.mp3 */,
+				CAF1001AA1B2C3D4E5F60001 /* adhan_makka_abb.caf */,
+				CAF2001AA1B2C3D4E5F60002 /* adhan_madinah_abb.caf */,
+				CAF3001AA1B2C3D4E5F60003 /* adhan_egypt_abb.caf */,
+				CAF4001AA1B2C3D4E5F60004 /* adhan_alaqsa_abb.caf */,
+				CAF5001AA1B2C3D4E5F60005 /* adhan_halab_abb.caf */,
+				CAF6001AA1B2C3D4E5F60006 /* al_hussaini_abb.caf */,
+				CAF7001AA1B2C3D4E5F60007 /* bakir_bash_abb.caf */,
+				CAF8001AA1B2C3D4E5F60008 /* abdul_hakam_abb.caf */,
+				CAF9001AA1B2C3D4E5F60009 /* athan_midi_abb.caf */,
 				A8CF5116C3914B47DA2E16A3 /* PrivacyInfo.xcprivacy */,
 			);
 			name = Mawaqit;
@@ -351,6 +378,15 @@
 				08E7D637A993439999DEC9DD /* al_hussaini.mp3 in Resources */,
 				962EC526EE7347818A328803 /* bakir_bash.mp3 in Resources */,
 				C616CBAEF0DD4AF3968CCD4E /* abdul_hakam.mp3 in Resources */,
+				CAF1001BB1B2C3D4E5F60001 /* adhan_makka_abb.caf in Resources */,
+				CAF2001BB1B2C3D4E5F60002 /* adhan_madinah_abb.caf in Resources */,
+				CAF3001BB1B2C3D4E5F60003 /* adhan_egypt_abb.caf in Resources */,
+				CAF4001BB1B2C3D4E5F60004 /* adhan_alaqsa_abb.caf in Resources */,
+				CAF5001BB1B2C3D4E5F60005 /* adhan_halab_abb.caf in Resources */,
+				CAF6001BB1B2C3D4E5F60006 /* al_hussaini_abb.caf in Resources */,
+				CAF7001BB1B2C3D4E5F60007 /* bakir_bash_abb.caf in Resources */,
+				CAF8001BB1B2C3D4E5F60008 /* abdul_hakam_abb.caf in Resources */,
+				CAF9001BB1B2C3D4E5F60009 /* athan_midi_abb.caf in Resources */,
 				1191A41A78EFCA13447D979E /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

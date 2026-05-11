@@ -419,7 +419,14 @@ export default function SettingsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const voice = draftPrayerAdhan[key] ?? draftAdhan;
     if (voice === 'system') {
-      Alert.alert('', tr.systemSoundPreviewNotAvailable as string);
+      if (!await requestNotifPermission()) return;
+      await Notifications.scheduleNotificationAsync({
+        content: { title: 'Mawaqit', sound: true },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 1,
+        },
+      });
       return;
     }
     if (previewing === key) {
@@ -598,7 +605,7 @@ export default function SettingsScreen() {
   };
 
   const adhanLabel = (key: string): string => {
-    if (key === 'system') return (tr.defaultNotificationSound as string) ?? 'Default Sound';
+    if (key === 'system') return (tr.defaultNotificationSound as string) ?? 'System Sound';
     const baseKey = key.endsWith('_full') ? key.slice(0, -5) : key;
     const trKey = ADHAN_NAME_MAP[baseKey];
     return trKey ? (tr[trKey] as string) : baseKey;
@@ -1096,40 +1103,10 @@ export default function SettingsScreen() {
                 </Pressable>
               </View>
               <ScrollView>
-                {/* "Default" option — inherit from global */}
-                {(() => {
-                  const effectiveDefault = draftAdhan;
-                  const isSelected = activePrayerAdhanKey !== null && !(activePrayerAdhanKey in draftPrayerAdhan);
-                  return (
-                    <Pressable
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        if (activePrayerAdhanKey) {
-                          setDraftPrayerAdhan(prev => {
-                            const next = { ...prev };
-                            delete next[activePrayerAdhanKey];
-                            return next;
-                          });
-                        }
-                        setActivePrayerAdhanKey(null);
-                      }}
-                      style={[
-                        styles.methodRow,
-                        { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' },
-                        isSelected && { backgroundColor: C.tint + '18' },
-                      ]}
-                    >
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <Text style={{ fontSize: 13, fontWeight: isSelected ? '700' : '500', color: isSelected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                          {isRtl ? `افتراضي (${adhanLabel(effectiveDefault)})` : `Default (${adhanLabel(effectiveDefault)})`}
-                        </Text>
-                      </View>
-                      {isSelected && <Ionicons name="checkmark" size={18} color={C.tint} />}
-                    </Pressable>
-                  );
-                })()}
                 {ADHAN_OPTIONS.map((opt, idx) => {
-                  const isSelected = activePrayerAdhanKey !== null && draftPrayerAdhan[activePrayerAdhanKey] === opt.key;
+                  const explicitSel = activePrayerAdhanKey !== null && draftPrayerAdhan[activePrayerAdhanKey] === opt.key;
+                  const implicitSel = activePrayerAdhanKey !== null && !(activePrayerAdhanKey in draftPrayerAdhan) && draftAdhan === opt.key;
+                  const isSelected = explicitSel || implicitSel;
                   const isLast = idx === ADHAN_OPTIONS.length - 1;
                   return (
                     <Pressable

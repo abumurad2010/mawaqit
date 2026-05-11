@@ -367,7 +367,7 @@ function DragSortList<T>({
 export default function AthkarScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { lang, colors: C, isDark } = useApp();
+  const { lang, colors: C, isDark, translitLang, updateSettings } = useApp();
   const tr = t(lang);
   const isRtl = isRtlLang(lang);
 
@@ -391,7 +391,8 @@ export default function AthkarScreen() {
   );
   const [favourites, setFavourites] = useState<string[]>([]);
   const [favHintSeen, setFavHintSeen] = useState(false);
-  const [athkarLang, setAthkarLang] = useState<Lang>((lang as Lang) || 'ar');
+  // athkarLang is derived from the persisted translitLang; Arabic display mode forces 'ar'.
+  const athkarLang: Lang = displayMode === 'arabic' ? 'ar' : translitLang;
   const [athkarFontSize, setAthkarFontSizeState] = useState<AthkarFontSize>('md');
   const readerRef = useRef<FlatList<Thikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -450,24 +451,11 @@ export default function AthkarScreen() {
 
 
   useEffect(() => {
-    if (!lang || lang === 'ar') {
-      setDisplayMode('arabic');
-      setAthkarLang('ar');
-    } else {
-      setDisplayMode('full');
-      setAthkarLang(lang as Lang);
-    }
+    setDisplayMode(!lang || lang === 'ar' ? 'arabic' : 'full');
   }, [lang]);
 
-  // Reset transliteration language to app language every time the tab is focused
   useFocusEffect(useCallback(() => {
-    if (!lang || lang === 'ar') {
-      setDisplayMode('arabic');
-      setAthkarLang('ar');
-    } else {
-      setDisplayMode('full');
-      setAthkarLang(lang as Lang);
-    }
+    setDisplayMode(!lang || lang === 'ar' ? 'arabic' : 'full');
   }, [lang]));
 
   const sortedCategories = useMemo(() => {
@@ -717,7 +705,7 @@ export default function AthkarScreen() {
           favHintSeen={favHintSeen}
           onFavHintDismiss={dismissFavHint}
           athkarLang={athkarLang}
-          setAthkarLang={setAthkarLang}
+          setAthkarLang={(l: Lang) => updateSettings({ translitLang: l })}
           athkarFontSize={athkarFontSize}
           setAthkarFontSize={setAthkarFontSize}
         />
@@ -1017,11 +1005,6 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             onPress={() => {
               Haptics.selectionAsync();
               onDisplayMode('full');
-              if (athkarLang === 'ar') {
-                setAthkarLang(
-                  (lang && lang !== 'ar') ? (lang as Lang) : 'en'
-                );
-              }
             }}
             style={[styles.segmentBtn, displayMode === 'full' && { backgroundColor: C.tint }]}
           >

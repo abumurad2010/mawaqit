@@ -86,11 +86,7 @@ export default function SurahTransliterationScreen() {
   const startAyahNum = Number(startAyah ?? '0');
   const highlightTerm = highlight ?? '';
   const insets = useSafeAreaInsets();
-  const { isDark, lang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings, setTranslitLastSurah, setTranslitLastPage } = useApp();
-  // Local session state — defaults to app language on every open; user can change within the session.
-  // Not persisted: next open always resets to app language.
-  const defaultTranslitLang: Lang = SUPPORTED_TRANSLIT_LANGS.includes(lang as Lang) ? (lang as Lang) : 'en';
-  const [translitLang, setTranslitLangState] = useState<Lang>(defaultTranslitLang);
+  const { isDark, lang, colors, fontSize, isBookmarked, addBookmark, removeBookmark, updateSettings, translitLang, setTranslitLastSurah, setTranslitLastPage } = useApp();
   const FONT_STEPS = ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const;
   const fsIdx = FONT_STEPS.indexOf(fontSize as typeof FONT_STEPS[number]);
   const changeFontSize = (dir: 1 | -1) => {
@@ -360,9 +356,9 @@ export default function SurahTransliterationScreen() {
 
   const setTranslitLang = useCallback((l: Lang) => {
     Haptics.selectionAsync();
-    setTranslitLangState(l);
+    updateSettings({ translitLang: l });
     setShowLangPicker(false);
-  }, []);
+  }, [updateSettings]);
 
   const toggleBookmark = useCallback((ayahNum: number, ayahText: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
