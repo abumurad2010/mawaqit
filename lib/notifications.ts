@@ -362,9 +362,11 @@ export async function schedulePrayerNotifications(params: {
         console.warn('[Notifications] Failed to schedule', prayerKey, err);
       }
 
-      // Pre-prayer reminder (silent banner only)
+      // Pre-prayer reminder (silent banner): fires for any prayer that has any
+      // notification configured (banner or athan), so athan-only prayers also
+      // receive the advance reminder.
       const prePrayerReminder = params.prePrayerReminder ?? 0;
-      if (prePrayerReminder > 0 && hasBanner && prayerKey !== 'fajrFirst') {
+      if (prePrayerReminder > 0 && (hasBanner || hasAthan) && prayerKey !== 'fajrFirst') {
         const reminderTime = new Date(prayerTime.getTime() - prePrayerReminder * 60 * 1000);
         if (reminderTime > now) {
           const reminderBody = `${effectiveTitle} ${tr.prayerReminderIn.replace('{n}', String(prePrayerReminder))}`;

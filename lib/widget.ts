@@ -35,7 +35,7 @@ export function updateWidget(
   prayerName2: string,
   prayerTime2: string,
 ): void {
-  if (Platform.OS !== 'ios') return;
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
     NativeModules.WidgetDataModule?.updateWidgetData(
       prayerName, prayerTime, countdown, prayerName2, prayerTime2,
@@ -53,7 +53,7 @@ export function updateWidget(
  * so it never fails due to Date object timezone edge-cases.
  */
 export function updateWidgetFromPrayerTimes(times: PrayerTimes, lang: Lang): void {
-  if (Platform.OS !== 'ios') return;
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
     const now = new Date();
     const nowSecs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
