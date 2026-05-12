@@ -306,10 +306,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [effectiveCountryCode]);
 
   useEffect(() => {
-    if (!effectiveLocation) return;
+    if (!effectiveLocation) {
+      console.log('[Notifications] rescheduleAll skipped — effectiveLocation is null');
+      return;
+    }
     const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled, dstEnabled } = settings;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
     const dstOffsetMs = dstEnabled ? 3600000 : 0;
+    console.log(`[Notifications] rescheduleAll triggered — hasAny=${hasAny} thikrEnabled=${thikrRemindersEnabled} location=${effectiveLocation.lat.toFixed(3)},${effectiveLocation.lng.toFixed(3)}`);
 
     const rescheduleAll = async () => {
       try {

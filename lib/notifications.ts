@@ -282,8 +282,12 @@ export async function schedulePrayerNotifications(params: {
   prePrayerReminder?: number;
   jumuahTime?: string | null;
 }): Promise<number> {
+  const enabledKeys = Object.entries(params.prayerNotifications)
+    .filter(([, v]) => v.banner || v.athan !== 'none')
+    .map(([k]) => k);
+  console.log(`[Notifications] schedulePrayerNotifications CALLED platform=${Platform.OS} location=${params.location ? `${params.location.lat.toFixed(3)},${params.location.lng.toFixed(3)}` : 'NULL'} daysAhead=${params.daysAhead ?? 7} enabledPrayers=[${enabledKeys.join(',')}] calcMethod=${params.calcMethod}`);
   await cancelAllPrayerNotifications();
-  if (!isNative) return 0;
+  if (!isNative) { console.log('[Notifications] non-native platform — returning 0'); return 0; }
 
   const { prayerNotifications, lang } = params;
   const labels = getPrayerLabels(lang);
@@ -294,6 +298,8 @@ export async function schedulePrayerNotifications(params: {
   const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
   let scheduledCount = 0;
+  let skippedPastCount = 0;
+  let scheduleErrors = 0;
   for (let d = 0; d < daysAhead; d++) {
     const date = new Date();
     date.setDate(date.getDate() + d);
@@ -331,7 +337,8 @@ export async function schedulePrayerNotifications(params: {
       if (!hasBanner && !hasAthan) continue;
 
       const prayerTime = prayerTimeMap[prayerKey];
-      if (!prayerTime || prayerTime <= now) continue;
+      if (!prayerTime) continue;
+      if (prayerTime <= now) { skippedPastCount++; continue; }
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
       let sound: boolean | string;
@@ -358,7 +365,9 @@ export async function schedulePrayerNotifications(params: {
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
         });
         scheduledCount++;
+        console.log(`[Notifications] scheduled ${prayerKey} @ ${prayerTime.toISOString()} sound=${typeof sound === 'string' ? sound : sound} athan=${cfg.athan}`);
       } catch (err) {
+        scheduleErrors++;
         console.warn('[Notifications] Failed to schedule', prayerKey, err);
       }
 
@@ -382,11 +391,13 @@ export async function schedulePrayerNotifications(params: {
             });
             scheduledCount++;
           } catch (err) {
+            scheduleErrors++;
             console.warn('[Notifications] Failed to schedule pre-prayer reminder', prayerKey, err);
           }
         }
       }
     }
   }
+  console.log(`[Notifications] schedulePrayerNotifications done: scheduled=${scheduledCount} skippedPast=${skippedPastCount} errors=${scheduleErrors} daysAhead=${daysAhead}`);
   return scheduledCount;
 }
