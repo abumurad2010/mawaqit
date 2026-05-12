@@ -13,7 +13,7 @@ const IOS_MAX_NOTIFICATIONS = 64;
 
 /** Maps voice key → abbreviated .caf filename bundled in the iOS app */
 const IOS_CAF_SOUNDS: Record<string, string> = {
-  'system':      '',
+  'system':      'adhan_makka_abb.caf',
   'makkah':      'adhan_makka_abb.caf',
   'madinah':     'adhan_madinah_abb.caf',
   'egypt':       'adhan_egypt_abb.caf',
@@ -341,14 +341,9 @@ export async function schedulePrayerNotifications(params: {
       if (prayerTime <= now) { skippedPastCount++; continue; }
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
-      let sound: boolean | string;
-      if (athanVoice === 'system') {
-        sound = Platform.OS === 'ios' ? true : 'default';
-      } else {
-        sound = Platform.OS === 'ios'
-          ? (IOS_CAF_SOUNDS[athanVoice] ?? 'adhan_makka_abb.caf')
-          : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3');
-      }
+      const sound: string = Platform.OS === 'ios'
+        ? (IOS_CAF_SOUNDS[athanVoice] || 'adhan_makka_abb.caf')
+        : (athanVoice === 'system' ? 'default' : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3'));
 
       const effectiveTitle = (prayerKey === 'dhuhr' && jumuahTimeStr)
         ? (tr.jumuah as string ?? labels[prayerKey])
