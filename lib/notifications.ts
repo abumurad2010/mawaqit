@@ -341,8 +341,9 @@ export async function schedulePrayerNotifications(params: {
       if (prayerTime <= now) { skippedPastCount++; continue; }
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
+      // DIAGNOSTIC: force iOS default sound to test whether CAF files are causing silent delivery failure
       const sound: string = Platform.OS === 'ios'
-        ? (IOS_CAF_SOUNDS[athanVoice] || 'adhan_makka_abb.caf')
+        ? 'default'
         : (athanVoice === 'system' ? 'default' : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3'));
 
       const effectiveTitle = (prayerKey === 'dhuhr' && jumuahTimeStr)

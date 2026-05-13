@@ -58,11 +58,28 @@ function RootLayoutNav() {
     if (Platform.OS === 'web') return;
     const subscription = AppState.addEventListener('change', async (nextState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
-        await Notifications.getPermissionsAsync();
+        const perms = await Notifications.getPermissionsAsync();
+        console.log('[Notifications] permissions on foreground:', JSON.stringify(perms));
       }
       appState.current = nextState;
     });
     return () => subscription.remove();
+  }, []);
+
+  // DIAGNOSTIC — log notification permission status at app startup.
+  // On iOS the `ios.status` enum is the truth: 2 = Authorized, 3 = Provisional (silent delivery),
+  // 4 = Ephemeral (App Clip), 1 = Denied, 0 = NotDetermined. A provisional grant returns
+  // status: 'granted' at the top level but suppresses all banners/sounds — exact symptom we have.
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        const perms = await Notifications.getPermissionsAsync();
+        console.log('[Notifications] startup permissions:', JSON.stringify(perms));
+      } catch (err) {
+        console.warn('[Notifications] startup getPermissionsAsync failed', err);
+      }
+    })();
   }, []);
 
   useEffect(() => {
