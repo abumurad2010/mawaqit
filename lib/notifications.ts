@@ -287,9 +287,8 @@ export async function schedulePrayerNotifications(params: {
   const enabledKeys = Object.entries(params.prayerNotifications)
     .filter(([, v]) => v.banner || v.athan !== 'none')
     .map(([k]) => k);
-  console.log(`[Notifications] schedulePrayerNotifications CALLED platform=${Platform.OS} location=${params.location ? `${params.location.lat.toFixed(3)},${params.location.lng.toFixed(3)}` : 'NULL'} daysAhead=${params.daysAhead ?? 7} enabledPrayers=[${enabledKeys.join(',')}] calcMethod=${params.calcMethod}`);
   await cancelAllPrayerNotifications();
-  if (!isNative) { console.log('[Notifications] non-native platform — returning 0'); return 0; }
+  if (!isNative) return 0;
 
   const { prayerNotifications, lang } = params;
   const labels = getPrayerLabels(lang);
@@ -360,9 +359,8 @@ export async function schedulePrayerNotifications(params: {
       if (prayerTime <= now) { skippedPastCount++; continue; }
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
-      // DIAGNOSTIC: force iOS default sound to test whether CAF files are causing silent delivery failure
       const sound: string = Platform.OS === 'ios'
-        ? 'default'
+        ? (IOS_CAF_SOUNDS[athanVoice] || 'adhan_makka_abb.caf')
         : (athanVoice === 'system' ? 'default' : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3'));
 
       const effectiveTitle = (prayerKey === 'dhuhr' && jumuahTimeStr)
@@ -380,7 +378,6 @@ export async function schedulePrayerNotifications(params: {
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: prayerTime },
         });
         scheduledCount++;
-        console.log(`[Notifications] scheduled ${prayerKey} @ ${prayerTime.toISOString()} sound=${typeof sound === 'string' ? sound : sound} athan=${cfg.athan}`);
       } catch (err) {
         scheduleErrors++;
         console.warn('[Notifications] Failed to schedule', prayerKey, err);
