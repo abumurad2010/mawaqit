@@ -141,8 +141,10 @@ export async function cancelThikrNotifications() {
 }
 
 const THIKR_DAILY_COUNT = 25;
-const THIKR_IOS_DAILY_COUNT = 12;
-const THIKR_IOS_DAYS = 5;
+// iOS 64-slot budget allocation: 30 slots reserved for thikr (10/day × 3 days)
+const THIKR_IOS_DAILY_COUNT = 10;
+const THIKR_IOS_DAYS = 3;
+const IOS_THIKR_RESERVED_SLOTS = THIKR_IOS_DAILY_COUNT * THIKR_IOS_DAYS; // 30
 const THIKR_WINDOW_AFTER_ISHA_MS = 5 * 60 * 60 * 1000; // 5 hours after Isha
 
 export async function scheduleThikrNotifications(params: {
@@ -294,12 +296,29 @@ export async function schedulePrayerNotifications(params: {
   const tr = t(lang);
   const prayerBody = tr.its_time_to_pray;
   const firstAdhanBody = tr.its_time_for_first_adhan;
-  const daysAhead = params.daysAhead ?? 7;
+  // iOS 64-slot budget: 3 days × enabled prayers (adhans) + 30 thikr + N pre-prayer reminders
+  const daysAhead = params.daysAhead ?? 3;
   const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
   let scheduledCount = 0;
   let skippedPastCount = 0;
   let scheduleErrors = 0;
+
+  // iOS 64-slot budget allocation for pre-prayer reminders.
+  //   prayerSlots   = enabled prayers × daysAhead (upper bound for adhans)
+  //   thikrSlots    = IOS_THIKR_RESERVED_SLOTS (30)
+  //   prePrayerBudget = 64 - prayerSlots - thikrSlots
+  // Day-by-day iteration below (d=0..daysAhead) ensures pre-prayer slots go
+  // to the soonest prayers first; once budget exhausted, later pre-prayers
+  // are silently skipped while adhans still schedule.
+  const isIos = Platform.OS === 'ios';
+  const enabledPrayerCount = enabledKeys.length;
+  const prayerSlotsReserved = enabledPrayerCount * daysAhead;
+  const prePrayerBudget = isIos
+    ? Math.max(0, IOS_MAX_NOTIFICATIONS - prayerSlotsReserved - IOS_THIKR_RESERVED_SLOTS)
+    : Infinity;
+  let prePrayerScheduled = 0;
+  let prePrayerSkippedBudget = 0;
   for (let d = 0; d < daysAhead; d++) {
     const date = new Date();
     date.setDate(date.getDate() + d);
@@ -369,31 +388,37 @@ export async function schedulePrayerNotifications(params: {
 
       // Pre-prayer reminder (silent banner): fires for any prayer that has any
       // notification configured (banner or athan), so athan-only prayers also
-      // receive the advance reminder.
+      // receive the advance reminder. iOS-only: capped by `prePrayerBudget` so
+      // pre-prayer reminders never crowd out adhans or thikr in the 64-slot queue.
       const prePrayerReminder = params.prePrayerReminder ?? 0;
       if (prePrayerReminder > 0 && (hasBanner || hasAthan) && prayerKey !== 'fajrFirst') {
-        const reminderTime = new Date(prayerTime.getTime() - prePrayerReminder * 60 * 1000);
-        if (reminderTime > now) {
-          const reminderBody = `${effectiveTitle} ${tr.prayerReminderIn.replace('{n}', String(prePrayerReminder))}`;
-          try {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: labels[prayerKey] ?? prayerKey,
-                body: reminderBody,
-                data: { prayerKey, playAthan: false },
-                sound: false,
-              },
-              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminderTime },
-            });
-            scheduledCount++;
-          } catch (err) {
-            scheduleErrors++;
-            console.warn('[Notifications] Failed to schedule pre-prayer reminder', prayerKey, err);
+        if (prePrayerScheduled >= prePrayerBudget) {
+          prePrayerSkippedBudget++;
+        } else {
+          const reminderTime = new Date(prayerTime.getTime() - prePrayerReminder * 60 * 1000);
+          if (reminderTime > now) {
+            const reminderBody = `${effectiveTitle} ${tr.prayerReminderIn.replace('{n}', String(prePrayerReminder))}`;
+            try {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: labels[prayerKey] ?? prayerKey,
+                  body: reminderBody,
+                  data: { prayerKey, playAthan: false },
+                  sound: false,
+                },
+                trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminderTime },
+              });
+              scheduledCount++;
+              prePrayerScheduled++;
+            } catch (err) {
+              scheduleErrors++;
+              console.warn('[Notifications] Failed to schedule pre-prayer reminder', prayerKey, err);
+            }
           }
         }
       }
     }
   }
-  console.log(`[Notifications] schedulePrayerNotifications done: scheduled=${scheduledCount} skippedPast=${skippedPastCount} errors=${scheduleErrors} daysAhead=${daysAhead}`);
+  console.log(`[Notifications] schedulePrayerNotifications done: scheduled=${scheduledCount} skippedPast=${skippedPastCount} errors=${scheduleErrors} daysAhead=${daysAhead} prePrayer=${prePrayerScheduled}/${prePrayerBudget === Infinity ? 'inf' : prePrayerBudget} prePrayerSkippedBudget=${prePrayerSkippedBudget}`);
   return scheduledCount;
 }

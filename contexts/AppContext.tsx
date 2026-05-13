@@ -16,6 +16,7 @@ import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { BUNDLED_LANGS, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
+import * as Notifications from 'expo-notifications';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications, cancelThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
 import type { AccessibilityTheme, ColorPalette } from '@/constants/colors';
@@ -353,6 +354,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
         } else {
           await cancelThikrNotifications();
+        }
+
+        // DIAGNOSTIC — verify iOS 64-slot ceiling hypothesis by counting what
+        // actually made it into the pending queue, grouped by kind.
+        try {
+          const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+          const counts = allScheduled.reduce((acc, n) => {
+            const data = n.content?.data as Record<string, unknown> | undefined;
+            const key = data?.prayerKey
+              ? (data?.playAthan === false ? 'pre-prayer' : 'adhan')
+              : (data?.type === 'thikr_reminder' ? 'thikr' : 'other');
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+          console.log(`[Notifications] FINAL SCHEDULED COUNT: total=${allScheduled.length} breakdown=${JSON.stringify(counts)}`);
+        } catch (err) {
+          console.warn('[Notifications] getAllScheduledNotificationsAsync failed', err);
         }
       } catch { /* notifications unavailable on this platform */ }
 
