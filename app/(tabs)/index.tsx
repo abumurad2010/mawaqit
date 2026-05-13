@@ -390,8 +390,8 @@ export default function PrayerTimesScreen() {
       asr: tr.asr,
       maghrib: tr.maghrib,
       isha: tr.isha,
-      dhuha: (tr as any).dhuha ?? 'Dhuha',
-      qiyam: (tr as any).tahajjud ?? 'Qiyam al-Layl',
+      dhuha: tr.dhuha,
+      qiyam: tr.qiyam,
     };
     return map[key] ?? key;
   };
