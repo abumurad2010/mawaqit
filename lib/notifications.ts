@@ -11,9 +11,12 @@ import { THIKR_ITEMS, getThikrText } from '@/constants/thikr-reminders';
 const isNative = Platform.OS !== 'web';
 const IOS_MAX_NOTIFICATIONS = 64;
 
-/** Maps voice key → abbreviated .caf filename bundled in the iOS app */
+/** Maps voice key → abbreviated .caf filename bundled in the iOS app.
+ *  Note: 'system' is special-cased in the schedule loop to use Apple's
+ *  built-in notification chime — the entry below is unused but kept for
+ *  documentation. */
 const IOS_CAF_SOUNDS: Record<string, string> = {
-  'system':      'adhan_makka_abb.caf',
+  'system':      'default',
   'makkah':      'adhan_makka_abb.caf',
   'madinah':     'adhan_madinah_abb.caf',
   'egypt':       'adhan_egypt_abb.caf',
@@ -360,7 +363,7 @@ export async function schedulePrayerNotifications(params: {
 
       const athanVoice = params.prayerAdhan?.[prayerKey] ?? params.selectedAdhan ?? 'makkah';
       const sound: string = Platform.OS === 'ios'
-        ? (IOS_CAF_SOUNDS[athanVoice] || 'adhan_makka_abb.caf')
+        ? (athanVoice === 'system' ? 'default' : (IOS_CAF_SOUNDS[athanVoice] || 'adhan_makka_abb.caf'))
         : (athanVoice === 'system' ? 'default' : (ANDROID_MP3_SOUNDS[athanVoice] ?? 'adhan_makka_abb.mp3'));
 
       const effectiveTitle = (prayerKey === 'dhuhr' && jumuahTimeStr)
