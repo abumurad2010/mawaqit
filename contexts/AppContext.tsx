@@ -8,9 +8,8 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
-import { calculatePrayerTimes } from '@/lib/prayer-times';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
-import { updateWidgetFromPrayerTimes } from '@/lib/widget';
+import { updateWidgetFromParams } from '@/lib/widget';
 
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
@@ -356,24 +355,48 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       } catch { /* notifications unavailable on this platform */ }
 
-      // Update the WidgetKit widget with today's next prayer time.
+      // Push the full 48-hour prayer timeline (today + tomorrow) to the iOS
+      // WidgetKit extension. The widget builds one TimelineEntry per prayer
+      // transition with policy .atEnd, so it auto-refreshes after the last entry.
       try {
-        const todayNoon = new Date();
-        todayNoon.setHours(12, 0, 0, 0);
-        const todayPrayerTimes = calculatePrayerTimes({
+        updateWidgetFromParams({
           lat: effectiveLocation.lat,
           lng: effectiveLocation.lng,
-          date: todayNoon,
           method: calcMethod,
           asrMethod,
           maghribOffset,
+          lang,
         });
-        updateWidgetFromPrayerTimes(todayPrayerTimes, lang);
       } catch { /* non-critical */ }
     };
 
     rescheduleAll();
   }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.dstEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime]);
+
+  // Date-rollover watcher: while the app stays open across midnight, push a
+  // fresh widget timeline so "today" rolls to the next calendar day.
+  useEffect(() => {
+    if (!effectiveLocation) return;
+    const tick = () => {
+      try {
+        updateWidgetFromParams({
+          lat: effectiveLocation.lat,
+          lng: effectiveLocation.lng,
+          method: settings.calcMethod,
+          asrMethod: settings.asrMethod,
+          maghribOffset,
+          lang: settings.lang,
+        });
+      } catch { /* non-critical */ }
+    };
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    tomorrow.setHours(0, 0, 30, 0);
+    const msUntilMidnight = tomorrow.getTime() - now.getTime();
+    const timeoutId = setTimeout(tick, msUntilMidnight);
+    return () => clearTimeout(timeoutId);
+  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

@@ -10,4 +10,16 @@ RCT_EXTERN_METHOD(
   prayerTime2:(NSString *)prayerTime2
 )
 
+RCT_EXTERN_METHOD(
+  updateWidgetTimeline:(NSString *)todayJson
+  tomorrowJson:(NSString *)tomorrowJson
+  nextPrayerName:(NSString *)nextPrayerName
+  nextPrayerTime:(NSString *)nextPrayerTime
+  countdown:(NSString *)countdown
+  nextPrayerName2:(NSString *)nextPrayerName2
+  nextPrayerTime2:(NSString *)nextPrayerTime2
+)
+
+RCT_EXTERN_METHOD(reloadAllTimelines)
+
 @end

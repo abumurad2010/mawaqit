@@ -1,6 +1,11 @@
 import { NativeModules, Platform } from 'react-native';
 import type { Lang } from '@/constants/i18n';
-import type { PrayerTimes } from '@/lib/prayer-times';
+import {
+  calculatePrayerTimes,
+  type AsrMethod,
+  type CalcMethod,
+  type PrayerTimes,
+} from '@/lib/prayer-times';
 
 // Per-language abbreviations for each prayer key.
 // Keys match prayer-times.ts: fajr, dhuhr, asr, maghrib, isha.
@@ -23,11 +28,32 @@ const PRAYER_ABBR: Record<Lang, Record<string, string>> = {
   ha: { fajr: 'FJR', dhuhr: 'DHR', asr: 'ASR', maghrib: 'MGB', isha: 'ISH' },
 };
 
+const FARDH_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+
+interface PrayerSlot {
+  name: string;
+  time: string;
+  timestamp: number;  // seconds since epoch
+}
+
 /** Returns a short display label for a prayer key in the given language. */
 export function getPrayerAbbreviation(prayerKey: string, lang: Lang): string {
   return PRAYER_ABBR[lang]?.[prayerKey] ?? prayerKey.slice(0, 3).toUpperCase();
 }
 
+function fmt(d: Date): string {
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+function buildSlots(times: PrayerTimes, lang: Lang): PrayerSlot[] {
+  return FARDH_KEYS.map(key => ({
+    name: getPrayerAbbreviation(key, lang),
+    time: fmt(times[key]),
+    timestamp: Math.floor(times[key].getTime() / 1000),
+  }));
+}
+
+/** Legacy single-shot update for the small/quick widget data path. */
 export function updateWidget(
   prayerName: string,
   prayerTime: string,
@@ -45,46 +71,142 @@ export function updateWidget(
   }
 }
 
+/** Force WidgetKit to reload all timelines without rewriting data. */
+export function reloadWidgetTimelines(): void {
+  if (Platform.OS !== 'ios') return;
+  try {
+    NativeModules.WidgetDataModule?.reloadAllTimelines?.();
+  } catch {
+    // non-critical
+  }
+}
+
 /**
- * Finds the next two upcoming prayers in `times`, then pushes all fields to the
- * WidgetKit extension via the native WidgetDataModule bridge.
+ * Push today + tomorrow's full prayer timeline to the native widget so
+ * WidgetKit can build a 48-hour timeline that automatically transitions
+ * between prayers without app intervention.
  *
- * Uses seconds-of-day comparison (same strategy as getNextPrayer in prayer-times.ts)
- * so it never fails due to Date object timezone edge-cases.
+ * Call whenever effective prayer-times input changes: app launch, location
+ * change, calc method change, date roll-over.
+ */
+export function updateWidgetTimeline(
+  todayTimes: PrayerTimes,
+  tomorrowTimes: PrayerTimes,
+  lang: Lang,
+): void {
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
+  try {
+    const today = buildSlots(todayTimes, lang);
+    const tomorrow = buildSlots(tomorrowTimes, lang);
+
+    const nowSecs = Math.floor(Date.now() / 1000);
+    const all = [...today, ...tomorrow];
+    const idx = all.findIndex(s => s.timestamp > nowSecs);
+    const first = idx >= 0 ? all[idx] : null;
+    const second = idx >= 0 && idx + 1 < all.length ? all[idx + 1] : null;
+
+    const diffMin = first ? Math.round((first.timestamp - nowSecs) / 60) : 0;
+    const countdown = diffMin > 0 ? `in ${diffMin} min` : '';
+
+    NativeModules.WidgetDataModule?.updateWidgetTimeline?.(
+      JSON.stringify(today),
+      JSON.stringify(tomorrow),
+      first?.name ?? '',
+      first?.time ?? '',
+      countdown,
+      second?.name ?? '',
+      second?.time ?? '',
+    );
+  } catch {
+    // non-critical
+  }
+}
+
+/**
+ * Convenience helper: given the location + calc params, computes today's and
+ * tomorrow's prayer times and pushes the full timeline payload to the widget.
+ */
+export function updateWidgetFromParams(params: {
+  lat: number;
+  lng: number;
+  method: CalcMethod;
+  asrMethod: AsrMethod;
+  maghribOffset: number;
+  lang: Lang;
+}): void {
+  if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
+  try {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const tomorrow = new Date(today.getTime() + 24 * 3600 * 1000);
+
+    const t = calculatePrayerTimes({
+      lat: params.lat,
+      lng: params.lng,
+      date: today,
+      method: params.method,
+      asrMethod: params.asrMethod,
+      maghribOffset: params.maghribOffset,
+    });
+    const tm = calculatePrayerTimes({
+      lat: params.lat,
+      lng: params.lng,
+      date: tomorrow,
+      method: params.method,
+      asrMethod: params.asrMethod,
+      maghribOffset: params.maghribOffset,
+    });
+    updateWidgetTimeline(t, tm, params.lang);
+  } catch {
+    // non-critical
+  }
+}
+
+/**
+ * @deprecated Prefer `updateWidgetFromParams` which writes a full 48-hour
+ * timeline. This wrapper is kept so existing call-sites keep working.
+ *
+ * Finds the next two upcoming prayers in `times` and pushes the legacy
+ * single-shot data plus a synthesized today-only timeline.
  */
 export function updateWidgetFromPrayerTimes(times: PrayerTimes, lang: Lang): void {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
     const now = new Date();
     const nowSecs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-    const keys = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 
-    const upcoming: Array<{ key: (typeof keys)[number]; time: Date }> = [];
-    for (const key of keys) {
+    const upcoming: Array<{ key: (typeof FARDH_KEYS)[number]; time: Date }> = [];
+    for (const key of FARDH_KEYS) {
       const time = times[key];
       const tSecs = time.getHours() * 3600 + time.getMinutes() * 60;
       if (tSecs > nowSecs) upcoming.push({ key, time });
       if (upcoming.length === 2) break;
     }
 
-    if (upcoming.length === 0) return;
-
-    const fmt = (d: Date) =>
-      `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-
-    const first = upcoming[0]!;
+    const first = upcoming[0];
     const second = upcoming[1];
 
-    const prayerName  = getPrayerAbbreviation(first.key, lang);
-    const prayerTime  = fmt(first.time);
-    const diffMs      = first.time.getTime() - now.getTime();
+    const prayerName  = first ? getPrayerAbbreviation(first.key, lang) : '';
+    const prayerTime  = first ? fmt(first.time) : '';
+    const diffMs      = first ? first.time.getTime() - now.getTime() : 0;
     const diffMin     = Math.round(diffMs / 60000);
     const countdown   = diffMin > 0 ? `in ${diffMin} min` : '';
 
     const prayerName2 = second ? getPrayerAbbreviation(second.key, lang) : '';
     const prayerTime2 = second ? fmt(second.time) : '';
 
-    updateWidget(prayerName, prayerTime, countdown, prayerName2, prayerTime2);
+    // Today-only timeline (no tomorrow data here — call updateWidgetFromParams
+    // for the full 48-hour version).
+    const today = buildSlots(times, lang);
+    NativeModules.WidgetDataModule?.updateWidgetTimeline?.(
+      JSON.stringify(today),
+      JSON.stringify([]),
+      prayerName,
+      prayerTime,
+      countdown,
+      prayerName2,
+      prayerTime2,
+    );
   } catch {
     // Non-critical
   }

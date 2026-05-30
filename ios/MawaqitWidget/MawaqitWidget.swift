@@ -5,35 +5,26 @@ import SwiftUI
 
 private let widgetAppGroupID = "group.com.mawaqit.app.widget"
 
+private struct PrayerSlot: Codable {
+  var name: String
+  var time: String
+  var timestamp: Double
+}
+
 private struct PrayerWidgetData: Codable {
+  var today: [PrayerSlot]
+  var tomorrow: [PrayerSlot]
+  var updatedAt: Double
   var nextPrayerName: String
   var nextPrayerTime: String
   var countdown: String
   var nextPrayerName2: String
   var nextPrayerTime2: String
-  var updatedAt: Double
 
-  // Explicit memberwise init — required because the custom Decodable init below
-  // would otherwise suppress the compiler-synthesised one.
-  init(
-    nextPrayerName: String,
-    nextPrayerTime: String,
-    countdown: String,
-    nextPrayerName2: String,
-    nextPrayerTime2: String,
-    updatedAt: Double
-  ) {
-    self.nextPrayerName  = nextPrayerName
-    self.nextPrayerTime  = nextPrayerTime
-    self.countdown       = countdown
-    self.nextPrayerName2 = nextPrayerName2
-    self.nextPrayerTime2 = nextPrayerTime2
-    self.updatedAt       = updatedAt
-  }
-
-  // Graceful decode for data written before name2/time2 were added.
   init(from decoder: Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
+    today           = (try? c.decode([PrayerSlot].self, forKey: .today)) ?? []
+    tomorrow        = (try? c.decode([PrayerSlot].self, forKey: .tomorrow)) ?? []
     nextPrayerName  = try c.decode(String.self, forKey: .nextPrayerName)
     nextPrayerTime  = try c.decode(String.self, forKey: .nextPrayerTime)
     countdown       = try c.decode(String.self, forKey: .countdown)
@@ -52,26 +43,22 @@ private func readWidgetData() -> PrayerWidgetData? {
 }
 
 // MARK: - Palette
-private let mawaqitGreen = Color(red: 0x22 / 255.0, green: 0xaa / 255.0, blue: 0x70 / 255.0) // slightly brighter on dark bg
+private let mawaqitGreen = Color(red: 0x22 / 255.0, green: 0xaa / 255.0, blue: 0x70 / 255.0)
 private let bgDeep       = Color(red: 0x0a / 255.0, green: 0x0a / 255.0, blue: 0x0a / 255.0)
 private let bgGreenTint  = Color(red: 0x0f / 255.0, green: 0x1f / 255.0, blue: 0x15 / 255.0)
 private let goldAccent   = Color(red: 0xb8 / 255.0, green: 0x86 / 255.0, blue: 0x0b / 255.0)
 
 // MARK: - Geometric decorations
-
-/// Two families of 45° diagonal lines that cross to form a diamond lattice.
 private struct IslamicLattice: Shape {
   func path(in rect: CGRect) -> Path {
     var p = Path()
     let step: CGFloat = 18
-    // NW→SE family
     var x: CGFloat = -rect.height
     while x <= rect.width {
       p.move(to: CGPoint(x: x, y: 0))
       p.addLine(to: CGPoint(x: x + rect.height, y: rect.height))
       x += step
     }
-    // NE→SW family
     x = 0
     while x <= rect.width + rect.height {
       p.move(to: CGPoint(x: x, y: 0))
@@ -82,17 +69,14 @@ private struct IslamicLattice: Shape {
   }
 }
 
-/// Simple mosque arch outline — two vertical stems joined by a semicircular arch at the top.
 private struct ArchSilhouette: Shape {
   func path(in rect: CGRect) -> Path {
     var p = Path()
     let cx      = rect.midX
     let archR   = rect.width * 0.38
-    let springY = rect.height - rect.height * 0.34   // Y of the arch spring line
-
+    let springY = rect.height - rect.height * 0.34
     p.move(to: CGPoint(x: cx + archR, y: rect.height))
     p.addLine(to: CGPoint(x: cx + archR, y: springY))
-    // Counterclockwise in screen coords (Y-down) → arc goes upward over the top
     p.addArc(
       center: CGPoint(x: cx, y: springY),
       radius: archR,
@@ -108,8 +92,10 @@ private struct ArchSilhouette: Shape {
 // MARK: - Entry
 struct PrayerEntry: TimelineEntry {
   let date: Date
+  let currentPrayerName: String
   let nextPrayerName: String
   let nextPrayerTime: String
+  let nextPrayerDate: Date?
   let countdown: String
   let nextPrayerName2: String
   let nextPrayerTime2: String
@@ -117,40 +103,189 @@ struct PrayerEntry: TimelineEntry {
 
 // MARK: - Provider
 struct PrayerProvider: TimelineProvider {
+
+  /// Static placeholder shown while WidgetKit warms up — never reads disk.
   func placeholder(in context: Context) -> PrayerEntry {
     PrayerEntry(
       date: .now,
-      nextPrayerName: "ASR", nextPrayerTime: "15:45", countdown: "in 43 min",
-      nextPrayerName2: "MGB", nextPrayerTime2: "18:12"
+      currentPrayerName: "DHR",
+      nextPrayerName: "ASR",
+      nextPrayerTime: "15:45",
+      nextPrayerDate: nil,
+      countdown: "in 43 min",
+      nextPrayerName2: "MGB",
+      nextPrayerTime2: "18:12"
     )
   }
 
+  /// Snapshot reflects the *current* moment using real data when present.
   func getSnapshot(in context: Context, completion: @escaping (PrayerEntry) -> Void) {
-    completion(makeEntry())
+    completion(makeEntry(for: .now))
   }
 
+  /// Timeline: one entry per upcoming prayer transition across today + tomorrow.
+  /// Refresh policy `.atEnd` so iOS re-asks for a new timeline after the last entry,
+  /// ensuring the widget keeps stepping through prayers without manual reloads.
   func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerEntry>) -> Void) {
-    let entry = makeEntry()
-    let refresh = Calendar.current.date(byAdding: .minute, value: 15, to: .now) ?? .now
-    completion(Timeline(entries: [entry], policy: .after(refresh)))
+    guard let data = readWidgetData() else {
+      // No data yet — surface a single placeholder and ask iOS to retry in 30 min.
+      let entry = PrayerEntry(
+        date: .now,
+        currentPrayerName: "",
+        nextPrayerName: "—",
+        nextPrayerTime: "—:—",
+        nextPrayerDate: nil,
+        countdown: "—",
+        nextPrayerName2: "",
+        nextPrayerTime2: ""
+      )
+      let refresh = Calendar.current.date(byAdding: .minute, value: 30, to: .now) ?? .now
+      completion(Timeline(entries: [entry], policy: .after(refresh)))
+      return
+    }
+
+    // Build the full ordered prayer list across today + tomorrow.
+    let all = data.today + data.tomorrow
+
+    // Anchor: "now" plus a small backoff so an entry exactly at the current
+    // minute is still considered upcoming.
+    let now = Date()
+    let anchorTs = now.timeIntervalSince1970 - 30
+
+    // Index of the first prayer still in the future. Everything earlier is "current".
+    var firstUpcomingIdx: Int? = nil
+    for (i, slot) in all.enumerated() {
+      if slot.timestamp > anchorTs { firstUpcomingIdx = i; break }
+    }
+
+    var entries: [PrayerEntry] = []
+
+    // ── Entry for "now" — covers the period until the first future prayer ──
+    let currentName: String = {
+      if let i = firstUpcomingIdx, i > 0 { return all[i - 1].name }
+      if firstUpcomingIdx == nil, let last = all.last { return last.name }
+      return ""
+    }()
+
+    if let i = firstUpcomingIdx {
+      let upcoming = all[i]
+      let next2 = (i + 1 < all.count) ? all[i + 1] : nil
+      let upcomingDate = Date(timeIntervalSince1970: upcoming.timestamp)
+      entries.append(PrayerEntry(
+        date: now,
+        currentPrayerName: currentName,
+        nextPrayerName: upcoming.name,
+        nextPrayerTime: upcoming.time,
+        nextPrayerDate: upcomingDate,
+        countdown: formatCountdown(from: now, to: upcomingDate),
+        nextPrayerName2: next2?.name ?? "",
+        nextPrayerTime2: next2?.time ?? ""
+      ))
+
+      // ── One entry per remaining prayer transition ─────────────────────────
+      for j in i..<all.count {
+        let pivot = all[j]
+        let pivotDate = Date(timeIntervalSince1970: pivot.timestamp)
+        // After `pivot` fires, `pivot` becomes the current prayer and the next
+        // one in the list becomes the upcoming target.
+        let nextIdx = j + 1
+        guard nextIdx < all.count else { break }
+        let nxt = all[nextIdx]
+        let nxtDate = Date(timeIntervalSince1970: nxt.timestamp)
+        let next2 = (nextIdx + 1 < all.count) ? all[nextIdx + 1] : nil
+
+        entries.append(PrayerEntry(
+          date: pivotDate,
+          currentPrayerName: pivot.name,
+          nextPrayerName: nxt.name,
+          nextPrayerTime: nxt.time,
+          nextPrayerDate: nxtDate,
+          countdown: formatCountdown(from: pivotDate, to: nxtDate),
+          nextPrayerName2: next2?.name ?? "",
+          nextPrayerTime2: next2?.time ?? ""
+        ))
+      }
+    } else {
+      // All known prayers have already passed. Surface the last-known one and
+      // let iOS retry in 30 minutes — by then the app will have written tomorrow.
+      entries.append(PrayerEntry(
+        date: now,
+        currentPrayerName: currentName,
+        nextPrayerName: data.nextPrayerName,
+        nextPrayerTime: data.nextPrayerTime,
+        nextPrayerDate: nil,
+        countdown: data.countdown,
+        nextPrayerName2: data.nextPrayerName2,
+        nextPrayerTime2: data.nextPrayerTime2
+      ))
+    }
+
+    completion(Timeline(entries: entries, policy: .atEnd))
   }
 
-  private func makeEntry() -> PrayerEntry {
-    if let d = readWidgetData() {
+  /// Build a single entry reflecting the current moment — used by getSnapshot.
+  private func makeEntry(for now: Date) -> PrayerEntry {
+    guard let data = readWidgetData() else {
       return PrayerEntry(
-        date: .now,
-        nextPrayerName: d.nextPrayerName,
-        nextPrayerTime: d.nextPrayerTime,
-        countdown: d.countdown,
-        nextPrayerName2: d.nextPrayerName2,
-        nextPrayerTime2: d.nextPrayerTime2
+        date: now,
+        currentPrayerName: "",
+        nextPrayerName: "—",
+        nextPrayerTime: "—:—",
+        nextPrayerDate: nil,
+        countdown: "—",
+        nextPrayerName2: "",
+        nextPrayerTime2: ""
       )
     }
+
+    let all = data.today + data.tomorrow
+    let anchorTs = now.timeIntervalSince1970 - 30
+    var firstUpcomingIdx: Int? = nil
+    for (i, slot) in all.enumerated() {
+      if slot.timestamp > anchorTs { firstUpcomingIdx = i; break }
+    }
+
+    let currentName: String = {
+      if let i = firstUpcomingIdx, i > 0 { return all[i - 1].name }
+      if firstUpcomingIdx == nil, let last = all.last { return last.name }
+      return ""
+    }()
+
+    if let i = firstUpcomingIdx {
+      let upcoming = all[i]
+      let next2 = (i + 1 < all.count) ? all[i + 1] : nil
+      let upcomingDate = Date(timeIntervalSince1970: upcoming.timestamp)
+      return PrayerEntry(
+        date: now,
+        currentPrayerName: currentName,
+        nextPrayerName: upcoming.name,
+        nextPrayerTime: upcoming.time,
+        nextPrayerDate: upcomingDate,
+        countdown: formatCountdown(from: now, to: upcomingDate),
+        nextPrayerName2: next2?.name ?? "",
+        nextPrayerTime2: next2?.time ?? ""
+      )
+    }
+
     return PrayerEntry(
-      date: .now,
-      nextPrayerName: "—", nextPrayerTime: "—:—", countdown: "—",
-      nextPrayerName2: "", nextPrayerTime2: ""
+      date: now,
+      currentPrayerName: currentName,
+      nextPrayerName: data.nextPrayerName,
+      nextPrayerTime: data.nextPrayerTime,
+      nextPrayerDate: nil,
+      countdown: data.countdown,
+      nextPrayerName2: data.nextPrayerName2,
+      nextPrayerTime2: data.nextPrayerTime2
     )
+  }
+
+  private func formatCountdown(from start: Date, to end: Date) -> String {
+    let diffMin = Int(end.timeIntervalSince(start) / 60.0)
+    if diffMin <= 0 { return "now" }
+    if diffMin < 60 { return "in \(diffMin) min" }
+    let h = diffMin / 60
+    let m = diffMin % 60
+    return m == 0 ? "in \(h)h" : "in \(h)h \(m)m"
   }
 }
 
@@ -160,7 +295,6 @@ struct SmallWidgetView: View {
 
   var body: some View {
     ZStack {
-      // ── Background layers ──────────────────────────────────────────
       LinearGradient(
         colors: [bgDeep, bgGreenTint],
         startPoint: .topLeading,
@@ -168,7 +302,6 @@ struct SmallWidgetView: View {
       )
       .ignoresSafeArea()
 
-      // Copper-gold glow in the bottom-leading corner
       RadialGradient(
         colors: [goldAccent.opacity(0.22), .clear],
         center: .bottomLeading,
@@ -177,13 +310,11 @@ struct SmallWidgetView: View {
       )
       .ignoresSafeArea()
 
-      // ── Geometric overlay ──────────────────────────────────────────
       IslamicLattice()
         .stroke(Color.white, lineWidth: 0.5)
         .opacity(0.07)
         .ignoresSafeArea()
 
-      // Partial arch peeking from the bottom-trailing corner
       ArchSilhouette()
         .stroke(Color.white, lineWidth: 0.85)
         .opacity(0.09)
@@ -191,22 +322,18 @@ struct SmallWidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         .offset(x: 14, y: 10)
 
-      // ── Content ────────────────────────────────────────────────────
       VStack(alignment: .leading, spacing: 0) {
-        // Wordmark
         Text("مواقيت  Mawaqit")
           .font(.system(size: 7.5, weight: .medium))
           .foregroundColor(.white.opacity(0.22))
 
         Spacer()
 
-        // Prayer name
         Text(entry.nextPrayerName)
           .font(.system(size: 13, weight: .bold))
           .foregroundColor(mawaqitGreen)
           .tracking(1.6)
 
-        // Prayer time
         Text(entry.nextPrayerTime)
           .font(.system(size: 30, weight: .heavy, design: .monospaced))
           .foregroundColor(.white)
@@ -214,12 +341,20 @@ struct SmallWidgetView: View {
           .lineLimit(1)
           .padding(.top, 1)
 
-        // Countdown
-        Text(entry.countdown)
-          .font(.system(size: 10.5, weight: .regular))
-          .italic()
-          .foregroundColor(.white.opacity(0.58))
-          .padding(.top, 3)
+        // Live countdown — uses Date math so each entry naturally re-renders.
+        if let target = entry.nextPrayerDate {
+          Text(target, style: .relative)
+            .font(.system(size: 10.5, weight: .regular))
+            .italic()
+            .foregroundColor(.white.opacity(0.58))
+            .padding(.top, 3)
+        } else {
+          Text(entry.countdown)
+            .font(.system(size: 10.5, weight: .regular))
+            .italic()
+            .foregroundColor(.white.opacity(0.58))
+            .padding(.top, 3)
+        }
       }
       .padding(14)
     }
@@ -232,7 +367,6 @@ struct MediumWidgetView: View {
 
   var body: some View {
     ZStack {
-      // ── Background layers ──────────────────────────────────────────
       LinearGradient(
         colors: [bgDeep, bgGreenTint],
         startPoint: .topLeading,
@@ -240,7 +374,6 @@ struct MediumWidgetView: View {
       )
       .ignoresSafeArea()
 
-      // Gold glow — anchored to the bottom-leading corner
       RadialGradient(
         colors: [goldAccent.opacity(0.20), .clear],
         center: .bottomLeading,
@@ -249,22 +382,26 @@ struct MediumWidgetView: View {
       )
       .ignoresSafeArea()
 
-      // ── Geometric overlay ──────────────────────────────────────────
       IslamicLattice()
         .stroke(Color.white, lineWidth: 0.5)
         .opacity(0.07)
         .ignoresSafeArea()
 
-      // ── Content ────────────────────────────────────────────────────
       VStack(alignment: .leading, spacing: 0) {
-        // Wordmark strip
-        Text("مواقيت  Mawaqit")
-          .font(.system(size: 7.5, weight: .medium))
-          .foregroundColor(.white.opacity(0.22))
-          .padding(.bottom, 6)
+        HStack {
+          Text("مواقيت  Mawaqit")
+            .font(.system(size: 7.5, weight: .medium))
+            .foregroundColor(.white.opacity(0.22))
+          Spacer()
+          if !entry.currentPrayerName.isEmpty {
+            Text("· \(entry.currentPrayerName)")
+              .font(.system(size: 7.5, weight: .medium))
+              .foregroundColor(mawaqitGreen.opacity(0.55))
+          }
+        }
+        .padding(.bottom, 6)
 
         HStack(spacing: 0) {
-          // ── Left: next prayer ──────────────────────────────────────
           VStack(alignment: .leading, spacing: 2) {
             Text(entry.nextPrayerName)
               .font(.system(size: 13, weight: .bold))
@@ -278,15 +415,22 @@ struct MediumWidgetView: View {
               .lineLimit(1)
               .padding(.top, 1)
 
-            Text(entry.countdown)
-              .font(.system(size: 10.5, weight: .regular))
-              .italic()
-              .foregroundColor(.white.opacity(0.58))
-              .padding(.top, 3)
+            if let target = entry.nextPrayerDate {
+              Text(target, style: .relative)
+                .font(.system(size: 10.5, weight: .regular))
+                .italic()
+                .foregroundColor(.white.opacity(0.58))
+                .padding(.top, 3)
+            } else {
+              Text(entry.countdown)
+                .font(.system(size: 10.5, weight: .regular))
+                .italic()
+                .foregroundColor(.white.opacity(0.58))
+                .padding(.top, 3)
+            }
           }
           .frame(maxWidth: .infinity, alignment: .leading)
 
-          // ── Divider ────────────────────────────────────────────────
           Rectangle()
             .fill(LinearGradient(
               colors: [.clear, Color.white.opacity(0.16), .clear],
@@ -297,7 +441,6 @@ struct MediumWidgetView: View {
             .padding(.vertical, 4)
             .padding(.horizontal, 12)
 
-          // ── Right: upcoming prayers ────────────────────────────────
           VStack(alignment: .leading, spacing: 10) {
             Text("NEXT")
               .font(.system(size: 9, weight: .semibold))
@@ -345,9 +488,15 @@ struct AccessoryRectangularView: View {
         .widgetAccentable()
       Text(entry.nextPrayerTime)
         .font(.system(size: 17, weight: .bold, design: .monospaced))
-      Text(entry.countdown)
-        .font(.system(size: 12, weight: .medium))
-        .opacity(0.7)
+      if let target = entry.nextPrayerDate {
+        Text(target, style: .relative)
+          .font(.system(size: 12, weight: .medium))
+          .opacity(0.7)
+      } else {
+        Text(entry.countdown)
+          .font(.system(size: 12, weight: .medium))
+          .opacity(0.7)
+      }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
