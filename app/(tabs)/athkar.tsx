@@ -1857,7 +1857,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
                             color={C.textMuted}
                           />
                           <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>
-                            {(tr as any).transliteration ?? 'Transliteration'}
+                            {tr.transliteration}
                           </Text>
                         </Pressable>
                         {transliterationVisible && (
