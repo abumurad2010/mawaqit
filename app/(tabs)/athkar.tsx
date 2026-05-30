@@ -496,11 +496,11 @@ export default function AthkarScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFavourites(prev => {
       const isFav = prev.includes(cat.id);
-      const name = (tr as any)[cat.nameKey] ?? cat.nameKey;
-      const prompt = isFav ? (tr as any).athkar_fav_remove_prompt : (tr as any).athkar_fav_add_prompt;
-      const btn = isFav ? (tr as any).athkar_fav_remove_btn : (tr as any).athkar_fav_add_btn;
+      const name = (tr[cat.nameKey as keyof typeof tr] as string) ?? cat.nameKey;
+      const prompt = isFav ? tr.athkar_fav_remove_prompt : tr.athkar_fav_add_prompt;
+      const btn = isFav ? tr.athkar_fav_remove_btn : tr.athkar_fav_add_btn;
       Alert.alert(name, prompt, [
-        { text: 'Cancel', style: 'cancel' },
+        { text: tr.btn_cancel, style: 'cancel' },
         {
           text: btn,
           style: isFav ? 'destructive' : 'default',
@@ -816,12 +816,12 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
         <View style={[styles.header, { paddingTop: topInset + 6, paddingHorizontal: 16 }]}>
           <View style={{ flex: 1, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 6 }}>
             <Text style={{ fontSize: 15, fontWeight: '600', color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_600SemiBold' }}>
-              {(tr as any).btn_done ? ((tr as any).reorder_hint?.split(' ').slice(0, 3).join(' ') ?? 'Reorder') : 'Reorder'}
+              {tr.btn_done ? (tr.reorder_hint?.split(' ').slice(0, 3).join(' ') ?? 'Reorder') : 'Reorder'}
             </Text>
             <Pressable
               onPress={() => Alert.alert(
-                (tr as any).drag_to_reorder ?? 'Hold and drag to reorder',
-                (tr as any).drag_to_reorder ?? 'Long-press the ≡ handle beside each item, then drag to its new position.',
+                tr.drag_to_reorder,
+                tr.drag_to_reorder,
               )}
               hitSlop={10}
             >
@@ -836,11 +836,11 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             }}
             style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.tint, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, width: 'auto' as any }]}
           >
-            <Text style={{ color: C.tintText, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{(tr as any).btn_done ?? 'Done'}</Text>
+            <Text style={{ color: C.tintText, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>{tr.btn_done}</Text>
           </Pressable>
         </View>
         <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'center', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}>
-          {(tr as any).drag_to_reorder ?? 'Hold and drag to reorder'}
+          {tr.drag_to_reorder}
         </Text>
         <DragSortList<'__personal__' | AthkarCategory>
           data={reorderData}
@@ -856,7 +856,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             const cat = item as AthkarCategory;
             const nameKey = isPersonal ? '' : cat.nameKey as any;
             const name = isPersonal
-              ? ((tr as any).personal_athkar ?? 'My Athkar')
+              ? (tr.personal_athkar)
               : displayMode === 'arabic'
                 ? (i18n['ar'] as any)[nameKey] ?? nameKey
                 : (i18n[athkarLang] as any)?.[nameKey] ?? nameKey;
@@ -998,7 +998,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
           >
             <Ionicons name="text" size={13} color={displayMode === 'arabic' ? C.tintText : C.textMuted} />
             <Text style={[styles.segmentLabel, { color: displayMode === 'arabic' ? C.tintText : C.textMuted }]}>
-              عربي
+              {tr.display_arabic}
             </Text>
           </Pressable>
           <Pressable
@@ -1038,7 +1038,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
       {!favHintSeen && (
         <View style={[styles.favHintBanner, { backgroundColor: C.backgroundCard }]}>
           <Text style={[styles.favHintText, { color: C.textMuted, textAlign: isRtl ? 'right' : 'left', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
-            {(tr as any).athkar_hint_updated ?? ''}
+            {tr.athkar_hint_updated}
           </Text>
           <Pressable onPress={onFavHintDismiss} hitSlop={12}>
             <Ionicons name="close" size={16} color={C.textMuted} />
@@ -1085,12 +1085,12 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             return (
               <View style={{ width: screenWidth, paddingHorizontal: OUTER_PADDING, paddingTop: 8 }}>
                 <Text style={[styles.favPageTitle, { fontFamily: isRtl ? 'Amiri_700Bold' : 'Inter_700Bold', textAlign: isRtl ? 'right' : 'left' }]}>
-                  {(tr as any).athkar_favourites_title ?? 'Favourites'}
+                  {tr.athkar_favourites_title}
                 </Text>
                 {favPage.length === 0 ? (
                   <View style={styles.noFavContainer}>
                     <Text style={[styles.noFavText, { color: C.textMuted, textAlign: 'center', fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}>
-                      {(tr as any).athkar_no_favourites ?? 'No favourites yet.\nLong-press any category to add it.'}
+                      {tr.athkar_no_favourites}
                     </Text>
                   </View>
                 ) : favRows.map((row, rIdx) => (
@@ -1277,7 +1277,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
               <Ionicons name="search" size={16} color={C.textMuted} />
               <TextInput
                 style={[styles.searchInput, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular' }]}
-                placeholder={(tr as any).athkar_search_placeholder ?? 'Search adhkar and duas...'}
+                placeholder={tr.athkar_search_placeholder}
                 placeholderTextColor={C.textMuted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -1301,7 +1301,7 @@ function GridScreen({ lang, isRtl, tr, C, topInset, bottomInset, displayMode, on
             ListEmptyComponent={searchQuery.trim().length > 0 ? (
               <View style={{ alignItems: 'center', paddingTop: 40 }}>
                 <Text style={{ color: C.textMuted, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', fontSize: 15 }}>
-                  {(tr as any).athkar_search_empty ?? 'No results found'}
+                  {tr.athkar_search_empty}
                 </Text>
               </View>
             ) : null}
@@ -1365,7 +1365,7 @@ function CopyHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; isRtl: b
     <Animated.View style={[styles.favHintBanner, animStyle, { backgroundColor: C.tint + '18', borderWidth: StyleSheet.hairlineWidth, borderColor: C.tint + '55', marginBottom: 6 }]}>
       <Ionicons name="copy-outline" size={16} color={C.tint} />
       <Text style={[styles.favHintText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left' }]}>
-        {(tr as any).copy_hint ?? 'Hold any thikr to copy it'}
+        {tr.copy_hint}
       </Text>
       <Pressable onPress={onDismiss} hitSlop={8}>
         <Ionicons name="close" size={16} color={C.tint} />
@@ -1390,7 +1390,7 @@ function ThikrReaderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; i
     <Animated.View style={[styles.favHintBanner, animStyle, { backgroundColor: C.tint + '18', borderWidth: StyleSheet.hairlineWidth, borderColor: C.tint + '55', marginBottom: 6 }]}>
       <Ionicons name="information-circle-outline" size={16} color={C.tint} />
       <Text style={[styles.favHintText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left' }]}>
-        {(tr as any).thikr_reader_hint ?? 'Tap the copy icon for copy options • Hold ≡ to reorder'}
+        {tr.thikr_reader_hint}
       </Text>
       <Pressable onPress={onDismiss} hitSlop={8}>
         <Ionicons name="close" size={16} color={C.tint} />
@@ -1415,7 +1415,7 @@ function GridReorderHintBanner({ tr, C, isRtl, onDismiss }: { tr: any; C: any; i
     <Animated.View style={[styles.favHintBanner, animStyle, { backgroundColor: C.tint + '18', borderWidth: StyleSheet.hairlineWidth, borderColor: C.tint + '55', marginBottom: 4 }]}>
       <Ionicons name="reorder-three-outline" size={16} color={C.tint} />
       <Text style={[styles.favHintText, { color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_400Regular', textAlign: isRtl ? 'right' : 'left' }]}>
-        {(tr as any).reorder_hint ?? 'Hold any category to reorder'}
+        {tr.reorder_hint}
       </Text>
       <Pressable onPress={onDismiss} hitSlop={8}>
         <Ionicons name="close" size={16} color={C.tint} />
@@ -1458,7 +1458,7 @@ function PersonalGridCell({ isRtl, tr, C, onPress, personalItemCount, tileSize, 
         numberOfLines={3}
         adjustsFontSizeToFit={false}
       >
-        {(tr as any).personal_athkar ?? 'My Athkar'}
+        {tr.personal_athkar}
       </Text>
       {personalItemCount > 0 && (
         <View style={{ position: 'absolute', top: 5, right: 5, backgroundColor: GOLD, borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
@@ -1757,7 +1757,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32, gap: 16 }}>
           <Ionicons name="bookmark-outline" size={48} color={C.textMuted} />
           <Text style={{ fontSize: 15, color: C.textMuted, textAlign: 'center', fontFamily: 'Inter_400Regular', lineHeight: 22 }}>
-            {(tr as any).add_thikr ?? 'Add your first thikr'}
+            {tr.add_thikr}
           </Text>
           {onAddUser && (
             <Pressable
@@ -1910,7 +1910,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
                           >
                             <Ionicons name="pencil-outline" size={14} color={C.textMuted} />
                             <Text style={{ fontSize: 12, color: C.textMuted, fontFamily: 'Inter_600SemiBold' }}>
-                              {(tr as any).edit ?? 'Edit'}
+                              {tr.edit}
                             </Text>
                           </Pressable>
                         )}
@@ -1921,7 +1921,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
                           >
                             <Ionicons name="close-circle-outline" size={14} color={C.danger} />
                             <Text style={{ fontSize: 12, color: C.danger, fontFamily: 'Inter_600SemiBold' }}>
-                              {(tr as any).delete ?? 'Delete'}
+                              {tr.delete}
                             </Text>
                           </Pressable>
                         )}
@@ -1982,7 +1982,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
                     >
                       <Ionicons name="checkmark-circle-outline" size={14} color={C.tint} />
                       <Text style={{ fontSize: 12, fontWeight: '600', color: C.tint, fontFamily: 'Inter_600SemiBold' }}>
-                        {(tr as any).done ?? 'Done'}
+                        {tr.done}
                       </Text>
                     </Pressable>
                   )}
@@ -2011,7 +2011,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
         <Animated.View style={[styles.toast, toastStyle]} pointerEvents="none">
           <View style={[styles.toastBox, { backgroundColor: C.tint }]}>
             <Ionicons name="checkmark-circle" size={18} color={C.tintText} />
-            <Text style={[styles.toastText, { color: C.tintText }]}>{(tr as any).copied_successfully ?? (tr as any).copied_toast ?? 'Copied'}</Text>
+            <Text style={[styles.toastText, { color: C.tintText }]}>{tr.copied_successfully ?? tr.copied_toast}</Text>
           </View>
         </Animated.View>
       )}
@@ -2079,12 +2079,12 @@ function ReaderScreen({
 
   const handleDeleteUser = useCallback((id: string) => {
     Alert.alert(
-      (tr as any).delete ?? 'Delete',
+      tr.delete,
       undefined,
       [
-        { text: (tr as any).btn_cancel ?? 'Cancel', style: 'cancel' },
+        { text: tr.btn_cancel, style: 'cancel' },
         {
-          text: (tr as any).delete ?? 'Delete',
+          text: tr.delete,
           style: 'destructive',
           onPress: () => {
             onUserCatItemsSave(userCatItems.filter(it => it.id !== id));
@@ -2292,21 +2292,21 @@ function UserThikrFormModal({
             <Ionicons name="close" size={22} color={C.textSecond} />
           </Pressable>
           <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'center', fontFamily: 'Inter_600SemiBold' }}>
-            {editingItem ? ((tr as any).edit ?? 'Edit') : '+'}
+            {editingItem ? (tr.edit) : '+'}
           </Text>
           <Pressable
             onPress={onSave}
             style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 12, backgroundColor: C.tint }}
           >
             <Text style={{ color: C.tintText, fontWeight: '600', fontSize: 13, fontFamily: 'Inter_600SemiBold' }}>
-              {(tr as any).save ?? 'Save'}
+              {tr.save}
             </Text>
           </Pressable>
         </View>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
           <View style={{ gap: 6 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold' }}>
-              {(tr as any).thikr_text ?? 'Thikr text'}
+              {tr.thikr_text}
             </Text>
             <TextInput
               value={formText}
@@ -2314,25 +2314,25 @@ function UserThikrFormModal({
               multiline
               numberOfLines={4}
               style={{ borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator, borderRadius: 12, padding: 12, fontSize: 20, fontFamily: 'Amiri_400Regular', color: C.text, backgroundColor: C.backgroundCard, textAlign: 'right', writingDirection: 'rtl', minHeight: 100 }}
-              placeholder="اكتب الذكر هنا..."
+              placeholder={tr.thikr_text_placeholder}
               placeholderTextColor={C.textMuted}
             />
           </View>
           <View style={{ gap: 6 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
-              {(tr as any).thikr_name ?? 'Name (optional)'}
+              {tr.thikr_name}
             </Text>
             <TextInput
               value={formName}
               onChangeText={setFormName}
               style={{ borderWidth: StyleSheet.hairlineWidth, borderColor: C.separator, borderRadius: 12, padding: 12, fontSize: 15, fontFamily: 'Inter_400Regular', color: C.text, backgroundColor: C.backgroundCard, textAlign: isRtl ? 'right' : 'left' }}
               placeholderTextColor={C.textMuted}
-              placeholder={(tr as any).thikr_name ?? 'Name (optional)'}
+              placeholder={tr.thikr_name}
             />
           </View>
           <View style={{ gap: 6 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecond, fontFamily: 'Inter_600SemiBold', textAlign: isRtl ? 'right' : 'left' }}>
-              {(tr as any).repetitions ?? 'Repetitions'}
+              {tr.repetitions}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Pressable
@@ -2436,12 +2436,12 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
 
   const handleDelete = useCallback((id: string) => {
     Alert.alert(
-      (tr as any).delete ?? 'Delete',
+      tr.delete,
       undefined,
       [
-        { text: (tr as any).btn_cancel ?? 'Cancel', style: 'cancel' },
+        { text: tr.btn_cancel, style: 'cancel' },
         {
-          text: (tr as any).delete ?? 'Delete',
+          text: tr.delete,
           style: 'destructive',
           onPress: () => {
             onSave(items.filter(it => it.id !== id));
@@ -2492,7 +2492,7 @@ function PersonalReaderScreen({ lang, isRtl, tr, C, topInset, bottomInset, items
     setCounts({});
   }, []);
 
-  const title = (tr as any).personal_athkar ?? 'My Athkar';
+  const title = tr.personal_athkar;
 
   return (
     <>

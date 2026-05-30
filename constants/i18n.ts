@@ -605,6 +605,7 @@ const base = {
   reset: 'Reset',
   mushaf: 'Mushaf',
   transliteration: 'Transliteration',
+  display_arabic: 'Arabic',
   continueReading: 'Continue Reading',
   translationLanguage: 'Translation language',
   pronunciation_guide: 'Pronunciation Guide',
@@ -638,6 +639,7 @@ const base = {
   personal_athkar_help: 'This is your personal space to save your own thikr. Add any thikr text, set how many times to repeat it, and give it a name. Your entries are saved privately on your device.',
   add_thikr: 'Add your first thikr',
   thikr_text: 'Thikr text',
+  thikr_text_placeholder: 'Type your thikr here...',
   thikr_name: 'Name (optional)',
   repetitions: 'Repetitions',
   edit: 'Edit',
@@ -694,6 +696,8 @@ const translations: Record<Lang, PartialT> = {
   en: base,
 
   ar: {
+    display_arabic: 'عربي',
+    thikr_text_placeholder: 'اكتب الذكر هنا...',
     prayers: 'أوقات الصلاة',
     qibla: 'القبلة',
     quran: 'القرآن الكريم',
@@ -1207,6 +1211,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   fr: {
+    display_arabic: 'Arabe',
+    thikr_text_placeholder: 'Écrivez votre dhikr ici...',
     bearing: 'Relèvement',
     distance: 'Distance',
     compass_n: 'N', compass_e: 'E', compass_s: 'S', compass_w: 'O',
@@ -1664,6 +1670,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   es: {
+    display_arabic: 'Árabe',
+    thikr_text_placeholder: 'Escribe tu dikr aquí...',
     bearing: 'Rumbo',
     distance: 'Distancia',
     compass_n: 'N', compass_e: 'E', compass_s: 'S', compass_w: 'O',
@@ -2119,6 +2127,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ru: {
+    display_arabic: 'Арабский',
+    thikr_text_placeholder: 'Напишите ваш зикр здесь...',
     bearing: 'Азимут',
     distance: 'Расстояние',
     compass_n: 'С', compass_e: 'В', compass_s: 'Ю', compass_w: 'З',
@@ -2577,6 +2587,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   zh: {
+    display_arabic: '阿拉伯语',
+    thikr_text_placeholder: '在此输入您的祈祷...',
     bearing: '方位角',
     distance: '距离',
     compass_n: '北', compass_e: '东', compass_s: '南', compass_w: '西',
@@ -3035,6 +3047,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   tr: {
+    display_arabic: 'Arapça',
+    thikr_text_placeholder: 'Zikrinizi buraya yazın...',
     bearing: 'Kerteriz',
     distance: 'Mesafe',
     compass_n: 'K', compass_e: 'D', compass_s: 'G', compass_w: 'B',
@@ -3495,6 +3509,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ur: {
+    display_arabic: 'عربی',
+    thikr_text_placeholder: 'اپنا ذکر یہاں لکھیں...',
     bearing: 'سمت',
     distance: 'فاصلہ',
     compass_n: 'ش', compass_e: 'مش', compass_s: 'ج', compass_w: 'مغ',
@@ -3885,7 +3901,7 @@ const translations: Record<Lang, PartialT> = {
     days: 'دن',
     reset: 'دوبارہ ترتیب دیں',
     mushaf: 'مصحف',
-    transliteration: 'ترجمہ نویسی',
+    transliteration: 'نقل حرفی',
     continueReading: 'پڑھنا جاری رکھیں',
     translationLanguage: 'ترجمے کی زبان',
     pronunciation_guide: 'تلفظ رہنما',
@@ -3955,6 +3971,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   id: {
+    display_arabic: 'Arab',
+    thikr_text_placeholder: 'Tulis dzikir Anda di sini...',
     bearing: 'Arah',
     distance: 'Jarak',
     compass_n: 'U', compass_e: 'T', compass_s: 'S', compass_w: 'B',
@@ -4413,6 +4431,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   bn: {
+    display_arabic: 'আরবি',
+    thikr_text_placeholder: 'এখানে আপনার যিকর লিখুন...',
     bearing: 'দিকমান',
     distance: 'দূরত্ব',
     compass_n: 'উ', compass_e: 'পূ', compass_s: 'দ', compass_w: 'প',
@@ -4868,6 +4888,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   fa: {
+    display_arabic: 'عربی',
+    thikr_text_placeholder: 'ذکر خود را اینجا بنویسید...',
     bearing: 'آزیموت',
     distance: 'فاصله',
     compass_n: 'ش', compass_e: 'شر', compass_s: 'ج', compass_w: 'غ',
@@ -5325,6 +5347,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ms: {
+    display_arabic: 'Arab',
+    thikr_text_placeholder: 'Taip zikir anda di sini...',
     bearing: 'Baringan',
     distance: 'Jarak',
     compass_n: 'U', compass_e: 'T', compass_s: 'S', compass_w: 'B',
@@ -5777,6 +5801,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   pt: {
+    display_arabic: 'Árabe',
+    thikr_text_placeholder: 'Escreva o seu dikr aqui...',
     bearing: 'Rumo',
     distance: 'Distância',
     compass_n: 'N', compass_e: 'L', compass_s: 'S', compass_w: 'O',
@@ -6229,6 +6255,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   sw: {
+    display_arabic: 'Kiarabu',
+    thikr_text_placeholder: 'Andika dhikri yako hapa...',
     bearing: 'Mwelekeo',
     distance: 'Umbali',
     compass_n: 'Ksk', compass_e: 'Msh', compass_s: 'Kus', compass_w: 'Mgh',
@@ -6681,6 +6709,8 @@ const translations: Record<Lang, PartialT> = {
   },
 
   ha: {
+    display_arabic: 'Larabci',
+    thikr_text_placeholder: 'Rubuta zikirin ku anan...',
     bearing: 'Alkibla',
     distance: 'Nisa',
     compass_n: 'A', compass_e: 'G', compass_s: 'K', compass_w: 'Y',
