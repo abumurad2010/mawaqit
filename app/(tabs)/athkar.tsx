@@ -1628,6 +1628,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
   } = props;
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const trContent = t(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
   const listRef = useRef<FlatList<SwipePage>>(null);
   const [currentIndex, setCurrentIndex] = useState(Math.max(0, Math.min(initialIndex, pages.length - 1)));
@@ -1857,7 +1858,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
                             color={C.textMuted}
                           />
                           <Text style={{ fontSize: 11, color: C.textMuted, fontFamily: 'Inter_600SemiBold', letterSpacing: 0.5 }}>
-                            {tr.transliteration}
+                            {trContent.transliteration}
                           </Text>
                         </Pressable>
                         {transliterationVisible && (
