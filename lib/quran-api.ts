@@ -88,18 +88,46 @@ export function fetchSurah(number: number): Promise<SurahData> {
   return Promise.resolve(getSurah(number));
 }
 
-function stripArabicDiacritics(text: string): string {
-  return text
-    .replace(/[\u064B-\u065F\u0670\u0610-\u061A]/g, '')
-    .replace(/[أإآٱ]/g, 'ا');
+// Quranic annotation marks, tashkeel and tatweel that carry no letter identity.
+// (U+0670 superscript alef is handled separately below -- it changes spelling.)
+const _ARABIC_MARKS = /[\u0610-\u061A\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u08D3-\u08FF\u0640]/g;
+
+/**
+ * Aggressively normalize Arabic so the classical Uthmani orthography and the
+ * modern spelling a user types collapse to the same string:
+ *   - classical waw + superscript alef -> alef  (al-riba, al-salah, al-zakah)
+ *   - remaining superscript (dagger) alef removed (hadha, dhalika, ar-rahman)
+ *   - tashkeel / Quranic marks / tatweel stripped; hamza + alef variants unified;
+ *     ta-marbuta -> ha; alef-maqsura -> ya; repeated alef + whitespace collapsed.
+ */
+export function normalizeArabic(input: string): string {
+  if (!input) return '';
+  return input
+    .replace(/\uFEFF/g, '')                              // strip BOM
+    .replace(/\u0648\u0670/g, '\u0627')              // waw + superscript alef -> alef
+    .replace(/\u0670/g, '')                            // remaining superscript alef -> removed
+    .replace(_ARABIC_MARKS, '')                        // tashkeel / Quranic marks / tatweel
+    .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')  // madda/hamza-alef/wasla -> alef
+    .replace(/\u0624/g, '\u0648')              // waw-hamza -> waw
+    .replace(/\u0626/g, '\u064A')              // ya-hamza -> ya
+    .replace(/[\u0621\u0654\u0655]/g, '')        // standalone hamza + hamza marks -> removed
+    .replace(/\u0629/g, '\u0647')              // ta-marbuta -> ha
+    .replace(/\u0649/g, '\u064A')              // alef-maqsura -> ya
+    .replace(/\u0627{2,}/g, '\u0627')          // collapse repeated alef
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
-function normalizeForSearch(text: string): string {
-  return stripArabicDiacritics(text)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
+/** Normalize a query and drop a leading definite article (alef-lam) so a search
+ *  for "al-riba" also matches "riba" (and vice-versa); the 3-char guard avoids
+ *  reducing short words to tiny fragments. */
+export function normalizeQuery(query: string): string {
+  let q = normalizeArabic(query);
+  if (q.startsWith('\u0627\u0644') && q.length - 2 >= 3) {
+    q = q.slice(2);
+  }
+  return q;
 }
 
 type NormEntry = { surahNum: number; ayahNum: number; text: string; norm: string };
@@ -112,7 +140,7 @@ function getNormalizedIndex(): NormEntry[] {
     const raw = QURAN_DATA[String(s)];
     if (!raw) continue;
     for (const a of raw) {
-      idx.push({ surahNum: s, ayahNum: a.n, text: a.t, norm: normalizeForSearch(a.t) });
+      idx.push({ surahNum: s, ayahNum: a.n, text: a.t.replace(/\uFEFF/g, ''), norm: normalizeArabic(a.t) });
     }
   }
   _normalizedIndex = idx;
@@ -120,8 +148,7 @@ function getNormalizedIndex(): NormEntry[] {
 }
 
 export function searchQuran(query: string): { surahNum: number; ayahNum: number; text: string }[] {
-  if (!query.trim()) return [];
-  const q = normalizeForSearch(query);
+  const q = normalizeQuery(query);
   if (!q) return [];
   const results: { surahNum: number; ayahNum: number; text: string }[] = [];
   const index = getNormalizedIndex();
@@ -132,6 +159,14 @@ export function searchQuran(query: string): { surahNum: number; ayahNum: number;
     }
   }
   return results;
+}
+
+/** Returns the bundled Uthmani text for a single ayah (empty string if absent). */
+export function getAyahText(surahNum: number, ayahNum: number): string {
+  const raw = QURAN_DATA[String(surahNum)];
+  if (!raw) return '';
+  const found = raw.find(a => a.n === ayahNum);
+  return found ? found.t.replace(/\uFEFF/g, '') : '';
 }
 
 export const SURAH_META: Array<{

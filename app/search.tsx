@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, Pressable,
   Platform, TextInput, ActivityIndicator, KeyboardAvoidingView,
@@ -11,8 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { searchQuran, SURAH_META, getAyahPage } from '@/lib/quran-api';
-import { getTransliteration, getTranslation } from '@/lib/quran-translations';
+import { searchQuran, SURAH_META, getAyahPage, getAyahText, normalizeArabic } from '@/lib/quran-api';
+import { searchTranslations } from '@/lib/quran-translations';
 
 interface SurahResult {
   type: 'surah';
@@ -26,6 +26,8 @@ interface ArabicResult {
   surahNum: number;
   ayahNum: number;
   text: string;
+  /** Optional translation/transliteration snippet shown when an ayah matched a non-Arabic corpus. */
+  matchSnippet?: string;
 }
 
 interface TranslitResult {
@@ -44,21 +46,15 @@ function getSnippet(text: string, term: string): string {
   return (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
 }
 
-/** Strip Arabic diacritics (harakat, shadda, etc.) for fuzzy matching. */
-const ARABIC_DIACRITIC_RE = /[\u064B-\u065F\u0670\u0610-\u061A]/g;
-function stripDiacritics(s: string): string {
-  return s.replace(ARABIC_DIACRITIC_RE, '');
-}
-
 function searchSurahNames(query: string): SurahResult[] {
   const q = query.trim();
   if (!q) return [];
   const qLow = q.toLowerCase();
-  const qStripped = stripDiacritics(q);
+  const qNorm = normalizeArabic(q);
   return SURAH_META
     .filter(s =>
-      // Arabic: compare after stripping diacritics from both sides
-      stripDiacritics(s.arabic).includes(qStripped) ||
+      // Arabic: compare after full normalization on both sides
+      (qNorm.length > 0 && normalizeArabic(s.arabic).includes(qNorm)) ||
       s.transliteration.toLowerCase().includes(qLow) ||
       s.english.toLowerCase().includes(qLow) ||
       String(s.number) === q
@@ -70,28 +66,6 @@ function searchSurahNames(query: string): SurahResult[] {
       transliteration: s.transliteration,
       english: s.english,
     }));
-}
-
-function searchTransliteration(query: string, translitLang: string): TranslitResult[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  const results: TranslitResult[] = [];
-  for (const meta of SURAH_META) {
-    for (let ayah = 1; ayah <= meta.ayahs; ayah++) {
-      const translit = getTransliteration(meta.number, ayah);
-      const translation = getTranslation(translitLang, meta.number, ayah);
-      if (translit.toLowerCase().includes(q) || translation.toLowerCase().includes(q)) {
-        results.push({
-          surahNum: meta.number,
-          ayahNum: ayah,
-          translitSnippet: getSnippet(translit, query),
-          translationSnippet: getSnippet(translation, query),
-        });
-        if (results.length >= 50) return results;
-      }
-    }
-  }
-  return results;
 }
 
 export default function SearchScreen() {
@@ -113,21 +87,56 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const doSearch = useCallback((q: string) => {
-    if (!q.trim()) return;
-    setLoading(true);
+  const doSearch = useCallback((raw: string) => {
+    const q = raw.trim();
+    if (!q) { setResults([]); setSearched(false); setLoading(false); return; }
     setSearched(true);
     try {
       const surahMatches = searchSurahNames(q);
-      const ayahMatches: (ArabicResult | TranslitResult)[] = searchMode === 'transliteration'
-        ? searchTransliteration(q, translitLang)
-        : (searchQuran(q) as ArabicResult[]);
+      let ayahMatches: (ArabicResult | TranslitResult)[];
+      if (searchMode === 'transliteration') {
+        ayahMatches = searchTranslations(q, translitLang, 100).map(m => ({
+          surahNum: m.surahNum,
+          ayahNum: m.ayahNum,
+          translitSnippet: getSnippet(m.transliteration, q),
+          translationSnippet: getSnippet(m.translation, q),
+        }));
+      } else {
+        // Arabic mode: match the Uthmani text (modern-spelling tolerant), then also
+        // fold in ayat whose loaded translation / transliteration matches, so a
+        // single box finds "الربا", "interest" and "moses" alike.
+        const arabicHits = searchQuran(q) as ArabicResult[];
+        const seen = new Set(arabicHits.map(r => `${r.surahNum}_${r.ayahNum}`));
+        const crossHits: ArabicResult[] = [];
+        for (const m of searchTranslations(q, translitLang, 100)) {
+          const key = `${m.surahNum}_${m.ayahNum}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          crossHits.push({
+            surahNum: m.surahNum,
+            ayahNum: m.ayahNum,
+            text: getAyahText(m.surahNum, m.ayahNum),
+            matchSnippet: getSnippet(m.translation || m.transliteration, q),
+          });
+        }
+        ayahMatches = [...arabicHits, ...crossHits];
+      }
       setResults([...surahMatches, ...ayahMatches]);
     } catch {
       setResults([]);
     }
     setLoading(false);
   }, [searchMode, translitLang]);
+
+  // Debounced live search (200ms) — avoids re-running on every keystroke.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!query.trim()) { setResults([]); setSearched(false); setLoading(false); return; }
+    setLoading(true);
+    debounceRef.current = setTimeout(() => doSearch(query), 200);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, doSearch]);
 
   const placeholder = searchMode === 'transliteration'
     ? (tr.search_quran_translit ?? 'Search transliteration...')
@@ -199,6 +208,11 @@ export default function SearchScreen() {
             <Text style={[styles.resultText, { color: C.text, fontFamily: 'Amiri_400Regular' }]} numberOfLines={3}>
               {item.text}
             </Text>
+            {!!item.matchSnippet && (
+              <Text style={[styles.resultTranslation, { color: C.textMuted }]} numberOfLines={2}>
+                {item.matchSnippet}
+              </Text>
+            )}
           </View>
         </Pressable>
       </Animated.View>

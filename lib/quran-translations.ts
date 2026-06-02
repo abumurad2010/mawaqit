@@ -52,6 +52,69 @@ export function getTransliteration(
   return _translit[`${surahNumber}_${ayahNumber}`] ?? '';
 }
 
+export interface CrossMatch {
+  surahNum: number;
+  ayahNum: number;
+  transliteration: string;
+  translation: string;
+}
+
+// Pre-built lowercase transliteration index (built once, reused on every keystroke).
+type CrossEntry = { surahNum: number; ayahNum: number; key: string; translit: string; translitLower: string };
+let _crossIndex: CrossEntry[] | null = null;
+function getCrossIndex(): CrossEntry[] {
+  if (_crossIndex) return _crossIndex;
+  const idx: CrossEntry[] = [];
+  for (const key of Object.keys(_translit)) {
+    const [s, a] = key.split('_');
+    const tl = _translit[key] ?? '';
+    idx.push({ surahNum: Number(s), ayahNum: Number(a), key, translit: tl, translitLower: tl.toLowerCase() });
+  }
+  _crossIndex = idx;
+  return idx;
+}
+
+// Per-language lowercase translation cache (built lazily, once per language).
+const _transLowerCache: Record<string, Record<string, string>> = {};
+function getLowerTranslations(lang: string): Record<string, string> {
+  if (_transLowerCache[lang]) return _transLowerCache[lang];
+  const srcMap = TRANSLATIONS[lang] ?? TRANSLATIONS['en'] ?? {};
+  const out: Record<string, string> = {};
+  for (const k in srcMap) out[k] = srcMap[k].toLowerCase();
+  _transLowerCache[lang] = out;
+  return out;
+}
+
+/**
+ * Case-insensitive substring search across the Roman transliteration corpus and
+ * the given language's translation (falling back to English per-ayah). Lets a
+ * user find ayat by typing Latin words ("riba", "moses") or translated words
+ * ("interest") regardless of how the Arabic is spelled.
+ */
+export function searchTranslations(query: string, lang: string, limit = 200): CrossMatch[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const idx = getCrossIndex();
+  const lower = getLowerTranslations(lang);
+  const enLower = getLowerTranslations('en');
+  const langMap = TRANSLATIONS[lang] ?? TRANSLATIONS['en'] ?? {};
+  const enMap = TRANSLATIONS['en'] ?? {};
+  const out: CrossMatch[] = [];
+  for (const e of idx) {
+    const transLower = lower[e.key] ?? enLower[e.key] ?? '';
+    if (e.translitLower.includes(q) || transLower.includes(q)) {
+      out.push({
+        surahNum: e.surahNum,
+        ayahNum: e.ayahNum,
+        transliteration: e.translit,
+        translation: langMap[e.key] ?? enMap[e.key] ?? '',
+      });
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
+
 /** All language codes that have a bundled translation. */
 export const translationsAvailable = Object.keys(TRANSLATIONS);
 
