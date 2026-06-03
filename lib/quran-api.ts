@@ -102,9 +102,10 @@ const _ARABIC_MARKS = /[\u0610-\u061A\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06
  */
 export function normalizeArabic(input: string): string {
   if (!input) return '';
-  return input
+  let s = input
     .replace(/\uFEFF/g, '')                              // strip BOM
     .replace(/\u0648\u0670/g, '\u0627')              // waw + superscript alef -> alef
+    .replace(/\u0649\u0670/g, '\u0649')              // alef-maqsura + superscript alef -> alef-maqsura
     .replace(/\u0670/g, '')                            // remaining superscript alef -> removed
     .replace(_ARABIC_MARKS, '')                        // tashkeel / Quranic marks / tatweel
     .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')  // madda/hamza-alef/wasla -> alef
@@ -117,7 +118,29 @@ export function normalizeArabic(input: string): string {
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+  // Long-form variants where modern Arabic users insert an explicit alef the
+  // Mushaf writes as a dagger alef we just stripped. Both forms collapse to the
+  // same target so they collide on lookup.
+  for (const [a, b] of _LONG_FORM) if (s.indexOf(a) !== -1) s = s.split(a).join(b);
+  // Salih family (root ص ل ح). Mushaf consistently spells without the alef
+  // (صَٰلِح → صلح after diacritic strip); modern users add it. Restricted to
+  // the two trailing letters so it doesn't break صالوا (prayed) or فصالا (weaning).
+  s = s.replace(/صال(?=[حه])/g, 'صل');
+  return s;
 }
+
+const _LONG_FORM: ReadonlyArray<[string, string]> = [
+  ['ذالك',   'ذلك'],
+  ['ذالكم',  'ذلكم'],
+  ['ذالكما', 'ذلكما'],
+  ['هاذا',   'هذا'],
+  ['هاذه',   'هذه'],
+  ['هاولاء', 'هؤلاء'],
+  ['لاكن',   'لكن'],
+  ['الاه',   'اله'],
+  ['رحمان',  'رحمن'],
+  ['اسحاق',  'اسحق'],
+];
 
 /** Normalize a query and drop a leading definite article (alef-lam) so a search
  *  for "al-riba" also matches "riba" (and vice-versa); the 3-char guard avoids
@@ -129,31 +152,117 @@ export function normalizeQuery(query: string): string {
   }
   return q;
 }
+/** Split into words on whitespace + Arabic/Latin punctuation. */
+function _tokenize(text: string): string[] {
+  return text
+    .split(/[\s،؛؟٭.,;:!?\-—()\[\]{}"'«»]+/u)
+    .filter(Boolean);
+}
 
-type NormEntry = { surahNum: number; ayahNum: number; text: string; norm: string };
-let _normalizedIndex: NormEntry[] | null = null;
+/** Strip leading "ال" from a query word when at least 2 chars remain. */
+function _stripLeadingAl(word: string): string {
+  if (word.length >= 4 && word.charCodeAt(0) === 0x0627 && word.charCodeAt(1) === 0x0644) {
+    return word.substring(2);
+  }
+  return word;
+}
 
-function getNormalizedIndex(): NormEntry[] {
-  if (_normalizedIndex) return _normalizedIndex;
-  const idx: NormEntry[] = [];
+/** Common Arabic proclitic prefixes — longer matches first. "س" (will) and
+ *  "ك" (like) deliberately excluded — too many false positives (سرب tunnel,
+ *  كرسي throne). */
+const _PROCLITIC_PREFIXES: readonly string[] = [
+  'وال', 'فال', 'بال', 'كال',
+  'لل',
+  'ال',
+  'و', 'ف', 'ل', 'ب', 'ي',
+];
+
+/** Expand an indexed word into its match-candidate Set: the word itself plus
+ *  every form obtained by stripping a known Arabic proclitic prefix when ≥ 2
+ *  chars remain. */
+function _expandWord(word: string): Set<string> {
+  const set = new Set<string>([word]);
+  for (const p of _PROCLITIC_PREFIXES) {
+    if (word.length - p.length >= 2 && word.startsWith(p)) {
+      set.add(word.substring(p.length));
+    }
+  }
+  return set;
+}
+
+interface _IndexEntry {
+  surahNum: number;
+  ayahNum: number;
+  text: string;
+  /** One expansion Set per word position. */
+  wordSets: Set<string>[];
+}
+
+let _wordIndex: _IndexEntry[] | null = null;
+
+function _getWordIndex(): _IndexEntry[] {
+  if (_wordIndex) return _wordIndex;
+  const idx: _IndexEntry[] = [];
   for (let s = 1; s <= 114; s++) {
     const raw = QURAN_DATA[String(s)];
     if (!raw) continue;
     for (const a of raw) {
-      idx.push({ surahNum: s, ayahNum: a.n, text: a.t.replace(/\uFEFF/g, ''), norm: normalizeArabic(a.t) });
+      const words = _tokenize(normalizeArabic(a.t));
+      idx.push({
+        surahNum: s,
+        ayahNum: a.n,
+        text: a.t.replace(/\uFEFF/g, ''),
+        wordSets: words.map(_expandWord),
+      });
     }
   }
-  _normalizedIndex = idx;
+  _wordIndex = idx;
   return idx;
 }
 
+/** Eagerly build the search index — call from app startup so the first search
+ *  doesn't pay the ~100 ms one-time build cost. Idempotent. */
+export function prewarmSearchIndex(): void {
+  _getWordIndex();
+}
+
+/** Phrase match: `queryWords` must appear as a consecutive subsequence of
+ *  the ayah's wordSets. Single-word queries match any position. */
+function _matchPhrase(queryWords: string[], wordSets: Set<string>[]): boolean {
+  const M = queryWords.length;
+  if (M === 0) return false;
+  if (M === 1) {
+    for (let i = 0; i < wordSets.length; i++) {
+      if (wordSets[i].has(queryWords[0])) return true;
+    }
+    return false;
+  }
+  const N = wordSets.length;
+  outer: for (let i = 0; i <= N - M; i++) {
+    for (let j = 0; j < M; j++) {
+      if (!wordSets[i + j].has(queryWords[j])) continue outer;
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Word-boundary Quran search. Substring matching used to over-match ("ربا"
+ * inside "تقربا" / "قربان"); we now tokenize each ayah into words and require
+ * the query to match WHOLE NORMALIZED WORDS (single-word) or appear as a
+ * consecutive subsequence (multi-word phrase). Proclitic prefixes (و, ف, ل,
+ * ب, ي and the ال combos) are expanded per-word so "موسي" finds "وموسي",
+ * "لموسي", "بموسي", "يموسي".
+ */
 export function searchQuran(query: string): { surahNum: number; ayahNum: number; text: string }[] {
-  const q = normalizeQuery(query);
-  if (!q) return [];
+  if (!query.trim()) return [];
+  const qw = _tokenize(normalizeArabic(query)).map(_stripLeadingAl);
+  if (qw.length === 0) return [];
   const results: { surahNum: number; ayahNum: number; text: string }[] = [];
-  const index = getNormalizedIndex();
+  const index = _getWordIndex();
   for (const entry of index) {
-    if (entry.norm.includes(q)) {
+    if (_matchPhrase(qw, entry.wordSets)) {
       results.push({ surahNum: entry.surahNum, ayahNum: entry.ayahNum, text: entry.text });
       if (results.length >= 200) return results;
     }
