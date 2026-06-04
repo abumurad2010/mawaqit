@@ -8,6 +8,13 @@ const QURAN_DATA = require('../assets/quran.json') as Record<
   Array<{ n: number; t: string; j: number; p: number }>
 >;
 
+// Tanzil Imlaei (modern-spelling) text -- used ONLY as the search corpus.
+// Same surah/ayah indexing as quran.json. Display always uses the Uthmani text.
+const IMLAEI_DATA = require('../assets/quran-imlaei.json') as Record<
+  string,
+  Array<{ n: number; t: string }>
+>;
+
 export interface Surah {
   number: number;
   name: string;
@@ -88,183 +95,114 @@ export function fetchSurah(number: number): Promise<SurahData> {
   return Promise.resolve(getSurah(number));
 }
 
-// Quranic annotation marks, tashkeel and tatweel that carry no letter identity.
-// (U+0670 superscript alef is handled separately below -- it changes spelling.)
-const _ARABIC_MARKS = /[\u0610-\u061A\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u08D3-\u08FF\u0640]/g;
+// Tashkeel, Quranic annotation marks, tatweel and the superscript (dagger) alef
+// -- all stripped for search (carry no base-letter identity). Arabic-Indic
+// digits U+0660-0669 are deliberately NOT in this class.
+const _ARABIC_MARKS = /[\u0610-\u061A\u064B-\u065F\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u08D3-\u08FF\u0670\u0640]/g;
 
 /**
- * Aggressively normalize Arabic so the classical Uthmani orthography and the
- * modern spelling a user types collapse to the same string:
- *   - classical waw + superscript alef -> alef  (al-riba, al-salah, al-zakah)
- *   - remaining superscript (dagger) alef removed (hadha, dhalika, ar-rahman)
- *   - tashkeel / Quranic marks / tatweel stripped; hamza + alef variants unified;
- *     ta-marbuta -> ha; alef-maqsura -> ya; repeated alef + whitespace collapsed.
+ * Light, Imlaei-friendly Arabic normalization. The search corpus is the Tanzil
+ * Imlaei (modern-spelling) text, so no classical->modern remapping is needed:
+ *   - strip tashkeel / Quranic marks / tatweel / superscript alef
+ *   - unify hamza + alef variants (madda/hamza/wasla -> alef; waw/ya-hamza; drop bare hamza)
+ *   - ta-marbuta -> ha, alef-maqsura -> ya
+ *   - collapse repeated alef/waw/ya (e.g. "Daawood" classical double-waw) + whitespace; lower-case
  */
 export function normalizeArabic(input: string): string {
   if (!input) return '';
-  let s = input
-    .replace(/\uFEFF/g, '')                              // strip BOM
-    .replace(/\u0648\u0670/g, '\u0627')              // waw + superscript alef -> alef
-    .replace(/\u0649\u0670/g, '\u0649')              // alef-maqsura + superscript alef -> alef-maqsura
-    .replace(/\u0670/g, '')                            // remaining superscript alef -> removed
-    .replace(_ARABIC_MARKS, '')                        // tashkeel / Quranic marks / tatweel
-    .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')  // madda/hamza-alef/wasla -> alef
-    .replace(/\u0624/g, '\u0648')              // waw-hamza -> waw
-    .replace(/\u0626/g, '\u064A')              // ya-hamza -> ya
-    .replace(/[\u0621\u0654\u0655]/g, '')        // standalone hamza + hamza marks -> removed
-    .replace(/\u0629/g, '\u0647')              // ta-marbuta -> ha
-    .replace(/\u0649/g, '\u064A')              // alef-maqsura -> ya
-    .replace(/\u0627{2,}/g, '\u0627')          // collapse repeated alef
+  return input
+    .replace(/\uFEFF/g, '')
+    .replace(_ARABIC_MARKS, '')
+    .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')   // madda / hamza-on-alef / wasla -> alef
+    .replace(/\u0624/g, '\u0648')   // waw-hamza -> waw
+    .replace(/\u0626/g, '\u064A')   // ya-hamza -> ya
+    .replace(/[\u0621\u0654\u0655]/g, '')         // bare hamza + hamza marks -> removed
+    .replace(/\u0629/g, '\u0647')   // ta-marbuta -> ha
+    .replace(/\u0649/g, '\u064A')   // alef-maqsura -> ya
+    .replace(/\u0627{2,}/g, '\u0627')   // collapse repeated alef
+    .replace(/\u0648{2,}/g, '\u0648')   // collapse repeated waw
+    .replace(/\u064A{2,}/g, '\u064A')   // collapse repeated ya
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
-  // Long-form variants where modern Arabic users insert an explicit alef the
-  // Mushaf writes as a dagger alef we just stripped. Both forms collapse to the
-  // same target so they collide on lookup.
-  for (const [a, b] of _LONG_FORM) if (s.indexOf(a) !== -1) s = s.split(a).join(b);
-  // Salih family (root ص ل ح). Mushaf consistently spells without the alef
-  // (صَٰلِح → صلح after diacritic strip); modern users add it. Restricted to
-  // the two trailing letters so it doesn't break صالوا (prayed) or فصالا (weaning).
-  s = s.replace(/صال(?=[حه])/g, 'صل');
-  return s;
-}
-
-const _LONG_FORM: ReadonlyArray<[string, string]> = [
-  ['ذالك',   'ذلك'],
-  ['ذالكم',  'ذلكم'],
-  ['ذالكما', 'ذلكما'],
-  ['هاذا',   'هذا'],
-  ['هاذه',   'هذه'],
-  ['هاولاء', 'هؤلاء'],
-  ['لاكن',   'لكن'],
-  ['الاه',   'اله'],
-  ['رحمان',  'رحمن'],
-  ['اسحاق',  'اسحق'],
-];
-
-/** Normalize a query and drop a leading definite article (alef-lam) so a search
- *  for "al-riba" also matches "riba" (and vice-versa); the 3-char guard avoids
- *  reducing short words to tiny fragments. */
-export function normalizeQuery(query: string): string {
-  let q = normalizeArabic(query);
-  if (q.startsWith('\u0627\u0644') && q.length - 2 >= 3) {
-    q = q.slice(2);
-  }
-  return q;
-}
-/** Split into words on whitespace + Arabic/Latin punctuation. */
-function _tokenize(text: string): string[] {
-  return text
-    .split(/[\s،؛؟٭.,;:!?\-—()\[\]{}"'«»]+/u)
-    .filter(Boolean);
-}
-
-/** Strip leading "ال" from a query word when at least 2 chars remain. */
-function _stripLeadingAl(word: string): string {
-  if (word.length >= 4 && word.charCodeAt(0) === 0x0627 && word.charCodeAt(1) === 0x0644) {
-    return word.substring(2);
-  }
-  return word;
-}
-
-/** Common Arabic proclitic prefixes — longer matches first. "س" (will) and
- *  "ك" (like) deliberately excluded — too many false positives (سرب tunnel,
- *  كرسي throne). */
-const _PROCLITIC_PREFIXES: readonly string[] = [
-  'وال', 'فال', 'بال', 'كال',
-  'لل',
-  'ال',
-  'و', 'ف', 'ل', 'ب', 'ي',
-];
-
-/** Expand an indexed word into its match-candidate Set: the word itself plus
- *  every form obtained by stripping a known Arabic proclitic prefix when ≥ 2
- *  chars remain. */
-function _expandWord(word: string): Set<string> {
-  const set = new Set<string>([word]);
-  for (const p of _PROCLITIC_PREFIXES) {
-    if (word.length - p.length >= 2 && word.startsWith(p)) {
-      set.add(word.substring(p.length));
-    }
-  }
-  return set;
-}
-
-interface _IndexEntry {
-  surahNum: number;
-  ayahNum: number;
-  text: string;
-  /** One expansion Set per word position. */
-  wordSets: Set<string>[];
-}
-
-let _wordIndex: _IndexEntry[] | null = null;
-
-function _getWordIndex(): _IndexEntry[] {
-  if (_wordIndex) return _wordIndex;
-  const idx: _IndexEntry[] = [];
-  for (let s = 1; s <= 114; s++) {
-    const raw = QURAN_DATA[String(s)];
-    if (!raw) continue;
-    for (const a of raw) {
-      const words = _tokenize(normalizeArabic(a.t));
-      idx.push({
-        surahNum: s,
-        ayahNum: a.n,
-        text: a.t.replace(/\uFEFF/g, ''),
-        wordSets: words.map(_expandWord),
-      });
-    }
-  }
-  _wordIndex = idx;
-  return idx;
-}
-
-/** Eagerly build the search index — call from app startup so the first search
- *  doesn't pay the ~100 ms one-time build cost. Idempotent. */
-export function prewarmSearchIndex(): void {
-  _getWordIndex();
-}
-
-/** Phrase match: `queryWords` must appear as a consecutive subsequence of
- *  the ayah's wordSets. Single-word queries match any position. */
-function _matchPhrase(queryWords: string[], wordSets: Set<string>[]): boolean {
-  const M = queryWords.length;
-  if (M === 0) return false;
-  if (M === 1) {
-    for (let i = 0; i < wordSets.length; i++) {
-      if (wordSets[i].has(queryWords[0])) return true;
-    }
-    return false;
-  }
-  const N = wordSets.length;
-  outer: for (let i = 0; i <= N - M; i++) {
-    for (let j = 0; j < M; j++) {
-      if (!wordSets[i + j].has(queryWords[j])) continue outer;
-    }
-    return true;
-  }
-  return false;
 }
 
 /**
- * Word-boundary Quran search. Substring matching used to over-match ("ربا"
- * inside "تقربا" / "قربان"); we now tokenize each ayah into words and require
- * the query to match WHOLE NORMALIZED WORDS (single-word) or appear as a
- * consecutive subsequence (multi-word phrase). Proclitic prefixes (و, ف, ل,
- * ب, ي and the ال combos) are expanded per-word so "موسي" finds "وموسي",
- * "لموسي", "بموسي", "يموسي".
+ * Expand a word into the set of searchable forms used for whole-word matching.
+ * Peels leading proclitics WITHOUT destroying root-initial letters:
+ *   - bare conjunction/preposition wa/fa/bi/li (NOT ka/sa -- usually root letters,
+ *     e.g. "kitab", "samaa", "sarab")
+ *   - the definite article al-, also after a bi/ka/li proclitic, and the li+al ("ll-") form
+ * Both the query and every ayah word are expanded the same way and matched by
+ * set intersection, so "صلاة" / "الصلاة" / "والصلاة" / "بالصلاة" all unify.
+ */
+function coreForms(w: string): string[] {
+  const out: string[] = [w];
+  let base = w;
+  if (base.length > 3 && '\u0648\u0641\u0628\u0644'.indexOf(base[0]) >= 0) { base = base.slice(1); out.push(base); }
+  for (const x of [w, base]) {
+    if (x.length >= 5 && x.startsWith('\u0627\u0644')) out.push(x.slice(2));
+    if (x.length >= 6 && (x[0] === '\u0628' || x[0] === '\u0643' || x[0] === '\u0644') && x.slice(1, 3) === '\u0627\u0644') out.push(x.slice(3));
+    if (x.length >= 5 && x.startsWith('\u0644\u0644')) out.push(x.slice(2));
+  }
+  return out;
+}
+
+type NormEntry = { surahNum: number; ayahNum: number; text: string; norm: string; forms: Set<string> };
+let _normalizedIndex: NormEntry[] | null = null;
+
+// Index built from the IMLAEI corpus for MATCHING; the `text` kept for DISPLAY is
+// always the Uthmani text from quran.json.
+function getNormalizedIndex(): NormEntry[] {
+  if (_normalizedIndex) return _normalizedIndex;
+  const idx: NormEntry[] = [];
+  for (let s = 1; s <= 114; s++) {
+    const uthmani = QURAN_DATA[String(s)];
+    if (!uthmani) continue;
+    const imlaei = IMLAEI_DATA[String(s)];
+    for (let i = 0; i < uthmani.length; i++) {
+      const a = uthmani[i];
+      const imlaeiText = imlaei && imlaei[i] ? imlaei[i].t : a.t;
+      const norm = normalizeArabic(imlaeiText);
+      const forms = new Set<string>();
+      for (const tok of norm.split(' ')) {
+        if (!tok) continue;
+        for (const f of coreForms(tok)) forms.add(f);
+      }
+      idx.push({ surahNum: s, ayahNum: a.n, text: a.t.replace(/\uFEFF/g, ''), norm, forms });
+    }
+  }
+  _normalizedIndex = idx;
+  return idx;
+}
+
+/**
+ * Word-boundary Quran search over the Imlaei (modern-spelling) corpus. A
+ * single-word query matches an ayah when any word shares a searchable form with
+ * it (whole-word + proclitic/article aware); a multi-word query matches as a
+ * normalized phrase substring. Returns the Uthmani text for display.
  */
 export function searchQuran(query: string): { surahNum: number; ayahNum: number; text: string }[] {
-  if (!query.trim()) return [];
-  const qw = _tokenize(normalizeArabic(query)).map(_stripLeadingAl);
-  if (qw.length === 0) return [];
+  const norm = normalizeArabic(query);
+  if (!norm) return [];
+  const tokens = norm.split(' ').filter(Boolean);
   const results: { surahNum: number; ayahNum: number; text: string }[] = [];
-  const index = _getWordIndex();
-  for (const entry of index) {
-    if (_matchPhrase(qw, entry.wordSets)) {
-      results.push({ surahNum: entry.surahNum, ayahNum: entry.ayahNum, text: entry.text });
-      if (results.length >= 200) return results;
+  const index = getNormalizedIndex();
+  if (tokens.length > 1) {
+    for (const entry of index) {
+      if (entry.norm.includes(norm)) {
+        results.push({ surahNum: entry.surahNum, ayahNum: entry.ayahNum, text: entry.text });
+      }
+    }
+  } else {
+    const qForms = coreForms(tokens[0]);
+    for (const entry of index) {
+      for (const qf of qForms) {
+        if (entry.forms.has(qf)) {
+          results.push({ surahNum: entry.surahNum, ayahNum: entry.ayahNum, text: entry.text });
+          break;
+        }
+      }
     }
   }
   return results;
