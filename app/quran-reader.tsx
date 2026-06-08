@@ -31,6 +31,8 @@ import {
   View, Text, StyleSheet, Pressable, Platform, Alert, FlatList,
   useWindowDimensions, Animated, type LayoutChangeEvent,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,6 +52,11 @@ const INITIAL_FONT = 24;
 const MAX_FONT = 26;
 const MIN_FONT = 16;
 const FONT_STEP = 0.5;
+/** Extra height the fit-loop subtracts from the layout box to avoid
+ *  edge-clipping caused by Arabic descenders / diacritics. Tight enough
+ *  to keep dense pages readable, generous enough to guarantee no
+ *  bottom-row clipping in worst cases (e.g. page 3). */
+const SAFETY_BUFFER = 8;
 const LINE_HEIGHT_MULT = 1.5;
 const HEADER_HEIGHT = 40;
 const FOOTER_HEIGHT = 20;
@@ -220,7 +227,10 @@ function MushafPageView({
   const horizPad = 10;
   const vertPad = 6;
   const innerWidth = width - horizPad * 2;
-  const available = height - vertPad * 2;
+  // SAFETY_BUFFER absorbs Arabic descender/diacritic overhang that the
+  // layout engine doesn't always account for in onLayout height. Without
+  // it, page 3's last visual line clipped at the bottom-right edge.
+  const available = height - vertPad * 2 - SAFETY_BUFFER;
 
   const cachedFont = FIT_CACHE[fitKey(pageNum, available)];
   const [fontSize, setFontSize] = useState<number>(cachedFont ?? INITIAL_FONT);
@@ -254,24 +264,41 @@ function MushafPageView({
     }
   }, [fontSize, available, pageNum]);
 
+  // GestureDetector with a short Tap. RN's <Text onLongPress> at the leaf
+  // level was eating short taps before they could reach a parent Pressable,
+  // so the page-level chrome toggle never fired on ayah-area taps. With
+  // gesture-handler, the Tap recognizer runs alongside (not below) the
+  // Text gesture system and fires reliably no matter where the user taps.
+  // maxDuration=250 prevents the Tap from competing with a long-press
+  // (which needs >=500 ms by default).
+  const tapGesture = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDuration(250)
+        .onEnd((_, success) => {
+          'worklet';
+          if (success) runOnJS(onTap)();
+        }),
+    [onTap]
+  );
+
   return (
-    <Pressable
-      onPress={onTap}
-      style={{ width, height, backgroundColor: bgColor, paddingHorizontal: horizPad, paddingVertical: vertPad, overflow: 'hidden' }}
-    >
-      <View onLayout={onMeasure} style={{ width: innerWidth }}>
-        <MushafPageBody
-          ayat={ayat}
-          width={innerWidth}
-          fontSize={fontSize}
-          textColor={textColor}
-          tintColor={tintColor}
-          highlightTarget={highlightTarget}
-          isBookmarkedFn={isBookmarkedFn}
-          onLongPressAyah={onLongPressAyah}
-        />
+    <GestureDetector gesture={tapGesture}>
+      <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: horizPad, paddingVertical: vertPad, overflow: 'hidden' }}>
+        <View onLayout={onMeasure} style={{ width: innerWidth }}>
+          <MushafPageBody
+            ayat={ayat}
+            width={innerWidth}
+            fontSize={fontSize}
+            textColor={textColor}
+            tintColor={tintColor}
+            highlightTarget={highlightTarget}
+            isBookmarkedFn={isBookmarkedFn}
+            onLongPressAyah={onLongPressAyah}
+          />
+        </View>
       </View>
-    </Pressable>
+    </GestureDetector>
   );
 }
 
