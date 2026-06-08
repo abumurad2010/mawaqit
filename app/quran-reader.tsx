@@ -1,42 +1,53 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Platform, Alert,
-  ScrollView, PanResponder, Animated, useWindowDimensions,
+  View, Text, StyleSheet, Pressable, Platform, Modal,
+  FlatList, useWindowDimensions, ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import { getQuranPage, getAyahPage, SURAH_META, SURAH_START_PAGES, BISMILLAH_TEXT, getSajdahWord, splitForSajdahUnderline, type PageAyah } from '@/lib/quran-api';
-
-const TOTAL_PAGES = 604;
-const SWIPE_THRESHOLD = 55;
+import {
+  SURAH_META,
+  getAyahPage,
+  getMushafPage,
+  getHizbNumber,
+  getHizbQuarter,
+  type MushafPage,
+  type MushafLine,
+  type MushafLineSegment,
+  TOTAL_PAGES,
+} from '@/lib/quran-api';
+import { getTranslation, getTransliteration } from '@/lib/quran-translations';
 
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 }
 
-function stripBismillah(text: string): string {
-  return text.slice(BISMILLAH_TEXT.length).trimStart();
+function hizbLabel(rubElHizb: number, isAr: boolean): string {
+  const hizb = getHizbNumber(rubElHizb);
+  const q = getHizbQuarter(rubElHizb);
+  const fractions = ['', '¼ ', '½ ', '¾ '];
+  if (isAr) {
+    const arFrac = ['', '¼ ', '½ ', '¾ '];
+    return `${arFrac[q]}حزب ${toArabicIndic(hizb)}`;
+  }
+  return `${fractions[q]}Hizb ${hizb}`;
 }
 
+interface AyahTapTarget { surah: number; ayah: number }
 
-
-function SurahBanner({ surahNum, color, textColor, mutedColor }: {
-  surahNum: number; color: string; textColor: string; mutedColor: string;
+function SurahBanner({ surahNum, color, textColor, mutedColor, height }: {
+  surahNum: number; color: string; textColor: string; mutedColor: string; height: number;
 }) {
   const meta = SURAH_META[surahNum - 1];
   if (!meta) return null;
-
   const ayahCount = meta.ayahs;
   const typeLabel = meta.type === 'Meccan' ? 'مكية' : 'مدنية';
-
   return (
-    <View style={banner.wrapper}>
+    <View style={[banner.wrapper, { height }]}>
       <View style={[banner.outer, { borderColor: color }]}>
         <View style={[banner.inner, { borderColor: color }]}>
           <View style={banner.sideOrn}>
@@ -44,25 +55,14 @@ function SurahBanner({ surahNum, color, textColor, mutedColor }: {
             <View style={[banner.ornLine, { backgroundColor: color }]} />
             <View style={[banner.orn, { backgroundColor: color }]} />
           </View>
-
           <View style={banner.center}>
-            <Text style={[banner.surahWord, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
-              سُورَةُ
+            <Text style={[banner.surahName, { color: textColor, fontFamily: 'Amiri_700Bold', fontSize: Math.min(20, height * 0.55) }]}>
+              سُورَةُ {meta.arabic}
             </Text>
-            <Text style={[banner.surahName, { color: textColor, fontFamily: 'Amiri_700Bold' }]}>
-              {meta.arabic}
+            <Text style={[banner.meta, { color: mutedColor, fontFamily: 'Amiri_400Regular', fontSize: Math.min(11, height * 0.28) }]}>
+              {typeLabel} · {toArabicIndic(ayahCount)} آية
             </Text>
-            <View style={banner.metaRow}>
-              <Text style={[banner.meta, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
-                {typeLabel}
-              </Text>
-              <View style={[banner.metaDot, { backgroundColor: mutedColor }]} />
-              <Text style={[banner.meta, { color: mutedColor, fontFamily: 'Amiri_400Regular' }]}>
-                {toArabicIndic(ayahCount)} آية
-              </Text>
-            </View>
           </View>
-
           <View style={banner.sideOrn}>
             <View style={[banner.orn, { backgroundColor: color }]} />
             <View style={[banner.ornLine, { backgroundColor: color }]} />
@@ -75,41 +75,301 @@ function SurahBanner({ surahNum, color, textColor, mutedColor }: {
 }
 
 const banner = StyleSheet.create({
-  wrapper: { marginTop: 8, marginBottom: 6, marginHorizontal: 4 },
-  outer: {
-    borderWidth: 1.5,
-    borderRadius: 3,
-    padding: 3,
-  },
+  wrapper: { justifyContent: 'center', paddingHorizontal: 8 },
+  outer: { borderWidth: 1.5, borderRadius: 3, padding: 2 },
   inner: {
-    borderWidth: 0.75,
-    borderRadius: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    borderWidth: 0.75, borderRadius: 1,
+    paddingVertical: 4, paddingHorizontal: 10,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
   center: { alignItems: 'center', flex: 1 },
-  surahWord: { fontSize: 12, letterSpacing: 1, marginBottom: 2 },
-  surahName: { fontSize: 24, letterSpacing: 1 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  meta: { fontSize: 11 },
-  metaDot: { width: 3, height: 3, borderRadius: 1.5, opacity: 0.5 },
-  sideOrn: { alignItems: 'center', justifyContent: 'center', gap: 3, width: 20 },
-  orn: { width: 5, height: 5, borderRadius: 2.5 },
-  ornLine: { width: 1, height: 20 },
+  surahName: { letterSpacing: 0.5 },
+  meta: { marginTop: 1 },
+  sideOrn: { alignItems: 'center', justifyContent: 'center', gap: 2, width: 16 },
+  orn: { width: 4, height: 4, borderRadius: 2 },
+  ornLine: { width: 1, height: 14 },
 });
 
+/* ── One Mushaf page, fits the viewport exactly ── */
+function MushafPageView({
+  pageNum, width, height, lineHeight, baseFontSize,
+  textColor, headerColor, mutedColor, tintColor, bgColor,
+  highlightTarget, isBookmarked, onAyahTap,
+}: {
+  pageNum: number;
+  width: number;
+  height: number;
+  lineHeight: number;
+  baseFontSize: number;
+  textColor: string;
+  headerColor: string;
+  mutedColor: string;
+  tintColor: string;
+  bgColor: string;
+  highlightTarget: AyahTapTarget | null;
+  isBookmarked: (s: number, a: number) => boolean;
+  onAyahTap: (target: AyahTapTarget) => void;
+}) {
+  const page = getMushafPage(pageNum);
+  if (!page) {
+    return <View style={{ width, height, backgroundColor: bgColor }} />;
+  }
+
+  return (
+    <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: 12 }}>
+      {page.lines.map((line, idx) => (
+        <MushafLineView
+          key={idx}
+          line={line}
+          width={width - 24}
+          height={lineHeight}
+          fontSize={baseFontSize}
+          textColor={textColor}
+          headerColor={headerColor}
+          mutedColor={mutedColor}
+          tintColor={tintColor}
+          highlightTarget={highlightTarget}
+          isBookmarked={isBookmarked}
+          onAyahTap={onAyahTap}
+        />
+      ))}
+    </View>
+  );
+}
+
+function MushafLineView({
+  line, width, height, fontSize,
+  textColor, headerColor, mutedColor, tintColor,
+  highlightTarget, isBookmarked, onAyahTap,
+}: {
+  line: MushafLine;
+  width: number;
+  height: number;
+  fontSize: number;
+  textColor: string;
+  headerColor: string;
+  mutedColor: string;
+  tintColor: string;
+  highlightTarget: AyahTapTarget | null;
+  isBookmarked: (s: number, a: number) => boolean;
+  onAyahTap: (target: AyahTapTarget) => void;
+}) {
+  if (line.type === 'blank') {
+    return <View style={{ height, width }} />;
+  }
+  if (line.type === 'header') {
+    return (
+      <SurahBanner
+        surahNum={line.surah}
+        color={tintColor}
+        textColor={headerColor}
+        mutedColor={mutedColor}
+        height={height}
+      />
+    );
+  }
+  if (line.type === 'bismillah') {
+    return (
+      <View style={{ height, justifyContent: 'center' }}>
+        <Text
+          style={{
+            color: textColor,
+            fontFamily: 'AmiriQuran',
+            fontSize: fontSize * 0.95,
+            textAlign: 'center',
+            writingDirection: 'rtl',
+          }}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+        </Text>
+      </View>
+    );
+  }
+
+  // verse line: render each segment with optional end marker and tap handler
+  return (
+    <View style={{ height, justifyContent: 'center' }}>
+      <Text
+        style={{
+          color: textColor,
+          fontFamily: 'AmiriQuran',
+          fontSize,
+          textAlign: 'justify',
+          writingDirection: 'rtl',
+          lineHeight: height,
+        }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {line.segments.map((seg, si) => {
+          const highlighted = highlightTarget?.surah === seg.surahNum && highlightTarget?.ayah === seg.ayahNum;
+          const bookmarked = isBookmarked(seg.surahNum, seg.ayahNum);
+          const segText = seg.text + (seg.isAyahEnd ? '' : ' ');
+          return (
+            <Text
+              key={si}
+              suppressHighlighting
+              onPress={() => onAyahTap({ surah: seg.surahNum, ayah: seg.ayahNum })}
+              style={{
+                color: highlighted ? tintColor : textColor,
+                backgroundColor: highlighted ? tintColor + '33' : undefined,
+              }}
+            >
+              {segText}
+              {seg.isAyahEnd && (
+                <Text style={{ color: bookmarked ? '#C8860A' : tintColor, fontSize: fontSize * 0.85 }}>
+                  ﴿{toArabicIndic(seg.ayahNum)}﴾{' '}
+                </Text>
+              )}
+            </Text>
+          );
+        })}
+      </Text>
+    </View>
+  );
+}
+
+/* ── Tap-on-ayah modal: translation + transliteration + bookmark ── */
+function AyahDetailModal({
+  target, visible, onClose, lang, translitLang, colors, isDark,
+  isBookmarked, addBookmark, removeBookmark,
+}: {
+  target: AyahTapTarget | null;
+  visible: boolean;
+  onClose: () => void;
+  lang: string;
+  translitLang: string;
+  colors: any;
+  isDark: boolean;
+  isBookmarked: (s: number, a: number) => boolean;
+  addBookmark: (b: any) => void;
+  removeBookmark: (s: number, a: number) => void;
+}) {
+  if (!target) return null;
+  const tr = t(lang as any);
+  const meta = SURAH_META[target.surah - 1];
+  const transliteration = getTransliteration(target.surah, target.ayah);
+  const translation = getTranslation(translitLang, target.surah, target.ayah);
+  const bookmarked = isBookmarked(target.surah, target.ayah);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={modalStyles.backdrop} onPress={onClose}>
+        <Pressable
+          style={[modalStyles.sheet, { backgroundColor: colors.backgroundCard, borderColor: colors.separator }]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={[modalStyles.handle, { backgroundColor: colors.separator }]} />
+          <View style={modalStyles.header}>
+            <Text style={[modalStyles.title, { color: colors.text, fontFamily: 'Amiri_700Bold' }]}>
+              {meta?.arabic ?? ''} · {tr.ayah} {toArabicIndic(target.ayah)}
+            </Text>
+            <Text style={[modalStyles.subtitle, { color: colors.textMuted }]}>
+              {meta?.transliteration ?? ''}
+            </Text>
+          </View>
+
+          <ScrollView style={{ maxHeight: 380 }} contentContainerStyle={{ paddingBottom: 12 }}>
+            {!!transliteration && (
+              <View style={modalStyles.section}>
+                <Text style={[modalStyles.sectionLabel, { color: colors.tint }]}>
+                  {tr.transliteration}
+                </Text>
+                <Text style={[modalStyles.bodyText, { color: colors.text, fontStyle: 'italic' }]}>
+                  {transliteration}
+                </Text>
+              </View>
+            )}
+            {!!translation && (
+              <View style={modalStyles.section}>
+                <Text style={[modalStyles.sectionLabel, { color: colors.tint }]}>
+                  {tr.translation_label ?? 'Translation'}
+                </Text>
+                <Text style={[modalStyles.bodyText, { color: colors.text }]}>
+                  {translation}
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+
+          <View style={modalStyles.actions}>
+            <Pressable
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                if (bookmarked) {
+                  removeBookmark(target.surah, target.ayah);
+                } else {
+                  addBookmark({
+                    surahNumber: target.surah,
+                    surahName: meta?.transliteration ?? '',
+                    ayahNumber: target.ayah,
+                    ayahText: '',
+                    timestamp: Date.now(),
+                  });
+                }
+              }}
+              style={({ pressed }) => [
+                modalStyles.actionBtn,
+                { backgroundColor: bookmarked ? colors.tintLight : colors.tint, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Ionicons name={bookmarked ? 'bookmark' : 'bookmark-outline'} size={16} color={bookmarked ? colors.tint : colors.tintText} />
+              <Text style={[modalStyles.actionLabel, { color: bookmarked ? colors.tint : colors.tintText }]}>
+                {bookmarked ? tr.removeBookmark : tr.addBookmark}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onClose}
+              style={({ pressed }) => [
+                modalStyles.actionBtn,
+                { backgroundColor: colors.backgroundSecond, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.separator, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Text style={[modalStyles.actionLabel, { color: colors.text }]}>
+                {tr.btn_done}
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: {
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28,
+    borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0,
+  },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
+  header: { marginBottom: 12 },
+  title: { fontSize: 22, textAlign: 'center' },
+  subtitle: { fontSize: 12, textAlign: 'center', marginTop: 2 },
+  section: { marginBottom: 16 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, marginBottom: 6, textTransform: 'uppercase' },
+  bodyText: { fontSize: 15, lineHeight: 22 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  actionBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingVertical: 12, borderRadius: 12,
+  },
+  actionLabel: { fontSize: 13, fontWeight: '600' },
+});
+
+/* ── Screen ── */
 export default function QuranReaderScreen() {
   const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; timestamp?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
   const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
   const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
 
-  const { width: W } = useWindowDimensions();
+  const { width: W, height: H } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { isDark, lang, setLastReadPage,
+  const { isDark, lang, translitLang, setLastReadPage, setLastReadSurah,
           addBookmark, removeBookmark, isBookmarked, colors } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -119,202 +379,117 @@ export default function QuranReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [pageNum, setPageNum] = useState(initialPage);
-  const [quranFontStep, setQuranFontStepState] = useState(2); // 0-4, default 2
-
-  useEffect(() => {
-    AsyncStorage.getItem('quran_font_step').then(val => {
-      const n = parseInt(val ?? '', 10);
-      if (!isNaN(n) && n >= 0 && n <= 4) setQuranFontStepState(n);
-    }).catch(() => {});
-  }, []);
-
-  const setQuranFontStep = useCallback((step: number) => {
-    const clamped = Math.max(0, Math.min(4, step));
-    setQuranFontStepState(clamped);
-    AsyncStorage.setItem('quran_font_step', String(clamped)).catch(() => {});
-  }, []);
-  const [highlightTarget, setHighlightTarget] = useState<{ surah: number; ayah: number } | null>(
+  const [tapTarget, setTapTarget] = useState<AyahTapTarget | null>(null);
+  const [highlightTarget, setHighlightTarget] = useState<AyahTapTarget | null>(
     highlightSurahParam && highlightAyahParam
       ? { surah: highlightSurahParam, ayah: highlightAyahParam }
       : null
   );
 
-  // Auto-clear highlight after 2.5 s
+  const listRef = useRef<FlatList>(null);
+  const userScrolling = useRef(false);
+
+  // Auto-clear highlight after 3 s
   useEffect(() => {
     if (!highlightTarget) return;
-    const t = setTimeout(() => setHighlightTarget(null), 2500);
-    return () => clearTimeout(t);
+    const tid = setTimeout(() => setHighlightTarget(null), 3000);
+    return () => clearTimeout(tid);
   }, [highlightTarget]);
 
-  // Navigate to highlighted ayah: change page if needed, then scroll once onLayout fires
+  // Search-result navigation: jump to the page containing the ayah and highlight it
   useEffect(() => {
     if (!params.highlightSurah || !params.highlightAyah) return;
-    const targetKey = params.highlightSurah + ':' + params.highlightAyah;
     const surah = parseInt(params.highlightSurah, 10);
     const ayah = parseInt(params.highlightAyah, 10);
     setHighlightTarget({ surah, ayah });
     const newPage = getAyahPage(surah, ayah);
-    pendingScrollTargetRef.current = targetKey;
     if (newPage !== pageNum) {
-      ayahPositions.current = {};
-      surahHeaderPositions.current = {};
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
       setPageNum(newPage);
-    } else {
-      // Same page — positions may already be recorded; try scrolling immediately
-      const pos = ayahPositions.current[targetKey];
-      if (pos !== undefined) {
-        pendingScrollTargetRef.current = null;
-        scrollRef.current?.scrollTo({ y: Math.max(0, pos - 20), animated: true });
-      }
-      // else: onLayout will fire the scroll when positions become available
+      listRef.current?.scrollToIndex({ index: newPage - 1, animated: false });
     }
   }, [params.highlightSurah, params.highlightAyah, params.timestamp]);
 
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const navigating = useRef(false);
-  const scrollRef = useRef<ScrollView>(null);
-  const surahHeaderPositions = useRef<Record<number, number>>({});
-  const ayahPositions = useRef<Record<string, number>>({});
-  const pendingScrollTargetRef = useRef<string | null>(null);
-  const highlightScrolled = useRef(false);
-  const scrollYRef = useRef(0);
-  const [visibleSurahNum, setVisibleSurahNum] = useState(0);
-
-  const QURAN_FONT_SIZES = [16, 19, 22, 26, 30];
-  const arabicFontSize = QURAN_FONT_SIZES[quranFontStep] ?? 22;
-
-  const handleScroll = useCallback((e: any) => {
-    const sy = e.nativeEvent.contentOffset.y;
-    scrollYRef.current = sy;
-    const entries = Object.entries(surahHeaderPositions.current);
-    let bestSurah = 0;
-    let bestY = -1;
-    for (const [k, y] of entries) {
-      if (y <= sy + 150 && y > bestY) {
-        bestY = y;
-        bestSurah = Number(k);
-      }
-    }
-    setVisibleSurahNum(n => n === bestSurah ? n : bestSurah);
-  }, []);
-
+  // Persist last-read
   useEffect(() => {
     setLastReadPage(pageNum);
+    const page = getMushafPage(pageNum);
+    if (page) {
+      // Pick a representative surah from the page (first verse line)
+      for (const line of page.lines) {
+        if (line.type === 'verse' && line.segments.length > 0) {
+          setLastReadSurah(line.segments[0].surahNum);
+          break;
+        }
+        if (line.type === 'header') {
+          setLastReadSurah(line.surah);
+          break;
+        }
+      }
+    }
   }, [pageNum]);
 
-  // TOC navigation: no highlightSurah param → scroll to the last surah header on the page
-  // so that the surah's content starts near the top (handles pages where a previous surah ends first).
-  useEffect(() => {
-    if (params.highlightSurah) return;
-    const timer = setTimeout(() => {
-      const values = Object.values(surahHeaderPositions.current);
-      if (values.length === 0) return;
-      const maxY = Math.max(...values);
-      if (maxY > 0) {
-        scrollRef.current?.scrollTo({ y: Math.max(0, maxY - 20), animated: false });
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [pageNum, params.highlightSurah]);
+  // Compute viewport dimensions for each page
+  const headerHeight = 56;
+  const footerHeight = 36;
+  const verticalChrome = topInset + headerHeight + footerHeight + bottomInset;
+  const pageHeight = H - verticalChrome;
+  const pageWidth = W;
+  const lineHeight = pageHeight / 15;
+  // Pick a comfortable base font; AmiriQuran needs decent vertical room for diacritics.
+  const baseFontSize = Math.min(28, Math.max(14, lineHeight * 0.55));
 
-  const navigate = useCallback((direction: 'prev' | 'next') => {
-    if (navigating.current) return;
-    const newPage = direction === 'next' ? pageNum + 1 : pageNum - 1;
-    if (newPage < 1 || newPage > TOTAL_PAGES) return;
-    navigating.current = true;
-    // Swipe right-to-left (next): current slides out left, new slides in from right
-    // Swipe left-to-right (prev): current slides out right, new slides in from left
-    const toX = direction === 'next' ? W : -W;
-    Animated.timing(slideAnim, { toValue: toX, duration: 180, useNativeDriver: true }).start(() => {
-      setPageNum(newPage);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-      surahHeaderPositions.current = {};
-      ayahPositions.current = {};
-      highlightScrolled.current = false;
-      setVisibleSurahNum(0);
-      slideAnim.setValue(-toX);
-      Animated.timing(slideAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
-        navigating.current = false;
-      });
-    });
-    Haptics.selectionAsync();
-  }, [pageNum, W, slideAnim]);
+  const currentPage = getMushafPage(pageNum);
+  const juzNum = currentPage?.juz ?? 1;
+  const rubElHizb = currentPage?.rubElHizb ?? 1;
 
-  const navigateRef = useRef(navigate);
-  navigateRef.current = navigate;
-
-  const handleLongPressAyah = useCallback((ayah: PageAyah) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
-    const surahName = SURAH_META[ayah.surahNum - 1];
-    const label = isAr
-      ? `${surahName?.arabic ?? ''} — آية ${toArabicIndic(ayah.ayahNum)}`
-      : `${surahName?.transliteration ?? ''} — ${tr.ayah} ${ayah.ayahNum}`;
-    Alert.alert(
-      bookmarked ? tr.removeBookmark : tr.addBookmark,
-      label,
-      [
-        { text: tr.btn_cancel, style: 'cancel' },
-        {
-          text: bookmarked ? tr.remove : tr.add,
-          onPress: () => {
-            if (bookmarked) {
-              removeBookmark(ayah.surahNum, ayah.ayahNum);
-            } else {
-              addBookmark({
-                surahNumber: ayah.surahNum,
-                surahName: surahName?.transliteration ?? '',
-                ayahNumber: ayah.ayahNum,
-                ayahText: ayah.text,
-                timestamp: Date.now(),
-              });
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
-    );
-  }, [isBookmarked, addBookmark, removeBookmark, isAr]);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > Math.abs(g.dy) && Math.abs(g.dx) > 12,
-      onPanResponderRelease: (_, g) => {
-        // RTL Quran: swipe right (dx > 0) = next page, swipe left (dx < 0) = prev page
-        if (g.dx > SWIPE_THRESHOLD) navigateRef.current('next');
-        else if (g.dx < -SWIPE_THRESHOLD) navigateRef.current('prev');
-      },
-    })
-  ).current;
-
-  const pageAyahs = getQuranPage(pageNum);
-
-  const groups: Array<{ surahNum: number; ayahs: PageAyah[]; showHeader: boolean }> = [];
-  for (const ayah of pageAyahs) {
-    if (groups.length === 0 || groups[groups.length - 1].surahNum !== ayah.surahNum) {
-      groups.push({ surahNum: ayah.surahNum, ayahs: [ayah], showHeader: ayah.ayahNum === 1 });
-    } else {
-      groups[groups.length - 1].ayahs.push(ayah);
+  // Display surah: the first surah whose verse appears on the page (preferred), else header surah
+  const displaySurah = useMemo(() => {
+    if (!currentPage) return 1;
+    for (const line of currentPage.lines) {
+      if (line.type === 'verse' && line.segments.length > 0) return line.segments[0].surahNum;
+      if (line.type === 'header') return line.surah;
     }
-  }
+    return 1;
+  }, [currentPage, pageNum]);
+  const displayMeta = SURAH_META[displaySurah - 1];
+  const surahLabel = displayMeta ? (isAr ? displayMeta.arabic : displayMeta.transliteration) : '';
 
-  const juzNum = pageAyahs[0]?.juz ?? 1;
+  const renderItem = useCallback(({ item }: { item: number }) => (
+    <MushafPageView
+      pageNum={item}
+      width={pageWidth}
+      height={pageHeight}
+      lineHeight={lineHeight}
+      baseFontSize={baseFontSize}
+      textColor={C.text}
+      headerColor={C.text}
+      mutedColor={C.textMuted}
+      tintColor={C.tint}
+      bgColor={isDark ? '#0D0D0D' : '#FAF6EE'}
+      highlightTarget={highlightTarget}
+      isBookmarked={isBookmarked}
+      onAyahTap={(t) => { Haptics.selectionAsync(); setTapTarget(t); }}
+    />
+  ), [pageWidth, pageHeight, lineHeight, baseFontSize, C, isDark, highlightTarget, isBookmarked]);
 
-  const displaySurahNum = visibleSurahNum || (pageAyahs[0]?.surahNum ?? 1);
-  const displaySurahMeta = SURAH_META[displaySurahNum - 1];
-  const surahLabel = displaySurahMeta
-    ? (isAr ? displaySurahMeta.arabic : displaySurahMeta.transliteration)
-    : '';
+  const data = useMemo(() => Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1), []);
+
+  const onMomentumEnd = useCallback((e: any) => {
+    if (!userScrolling.current) return;
+    const idx = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
+    const newPage = idx + 1;
+    if (newPage !== pageNum && newPage >= 1 && newPage <= TOTAL_PAGES) {
+      setPageNum(newPage);
+    }
+    userScrolling.current = false;
+  }, [pageNum, pageWidth]);
 
   const bgColor = isDark ? '#0D0D0D' : '#FAF6EE';
 
   return (
     <View style={[styles.root, { backgroundColor: bgColor }]}>
-
-      {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator, height: topInset + headerHeight }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
@@ -323,265 +498,85 @@ export default function QuranReaderScreen() {
         </Pressable>
 
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerSurah, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+          <Text style={[styles.headerSurah, { color: C.text, fontFamily: 'Amiri_700Bold' }]} numberOfLines={1}>
             {surahLabel}
           </Text>
           <Text style={[styles.headerJuz, { color: C.textMuted }]}>
             {isAr
-              ? `جزء ${toArabicIndic(juzNum)} · صفحة ${toArabicIndic(pageNum)}`
-              : `Juz ${juzNum} · Page ${pageNum}`}
+              ? `جزء ${toArabicIndic(juzNum)} · ${hizbLabel(rubElHizb, true)}`
+              : `Juz ${juzNum} · ${hizbLabel(rubElHizb, false)}`}
           </Text>
         </View>
 
-        <View style={styles.headerRight}>
-          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep - 1); }}
-            disabled={quranFontStep <= 0}
-            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep <= 0) ? 0.4 : 1 }]}
-          >
-            <Text style={[styles.fontStepLabel, { color: C.textSecond }]}>A−</Text>
-          </Pressable>
-          <Text style={[styles.fontSizeStepName, { color: C.textMuted }]}>
-            {(['XS', 'S', 'M', 'L', 'XL'] as const)[quranFontStep]}
-          </Text>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep + 1); }}
-            disabled={quranFontStep >= 4}
-            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep >= 4) ? 0.4 : 1 }]}
-          >
-            <Text style={[styles.fontStepLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
-          </Pressable>
-          </View>
-          <Pressable
-            onPress={() => router.push('/bookmarks')}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
-          </Pressable>
-        </View>
+        <Pressable
+          onPress={() => router.push('/bookmarks')}
+          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
+        </Pressable>
       </View>
 
-      {/* ── Page content with swipe ── */}
-      <Animated.View
-        style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]}
-        {...panResponder.panHandlers}
-      >
-        <ScrollView
-          ref={scrollRef}
-          style={{ flex: 1 }}
-          contentContainerStyle={[styles.pageContent, { paddingBottom: bottomInset + 90 }]}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-        >
-          {pageAyahs.length === 0 ? (
-            <Text style={{ color: C.textMuted, textAlign: 'center', marginTop: 60, fontFamily: 'Amiri_400Regular', fontSize: 18 }}>
-              ...
-            </Text>
-          ) : (
-            groups.map((group, gi) => {
-              const meta = SURAH_META[group.surahNum - 1];
-              const hasBismillah = meta?.hasBismillah ?? false;
-              const showBismillah = group.showHeader && hasBismillah && group.surahNum !== 1;
+      {/* Pages — horizontal FlatList, paging enabled */}
+      <FlatList
+        ref={listRef}
+        data={data}
+        keyExtractor={(p) => String(p)}
+        renderItem={renderItem}
+        horizontal
+        pagingEnabled
+        initialScrollIndex={initialPage - 1}
+        getItemLayout={(_, i) => ({ length: pageWidth, offset: pageWidth * i, index: i })}
+        onScrollToIndexFailed={() => {}}
+        onScrollBeginDrag={() => { userScrolling.current = true; }}
+        onMomentumScrollEnd={onMomentumEnd}
+        showsHorizontalScrollIndicator={false}
+        windowSize={3}
+        maxToRenderPerBatch={2}
+        removeClippedSubviews
+      />
 
-              return (
-                <View
-                  key={`g-${group.surahNum}-${gi}`}
-                  onLayout={(e) => {
-                    const y = e.nativeEvent.layout.y;
-                    if (group.showHeader) {
-                      surahHeaderPositions.current[group.surahNum] = y;
-                    }
-                    for (const ayah of group.ayahs) {
-                      ayahPositions.current[`${ayah.surahNum}:${ayah.ayahNum}`] = y;
-                    }
-                    // Scroll to pending target as soon as its group is laid out
-                    const pending = pendingScrollTargetRef.current;
-                    console.log('LAYOUT CHECK', `g-${group.surahNum}-${gi}`, 'pending:', pending, 'y:', y);
-                    if (pending !== null && ayahPositions.current[pending] !== undefined) {
-                      pendingScrollTargetRef.current = null;
-                      const pos = ayahPositions.current[pending]!;
-                      console.log('SCROLL FIRING for', pending, 'at y=', pos);
-                      scrollRef.current?.scrollTo({ y: Math.max(0, pos - 20), animated: true });
-                    }
-                  }}
-                >
-
-                  {/* ── Surah banner ── */}
-                  {group.showHeader && (
-                    <SurahBanner
-                      surahNum={group.surahNum}
-                      color={C.tint}
-                      textColor={C.text}
-                      mutedColor={C.textMuted}
-                    />
-                  )}
-
-                  {/* ── Bismillah line (separate from verse 1) ── */}
-                  {showBismillah && (
-                    <Text style={[styles.bismillah, {
-                      color: C.text,
-                      fontSize: arabicFontSize * 1.05,
-                      lineHeight: arabicFontSize * 2.3,
-                    }]}>
-                      {BISMILLAH_TEXT}
-                    </Text>
-                  )}
-
-                  {/* ── Flowing verse text ── */}
-                  <Text
-                    style={[styles.ayahText, {
-                      color: C.text,
-                      fontSize: arabicFontSize,
-                      lineHeight: arabicFontSize * 2.1,
-                    }]}
-                  >
-                    {group.ayahs.map(ayah => {
-                      let text = ayah.text;
-                      if (ayah.ayahNum === 1 && showBismillah) {
-                        text = stripBismillah(text);
-                      }
-                      const bookmarked = isBookmarked(ayah.surahNum, ayah.ayahNum);
-                      const isHighlighted = highlightTarget?.surah === ayah.surahNum && highlightTarget?.ayah === ayah.ayahNum;
-                      const sajdahWord = getSajdahWord(ayah.surahNum, ayah.ayahNum);
-                      const wordParts = sajdahWord ? splitForSajdahUnderline(text, sajdahWord) : null;
-                      return (
-                        <React.Fragment key={`a-${ayah.surahNum}-${ayah.ayahNum}`}>
-                          {wordParts
-                            ? [wordParts.before, <Text key="u" style={{ textDecorationLine: 'underline' }}>{wordParts.match}</Text>, wordParts.after]
-                            : text}
-                          <Text
-                            suppressHighlighting
-                            onLongPress={() => handleLongPressAyah(ayah)}
-                            style={{
-                              color: isHighlighted ? C.tintText : (bookmarked ? '#C8860A' : C.tint),
-                              backgroundColor: isHighlighted ? C.tint : undefined,
-                              borderRadius: 4,
-                              fontSize: arabicFontSize * 0.7,
-                            }}
-                          >
-                            {' ﴿'}{toArabicIndic(ayah.ayahNum)}{'﴾ '}
-                          </Text>
-                        </React.Fragment>
-                      );
-                    })}
-                  </Text>
-                </View>
-              );
-            })
-          )}
-
-          {/* Page number at bottom */}
-          <View style={styles.pageNumRow}>
-            <View style={[styles.pageNumLine, { backgroundColor: C.separator }]} />
-            <Text style={[styles.pageNum, { color: C.textMuted, fontFamily: 'Amiri_700Bold' }]}>
-              {toArabicIndic(pageNum)}
-            </Text>
-            <View style={[styles.pageNumLine, { backgroundColor: C.separator }]} />
-          </View>
-        </ScrollView>
-      </Animated.View>
-
-      {/* ── Bottom navigation ── */}
-      <View style={[styles.bottomNav, {
-        paddingBottom: bottomInset + 14,
+      {/* Footer: page number with hizb mark */}
+      <View style={[styles.footer, {
+        paddingBottom: bottomInset + 4,
+        height: footerHeight + bottomInset,
         borderTopColor: C.separator,
-        backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
+        backgroundColor: bgColor,
       }]}>
-        <Pressable
-          onPress={() => navigate('next')}
-          disabled={pageNum >= TOTAL_PAGES}
-          style={({ pressed }) => [
-            styles.navBtn,
-            { backgroundColor: C.backgroundCard, opacity: pageNum >= TOTAL_PAGES ? 0.3 : pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Ionicons name="chevron-back" size={16} color={C.tint} />
-          <Text style={[styles.navBtnText, { color: C.tint }]}>
-            {tr.next}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => navigate('prev')}
-          disabled={pageNum <= 1}
-          style={({ pressed }) => [
-            styles.navBtn,
-            { backgroundColor: C.backgroundCard, opacity: pageNum <= 1 ? 0.3 : pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Text style={[styles.navBtnText, { color: C.tint }]}>
-            {tr.prev}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color={C.tint} />
-        </Pressable>
+        <Text style={[styles.pageNumText, { color: C.textMuted, fontFamily: 'Amiri_700Bold' }]}>
+          {toArabicIndic(pageNum)}
+        </Text>
       </View>
+
+      <AyahDetailModal
+        target={tapTarget}
+        visible={!!tapTarget}
+        onClose={() => setTapTarget(null)}
+        lang={lang}
+        translitLang={translitLang}
+        colors={C}
+        isDark={isDark}
+        isBookmarked={isBookmarked}
+        addBookmark={addBookmark}
+        removeBookmark={removeBookmark}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerCenter: { alignItems: 'center', flex: 1 },
-  headerRight: { flexDirection: 'row', gap: 6 },
+  headerCenter: { alignItems: 'center', flex: 1, paddingHorizontal: 8 },
   headerSurah: { fontSize: 17, letterSpacing: 0.5 },
   headerJuz: { fontSize: 11, marginTop: 1 },
   iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  fontStepBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  fontStepLabel: { fontSize: 11, fontWeight: '700' },
-  fontSizeStepName: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, minWidth: 28, textAlign: 'center' },
 
-  fontPanel: {
-    flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    paddingVertical: 10, paddingHorizontal: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  footer: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth,
   },
-  fontOption: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 8, gap: 4,
-  },
-  fontOptionLetter: { fontFamily: 'Amiri_700Bold' },
-  fontOptionLabel: { fontSize: 10, fontWeight: '600' },
-
-  pageContent: { paddingHorizontal: 16, paddingTop: 4 },
-
-  bismillah: {
-    fontFamily: 'AmiriQuran',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 4,
-    writingDirection: 'rtl',
-  },
-
-  ayahText: {
-    fontFamily: 'AmiriQuran',
-    textAlign: 'justify',
-    writingDirection: 'rtl',
-    marginBottom: 10,
-  },
-
-  pageNumRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    marginTop: 16, marginBottom: 4, paddingHorizontal: 8,
-  },
-  pageNumLine: { flex: 1, height: StyleSheet.hairlineWidth },
-  pageNum: { fontSize: 16 },
-
-  bottomNav: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  navBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
-  },
-  navBtnText: { fontSize: 13, fontWeight: '600' },
+  pageNumText: { fontSize: 14 },
 });
