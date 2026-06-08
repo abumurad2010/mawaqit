@@ -3,28 +3,28 @@
  * Uthmanic Script font (v18).
  *
  * Font: King Fahd Glorious Quran Printing Complex, https://qurancomplex.gov.sa/en/techquran/dev/
- *   - Font files distributed via github.com/thetruetruth/quran-data-kfgqpc.
- *   - License: KFGQPC permits free use for Quranic rendering.
+ *   Font files distributed via github.com/thetruetruth/quran-data-kfgqpc.
+ *   License: KFGQPC permits free use for Quranic rendering.
  *
  * Page data: hafsData_v18.json from the same upstream repo (MIT-licensed).
  *
- * Mawaqit conventions:
- *   - one page per screen, no internal scroll
- *   - swipe LEFT → next page in Arabic UI; LTR mode keeps standard pager
- *   - LONG-PRESS on an ayah → add/remove ayah-precise bookmark
- *   - TAP anywhere on the page → toggle chrome (header + footer) visibility
- *     for distraction-free reading
- *   - taps never open translation popups or menus
+ * Polish goals (Ayah app visual quality):
+ *   - vertically distributed page content (justifyContent: space-evenly)
+ *   - ornate bordered surah banner with end medallions (drawn in SVG)
+ *   - subtle minimal-chrome default: tiny surah label top-left, juz label
+ *     top-right, decorative oval page number at the bottom
+ *   - TAP page → reveal a full chrome bar (back / ToC / search / bookmark);
+ *     TAP again hides it.
+ *   - LONG-PRESS ayah → ayah-precise bookmark.
+ *   - SWIPE → page navigation (RTL-aware via the reversed data array).
  *
  * Fit policy (NEVER drop content):
- *   - Start at fontSize = INITIAL_FONT.
- *   - Measure rendered content height via onLayout.
- *   - If measured > available page height, shrink fontSize by FONT_STEP and
- *     re-render. Floor at MIN_FONT. If still overflowing at the floor, allow
- *     visual overflow rather than truncating — every ayah and banner stays
- *     mounted.
- *   - Cache the converged fontSize per (page, available height) so it's
- *     stable across visits AND adapts when chrome toggles the available height.
+ *   The reader renders MushafPageBody twice — once invisibly off-screen for
+ *   intrinsic-height measurement, once visibly inside a space-evenly flex
+ *   container for distribution. If measured > available, shrink fontSize by
+ *   FONT_STEP and re-render. Floor at MIN_FONT; if still overflowing, allow
+ *   visual overflow rather than truncating — every ayah, banner, and
+ *   bismillah stays mounted.
  */
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
@@ -33,6 +33,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
+import Svg, { Rect, Circle, Ellipse } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,15 +53,15 @@ const INITIAL_FONT = 24;
 const MAX_FONT = 26;
 const MIN_FONT = 16;
 const FONT_STEP = 0.5;
-/** Extra height the fit-loop subtracts from the layout box to avoid
- *  edge-clipping caused by Arabic descenders / diacritics. Tight enough
- *  to keep dense pages readable, generous enough to guarantee no
- *  bottom-row clipping in worst cases (e.g. page 3). */
 const SAFETY_BUFFER = 8;
 const LINE_HEIGHT_MULT = 1.5;
-const HEADER_HEIGHT = 40;
-const FOOTER_HEIGHT = 20;
-const CHROME_FADE_MS = 220;
+const MINI_LABEL_HEIGHT = 26;
+const PAGE_OVAL_HEIGHT = 30;
+const ICON_BAR_HEIGHT = 44;
+const CHROME_FADE_MS = 240;
+/** Muted ornament gold, harmonises with both dark and light backgrounds. */
+const GOLD_LIGHT = '#A88B5C';
+const GOLD_DARK  = '#C9A875';
 
 /** Per-(page,available-height) converged font size. */
 const FIT_CACHE: Record<string, number> = {};
@@ -72,38 +73,88 @@ function toArabicIndic(n: number): string {
 
 interface AyahKey { surah: number; ayah: number }
 
-/* ── Surah banner ────────────────────────────────────────────── */
-function SurahBanner({
-  surahNum, color, textColor, height, width,
+/* ─────────────────────────────────────────────────────────────────────────
+ * OrnateSurahBanner — Madani-style bordered frame with end medallions
+ * drawn in react-native-svg, surah title overlaid in calligraphic Arabic.
+ * The frame is intentionally muted gold/grey so it reads as decoration
+ * rather than chrome.
+ * ──────────────────────────────────────────────────────────────────────── */
+function OrnateSurahBanner({
+  surahNum, color, textColor, width, height,
 }: {
-  surahNum: number; color: string; textColor: string; height: number; width: number;
+  surahNum: number; color: string; textColor: string; width: number; height: number;
 }) {
   const meta = SURAH_META[surahNum - 1];
   if (!meta) return null;
-  const typeLabel = meta.type === 'Meccan' ? 'مكية' : 'مدنية';
-  const text = `سورة ${meta.arabic} · ${typeLabel} · ${toArabicIndic(meta.ayahs)} آية`;
-  const fontSize = Math.max(11, Math.min(17, height * 0.45));
+  const innerW = width;
+  const innerH = height;
+  const titleSize = Math.max(13, Math.min(20, innerH * 0.5));
   return (
-    <View style={{ height, width, justifyContent: 'center', alignItems: 'center' }}>
-      <View style={{
-        width: width - 12,
-        borderWidth: 1.2,
-        borderColor: color,
-        borderRadius: 4,
-        paddingVertical: 3,
-        paddingHorizontal: 10,
-      }}>
+    <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={innerW} height={innerH} viewBox={`0 0 ${innerW} ${innerH}`}>
+        {/* Outer frame */}
+        <Rect
+          x={3} y={3}
+          width={innerW - 6} height={innerH - 6}
+          rx={3} ry={3}
+          stroke={color} strokeWidth={1.2} fill="transparent"
+        />
+        {/* Inner frame */}
+        <Rect
+          x={6} y={6}
+          width={innerW - 12} height={innerH - 12}
+          rx={2} ry={2}
+          stroke={color} strokeWidth={0.5} fill="transparent"
+        />
+        {/* Left medallion — three concentric */}
+        <Circle cx={22} cy={innerH / 2} r={7} stroke={color} strokeWidth={0.8} fill="transparent" />
+        <Circle cx={22} cy={innerH / 2} r={4} stroke={color} strokeWidth={0.6} fill="transparent" />
+        <Circle cx={22} cy={innerH / 2} r={1.6} fill={color} />
+        {/* Right medallion */}
+        <Circle cx={innerW - 22} cy={innerH / 2} r={7} stroke={color} strokeWidth={0.8} fill="transparent" />
+        <Circle cx={innerW - 22} cy={innerH / 2} r={4} stroke={color} strokeWidth={0.6} fill="transparent" />
+        <Circle cx={innerW - 22} cy={innerH / 2} r={1.6} fill={color} />
+      </Svg>
+      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
         <Text
           style={{
             color: textColor,
             fontFamily: 'Amiri_700Bold',
-            fontSize,
+            fontSize: titleSize,
             textAlign: 'center',
           }}
           numberOfLines={1}
           ellipsizeMode="clip"
         >
-          {text}
+          {`سُورَة ${meta.arabic}`}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * PageNumberFrame — bottom-center decorative oval containing Arabic-Indic
+ * page number. Renders in muted gold; the digits sit in the middle of the
+ * shape.
+ * ──────────────────────────────────────────────────────────────────────── */
+function PageNumberFrame({
+  pageNum, color, width = 64, height = 24,
+}: { pageNum: number; color: string; width?: number; height?: number }) {
+  return (
+    <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Ellipse cx={width / 2} cy={height / 2} rx={width / 2 - 1} ry={height / 2 - 1}
+          stroke={color} strokeWidth={0.7} fill="transparent" />
+        <Ellipse cx={width / 2} cy={height / 2} rx={width / 2 - 5} ry={height / 2 - 5}
+          stroke={color} strokeWidth={0.4} fill="transparent" />
+        {/* Tiny tasseled dots flanking the oval */}
+        <Circle cx={2} cy={height / 2} r={1} fill={color} />
+        <Circle cx={width - 2} cy={height / 2} r={1} fill={color} />
+      </Svg>
+      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color, fontFamily: 'Amiri_700Bold', fontSize: 11, letterSpacing: 0.5 }}>
+          {toArabicIndic(pageNum)}
         </Text>
       </View>
     </View>
@@ -112,14 +163,14 @@ function SurahBanner({
 
 /* ── Page content body — pure render at a given font size ──────── */
 function MushafPageBody({
-  ayat, width, fontSize, textColor, tintColor,
+  ayat, width, fontSize, textColor, ornamentColor,
   highlightTarget, isBookmarkedFn, onLongPressAyah,
 }: {
   ayat: ReadonlyArray<HafsAyah>;
   width: number;
   fontSize: number;
   textColor: string;
-  tintColor: string;
+  ornamentColor: string;
   highlightTarget: AyahKey | null;
   isBookmarkedFn: (s: number, a: number) => boolean;
   onLongPressAyah: (target: AyahKey) => void;
@@ -133,15 +184,13 @@ function MushafPageBody({
     } else {
       const meta = SURAH_META[a.surahNum - 1];
       const isSurahStart = a.ayahNum === 1;
-      // Surah 1 (Al-Fatiha)'s bismillah IS ayah 1, so no separate line.
-      // Surah 9 (At-Tawbah) has no bismillah at all.
       const hasBismillah = isSurahStart && !!meta?.hasBismillah && a.surahNum !== 1;
       groups.push({ surahNum: a.surahNum, isSurahStart, hasBismillah, ayat: [a] });
     }
   }
 
   const lineHeight = fontSize * LINE_HEIGHT_MULT;
-  const bannerHeight = Math.max(22, fontSize * 1.35);
+  const bannerHeight = Math.max(38, fontSize * 1.7);
   const bismillahHeight = Math.max(22, fontSize * 1.3);
 
   return (
@@ -149,12 +198,12 @@ function MushafPageBody({
       {groups.map((g, gi) => (
         <View key={gi}>
           {g.isSurahStart && (
-            <SurahBanner
+            <OrnateSurahBanner
               surahNum={g.surahNum}
-              color={tintColor}
+              color={ornamentColor}
               textColor={textColor}
-              height={bannerHeight}
               width={width}
+              height={bannerHeight}
             />
           )}
           {g.hasBismillah && (
@@ -192,8 +241,8 @@ function MushafPageBody({
                   suppressHighlighting
                   onLongPress={() => onLongPressAyah({ surah: a.surahNum, ayah: a.ayahNum })}
                   style={{
-                    color: highlighted ? tintColor : (bookmarked ? '#C8860A' : textColor),
-                    backgroundColor: highlighted ? tintColor + '22' : undefined,
+                    color: highlighted ? ornamentColor : (bookmarked ? '#C8860A' : textColor),
+                    backgroundColor: highlighted ? ornamentColor + '22' : undefined,
                   }}
                 >
                   {a.text + ' '}
@@ -207,16 +256,16 @@ function MushafPageBody({
   );
 }
 
-/* ── One Mushaf page — measure-and-fit + chrome-toggle tap surface ──── */
+/* ── One Mushaf page — measure off-screen, render distributed ──── */
 function MushafPageView({
-  pageNum, width, height, textColor, tintColor, bgColor,
+  pageNum, width, height, textColor, ornamentColor, bgColor,
   highlightTarget, isBookmarkedFn, onLongPressAyah, onTap,
 }: {
   pageNum: number;
   width: number;
   height: number;
   textColor: string;
-  tintColor: string;
+  ornamentColor: string;
   bgColor: string;
   highlightTarget: AyahKey | null;
   isBookmarkedFn: (s: number, a: number) => boolean;
@@ -227,14 +276,10 @@ function MushafPageView({
   const horizPad = 10;
   const vertPad = 6;
   const innerWidth = width - horizPad * 2;
-  // SAFETY_BUFFER absorbs Arabic descender/diacritic overhang that the
-  // layout engine doesn't always account for in onLayout height. Without
-  // it, page 3's last visual line clipped at the bottom-right edge.
   const available = height - vertPad * 2 - SAFETY_BUFFER;
 
   const cachedFont = FIT_CACHE[fitKey(pageNum, available)];
   const [fontSize, setFontSize] = useState<number>(cachedFont ?? INITIAL_FONT);
-  // Reset to INITIAL when the page or available height changes.
   const lastKey = useRef<string>('');
   useEffect(() => {
     const key = fitKey(pageNum, available);
@@ -244,10 +289,6 @@ function MushafPageView({
       setFontSize(cached ?? INITIAL_FONT);
     }
   }, [pageNum, available]);
-
-  if (ayat.length === 0) {
-    return <View style={{ width, height, backgroundColor: bgColor }} />;
-  }
 
   const onMeasure = useCallback((e: LayoutChangeEvent) => {
     const measured = e.nativeEvent.layout.height;
@@ -264,13 +305,13 @@ function MushafPageView({
     }
   }, [fontSize, available, pageNum]);
 
-  // GestureDetector with a short Tap. RN's <Text onLongPress> at the leaf
-  // level was eating short taps before they could reach a parent Pressable,
-  // so the page-level chrome toggle never fired on ayah-area taps. With
-  // gesture-handler, the Tap recognizer runs alongside (not below) the
-  // Text gesture system and fires reliably no matter where the user taps.
-  // maxDuration=250 prevents the Tap from competing with a long-press
-  // (which needs >=500 ms by default).
+  if (ayat.length === 0) {
+    return <View style={{ width, height, backgroundColor: bgColor }} />;
+  }
+
+  // GestureDetector with a short Tap. gesture-handler's recognizer runs
+  // parallel to RN's Text gesture system so it fires reliably regardless of
+  // where on the page the user taps — including on top of an ayah Text.
   const tapGesture = useMemo(
     () =>
       Gesture.Tap()
@@ -285,13 +326,31 @@ function MushafPageView({
   return (
     <GestureDetector gesture={tapGesture}>
       <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: horizPad, paddingVertical: vertPad, overflow: 'hidden' }}>
-        <View onLayout={onMeasure} style={{ width: innerWidth }}>
+        {/* Off-screen measurement — intrinsic height drives the fit-loop. */}
+        <View
+          onLayout={onMeasure}
+          style={{ position: 'absolute', top: 0, left: -10000, width: innerWidth, opacity: 0 }}
+          pointerEvents="none"
+        >
           <MushafPageBody
             ayat={ayat}
             width={innerWidth}
             fontSize={fontSize}
             textColor={textColor}
-            tintColor={tintColor}
+            ornamentColor={ornamentColor}
+            highlightTarget={highlightTarget}
+            isBookmarkedFn={isBookmarkedFn}
+            onLongPressAyah={onLongPressAyah}
+          />
+        </View>
+        {/* Visible distributed render — groups spread vertically. */}
+        <View style={{ flex: 1, justifyContent: 'space-evenly' }}>
+          <MushafPageBody
+            ayat={ayat}
+            width={innerWidth}
+            fontSize={fontSize}
+            textColor={textColor}
+            ornamentColor={ornamentColor}
             highlightTarget={highlightTarget}
             isBookmarkedFn={isBookmarkedFn}
             onLongPressAyah={onLongPressAyah}
@@ -316,6 +375,7 @@ export default function QuranReaderScreen() {
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
+  const ornamentColor = isDark ? GOLD_DARK : GOLD_LIGHT;
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -326,8 +386,8 @@ export default function QuranReaderScreen() {
       ? { surah: highlightSurahParam, ayah: highlightAyahParam }
       : null
   );
-  const [chromeVisible, setChromeVisible] = useState(true);
-  const chromeAnim = useRef(new Animated.Value(1)).current;
+  const [chromeVisible, setChromeVisible] = useState(false);
+  const chromeAnim = useRef(new Animated.Value(0)).current;
 
   const listRef = useRef<FlatList>(null);
   const userScrolling = useRef(false);
@@ -346,8 +406,7 @@ export default function QuranReaderScreen() {
     return () => clearTimeout(tid);
   }, [highlightTarget]);
 
-  // Arabic reading direction: reverse the data so index 0 = page 604, index 603 = page 1.
-  // User starts at the right end of the strip; swipe-left decreases the index = next page.
+  // Arabic: reverse the data so a finger-left drag decreases the index = next page.
   const pageFromIdx = useCallback(
     (idx: number) => (isAr ? (TOTAL_PAGES - idx) : (idx + 1)),
     [isAr]
@@ -357,7 +416,6 @@ export default function QuranReaderScreen() {
     [isAr]
   );
 
-  // Search/bookmark nav: jump to page containing the ayah, set highlight
   useEffect(() => {
     if (!params.highlightSurah || !params.highlightAyah) return;
     const surah = parseInt(params.highlightSurah, 10);
@@ -370,27 +428,24 @@ export default function QuranReaderScreen() {
     }
   }, [params.highlightSurah, params.highlightAyah, params.timestamp, idxFromPage]);
 
-  // Persist last-read
   useEffect(() => {
     setLastReadPage(pageNum);
     const ayat = getHafsPage(pageNum);
     if (ayat[0]) setLastReadSurah(ayat[0].surahNum);
   }, [pageNum]);
 
-  // Page area: full viewport between safe insets; chrome overlays the top and
-  // bottom edges when visible. When chrome is hidden the same page area shows
-  // through; we shrink the layout-reserved chrome to 0 so the font fit loop
-  // gets a taller available height and may grow the font on dense pages.
-  const chromeTop = chromeVisible ? HEADER_HEIGHT : 0;
-  const chromeBottom = chromeVisible ? FOOTER_HEIGHT : 0;
-  const pageHeight = Math.max(360, H - topInset - bottomInset - chromeTop - chromeBottom);
+  // Layout: top safe + MINI_LABEL row + page + PAGE_OVAL row + bottom safe.
+  // Chrome icon bar overlays the MINI_LABEL row when revealed (no layout shift).
+  const pageHeight = Math.max(360, H - topInset - bottomInset - MINI_LABEL_HEIGHT - PAGE_OVAL_HEIGHT);
   const pageWidth = W;
 
-  // Header surah label
+  // Current-page metadata
   const currentAyat = getHafsPage(pageNum);
   const displaySurah = currentAyat[0]?.surahNum ?? 1;
   const displayMeta = SURAH_META[displaySurah - 1];
   const surahLabel = displayMeta ? (isAr ? displayMeta.arabic : displayMeta.transliteration) : '';
+  const juzNum = currentAyat[0]?.juz ?? 1;
+  const juzLabel = isAr ? `جزء ${toArabicIndic(juzNum)}` : `${tr.juz} ${juzNum}`;
 
   const handleLongPressAyah = useCallback((target: AyahKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -435,14 +490,14 @@ export default function QuranReaderScreen() {
       width={pageWidth}
       height={pageHeight}
       textColor={C.text}
-      tintColor={C.tint}
+      ornamentColor={ornamentColor}
       bgColor={isDark ? '#0D0D0D' : '#FAF6EE'}
       highlightTarget={highlightTarget}
       isBookmarkedFn={isBookmarked}
       onLongPressAyah={handleLongPressAyah}
       onTap={handleTap}
     />
-  ), [pageWidth, pageHeight, C, isDark, highlightTarget, isBookmarked, handleLongPressAyah, handleTap]);
+  ), [pageWidth, pageHeight, C, isDark, ornamentColor, highlightTarget, isBookmarked, handleLongPressAyah, handleTap]);
 
   const data = useMemo(() => {
     const arr = Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1);
@@ -460,20 +515,28 @@ export default function QuranReaderScreen() {
   }, [pageNum, pageWidth, pageFromIdx]);
 
   const bgColor = isDark ? '#0D0D0D' : '#FAF6EE';
-
-  // Animated chrome translations — slide off-screen when hidden so the text
-  // visually owns the full viewport.
-  const headerTranslate = chromeAnim.interpolate({
+  const iconBarTranslate = chromeAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [-(topInset + HEADER_HEIGHT), 0],
-  });
-  const footerTranslate = chromeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [bottomInset + FOOTER_HEIGHT, 0],
+    outputRange: [-(ICON_BAR_HEIGHT + 8), 0],
   });
 
   return (
-    <View style={[styles.root, { backgroundColor: bgColor, paddingTop: topInset + chromeTop, paddingBottom: bottomInset + chromeBottom }]}>
+    <View style={[styles.root, { backgroundColor: bgColor }]}>
+      {/* Mini-label strip — always visible */}
+      <View style={{
+        height: topInset + MINI_LABEL_HEIGHT,
+        paddingTop: topInset + 2,
+        paddingHorizontal: 16,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <Text style={{ color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : 'Inter_400Regular', fontSize: 11, letterSpacing: 0.3 }} numberOfLines={1}>
+          {surahLabel}
+        </Text>
+        <Text style={{ color: C.textMuted, fontFamily: isAr ? 'Amiri_400Regular' : 'Inter_400Regular', fontSize: 11, letterSpacing: 0.3 }} numberOfLines={1}>
+          {juzLabel}
+        </Text>
+      </View>
+
       {/* Pages */}
       <FlatList
         ref={listRef}
@@ -493,51 +556,57 @@ export default function QuranReaderScreen() {
         removeClippedSubviews
       />
 
-      {/* Compact header — absolutely overlaid, animates with chromeAnim */}
+      {/* Decorative page-number oval — bottom centre, always visible */}
+      <View style={{
+        height: PAGE_OVAL_HEIGHT + bottomInset,
+        paddingBottom: bottomInset + 2,
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        <PageNumberFrame pageNum={pageNum} color={ornamentColor} />
+      </View>
+
+      {/* Full chrome icon bar — slides down from above on tap */}
       <Animated.View
         pointerEvents={chromeVisible ? 'auto' : 'none'}
-        style={[styles.headerOverlay, {
-          height: topInset + HEADER_HEIGHT,
+        style={[styles.iconBar, {
           paddingTop: topInset + 2,
-          paddingHorizontal: 12,
+          height: topInset + ICON_BAR_HEIGHT,
+          backgroundColor: bgColor,
           borderBottomColor: C.separator,
-          backgroundColor: bgColor,
           opacity: chromeAnim,
-          transform: [{ translateY: headerTranslate }],
+          transform: [{ translateY: iconBarTranslate }],
         }]}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Ionicons name="chevron-back" size={18} color={C.tint} />
-        </Pressable>
-        <Text style={[styles.headerSurah, { color: C.text, fontFamily: 'Amiri_700Bold' }]} numberOfLines={1}>
-          {surahLabel}
-        </Text>
-        <Pressable
-          onPress={() => router.push('/bookmarks')}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Ionicons name="bookmark-outline" size={16} color={C.textSecond} />
-        </Pressable>
-      </Animated.View>
-
-      {/* Tiny footer — absolutely overlaid */}
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.footerOverlay, {
-          height: bottomInset + FOOTER_HEIGHT,
-          paddingBottom: bottomInset + 2,
-          borderTopColor: C.separator,
-          backgroundColor: bgColor,
-          opacity: chromeAnim,
-          transform: [{ translateY: footerTranslate }],
-        }]}
-      >
-        <Text style={[styles.pageNumText, { color: C.textMuted, fontFamily: 'Amiri_700Bold' }]}>
-          {toArabicIndic(pageNum)} / {toArabicIndic(TOTAL_PAGES)}
-        </Text>
+        <View style={styles.iconBarRow}>
+          <View style={styles.iconGroup}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="chevron-back" size={18} color={C.tint} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/quran-toc')}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="list" size={18} color={C.textSecond} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push({ pathname: '/search', params: { mode: 'mushaf' } })}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="search" size={16} color={C.textSecond} />
+            </Pressable>
+          </View>
+          <View style={styles.iconGroup}>
+            <Pressable
+              onPress={() => router.push('/bookmarks')}
+              style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Ionicons name="bookmark-outline" size={16} color={C.textSecond} />
+            </Pressable>
+          </View>
+        </View>
       </Animated.View>
     </View>
   );
@@ -545,17 +614,14 @@ export default function QuranReaderScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerOverlay: {
+  iconBar: {
     position: 'absolute', top: 0, left: 0, right: 0,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingBottom: 4, borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
   },
-  headerSurah: { fontSize: 16, letterSpacing: 0.4, flex: 1, textAlign: 'center', paddingHorizontal: 8 },
-  iconBtn: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  footerOverlay: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingTop: 2, borderTopWidth: StyleSheet.hairlineWidth,
+  iconBarRow: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  pageNumText: { fontSize: 11, letterSpacing: 0.5 },
+  iconGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  iconBtn: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });
