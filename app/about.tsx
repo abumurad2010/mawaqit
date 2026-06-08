@@ -229,9 +229,14 @@ export default function AboutScreen() {
           <Text style={[styles.copyright, { color: C.textMuted }]}>
             {'© 2025 Riwaq Labs · رواق لابز'}
           </Text>
-          <Pressable onPress={() => Linking.openURL('https://github.com/adelpro/open-mushaf-native')}>
-            <Text style={[styles.copyright, { color: C.textMuted, marginTop: 4 }]}>
+          <Pressable onPress={() => Linking.openURL('https://qurancomplex.gov.sa/en/techquran/dev/')}>
+            <Text style={[styles.copyright, { color: C.textMuted, marginTop: 4, textAlign: 'center' }]}>
               {tr.about_mushaf_credit}
+            </Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL('https://github.com/thetruetruth/quran-data-kfgqpc')}>
+            <Text style={[styles.copyright, { color: C.textMuted, marginTop: 2, textAlign: 'center' }]}>
+              {tr.about_mushaf_data_credit}
             </Text>
           </Pressable>
         </View>

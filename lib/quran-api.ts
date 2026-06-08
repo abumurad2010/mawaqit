@@ -377,6 +377,69 @@ export const BISMILLAH_TEXT: string = ((QURAN_DATA['1']?.[0]?.t) ?? 'بِسْم�
 /** Total pages in the Madani Mushaf. */
 export const TOTAL_PAGES = 604;
 
+/* ──────────────────────────────────────────────────────────────────────
+ * KFGQPC Hafs v18 — official Uthmanic-script Quran text from King Fahd
+ * Glorious Quran Printing Complex. Sourced via thetruetruth/quran-data-kfgqpc
+ * (MIT for the JSON data; font licensed for Quranic rendering by KFGQPC).
+ *
+ * Each row is one ayah with its Uthmanic text (renders with the
+ * UthmanicHafs-v18 font), its Mushaf page, and its 15-line slot range.
+ * ───────────────────────────────────────────────────────────────────── */
+
+interface RawHafsRow {
+  id: number;
+  jozz: number;
+  sora: number;
+  sora_name_en: string;
+  sora_name_ar: string;
+  page: number;
+  line_start: number;
+  line_end: number;
+  aya_no: number;
+  aya_text: string;
+  aya_text_emlaey: string;
+}
+
+const HAFS_DATA: ReadonlyArray<RawHafsRow> = require('../assets/hafs-data.json') as RawHafsRow[];
+
+export interface HafsAyah {
+  surahNum: number;
+  ayahNum: number;
+  page: number;
+  juz: number;
+  lineStart: number;
+  lineEnd: number;
+  /** Uthmanic text (includes the trailing Arabic-Indic ayah marker like " ١"). */
+  text: string;
+  /** Imlaei (modern spelling) — kept for compatibility with the search layer. */
+  textEmlaey: string;
+}
+
+const HAFS_BY_PAGE: ReadonlyArray<HafsAyah>[] = (() => {
+  const arr: HafsAyah[][] = Array.from({ length: 604 }, () => []);
+  for (const row of HAFS_DATA) {
+    if (row.page >= 1 && row.page <= 604) {
+      arr[row.page - 1].push({
+        surahNum: row.sora,
+        ayahNum: row.aya_no,
+        page: row.page,
+        juz: row.jozz,
+        lineStart: row.line_start,
+        lineEnd: row.line_end,
+        text: row.aya_text,
+        textEmlaey: row.aya_text_emlaey,
+      });
+    }
+  }
+  return arr;
+})();
+
+/** All ayat on the given Mushaf page (1-604), in reading order. */
+export function getHafsPage(pageNum: number): ReadonlyArray<HafsAyah> {
+  if (pageNum < 1 || pageNum > 604) return [];
+  return HAFS_BY_PAGE[pageNum - 1];
+}
+
 /** The 15 sajdah (prostration) ayahs. `word` is the specific Arabic word to underline. */
 export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number; word: string }> = [
   { surah: 7,  ayah: 206, word: 'يسجدون'       },
