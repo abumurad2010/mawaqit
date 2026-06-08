@@ -1,223 +1,75 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+/**
+ * Quran reader — Madani Mushaf page-image viewer.
+ *
+ * Page images: github.com/adelpro/open-mushaf-native
+ * Copyright (c) 2024 adelpro — MIT License
+ *
+ * Image-based rendering, no font glyph alignment, no Unicode quirks. One
+ * 456x672 PNG per page (1-604), rendered via expo-image, navigated via a
+ * react-native-gesture-handler pan gesture.
+ *
+ * Mawaqit conventions enforced on top of the base renderer:
+ *   - swipe LEFT  → next page
+ *   - swipe RIGHT → previous page
+ *   - LONG-PRESS  → add/remove bookmark for current page (no tap handler)
+ */
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Platform, Alert,
-  FlatList, useWindowDimensions,
+  View, Text, StyleSheet, Pressable, Platform, Alert, ActivityIndicator,
+  useWindowDimensions, I18nManager,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
-import {
-  SURAH_META,
-  getAyahPage,
-  getMushafPage,
-  getHizbNumber,
-  getHizbQuarter,
-  type MushafLine,
-  TOTAL_PAGES,
-} from '@/lib/quran-api';
+import { SURAH_META, SURAH_START_PAGES, getAyahPage } from '@/lib/quran-api';
+import { MUSHAF_HAFS_IMAGES } from '@/constants/mushaf-images';
 
-const QURAN_FONT = 'KFGQPCHafs';
+const TOTAL_PAGES = 604;
+const PAGE_ASPECT_RATIO = 456 / 672; // ~0.679 — original image dimensions
+
+const ACTIVATION_OFFSET_X = 10;
+const FAIL_OFFSET_Y = 12;
+const MAX_TRANSLATION_X = 100;
+const SWIPE_THRESHOLD = 50;
+const SPRING_DAMPING = 15;
+const SPRING_STIFFNESS = 120;
 
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 }
 
-function hizbLabel(rubElHizb: number, isAr: boolean): string {
-  const hizb = getHizbNumber(rubElHizb);
-  const q = getHizbQuarter(rubElHizb);
-  const frac = ['', '¼ ', '½ ', '¾ '][q];
-  return isAr ? `${frac}حزب ${toArabicIndic(hizb)}` : `${frac}Hizb ${hizb}`;
-}
-
-interface AyahKey { surah: number; ayah: number }
-
-/* ── Surah banner — single bordered row, fits page width ─────────── */
-function SurahBanner({ surahNum, color, textColor, height, pageWidth }: {
-  surahNum: number; color: string; textColor: string; height: number; pageWidth: number;
-}) {
-  const meta = SURAH_META[surahNum - 1];
-  if (!meta) return null;
-  const typeLabel = meta.type === 'Meccan' ? 'مكية' : 'مدنية';
-  const text = `سورة ${meta.arabic} · ${typeLabel} · ${toArabicIndic(meta.ayahs)} آية`;
-  const innerWidth = Math.max(120, pageWidth - 48);
-  const maxFontByHeight = height * 0.42;
-  const maxFontByWidth = innerWidth / (text.length * 0.55);
-  const fontSize = Math.max(12, Math.min(18, Math.min(maxFontByHeight, maxFontByWidth)));
-  return (
-    <View style={{ height, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8 }}>
-      <View style={{
-        width: innerWidth,
-        height: Math.max(28, height * 0.85),
-        borderWidth: 1.2,
-        borderColor: color,
-        borderRadius: 4,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 10,
-      }}>
-        <Text
-          style={{
-            color: textColor,
-            fontFamily: 'Amiri_700Bold',
-            fontSize,
-            textAlign: 'center',
-          }}
-          numberOfLines={1}
-          ellipsizeMode="clip"
-        >
-          {text}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-/* ── One Mushaf line — long-press only, no tap handler ───────────── */
-function MushafLineView({
-  line, height, fontSize, pageWidth,
-  textColor, mutedColor, tintColor, isBookmarkedFn, onBookmark, highlightTarget,
-}: {
-  line: MushafLine;
-  height: number;
-  fontSize: number;
-  pageWidth: number;
-  textColor: string;
-  mutedColor: string;
-  tintColor: string;
-  isBookmarkedFn: (s: number, a: number) => boolean;
-  onBookmark: (target: AyahKey) => void;
-  highlightTarget: AyahKey | null;
-}) {
-  if (line.type === 'blank') {
-    return <View style={{ height }} />;
+/** Find the surah whose starting page is the latest <= the given page. */
+function getSurahAtPage(page: number): number {
+  let best = 1;
+  for (let s = 1; s <= 114; s++) {
+    const sp = SURAH_START_PAGES[s];
+    if (sp && sp <= page && sp >= (SURAH_START_PAGES[best] ?? 1)) best = s;
   }
-  if (line.type === 'header') {
-    return (
-      <SurahBanner
-        surahNum={line.surah}
-        color={tintColor}
-        textColor={textColor}
-        height={height}
-        pageWidth={pageWidth}
-      />
-    );
-  }
-  if (line.type === 'bismillah') {
-    return (
-      <View style={{ height, justifyContent: 'center', overflow: 'hidden' }}>
-        <Text
-          style={{
-            color: textColor,
-            fontFamily: QURAN_FONT,
-            fontSize: fontSize * 0.92,
-            lineHeight: fontSize * 1.6,
-            textAlign: 'center',
-            writingDirection: 'rtl',
-          }}
-        >
-          بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-        </Text>
-      </View>
-    );
-  }
-
-  // verse line — single flat Text, long-press only
-  const firstSeg = line.segments[0];
-  if (!firstSeg) return <View style={{ height }} />;
-  const highlighted = highlightTarget?.surah === firstSeg.surahNum && highlightTarget?.ayah === firstSeg.ayahNum;
-
-  return (
-    <Pressable
-      onLongPress={() => onBookmark({ surah: firstSeg.surahNum, ayah: firstSeg.ayahNum })}
-      delayLongPress={400}
-      style={{
-        height,
-        paddingHorizontal: 4,
-        justifyContent: 'center',
-        overflow: 'hidden',
-        backgroundColor: highlighted ? tintColor + '22' : undefined,
-        borderRadius: 4,
-      }}
-    >
-      <Text
-        style={{
-          color: textColor,
-          fontFamily: QURAN_FONT,
-          fontSize,
-          lineHeight: fontSize * 1.6,
-          textAlign: 'center',
-          writingDirection: 'rtl',
-        }}
-      >
-        {line.segments.map((seg, si) => {
-          const bookmarked = isBookmarkedFn(seg.surahNum, seg.ayahNum);
-          return (
-            <React.Fragment key={si}>
-              {seg.text}
-              {seg.isAyahEnd ? (
-                <Text style={{ color: bookmarked ? '#C8860A' : tintColor, fontSize: fontSize * 0.82 }}>
-                  {' ۝' + toArabicIndic(seg.ayahNum) + ' '}
-                </Text>
-              ) : ' '}
-            </React.Fragment>
-          );
-        })}
-      </Text>
-    </Pressable>
-  );
+  return best;
 }
 
-/* ── One Mushaf page — 15 slots, content fits viewport ───────────── */
-function MushafPageView({
-  pageNum, width, height, lineSlot, baseFontSize,
-  textColor, mutedColor, tintColor, bgColor,
-  highlightTarget, isBookmarkedFn, onBookmark,
-}: {
-  pageNum: number;
-  width: number;
-  height: number;
-  lineSlot: number;
-  baseFontSize: number;
-  textColor: string;
-  mutedColor: string;
-  tintColor: string;
-  bgColor: string;
-  highlightTarget: AyahKey | null;
-  isBookmarkedFn: (s: number, a: number) => boolean;
-  onBookmark: (target: AyahKey) => void;
-}) {
-  const page = getMushafPage(pageNum);
-  if (!page) return <View style={{ width, height, backgroundColor: bgColor }} />;
-  return (
-    <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: 12 }}>
-      {page.lines.map((line, idx) => (
-        <MushafLineView
-          key={idx}
-          line={line}
-          height={lineSlot}
-          fontSize={baseFontSize}
-          pageWidth={width}
-          textColor={textColor}
-          mutedColor={mutedColor}
-          tintColor={tintColor}
-          isBookmarkedFn={isBookmarkedFn}
-          onBookmark={onBookmark}
-          highlightTarget={highlightTarget}
-        />
-      ))}
-    </View>
-  );
+/** Estimated juz number for a page (Madani 604-page layout). Juz N starts roughly at page (N-1)*20 + 1, with N=1 at page 1. */
+const JUZ_START_PAGES = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182,
+  201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+];
+function getJuzAtPage(page: number): number {
+  for (let i = JUZ_START_PAGES.length - 1; i >= 0; i--) {
+    if (page >= JUZ_START_PAGES[i]) return i + 1;
+  }
+  return 1;
 }
 
-/* ── Reader screen ───────────────────────────────────────────────── */
 export default function QuranReaderScreen() {
   const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; timestamp?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
-  const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
-  const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
 
   const { width: W, height: H } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -231,77 +83,42 @@ export default function QuranReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [pageNum, setPageNum] = useState(initialPage);
-  const [highlightTarget, setHighlightTarget] = useState<AyahKey | null>(
-    highlightSurahParam && highlightAyahParam
-      ? { surah: highlightSurahParam, ayah: highlightAyahParam }
-      : null
-  );
+  const pageNumRef = useRef(initialPage);
+  pageNumRef.current = pageNum;
 
-  const listRef = useRef<FlatList>(null);
-  const userScrolling = useRef(false);
-
-  useEffect(() => {
-    if (!highlightTarget) return;
-    const tid = setTimeout(() => setHighlightTarget(null), 3000);
-    return () => clearTimeout(tid);
-  }, [highlightTarget]);
-
+  // Search/bookmark navigation: jump to page
   useEffect(() => {
     if (!params.highlightSurah || !params.highlightAyah) return;
     const surah = parseInt(params.highlightSurah, 10);
     const ayah = parseInt(params.highlightAyah, 10);
-    setHighlightTarget({ surah, ayah });
     const newPage = getAyahPage(surah, ayah);
-    if (newPage !== pageNum) {
-      setPageNum(newPage);
-      listRef.current?.scrollToIndex({ index: newPage - 1, animated: false });
-    }
+    if (newPage !== pageNumRef.current) setPageNum(newPage);
   }, [params.highlightSurah, params.highlightAyah, params.timestamp]);
 
+  // Persist last-read
   useEffect(() => {
     setLastReadPage(pageNum);
-    const page = getMushafPage(pageNum);
-    if (page) {
-      for (const line of page.lines) {
-        if (line.type === 'verse' && line.segments.length > 0) {
-          setLastReadSurah(line.segments[0].surahNum);
-          break;
-        }
-        if (line.type === 'header') { setLastReadSurah(line.surah); break; }
-      }
-    }
+    setLastReadSurah(getSurahAtPage(pageNum));
   }, [pageNum]);
 
-  const headerHeight = 56;
-  const footerHeight = 32;
-  const verticalChrome = topInset + headerHeight + footerHeight + bottomInset;
-  const pageHeight = Math.max(360, H - verticalChrome);
-  const pageWidth = W;
-  const lineSlot = pageHeight / 15;
-  const baseFontSize = Math.max(15, Math.min(22, lineSlot * 0.55));
+  // Surah / juz labels for header
+  const currentSurahNum = useMemo(() => getSurahAtPage(pageNum), [pageNum]);
+  const currentMeta = SURAH_META[currentSurahNum - 1];
+  const surahLabel = currentMeta ? (isAr ? currentMeta.arabic : currentMeta.transliteration) : '';
+  const juzNum = useMemo(() => getJuzAtPage(pageNum), [pageNum]);
 
-  const currentPage = getMushafPage(pageNum);
-  const juzNum = currentPage?.juz ?? 1;
-  const rubElHizb = currentPage?.rubElHizb ?? 1;
-
-  const displaySurah = useMemo(() => {
-    if (!currentPage) return 1;
-    for (const line of currentPage.lines) {
-      if (line.type === 'verse' && line.segments.length > 0) return line.segments[0].surahNum;
-      if (line.type === 'header') return line.surah;
-    }
-    return 1;
-  }, [currentPage, pageNum]);
-  const displayMeta = SURAH_META[displaySurah - 1];
-  const surahLabel = displayMeta ? (isAr ? displayMeta.arabic : displayMeta.transliteration) : '';
-
-  const handleBookmark = useCallback((target: AyahKey) => {
+  // Bookmark current page (long-press)
+  const handleLongPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const bookmarked = isBookmarked(target.surah, target.ayah);
-    const meta = SURAH_META[target.surah - 1];
+    const surahNum = getSurahAtPage(pageNum);
+    const meta = SURAH_META[surahNum - 1];
+    // We bookmark page as ayah 1 of the page-start surah (image-based reader has no
+    // per-ayah anchor; the bookmark is page-scoped).
+    const bookmarkAyah = 1;
+    const bookmarked = isBookmarked(surahNum, bookmarkAyah);
     const label = isAr
-      ? `${meta?.arabic ?? ''} — آية ${toArabicIndic(target.ayah)}`
-      : `${meta?.transliteration ?? ''} — ${tr.ayah} ${target.ayah}`;
+      ? `${meta?.arabic ?? ''} — صفحة ${toArabicIndic(pageNum)}`
+      : `${meta?.transliteration ?? ''} — ${tr.page} ${pageNum}`;
     Alert.alert(
       bookmarked ? tr.removeBookmark : tr.addBookmark,
       label,
@@ -311,12 +128,12 @@ export default function QuranReaderScreen() {
           text: bookmarked ? tr.remove : tr.add,
           onPress: () => {
             if (bookmarked) {
-              removeBookmark(target.surah, target.ayah);
+              removeBookmark(surahNum, bookmarkAyah);
             } else {
               addBookmark({
-                surahNumber: target.surah,
+                surahNumber: surahNum,
                 surahName: meta?.transliteration ?? '',
-                ayahNumber: target.ayah,
+                ayahNumber: bookmarkAyah,
                 ayahText: '',
                 timestamp: Date.now(),
               });
@@ -326,41 +143,74 @@ export default function QuranReaderScreen() {
         },
       ]
     );
-  }, [isBookmarked, addBookmark, removeBookmark, tr, isAr]);
+  }, [pageNum, isBookmarked, addBookmark, removeBookmark, tr, isAr]);
 
-  const renderItem = useCallback(({ item }: { item: number }) => (
-    <MushafPageView
-      pageNum={item}
-      width={pageWidth}
-      height={pageHeight}
-      lineSlot={lineSlot}
-      baseFontSize={baseFontSize}
-      textColor={C.text}
-      mutedColor={C.textMuted}
-      tintColor={C.tint}
-      bgColor={isDark ? '#0D0D0D' : '#FAF6EE'}
-      highlightTarget={highlightTarget}
-      isBookmarkedFn={isBookmarked}
-      onBookmark={handleBookmark}
-    />
-  ), [pageWidth, pageHeight, lineSlot, baseFontSize, C, isDark, highlightTarget, isBookmarked, handleBookmark]);
+  // Pan gesture — Mawaqit convention: swipe LEFT (translationX < 0) → next page.
+  // Adapted from open-mushaf-native (MIT, copyright 2024 adelpro).
+  const translateX = useSharedValue(0);
 
-  const data = useMemo(() => Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1), []);
+  const changePage = useCallback((delta: number) => {
+    const target = pageNumRef.current + delta;
+    if (target < 1 || target > TOTAL_PAGES) return;
+    Haptics.selectionAsync();
+    setPageNum(target);
+  }, []);
 
-  const onMomentumEnd = useCallback((e: any) => {
-    if (!userScrolling.current) return;
-    const idx = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
-    const newPage = idx + 1;
-    if (newPage !== pageNum && newPage >= 1 && newPage <= TOTAL_PAGES) {
-      setPageNum(newPage);
-    }
-    userScrolling.current = false;
-  }, [pageNum, pageWidth]);
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-ACTIVATION_OFFSET_X, ACTIVATION_OFFSET_X])
+        .failOffsetY([-FAIL_OFFSET_Y, FAIL_OFFSET_Y])
+        .onUpdate((e) => {
+          'worklet';
+          translateX.value = Math.max(
+            -MAX_TRANSLATION_X,
+            Math.min(MAX_TRANSLATION_X, e.translationX),
+          );
+        })
+        .onEnd((e) => {
+          'worklet';
+          if (Math.abs(e.translationX) > SWIPE_THRESHOLD) {
+            // Swipe LEFT (translationX < 0) → next page (+1)
+            // Swipe RIGHT (translationX > 0) → prev page (-1)
+            const delta = e.translationX < 0 ? +1 : -1;
+            runOnJS(changePage)(delta);
+          }
+          translateX.value = withSpring(0, { damping: SPRING_DAMPING, stiffness: SPRING_STIFFNESS });
+        }),
+    [translateX, changePage],
+  );
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  // Long-press detection — separate gesture so it doesn't conflict with pan
+  const longPressGesture = useMemo(
+    () =>
+      Gesture.LongPress()
+        .minDuration(450)
+        .onStart(() => {
+          'worklet';
+          runOnJS(handleLongPress)();
+        }),
+    [handleLongPress],
+  );
+
+  const composedGesture = useMemo(
+    () => Gesture.Race(panGesture, longPressGesture),
+    [panGesture, longPressGesture],
+  );
+
+  const headerHeight = 56;
+  const footerHeight = 32;
   const bgColor = isDark ? '#0D0D0D' : '#FAF6EE';
+
+  const imageSource = MUSHAF_HAFS_IMAGES[pageNum];
 
   return (
     <View style={[styles.root, { backgroundColor: bgColor }]}>
+      {/* Header */}
       <View style={[styles.header, {
         paddingTop: topInset + 4,
         paddingHorizontal: 16,
@@ -379,8 +229,8 @@ export default function QuranReaderScreen() {
           </Text>
           <Text style={[styles.headerJuz, { color: C.textMuted }]} numberOfLines={1}>
             {isAr
-              ? `جزء ${toArabicIndic(juzNum)} · ${hizbLabel(rubElHizb, true)}`
-              : `Juz ${juzNum} · ${hizbLabel(rubElHizb, false)}`}
+              ? `جزء ${toArabicIndic(juzNum)} · صفحة ${toArabicIndic(pageNum)}`
+              : `${tr.juz} ${juzNum} · ${tr.page} ${pageNum}`}
           </Text>
         </View>
         <Pressable
@@ -391,24 +241,26 @@ export default function QuranReaderScreen() {
         </Pressable>
       </View>
 
-      <FlatList
-        ref={listRef}
-        data={data}
-        keyExtractor={(p) => String(p)}
-        renderItem={renderItem}
-        horizontal
-        pagingEnabled
-        initialScrollIndex={initialPage - 1}
-        getItemLayout={(_, i) => ({ length: pageWidth, offset: pageWidth * i, index: i })}
-        onScrollToIndexFailed={() => {}}
-        onScrollBeginDrag={() => { userScrolling.current = true; }}
-        onMomentumScrollEnd={onMomentumEnd}
-        showsHorizontalScrollIndicator={false}
-        windowSize={3}
-        maxToRenderPerBatch={2}
-        removeClippedSubviews
-      />
+      {/* Page viewer */}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureDetector gesture={composedGesture}>
+          <Animated.View style={[styles.pageWrap, animatedStyle, { backgroundColor: bgColor }]}>
+            {imageSource ? (
+              <Image
+                source={imageSource}
+                style={{ width: '100%', aspectRatio: PAGE_ASPECT_RATIO, maxHeight: '100%' }}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+                transition={120}
+              />
+            ) : (
+              <ActivityIndicator color={C.tint} />
+            )}
+          </Animated.View>
+        </GestureDetector>
+      </GestureHandlerRootView>
 
+      {/* Footer */}
       <View style={[styles.footer, {
         paddingBottom: bottomInset + 4,
         height: footerHeight + bottomInset,
@@ -416,7 +268,7 @@ export default function QuranReaderScreen() {
         backgroundColor: bgColor,
       }]}>
         <Text style={[styles.pageNumText, { color: C.textMuted, fontFamily: 'Amiri_700Bold' }]}>
-          {toArabicIndic(pageNum)}
+          {toArabicIndic(pageNum)} / {toArabicIndic(TOTAL_PAGES)}
         </Text>
       </View>
     </View>
@@ -433,9 +285,13 @@ const styles = StyleSheet.create({
   headerSurah: { fontSize: 16, letterSpacing: 0.5 },
   headerJuz: { fontSize: 11, marginTop: 1 },
   iconBtn: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  pageWrap: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 8, paddingVertical: 4,
+  },
   footer: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingTop: 4, borderTopWidth: StyleSheet.hairlineWidth,
   },
-  pageNumText: { fontSize: 13 },
+  pageNumText: { fontSize: 13, letterSpacing: 0.5 },
 });

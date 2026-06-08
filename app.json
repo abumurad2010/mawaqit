@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
-      "buildNumber": "86",
+      "buildNumber": "87",
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.mawaqit.app.widget"]
       },
@@ -31,7 +31,7 @@
     },
     "android": {
       "package": "com.mawaqit.app",
-      "versionCode": 39,
+      "versionCode": 40,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"

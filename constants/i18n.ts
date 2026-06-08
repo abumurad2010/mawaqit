@@ -511,6 +511,7 @@ const base = {
   about_closing_dua: 'Our Lord, accept from us — Al-Baqarah 2:127',
   about_privacy_link: 'Privacy Policy',
   about_contact_link: 'Get in touch',
+  about_mushaf_credit: 'Mushaf pages by Open-Mushaf Native (MIT)',
   thikr_reminder_title: 'Thikr Reminder',
   thikr_reminders_section: 'Thikr Reminders',
   notifHelpTitle: 'Notification Types',
