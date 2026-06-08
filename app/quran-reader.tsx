@@ -8,17 +8,25 @@
  *
  * Page data: hafsData_v18.json from the same upstream repo (MIT-licensed).
  *
- * Mawaqit conventions enforced on top:
+ * Mawaqit conventions:
  *   - one page per screen, no internal scroll
- *   - swipe LEFT → next page; RIGHT → previous (RTL-aware via I18nManager)
+ *   - swipe LEFT → next page in Arabic UI; LTR mode keeps standard pager
  *   - LONG-PRESS on an ayah → add/remove ayah-precise bookmark
  *   - taps do nothing — no translation popups, no inline UI
  *   - minimal chrome: thin header (back / surah / bookmark), tiny footer (page)
+ *
+ * Fit policy (NEVER drop content):
+ *   - Start at fontSize = INITIAL_FONT (20).
+ *   - Measure rendered content height via onLayout.
+ *   - If measured > available page height, shrink fontSize by 0.5 pt and re-render.
+ *   - Floor at MIN_FONT (14). If still overflowing at the floor, allow visual
+ *     overflow rather than truncating — every ayah and banner stays mounted.
+ *   - Cache the converged fontSize per page so it's stable across visits.
  */
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform, Alert, FlatList,
-  useWindowDimensions, I18nManager,
+  useWindowDimensions, type LayoutChangeEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -35,6 +43,12 @@ import {
 } from '@/lib/quran-api';
 
 const QURAN_FONT = 'KFGQPCHafs';
+const INITIAL_FONT = 20;
+const MAX_FONT = 24;
+const MIN_FONT = 14;
+const FONT_STEP = 0.5;
+/** Per-page converged font size, keyed by page number. */
+const FIT_CACHE: Record<number, number> = {};
 
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -80,40 +94,20 @@ function SurahBanner({
   );
 }
 
-/* ── One Mushaf page — KFGQPC Hafs text rendering ──────────────
- * Each ayah is a Pressable with onLongPress only. The whole page is laid
- * out as flowing justified Arabic text, broken at ayah boundaries by
- * inserting space between them. New-surah markers are rendered inline as
- * a SurahBanner View; bismillah is its own line.
- *
- * For sizing we don't try to match the 15-line printed layout exactly —
- * we pick a font size such that the total content of the page fits the
- * available height with a small safety margin. Pages with banners +
- * bismillah leave less room for ayah text, so we count the ayat and
- * compute a target line count.
- * ──────────────────────────────────────────────────────────── */
-function MushafPageView({
-  pageNum, width, height, baseFontSize,
-  textColor, mutedColor, tintColor, bgColor,
+/* ── Page content body — pure render at a given font size ──────── */
+function MushafPageBody({
+  ayat, width, fontSize, textColor, tintColor,
   highlightTarget, isBookmarkedFn, onLongPressAyah,
 }: {
-  pageNum: number;
+  ayat: ReadonlyArray<HafsAyah>;
   width: number;
-  height: number;
-  baseFontSize: number;
+  fontSize: number;
   textColor: string;
-  mutedColor: string;
   tintColor: string;
-  bgColor: string;
   highlightTarget: AyahKey | null;
   isBookmarkedFn: (s: number, a: number) => boolean;
   onLongPressAyah: (target: AyahKey) => void;
 }) {
-  const ayat = getHafsPage(pageNum);
-  if (ayat.length === 0) {
-    return <View style={{ width, height, backgroundColor: bgColor }} />;
-  }
-
   // Group consecutive ayat by surah so we can insert a banner + bismillah
   // before each surah that starts on this page.
   type Group = { surahNum: number; isSurahStart: boolean; hasBismillah: boolean; ayat: HafsAyah[] };
@@ -132,15 +126,14 @@ function MushafPageView({
     }
   }
 
-  const lineHeight = baseFontSize * 1.6;
-  const bannerHeight = baseFontSize * 1.5;
-  const bismillahHeight = baseFontSize * 1.45;
+  const lineHeight = fontSize * 1.6;
+  const bannerHeight = Math.max(22, fontSize * 1.5);
+  const bismillahHeight = Math.max(22, fontSize * 1.45);
 
   return (
-    <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 4, justifyContent: 'center' }}>
-      <View style={{ flex: 1, justifyContent: 'flex-start' }}>
+    <>
       {groups.map((g, gi) => (
-        <View key={gi} style={{ marginBottom: 2 }}>
+        <View key={gi}>
           {g.isSurahStart && (
             <SurahBanner
               surahNum={g.surahNum}
@@ -156,7 +149,7 @@ function MushafPageView({
                 style={{
                   color: textColor,
                   fontFamily: QURAN_FONT,
-                  fontSize: baseFontSize * 0.95,
+                  fontSize: fontSize * 0.95,
                   lineHeight: bismillahHeight,
                   textAlign: 'center',
                   writingDirection: 'rtl',
@@ -171,7 +164,7 @@ function MushafPageView({
             style={{
               color: textColor,
               fontFamily: QURAN_FONT,
-              fontSize: baseFontSize,
+              fontSize,
               lineHeight,
               textAlign: 'justify',
               writingDirection: 'rtl',
@@ -180,7 +173,6 @@ function MushafPageView({
             {g.ayat.map((a, ai) => {
               const bookmarked = isBookmarkedFn(a.surahNum, a.ayahNum);
               const highlighted = highlightTarget?.surah === a.surahNum && highlightTarget?.ayah === a.ayahNum;
-              // For surah 1 (Al-Fatiha) ayah 1, the bismillah IS the ayah — keep as-is.
               return (
                 <Text
                   key={ai}
@@ -198,6 +190,81 @@ function MushafPageView({
           </Text>
         </View>
       ))}
+    </>
+  );
+}
+
+/* ── One Mushaf page — measure-and-fit wrapper ──────────────────
+ * Renders MushafPageBody twice when needed:
+ *   1) at the current candidate fontSize, with onLayout measuring its
+ *      intrinsic height (overflow: 'visible' on the measured wrapper so
+ *      the layout engine returns the full child extent even if the page
+ *      visually clips it).
+ *   2) if measured height > available page height, shrink fontSize by
+ *      FONT_STEP and re-render. Loop until fits or floor reached.
+ *   The converged value is cached per page so subsequent visits skip
+ *   measurement.
+ * ──────────────────────────────────────────────────────────── */
+function MushafPageView({
+  pageNum, width, height, textColor, tintColor, bgColor,
+  highlightTarget, isBookmarkedFn, onLongPressAyah,
+}: {
+  pageNum: number;
+  width: number;
+  height: number;
+  textColor: string;
+  tintColor: string;
+  bgColor: string;
+  highlightTarget: AyahKey | null;
+  isBookmarkedFn: (s: number, a: number) => boolean;
+  onLongPressAyah: (target: AyahKey) => void;
+}) {
+  const ayat = getHafsPage(pageNum);
+  const [fontSize, setFontSize] = useState<number>(() => FIT_CACHE[pageNum] ?? INITIAL_FONT);
+  // Re-measure if width changes (rotation / split-screen).
+  const widthRef = useRef(width);
+  useEffect(() => {
+    if (widthRef.current !== width) {
+      widthRef.current = width;
+      delete FIT_CACHE[pageNum];
+      setFontSize(INITIAL_FONT);
+    }
+  }, [width, pageNum]);
+
+  if (ayat.length === 0) {
+    return <View style={{ width, height, backgroundColor: bgColor }} />;
+  }
+
+  const onMeasure = useCallback((e: LayoutChangeEvent) => {
+    const measured = e.nativeEvent.layout.height;
+    const available = height - 8; // 4 pt top + 4 pt bottom padding
+    if (measured > available && fontSize > MIN_FONT) {
+      const next = Math.max(MIN_FONT, fontSize - FONT_STEP);
+      FIT_CACHE[pageNum] = next;
+      setFontSize(next);
+    } else {
+      // Converged (fits, or hit the floor). Cache the result.
+      FIT_CACHE[pageNum] = fontSize;
+      if (measured > available) {
+        // eslint-disable-next-line no-console
+        console.warn(`[Mushaf] Page ${pageNum} overflows even at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
+      }
+    }
+  }, [fontSize, height, pageNum]);
+
+  return (
+    <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: 12, paddingTop: 4, paddingBottom: 4, overflow: 'hidden' }}>
+      <View onLayout={onMeasure} style={{ width: width - 24 }}>
+        <MushafPageBody
+          ayat={ayat}
+          width={width}
+          fontSize={fontSize}
+          textColor={textColor}
+          tintColor={tintColor}
+          highlightTarget={highlightTarget}
+          isBookmarkedFn={isBookmarkedFn}
+          onLongPressAyah={onLongPressAyah}
+        />
       </View>
     </View>
   );
@@ -237,6 +304,22 @@ export default function QuranReaderScreen() {
     return () => clearTimeout(tid);
   }, [highlightTarget]);
 
+  // Reading direction for the FlatList:
+  //   Arabic UI: data reversed so that index 0 holds page 604 and index 603
+  //   holds page 1. The user starts at the right end of the strip (high
+  //   index), swipes LEFT to walk to lower indices = higher page numbers.
+  //   The visual effect: swipe-LEFT advances to the next page, matching
+  //   physical Mushaf reading order.
+  //   LTR UI: standard order, index 0 → page 1, swipe-LEFT advances.
+  const pageFromIdx = useCallback(
+    (idx: number) => (isAr ? (TOTAL_PAGES - idx) : (idx + 1)),
+    [isAr]
+  );
+  const idxFromPage = useCallback(
+    (page: number) => (isAr ? (TOTAL_PAGES - page) : (page - 1)),
+    [isAr]
+  );
+
   // Search/bookmark nav: jump to page containing the ayah, set highlight
   useEffect(() => {
     if (!params.highlightSurah || !params.highlightAyah) return;
@@ -246,9 +329,9 @@ export default function QuranReaderScreen() {
     const newPage = getAyahPage(surah, ayah);
     if (newPage !== pageNum) {
       setPageNum(newPage);
-      listRef.current?.scrollToIndex({ index: newPage - 1, animated: false });
+      listRef.current?.scrollToIndex({ index: idxFromPage(newPage), animated: false });
     }
-  }, [params.highlightSurah, params.highlightAyah, params.timestamp]);
+  }, [params.highlightSurah, params.highlightAyah, params.timestamp, idxFromPage]);
 
   // Persist last-read
   useEffect(() => {
@@ -263,12 +346,6 @@ export default function QuranReaderScreen() {
   const verticalChrome = topInset + headerHeight + footerHeight + bottomInset;
   const pageHeight = Math.max(360, H - verticalChrome);
   const pageWidth = W;
-
-  // Auto-fit font: target ~15-16 logical lines per page with a 1.6x line-height
-  // multiplier, leave 4% slack for surah banners/bismillah/inter-group margins.
-  const targetLines = 15.5;
-  const computedFont = Math.floor((pageHeight * 0.96) / (targetLines * 1.6));
-  const baseFontSize = Math.max(16, Math.min(28, computedFont));
 
   // Current-page metadata (for header)
   const currentAyat = getHafsPage(pageNum);
@@ -314,28 +391,29 @@ export default function QuranReaderScreen() {
       pageNum={item}
       width={pageWidth}
       height={pageHeight}
-      baseFontSize={baseFontSize}
       textColor={C.text}
-      mutedColor={C.textMuted}
       tintColor={C.tint}
       bgColor={isDark ? '#0D0D0D' : '#FAF6EE'}
       highlightTarget={highlightTarget}
       isBookmarkedFn={isBookmarked}
       onLongPressAyah={handleLongPressAyah}
     />
-  ), [pageWidth, pageHeight, baseFontSize, C, isDark, highlightTarget, isBookmarked, handleLongPressAyah]);
+  ), [pageWidth, pageHeight, C, isDark, highlightTarget, isBookmarked, handleLongPressAyah]);
 
-  const data = useMemo(() => Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1), []);
+  const data = useMemo(() => {
+    const arr = Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1);
+    return isAr ? arr.reverse() : arr;
+  }, [isAr]);
 
   const onMomentumEnd = useCallback((e: any) => {
     if (!userScrolling.current) return;
     const idx = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
-    const newPage = idx + 1;
+    const newPage = pageFromIdx(idx);
     if (newPage !== pageNum && newPage >= 1 && newPage <= TOTAL_PAGES) {
       setPageNum(newPage);
     }
     userScrolling.current = false;
-  }, [pageNum, pageWidth]);
+  }, [pageNum, pageWidth, pageFromIdx]);
 
   const bgColor = isDark ? '#0D0D0D' : '#FAF6EE';
 
@@ -373,7 +451,7 @@ export default function QuranReaderScreen() {
         renderItem={renderItem}
         horizontal
         pagingEnabled
-        initialScrollIndex={initialPage - 1}
+        initialScrollIndex={idxFromPage(initialPage)}
         getItemLayout={(_, i) => ({ length: pageWidth, offset: pageWidth * i, index: i })}
         onScrollToIndexFailed={() => {}}
         onScrollBeginDrag={() => { userScrolling.current = true; }}
