@@ -29,7 +29,7 @@
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform, Alert, FlatList, ActionSheetIOS,
-  useWindowDimensions, Animated, type LayoutChangeEvent, type NativeSyntheticEvent, type TextLayoutEventData,
+  useWindowDimensions, Animated, type LayoutChangeEvent,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -77,6 +77,11 @@ const CHROME_FADE_MS = 240;
 /** Muted ornament gold, harmonises with both dark and light backgrounds. */
 const GOLD_LIGHT = '#A88B5C';
 const GOLD_DARK  = '#C9A875';
+
+/** TEMP — flip to false before commit. Adds visible borders around each
+ *  layout container so we can SEE which one is collapsing/leaking when
+ *  the page renders. */
+const DEBUG_BORDERS = false;
 
 /** Per-(page,available-height) converged font size. */
 const FIT_CACHE: Record<string, number> = {};
@@ -272,7 +277,7 @@ function PageNumberFrame({
 function MushafPageBody({
   ayat, width, fontSize, textColor, ornamentColor,
   highlightTarget, isBookmarkedFn, onLongPressAyah,
-  lineHeightOverride, onAyahTextLayout,
+  lineHeightOverride, debugBorders,
 }: {
   ayat: ReadonlyArray<HafsAyah>;
   width: number;
@@ -285,8 +290,7 @@ function MushafPageBody({
   /** If set, overrides the per-line spacing of the ayah Text. Used to
    *  stretch the rendered text to fill the page on single-no-banner pages. */
   lineHeightOverride?: number;
-  /** Captures the visual line count of the ayah Text. Only invoked when set. */
-  onAyahTextLayout?: (e: NativeSyntheticEvent<TextLayoutEventData>) => void;
+  debugBorders?: boolean;
 }) {
   type Group = { surahNum: number; isSurahStart: boolean; hasBismillah: boolean; ayat: HafsAyah[] };
   const groups: Group[] = [];
@@ -313,7 +317,7 @@ function MushafPageBody({
   return (
     <>
       {groups.map((g, gi) => (
-        <View key={gi}>
+        <View key={gi} style={debugBorders ? { borderWidth: 1, borderColor: 'blue' } : undefined}>
           {g.isSurahStart && (
             <OrnateSurahBanner
               surahNum={g.surahNum}
@@ -340,10 +344,6 @@ function MushafPageBody({
             </View>
           )}
           <Text
-            // Fire onTextLayout only on the first group's ayah Text — for
-            // single-no-banner pages there IS only one group, and that's the
-            // one whose line count we want to drive the stretch policy.
-            onTextLayout={gi === 0 ? onAyahTextLayout : undefined}
             style={{
               color: textColor,
               fontFamily: QURAN_FONT,
@@ -456,56 +456,56 @@ function MushafPageView({
     }
   }, [pageNum, available, initialFont]);
 
+  // ── Line-stretch fill for single-no-banner pages.
+  // Earlier attempt used onTextLayout on the visible Text — but that fires
+  // with a transient lineCount of 1 during initial layout (before the Text
+  // has finished measuring), producing stretchedLH ≈ available ≈ 700pt and
+  // a single giant line floating in the middle of an otherwise empty page.
+  // New approach: derive the stretched lineHeight directly from the
+  // off-screen measurement (`measured` height at baseLineHeight). Because
+  // baseLineHeight is fixed per fontSize and lineHeight doesn't affect
+  // line-wrap, lineCount ≈ measured / baseLineHeight is stable. Stretched
+  // value is capped at MAX_STRETCH_MULT * baseLineHeight as a safety net.
+  const stretchEnabled = !hasBanner && !multiGroup;
+  const MAX_STRETCH_MULT = 2.4;
+  const [stretchedLH, setStretchedLH] = useState<number | null>(null);
+  // Reset stretch on page identity change so a recycled component instance
+  // doesn't render the new page with the previous page's stretched lineHeight.
+  useEffect(() => {
+    setStretchedLH(null);
+  }, [pageNum]);
+
   const onMeasure = useCallback((e: LayoutChangeEvent) => {
     const measured = e.nativeEvent.layout.height;
+    const baseLH = fontSize * LINE_HEIGHT_MULT;
     if (measured > available && fontSize > MIN_FONT) {
       const next = Math.max(MIN_FONT, fontSize - FONT_STEP);
       FIT_CACHE[fitKey(pageNum, available)] = next;
       setFontSize(next);
+      return;
+    }
+    FIT_CACHE[fitKey(pageNum, available)] = fontSize;
+    if (measured > available) {
+      // eslint-disable-next-line no-console
+      console.warn(`[Mushaf] Page ${pageNum} overflows at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
     } else {
-      FIT_CACHE[fitKey(pageNum, available)] = fontSize;
-      if (measured > available) {
+      // eslint-disable-next-line no-console
+      console.log(`[Mushaf] Page ${pageNum} fit: policy=${layoutPolicy} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)} page=${Math.round(height)}`);
+    }
+    // Compute stretchedLH from the converged measurement (single-no-banner
+    // pages only). measured is the intrinsic height at baseLH; we want the
+    // text to fill `available` instead. Cap defensively.
+    if (stretchEnabled && measured > baseLH && measured <= available) {
+      const desired = baseLH * (available / measured);
+      const capped = Math.min(desired, baseLH * MAX_STRETCH_MULT);
+      // Don't bother updating for tiny stretches (< 2pt) — avoids re-render thrash.
+      if (capped > baseLH + 2 && Math.abs(capped - (stretchedLH ?? baseLH)) > 1) {
         // eslint-disable-next-line no-console
-        console.warn(`[Mushaf] Page ${pageNum} overflows at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log(`[Mushaf] Page ${pageNum} fit: policy=${layoutPolicy} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)} page=${Math.round(height)}`);
+        console.log(`[Mushaf] Page ${pageNum} stretch: fontSize=${fontSize} baseLH=${Math.round(baseLH)} stretchedLH=${Math.round(capped)} (measured=${Math.round(measured)} available=${Math.round(available)})`);
+        setStretchedLH(capped);
       }
     }
-  }, [fontSize, available, pageNum, layoutPolicy, height]);
-
-  // ── Line-stretch fill for single-no-banner pages.
-  // Captures the actual visual line count once the converged fontSize
-  // renders the text, then sets lineHeight = available / lineCount so the
-  // ayah Text fills the page top to bottom. Avoids the "text bunched at
-  // top, empty bottom half" problem flex-start alone left us with.
-  const stretchEnabled = !hasBanner && !multiGroup;
-  const [stretchedLH, setStretchedLH] = useState<number | null>(null);
-  const lastLineCount = useRef<number>(0);
-  useEffect(() => {
-    // Reset stretch when page or fontSize changes so we re-measure.
-    setStretchedLH(null);
-    lastLineCount.current = 0;
-  }, [pageNum, fontSize, available]);
-  const onAyahTextLayout = useCallback(
-    (e: NativeSyntheticEvent<TextLayoutEventData>) => {
-      if (!stretchEnabled) return;
-      const lineCount = e.nativeEvent.lines.length;
-      if (lineCount <= 0) return;
-      if (lineCount === lastLineCount.current) return;
-      lastLineCount.current = lineCount;
-      const desired = (available - 6) / lineCount;
-      const base = fontSize * LINE_HEIGHT_MULT;
-      // Only stretch — never compress. If lines naturally take more than
-      // available (already dense), let the fit-loop handle it.
-      if (desired > base) {
-        // eslint-disable-next-line no-console
-        console.log(`[Mushaf] Page ${pageNum} stretch: fontSize=${fontSize} lineCount=${lineCount} baseLH=${Math.round(base)} stretchedLH=${Math.round(desired)} available=${Math.round(available)}`);
-        setStretchedLH(desired);
-      }
-    },
-    [stretchEnabled, fontSize, available, pageNum]
-  );
+  }, [fontSize, available, pageNum, layoutPolicy, height, stretchEnabled, stretchedLH]);
 
   if (ayat.length === 0) {
     return <View style={{ width, height, backgroundColor: bgColor }} />;
@@ -533,7 +533,12 @@ function MushafPageView({
           // eslint-disable-next-line no-console
           console.log(`[Mushaf] Page ${pageNum} wrapper layout: width=${Math.round(e.nativeEvent.layout.width)} height=${Math.round(e.nativeEvent.layout.height)} expected=${Math.round(height)}`);
         }}
-        style={{ width, height, backgroundColor: bgColor, paddingHorizontal: horizPad, paddingVertical: vertPad, overflow: 'hidden' }}
+        style={{
+          width, height, backgroundColor: bgColor,
+          paddingHorizontal: horizPad, paddingVertical: vertPad,
+          overflow: 'hidden',
+          ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'red' } : null),
+        }}
       >
         {/* Off-screen measurement — intrinsic height at BASE lineHeight,
             drives the fit-loop. Stretching is applied only to the visible
@@ -563,7 +568,11 @@ function MushafPageView({
             // eslint-disable-next-line no-console
             console.log(`[Mushaf] Page ${pageNum} content container: height=${Math.round(e.nativeEvent.layout.height)} policy=${layoutPolicy} stretched=${stretchedLH ? Math.round(stretchedLH) : 'no'}`);
           }}
-          style={{ flex: 1, justifyContent: layoutPolicy }}
+          style={{
+            flex: 1,
+            justifyContent: layoutPolicy,
+            ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'yellow' } : null),
+          }}
         >
           <MushafPageBody
             ayat={ayat}
@@ -575,7 +584,7 @@ function MushafPageView({
             isBookmarkedFn={isBookmarkedFn}
             onLongPressAyah={onLongPressAyah}
             lineHeightOverride={stretchEnabled ? (stretchedLH ?? undefined) : undefined}
-            onAyahTextLayout={onAyahTextLayout}
+            debugBorders={DEBUG_BORDERS}
           />
         </View>
       </View>
@@ -793,7 +802,12 @@ export default function QuranReaderScreen() {
   }, []);
 
   const renderItem = useCallback(({ item }: { item: number }) => (
+    // key={item} forces React to mount a fresh MushafPageView instance whenever
+    // the page number changes — eliminates state leakage (cached fontSize,
+    // stretchedLH) from a recycled FlatList child when virtualization
+    // restores it for a different page than it last rendered.
     <MushafPageView
+      key={item}
       pageNum={item}
       width={pageWidth}
       height={pageHeight}
