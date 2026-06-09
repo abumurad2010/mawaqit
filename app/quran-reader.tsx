@@ -29,7 +29,8 @@
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Platform, Alert, FlatList, ActionSheetIOS,
-  useWindowDimensions, Animated, type LayoutChangeEvent,
+  useWindowDimensions, Animated,
+  type NativeSyntheticEvent, type TextLayoutEventData,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -273,26 +274,31 @@ function PageNumberFrame({
   );
 }
 
-/* ── Page content body — pure render at a given font size ──────── */
-function MushafPageBody({
-  ayat, width, fontSize, textColor, ornamentColor,
-  highlightTarget, isBookmarkedFn, onLongPressAyah,
-  lineHeightOverride, debugBorders,
-}: {
-  ayat: ReadonlyArray<HafsAyah>;
-  width: number;
-  fontSize: number;
-  textColor: string;
-  ornamentColor: string;
-  highlightTarget: AyahKey | null;
-  isBookmarkedFn: (s: number, a: number) => boolean;
-  onLongPressAyah: (target: AyahKey) => void;
-  /** If set, overrides the per-line spacing of the ayah Text. Used to
-   *  stretch the rendered text to fill the page on single-no-banner pages. */
-  lineHeightOverride?: number;
-  debugBorders?: boolean;
-}) {
-  type Group = { surahNum: number; isSurahStart: boolean; hasBismillah: boolean; ayat: HafsAyah[] };
+/* ─────────────────────────────────────────────────────────────────────────
+ * Per-ayah layout. Each ayah becomes one direct flex child of the page
+ * content container. Banners/bismillah are natural-sized children. Lines
+ * use flex: 1 so they collectively absorb the remaining height after
+ * banners/bismillah are subtracted, then distribute it equally — like
+ * the printed Mushaf's 15 evenly-spaced lines.
+ *
+ * No measurement phase, no two-render dance, no race conditions. Long-
+ * press is per-ayah (precise; the Pressable IS the ayah).
+ *
+ * Layout policy per page composition:
+ *   single-banner (page 1, 2):
+ *     Wrap banner + ayat in one centered group inside the flex parent.
+ *     Parent uses justifyContent: 'center' so the block sits with equal
+ *     breathing space above and below (the Fatiha aesthetic).
+ *   everything else (multi-group + single-no-banner):
+ *     Flat list of [banner?, bismillah?, ...ayahPressables(flex:1)] as
+ *     direct flex children. Container has explicit height; default
+ *     flex-start with each ayah's flex: 1 makes them share the
+ *     leftover space equally, filling the container exactly.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+type Group = { surahNum: number; isSurahStart: boolean; hasBismillah: boolean; ayat: HafsAyah[] };
+
+function buildGroups(ayat: ReadonlyArray<HafsAyah>): Group[] {
   const groups: Group[] = [];
   for (const a of ayat) {
     const last = groups[groups.length - 1];
@@ -305,79 +311,10 @@ function MushafPageBody({
       groups.push({ surahNum: a.surahNum, isSurahStart, hasBismillah, ayat: [a] });
     }
   }
-
-  const baseLineHeight = fontSize * LINE_HEIGHT_MULT;
-  const lineHeight = lineHeightOverride ?? baseLineHeight;
-  // Substantial banner — proper Madani Mushaf decorative panel, not a label.
-  // The 90 pt floor guarantees room for the rosettes + dotted border +
-  // calligraphic title with ~20 pt of breathing space above and below.
-  const bannerHeight = Math.max(90, fontSize * 3.5);
-  const bismillahHeight = Math.max(26, fontSize * 1.5);
-
-  return (
-    <>
-      {groups.map((g, gi) => (
-        <View key={gi} style={debugBorders ? { borderWidth: 1, borderColor: 'blue' } : undefined}>
-          {g.isSurahStart && (
-            <OrnateSurahBanner
-              surahNum={g.surahNum}
-              color={ornamentColor}
-              textColor={textColor}
-              width={width}
-              height={bannerHeight}
-            />
-          )}
-          {g.hasBismillah && (
-            <View style={{ height: bismillahHeight, justifyContent: 'center' }}>
-              <Text
-                style={{
-                  color: textColor,
-                  fontFamily: QURAN_FONT,
-                  fontSize: fontSize * 0.95,
-                  lineHeight: bismillahHeight,
-                  textAlign: 'center',
-                  writingDirection: 'rtl',
-                }}
-              >
-                بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
-              </Text>
-            </View>
-          )}
-          <Text
-            style={{
-              color: textColor,
-              fontFamily: QURAN_FONT,
-              fontSize,
-              lineHeight,
-              textAlign: 'justify',
-              writingDirection: 'rtl',
-            }}
-          >
-            {g.ayat.map((a, ai) => {
-              const bookmarked = isBookmarkedFn(a.surahNum, a.ayahNum);
-              const highlighted = highlightTarget?.surah === a.surahNum && highlightTarget?.ayah === a.ayahNum;
-              return (
-                <Text
-                  key={ai}
-                  suppressHighlighting
-                  onLongPress={() => onLongPressAyah({ surah: a.surahNum, ayah: a.ayahNum })}
-                  style={{
-                    color: highlighted ? ornamentColor : (bookmarked ? '#C8860A' : textColor),
-                    backgroundColor: highlighted ? ornamentColor + '22' : undefined,
-                  }}
-                >
-                  {a.text + ' '}
-                </Text>
-              );
-            })}
-          </Text>
-        </View>
-      ))}
-    </>
-  );
+  return groups;
 }
 
-/* ── One Mushaf page — measure off-screen, render distributed ──── */
+/* ── One Mushaf page — direct per-ayah render ──────────────────── */
 function MushafPageView({
   pageNum, width, height, textColor, ornamentColor, bgColor,
   highlightTarget, isBookmarkedFn, onLongPressAyah, onTap,
@@ -399,22 +336,11 @@ function MushafPageView({
   const innerWidth = width - horizPad * 2;
   const available = height - vertPad * 2 - SAFETY_BUFFER;
 
-  // Page composition — decides initial font + layout policy.
-  //   hasBanner  : any group on this page starts a surah (banner + breathing
-  //                space; Al-Fatiha / Al-Baqarah start aesthetic).
-  //   multiGroup : two or more surahs share the page (mid-page transitions
-  //                like 293 Al-Isra→Al-Kahf, 604 with three short surahs).
-  //   Single dense group, no banner (most pages — 3, 4, 50, 292):
-  //     start font HIGH (32) so the text naturally fills top-to-bottom;
-  //     justifyContent: 'flex-start' so the first line sits at the top.
-  //   Banner or multi-group:
-  //     start font modest (24), use 'space-evenly' to distribute groups
-  //     evenly — preserves the centered breathing-space layout users
-  //     specifically asked us to keep on pages 1 and 2.
+  const groups = useMemo(() => buildGroups(ayat), [ayat]);
   const { hasBanner, multiGroup } = useMemo(() => {
     let banner = false;
-    let lastSurah = -1;
     let nGroups = 0;
+    let lastSurah = -1;
     for (const a of ayat) {
       if (a.surahNum !== lastSurah) {
         nGroups++;
@@ -424,96 +350,21 @@ function MushafPageView({
     }
     return { hasBanner: banner, multiGroup: nGroups > 1 };
   }, [ayat]);
-  // Three-mode layout policy:
-  //   multi-group pages (293, 312, 604)         → 'space-between'
-  //       Two or more surah groups: pin the first group to the page top and
-  //       the last group to the page bottom; the gap between them grows to
-  //       fill all remaining vertical space (per the user spec — Maryam
-  //       content near top, Taha content near bottom, banner sits between).
-  //   single-group banner pages (1, 2, 50, 187) → 'space-around'
-  //       One surah with a banner — Al-Fatiha / Al-Baqarah start aesthetic.
-  //       Banner + ayat sit as one unit, vertically centered with equal
-  //       breathing space above and below.
-  //   single-group no-banner pages (3, 4, …)    → 'flex-start'
-  //       Dense continuation pages: top-align so the first line sits at
-  //       the page top; the higher INITIAL_FONT_NO_BANNER lets the text
-  //       run down to the bottom edge before the fit-loop shrinks it.
-  const layoutPolicy: 'space-between' | 'space-around' | 'flex-start' =
-    multiGroup ? 'space-between'
-      : hasBanner ? 'space-around'
-        : 'flex-start';
-  const initialFont = (hasBanner || multiGroup) ? INITIAL_FONT_WITH_BANNER : INITIAL_FONT_NO_BANNER;
+  const singleBanner = hasBanner && !multiGroup;
 
-  const cachedFont = FIT_CACHE[fitKey(pageNum, available)];
-  const [fontSize, setFontSize] = useState<number>(cachedFont ?? initialFont);
-  const lastKey = useRef<string>('');
-  useEffect(() => {
-    const key = fitKey(pageNum, available);
-    if (lastKey.current !== key) {
-      lastKey.current = key;
-      const cached = FIT_CACHE[key];
-      setFontSize(cached ?? initialFont);
-    }
-  }, [pageNum, available, initialFont]);
-
-  // ── Line-stretch fill for single-no-banner pages.
-  // Earlier attempt used onTextLayout on the visible Text — but that fires
-  // with a transient lineCount of 1 during initial layout (before the Text
-  // has finished measuring), producing stretchedLH ≈ available ≈ 700pt and
-  // a single giant line floating in the middle of an otherwise empty page.
-  // New approach: derive the stretched lineHeight directly from the
-  // off-screen measurement (`measured` height at baseLineHeight). Because
-  // baseLineHeight is fixed per fontSize and lineHeight doesn't affect
-  // line-wrap, lineCount ≈ measured / baseLineHeight is stable. Stretched
-  // value is capped at MAX_STRETCH_MULT * baseLineHeight as a safety net.
-  const stretchEnabled = !hasBanner && !multiGroup;
-  const MAX_STRETCH_MULT = 2.4;
-  const [stretchedLH, setStretchedLH] = useState<number | null>(null);
-  // Reset stretch on page identity change so a recycled component instance
-  // doesn't render the new page with the previous page's stretched lineHeight.
-  useEffect(() => {
-    setStretchedLH(null);
-  }, [pageNum]);
-
-  const onMeasure = useCallback((e: LayoutChangeEvent) => {
-    const measured = e.nativeEvent.layout.height;
-    const baseLH = fontSize * LINE_HEIGHT_MULT;
-    if (measured > available && fontSize > MIN_FONT) {
-      const next = Math.max(MIN_FONT, fontSize - FONT_STEP);
-      FIT_CACHE[fitKey(pageNum, available)] = next;
-      setFontSize(next);
-      return;
-    }
-    FIT_CACHE[fitKey(pageNum, available)] = fontSize;
-    if (measured > available) {
-      // eslint-disable-next-line no-console
-      console.warn(`[Mushaf] Page ${pageNum} overflows at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
-    } else {
-      // eslint-disable-next-line no-console
-      console.log(`[Mushaf] Page ${pageNum} fit: policy=${layoutPolicy} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)} page=${Math.round(height)}`);
-    }
-    // Compute stretchedLH from the converged measurement (single-no-banner
-    // pages only). measured is the intrinsic height at baseLH; we want the
-    // text to fill `available` instead. Cap defensively.
-    if (stretchEnabled && measured > baseLH && measured <= available) {
-      const desired = baseLH * (available / measured);
-      const capped = Math.min(desired, baseLH * MAX_STRETCH_MULT);
-      // Don't bother updating for tiny stretches (< 2pt) — avoids re-render thrash.
-      if (capped > baseLH + 2 && Math.abs(capped - (stretchedLH ?? baseLH)) > 1) {
-        // eslint-disable-next-line no-console
-        console.log(`[Mushaf] Page ${pageNum} stretch: fontSize=${fontSize} baseLH=${Math.round(baseLH)} stretchedLH=${Math.round(capped)} (measured=${Math.round(measured)} available=${Math.round(available)})`);
-        setStretchedLH(capped);
-      }
-    }
-  }, [fontSize, available, pageNum, layoutPolicy, height, stretchEnabled, stretchedLH]);
+  // Single-banner pages (Fatiha, Baqarah-start) use a smaller starting
+  // font so the centered block doesn't overwhelm the page. Other pages
+  // start larger and let flex distribute. The fit-loop is implicit:
+  // ayat with flex: 1 will SHRINK their text rendering if it overflows
+  // the slot height. We don't run an explicit measurement loop.
+  const fontSize = singleBanner ? INITIAL_FONT_WITH_BANNER : INITIAL_FONT_NO_BANNER;
+  const bannerHeight = Math.max(90, fontSize * 3.5);
+  const bismillahHeight = Math.max(26, fontSize * 1.5);
 
   if (ayat.length === 0) {
     return <View style={{ width, height, backgroundColor: bgColor }} />;
   }
 
-  // GestureDetector with a short Tap. gesture-handler's recognizer runs
-  // parallel to RN's Text gesture system so it fires reliably regardless of
-  // where on the page the user taps — including on top of an ayah Text.
   const tapGesture = useMemo(
     () =>
       Gesture.Tap()
@@ -525,13 +376,136 @@ function MushafPageView({
     [onTap]
   );
 
+  // Render an ayah row (Pressable + Text). Lines collectively share the
+  // remaining flex space. textAlign: 'justify' makes the ayah text fill
+  // its row width edge to edge — the printed-Mushaf horizontal justify.
+  const renderAyah = (a: HafsAyah, idx: number) => {
+    const key = { surah: a.surahNum, ayah: a.ayahNum };
+    const bookmarked = isBookmarkedFn(a.surahNum, a.ayahNum);
+    const highlighted = highlightTarget?.surah === a.surahNum && highlightTarget?.ayah === a.ayahNum;
+    return (
+      <Pressable
+        key={`a-${a.surahNum}-${a.ayahNum}`}
+        onLongPress={() => onLongPressAyah(key)}
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'blue' } : null),
+        }}
+      >
+        <Text
+          style={{
+            color: highlighted ? ornamentColor : (bookmarked ? '#C8860A' : textColor),
+            backgroundColor: highlighted ? ornamentColor + '22' : undefined,
+            fontFamily: QURAN_FONT,
+            fontSize,
+            lineHeight: fontSize * LINE_HEIGHT_MULT,
+            textAlign: 'justify',
+            writingDirection: 'rtl',
+          }}
+        >
+          {a.text}
+        </Text>
+      </Pressable>
+    );
+  };
+
+  const renderBismillah = (key: string) => (
+    <View
+      key={key}
+      style={{
+        height: bismillahHeight,
+        justifyContent: 'center',
+        ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'green' } : null),
+      }}
+    >
+      <Text
+        style={{
+          color: textColor,
+          fontFamily: QURAN_FONT,
+          fontSize: fontSize * 0.95,
+          lineHeight: bismillahHeight,
+          textAlign: 'center',
+          writingDirection: 'rtl',
+        }}
+      >
+        بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+      </Text>
+    </View>
+  );
+
+  // Single-banner pages get the centered-block treatment so Al-Fatiha and
+  // Al-Baqarah-start keep their breathing aesthetic.
+  if (singleBanner) {
+    const g = groups[0];
+    return (
+      <GestureDetector gesture={tapGesture}>
+        <View
+          onLayout={(e) => {
+            // eslint-disable-next-line no-console
+            console.log(`[Mushaf] Page ${pageNum} wrapper: w=${Math.round(e.nativeEvent.layout.width)} h=${Math.round(e.nativeEvent.layout.height)} expected=${Math.round(height)}`);
+          }}
+          style={{
+            width, height, backgroundColor: bgColor,
+            paddingHorizontal: horizPad, paddingVertical: vertPad,
+            overflow: 'hidden',
+            ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'red' } : null),
+          }}
+        >
+          <View
+            onLayout={(e) => {
+              // eslint-disable-next-line no-console
+              console.log(`[Mushaf] Page ${pageNum} content: h=${Math.round(e.nativeEvent.layout.height)} layout=centered-block`);
+            }}
+            style={{
+              height: available,
+              justifyContent: 'center',
+              alignItems: 'stretch',
+              ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'yellow' } : null),
+            }}
+          >
+            <View style={DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'magenta' } : undefined}>
+              <OrnateSurahBanner
+                surahNum={g.surahNum}
+                color={ornamentColor}
+                textColor={textColor}
+                width={innerWidth}
+                height={bannerHeight}
+              />
+              {g.hasBismillah && renderBismillah(`bs-0`)}
+              {g.ayat.map((a) => (
+                <Text
+                  key={`a-${a.ayahNum}`}
+                  onLongPress={() => onLongPressAyah({ surah: a.surahNum, ayah: a.ayahNum })}
+                  style={{
+                    color: textColor,
+                    fontFamily: QURAN_FONT,
+                    fontSize,
+                    lineHeight: fontSize * LINE_HEIGHT_MULT,
+                    textAlign: 'center',
+                    writingDirection: 'rtl',
+                    paddingVertical: 2,
+                  }}
+                >
+                  {a.text}
+                </Text>
+              ))}
+            </View>
+          </View>
+        </View>
+      </GestureDetector>
+    );
+  }
+
+  // Multi-group OR single-no-banner: flat list. Each ayah is a flex: 1
+  // child; banners/bismillah have natural sizes. All ayat share the
+  // remaining height equally so the page fills top-to-bottom.
   return (
     <GestureDetector gesture={tapGesture}>
       <View
         onLayout={(e) => {
-          // Log the actual rendered page wrapper height once per page.
           // eslint-disable-next-line no-console
-          console.log(`[Mushaf] Page ${pageNum} wrapper layout: width=${Math.round(e.nativeEvent.layout.width)} height=${Math.round(e.nativeEvent.layout.height)} expected=${Math.round(height)}`);
+          console.log(`[Mushaf] Page ${pageNum} wrapper: w=${Math.round(e.nativeEvent.layout.width)} h=${Math.round(e.nativeEvent.layout.height)} expected=${Math.round(height)}`);
         }}
         style={{
           width, height, backgroundColor: bgColor,
@@ -540,52 +514,33 @@ function MushafPageView({
           ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'red' } : null),
         }}
       >
-        {/* Off-screen measurement — intrinsic height at BASE lineHeight,
-            drives the fit-loop. Stretching is applied only to the visible
-            render so the measurement remains a stable upper bound. */}
-        <View
-          onLayout={onMeasure}
-          style={{ position: 'absolute', top: 0, left: -10000, width: innerWidth, opacity: 0 }}
-          pointerEvents="none"
-        >
-          <MushafPageBody
-            ayat={ayat}
-            width={innerWidth}
-            fontSize={fontSize}
-            textColor={textColor}
-            ornamentColor={ornamentColor}
-            highlightTarget={highlightTarget}
-            isBookmarkedFn={isBookmarkedFn}
-            onLongPressAyah={onLongPressAyah}
-          />
-        </View>
-        {/* Visible render — three-mode policy (space-between / space-around
-            / flex-start). For single-no-banner pages we ALSO pass a stretched
-            lineHeight derived from onTextLayout so the text fills the page
-            top-to-bottom instead of bunching at the top edge. */}
         <View
           onLayout={(e) => {
             // eslint-disable-next-line no-console
-            console.log(`[Mushaf] Page ${pageNum} content container: height=${Math.round(e.nativeEvent.layout.height)} policy=${layoutPolicy} stretched=${stretchedLH ? Math.round(stretchedLH) : 'no'}`);
+            console.log(`[Mushaf] Page ${pageNum} content: h=${Math.round(e.nativeEvent.layout.height)} layout=flat-flex ayat=${ayat.length} groups=${groups.length}`);
           }}
           style={{
-            flex: 1,
-            justifyContent: layoutPolicy,
+            height: available,
             ...(DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'yellow' } : null),
           }}
         >
-          <MushafPageBody
-            ayat={ayat}
-            width={innerWidth}
-            fontSize={fontSize}
-            textColor={textColor}
-            ornamentColor={ornamentColor}
-            highlightTarget={highlightTarget}
-            isBookmarkedFn={isBookmarkedFn}
-            onLongPressAyah={onLongPressAyah}
-            lineHeightOverride={stretchEnabled ? (stretchedLH ?? undefined) : undefined}
-            debugBorders={DEBUG_BORDERS}
-          />
+          {groups.map((g, gi) => (
+            <React.Fragment key={`g-${gi}`}>
+              {g.isSurahStart && (
+                <View style={DEBUG_BORDERS ? { borderWidth: 1, borderColor: 'magenta' } : undefined}>
+                  <OrnateSurahBanner
+                    surahNum={g.surahNum}
+                    color={ornamentColor}
+                    textColor={textColor}
+                    width={innerWidth}
+                    height={bannerHeight}
+                  />
+                </View>
+              )}
+              {g.hasBismillah && renderBismillah(`bs-${gi}`)}
+              {g.ayat.map((a, idx) => renderAyah(a, idx))}
+            </React.Fragment>
+          ))}
         </View>
       </View>
     </GestureDetector>
@@ -908,7 +863,13 @@ export default function QuranReaderScreen() {
               <Ionicons name="chevron-back" size={18} color={C.tint} />
             </Pressable>
             <Pressable
-              onPress={() => router.push('/quran-toc')}
+              // replace, not push — opening ToC swaps the reader for the ToC
+              // screen in the stack (rather than stacking on top). Combined
+              // with the ToC's own router.replace back to the reader, the
+              // stack stays flat: one back tap returns to wherever the user
+              // entered the reader from (Quran tab / search / bookmarks),
+              // regardless of how many times they bounced via ToC.
+              onPress={() => router.replace('/quran-toc')}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
             >
               <Ionicons name="list" size={18} color={C.textSecond} />

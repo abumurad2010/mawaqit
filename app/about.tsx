@@ -18,7 +18,7 @@ const appIcon = require('@/assets/images/icon.png');
 /** JS-bundle cache marker — Constants.expoConfig.version reads from the
  *  native shell's embedded config, which we can't refresh over Metro. This
  *  constant lives in the JS bundle so any code reload updates it. */
-const JS_BUILD_MARKER = 'TEST-4';
+const JS_BUILD_MARKER = 'TEST-5';
 const APP_VERSION: string = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function AboutScreen() {
