@@ -28,8 +28,8 @@
  */
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Platform, Alert, FlatList,
-  useWindowDimensions, Animated, type LayoutChangeEvent,
+  View, Text, StyleSheet, Pressable, Platform, Alert, FlatList, ActionSheetIOS,
+  useWindowDimensions, Animated, type LayoutChangeEvent, type NativeSyntheticEvent, type TextLayoutEventData,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -44,9 +44,13 @@ import {
   SURAH_META,
   getAyahPage,
   getHafsPage,
+  getHizbForPage,
+  getJuzForPage,
+  HIZB_START_PAGES,
   TOTAL_PAGES,
   type HafsAyah,
 } from '@/lib/quran-api';
+import type { BookmarkScope } from '@/contexts/AppContext';
 
 const QURAN_FONT = 'KFGQPCHafs';
 /** Initial guess for pages with a surah banner (page 1 Al-Fatiha, page 2
@@ -268,6 +272,7 @@ function PageNumberFrame({
 function MushafPageBody({
   ayat, width, fontSize, textColor, ornamentColor,
   highlightTarget, isBookmarkedFn, onLongPressAyah,
+  lineHeightOverride, onAyahTextLayout,
 }: {
   ayat: ReadonlyArray<HafsAyah>;
   width: number;
@@ -277,6 +282,11 @@ function MushafPageBody({
   highlightTarget: AyahKey | null;
   isBookmarkedFn: (s: number, a: number) => boolean;
   onLongPressAyah: (target: AyahKey) => void;
+  /** If set, overrides the per-line spacing of the ayah Text. Used to
+   *  stretch the rendered text to fill the page on single-no-banner pages. */
+  lineHeightOverride?: number;
+  /** Captures the visual line count of the ayah Text. Only invoked when set. */
+  onAyahTextLayout?: (e: NativeSyntheticEvent<TextLayoutEventData>) => void;
 }) {
   type Group = { surahNum: number; isSurahStart: boolean; hasBismillah: boolean; ayat: HafsAyah[] };
   const groups: Group[] = [];
@@ -292,7 +302,8 @@ function MushafPageBody({
     }
   }
 
-  const lineHeight = fontSize * LINE_HEIGHT_MULT;
+  const baseLineHeight = fontSize * LINE_HEIGHT_MULT;
+  const lineHeight = lineHeightOverride ?? baseLineHeight;
   // Substantial banner — proper Madani Mushaf decorative panel, not a label.
   // The 90 pt floor guarantees room for the rosettes + dotted border +
   // calligraphic title with ~20 pt of breathing space above and below.
@@ -329,6 +340,10 @@ function MushafPageBody({
             </View>
           )}
           <Text
+            // Fire onTextLayout only on the first group's ayah Text — for
+            // single-no-banner pages there IS only one group, and that's the
+            // one whose line count we want to drive the stretch policy.
+            onTextLayout={gi === 0 ? onAyahTextLayout : undefined}
             style={{
               color: textColor,
               fontFamily: QURAN_FONT,
@@ -454,10 +469,43 @@ function MushafPageView({
         console.warn(`[Mushaf] Page ${pageNum} overflows at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
       } else {
         // eslint-disable-next-line no-console
-        console.log(`[Mushaf] Page ${pageNum} fit: policy=${layoutPolicy} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)}`);
+        console.log(`[Mushaf] Page ${pageNum} fit: policy=${layoutPolicy} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)} page=${Math.round(height)}`);
       }
     }
-  }, [fontSize, available, pageNum, layoutPolicy]);
+  }, [fontSize, available, pageNum, layoutPolicy, height]);
+
+  // ── Line-stretch fill for single-no-banner pages.
+  // Captures the actual visual line count once the converged fontSize
+  // renders the text, then sets lineHeight = available / lineCount so the
+  // ayah Text fills the page top to bottom. Avoids the "text bunched at
+  // top, empty bottom half" problem flex-start alone left us with.
+  const stretchEnabled = !hasBanner && !multiGroup;
+  const [stretchedLH, setStretchedLH] = useState<number | null>(null);
+  const lastLineCount = useRef<number>(0);
+  useEffect(() => {
+    // Reset stretch when page or fontSize changes so we re-measure.
+    setStretchedLH(null);
+    lastLineCount.current = 0;
+  }, [pageNum, fontSize, available]);
+  const onAyahTextLayout = useCallback(
+    (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+      if (!stretchEnabled) return;
+      const lineCount = e.nativeEvent.lines.length;
+      if (lineCount <= 0) return;
+      if (lineCount === lastLineCount.current) return;
+      lastLineCount.current = lineCount;
+      const desired = (available - 6) / lineCount;
+      const base = fontSize * LINE_HEIGHT_MULT;
+      // Only stretch — never compress. If lines naturally take more than
+      // available (already dense), let the fit-loop handle it.
+      if (desired > base) {
+        // eslint-disable-next-line no-console
+        console.log(`[Mushaf] Page ${pageNum} stretch: fontSize=${fontSize} lineCount=${lineCount} baseLH=${Math.round(base)} stretchedLH=${Math.round(desired)} available=${Math.round(available)}`);
+        setStretchedLH(desired);
+      }
+    },
+    [stretchEnabled, fontSize, available, pageNum]
+  );
 
   if (ayat.length === 0) {
     return <View style={{ width, height, backgroundColor: bgColor }} />;
@@ -479,8 +527,17 @@ function MushafPageView({
 
   return (
     <GestureDetector gesture={tapGesture}>
-      <View style={{ width, height, backgroundColor: bgColor, paddingHorizontal: horizPad, paddingVertical: vertPad, overflow: 'hidden' }}>
-        {/* Off-screen measurement — intrinsic height drives the fit-loop. */}
+      <View
+        onLayout={(e) => {
+          // Log the actual rendered page wrapper height once per page.
+          // eslint-disable-next-line no-console
+          console.log(`[Mushaf] Page ${pageNum} wrapper layout: width=${Math.round(e.nativeEvent.layout.width)} height=${Math.round(e.nativeEvent.layout.height)} expected=${Math.round(height)}`);
+        }}
+        style={{ width, height, backgroundColor: bgColor, paddingHorizontal: horizPad, paddingVertical: vertPad, overflow: 'hidden' }}
+      >
+        {/* Off-screen measurement — intrinsic height at BASE lineHeight,
+            drives the fit-loop. Stretching is applied only to the visible
+            render so the measurement remains a stable upper bound. */}
         <View
           onLayout={onMeasure}
           style={{ position: 'absolute', top: 0, left: -10000, width: innerWidth, opacity: 0 }}
@@ -497,9 +554,17 @@ function MushafPageView({
             onLongPressAyah={onLongPressAyah}
           />
         </View>
-        {/* Visible render — see layoutPolicy comment above for the
-            three-mode policy (space-between / space-around / flex-start). */}
-        <View style={{ flex: 1, justifyContent: layoutPolicy }}>
+        {/* Visible render — three-mode policy (space-between / space-around
+            / flex-start). For single-no-banner pages we ALSO pass a stretched
+            lineHeight derived from onTextLayout so the text fills the page
+            top-to-bottom instead of bunching at the top edge. */}
+        <View
+          onLayout={(e) => {
+            // eslint-disable-next-line no-console
+            console.log(`[Mushaf] Page ${pageNum} content container: height=${Math.round(e.nativeEvent.layout.height)} policy=${layoutPolicy} stretched=${stretchedLH ? Math.round(stretchedLH) : 'no'}`);
+          }}
+          style={{ flex: 1, justifyContent: layoutPolicy }}
+        >
           <MushafPageBody
             ayat={ayat}
             width={innerWidth}
@@ -509,6 +574,8 @@ function MushafPageView({
             highlightTarget={highlightTarget}
             isBookmarkedFn={isBookmarkedFn}
             onLongPressAyah={onLongPressAyah}
+            lineHeightOverride={stretchEnabled ? (stretchedLH ?? undefined) : undefined}
+            onAyahTextLayout={onAyahTextLayout}
           />
         </View>
       </View>
@@ -599,41 +666,127 @@ export default function QuranReaderScreen() {
   const displaySurah = currentAyat[0]?.surahNum ?? 1;
   const displayMeta = SURAH_META[displaySurah - 1];
   const surahLabel = displayMeta ? (isAr ? displayMeta.arabic : displayMeta.transliteration) : '';
-  const juzNum = currentAyat[0]?.juz ?? 1;
-  const juzLabel = isAr ? `جزء ${toArabicIndic(juzNum)}` : `${tr.juz} ${juzNum}`;
+  // Juz from the page's first ayah; hizb from the canonical HIZB_START_PAGES table.
+  const juzNum = currentAyat[0]?.juz ?? getJuzForPage(pageNum);
+  const hizbNum = getHizbForPage(pageNum);
+  const juzLabel = isAr
+    ? `جزء ${toArabicIndic(juzNum)} · حزب ${toArabicIndic(hizbNum)}`
+    : `${tr.juz} ${juzNum} · ${tr.hizb} ${hizbNum}`;
+
+  // Three-scope bookmark dispatcher: given a scope and the long-pressed ayah,
+  // toggle the corresponding bookmark. Reuses the AppContext API which now
+  // accepts a polymorphic BookmarkKey.
+  const toggleBookmark = useCallback((target: AyahKey, scope: BookmarkScope) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const meta = SURAH_META[target.surah - 1];
+    const ayahPage = getAyahPage(target.surah, target.ayah);
+    if (scope === 'ayah') {
+      const key = { scope: 'ayah' as const, surah: target.surah, ayah: target.ayah };
+      if (isBookmarked(key)) {
+        removeBookmark(key);
+      } else {
+        addBookmark({
+          scope: 'ayah',
+          surahNumber: target.surah,
+          surahName: meta?.transliteration ?? '',
+          ayahNumber: target.ayah,
+          ayahText: '',
+          page: ayahPage,
+          timestamp: Date.now(),
+        });
+      }
+      return;
+    }
+    if (scope === 'hizb') {
+      const hizb = getHizbForPage(ayahPage);
+      const key = { scope: 'hizb' as const, hizb };
+      const hizbStartPage = HIZB_START_PAGES[hizb - 1] ?? ayahPage;
+      if (isBookmarked(key)) {
+        removeBookmark(key);
+      } else {
+        addBookmark({
+          scope: 'hizb',
+          surahNumber: target.surah,
+          surahName: meta?.transliteration ?? '',
+          ayahNumber: target.ayah,
+          ayahText: '',
+          hizb,
+          page: hizbStartPage,
+          timestamp: Date.now(),
+        });
+      }
+      return;
+    }
+    // juz
+    const juz = getJuzForPage(ayahPage);
+    const key = { scope: 'juz' as const, juz };
+    // First hizb in juz N is hizb 2N-1. That hizb's start page is the juz start.
+    const juzStartPage = HIZB_START_PAGES[(juz - 1) * 2] ?? ayahPage;
+    if (isBookmarked(key)) {
+      removeBookmark(key);
+    } else {
+      addBookmark({
+        scope: 'juz',
+        surahNumber: target.surah,
+        surahName: meta?.transliteration ?? '',
+        ayahNumber: target.ayah,
+        ayahText: '',
+        juz,
+        page: juzStartPage,
+        timestamp: Date.now(),
+      });
+    }
+  }, [isBookmarked, addBookmark, removeBookmark]);
 
   const handleLongPressAyah = useCallback((target: AyahKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const meta = SURAH_META[target.surah - 1];
-    const bookmarked = isBookmarked(target.surah, target.ayah);
-    const label = isAr
-      ? `${meta?.arabic ?? ''} — آية ${toArabicIndic(target.ayah)}`
-      : `${meta?.transliteration ?? ''} — ${tr.ayah} ${target.ayah}`;
-    Alert.alert(
-      bookmarked ? tr.removeBookmark : tr.addBookmark,
-      label,
-      [
-        { text: tr.btn_cancel, style: 'cancel' },
+    const ayahPage = getAyahPage(target.surah, target.ayah);
+    const hizb = getHizbForPage(ayahPage);
+    const juz = getJuzForPage(ayahPage);
+    const headerLabel = isAr
+      ? `${meta?.arabic ?? ''} — آية ${toArabicIndic(target.ayah)} · حزب ${toArabicIndic(hizb)} · جزء ${toArabicIndic(juz)}`
+      : `${meta?.transliteration ?? ''} — ${tr.ayah} ${target.ayah} · ${tr.hizb} ${hizb} · ${tr.juz} ${juz}`;
+
+    const ayahKey = { scope: 'ayah' as const, surah: target.surah, ayah: target.ayah };
+    const hizbKey = { scope: 'hizb' as const, hizb };
+    const juzKey = { scope: 'juz' as const, juz };
+    const ayahMarked = isBookmarked(ayahKey);
+    const hizbMarked = isBookmarked(hizbKey);
+    const juzMarked = isBookmarked(juzKey);
+    const mark = (on: boolean) => on ? '✓ ' : '';
+    const ayahLabel = `${mark(ayahMarked)}${tr.bookmark_save_ayah ?? 'Bookmark this ayah'}`;
+    const hizbLabel = `${mark(hizbMarked)}${tr.bookmark_save_hizb ?? 'Bookmark this hizb'}`;
+    const juzLabel  = `${mark(juzMarked)}${tr.bookmark_save_juz ?? 'Bookmark this juz'}`;
+    const cancelLabel = tr.btn_cancel ?? 'Cancel';
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
         {
-          text: bookmarked ? tr.remove : tr.add,
-          onPress: () => {
-            if (bookmarked) {
-              removeBookmark(target.surah, target.ayah);
-            } else {
-              addBookmark({
-                surahNumber: target.surah,
-                surahName: meta?.transliteration ?? '',
-                ayahNumber: target.ayah,
-                ayahText: '',
-                timestamp: Date.now(),
-              });
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
+          title: tr.bookmark_choose_scope ?? 'Choose what to bookmark',
+          message: headerLabel,
+          options: [ayahLabel, hizbLabel, juzLabel, cancelLabel],
+          cancelButtonIndex: 3,
         },
+        (idx) => {
+          if (idx === 0) toggleBookmark(target, 'ayah');
+          else if (idx === 1) toggleBookmark(target, 'hizb');
+          else if (idx === 2) toggleBookmark(target, 'juz');
+        }
+      );
+      return;
+    }
+    Alert.alert(
+      tr.bookmark_choose_scope ?? 'Choose what to bookmark',
+      headerLabel,
+      [
+        { text: ayahLabel, onPress: () => toggleBookmark(target, 'ayah') },
+        { text: hizbLabel, onPress: () => toggleBookmark(target, 'hizb') },
+        { text: juzLabel,  onPress: () => toggleBookmark(target, 'juz') },
+        { text: cancelLabel, style: 'cancel' },
       ]
     );
-  }, [isBookmarked, addBookmark, removeBookmark, tr, isAr]);
+  }, [isBookmarked, tr, isAr, toggleBookmark]);
 
   const handleTap = useCallback(() => {
     setChromeVisible(v => !v);

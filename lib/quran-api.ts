@@ -377,6 +377,35 @@ export const BISMILLAH_TEXT: string = ((QURAN_DATA['1']?.[0]?.t) ?? 'بِسْم�
 /** Total pages in the Madani Mushaf. */
 export const TOTAL_PAGES = 604;
 
+/** Standard Madani Mushaf hizb start pages (60 hizbs). Hizb N starts at
+ *  HIZB_START_PAGES[N-1]. Compiled from the printed Madinah Mushaf reference. */
+export const HIZB_START_PAGES: ReadonlyArray<number> = [
+  1, 11, 22, 32, 42, 52, 62, 72, 82, 92,    // 1-10
+  102, 111, 121, 131, 142, 152, 162, 172, 182, 192,  // 11-20
+  202, 213, 223, 233, 242, 252, 262, 272, 282, 292,  // 21-30
+  302, 312, 322, 332, 342, 352, 362, 372, 382, 392,  // 31-40
+  402, 412, 422, 432, 442, 452, 462, 472, 482, 492,  // 41-50
+  502, 512, 522, 532, 542, 552, 562, 572, 582, 591,  // 51-60
+];
+
+/** Returns the hizb number (1-60) for the given Mushaf page. */
+export function getHizbForPage(page: number): number {
+  if (page < 1) return 1;
+  let lo = 0, hi = HIZB_START_PAGES.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (HIZB_START_PAGES[mid] <= page) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo + 1;
+}
+
+/** Returns the juz number (1-30) for the given Mushaf page. Hizb N is in
+ *  juz ceil(N/2). */
+export function getJuzForPage(page: number): number {
+  return Math.ceil(getHizbForPage(page) / 2);
+}
+
 /* ──────────────────────────────────────────────────────────────────────
  * KFGQPC Hafs v18 — official Uthmanic-script Quran text from King Fahd
  * Glorious Quran Printing Complex. Sourced via thetruetruth/quran-data-kfgqpc

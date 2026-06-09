@@ -50,13 +50,40 @@ export interface PrayerNotifConfig {
 export type PrayerNotifType = PrayerNotifConfig;
 export type SecondLang = Lang | 'auto';
 
+/** Bookmark scope — discriminates between the three reading-position kinds. */
+export type BookmarkScope = 'ayah' | 'hizb' | 'juz';
+
 export interface Bookmark {
+  /** New: scope discriminator. Older records without `scope` are treated as 'ayah'. */
+  scope?: BookmarkScope;
+  /** Page to navigate to. New field; back-filled on load from getAyahPage()
+   *  for legacy ayah-scope records. */
+  page?: number;
+  /** Ayah-scope fields. */
   surahNumber: number;
   surahName: string;
   ayahNumber: number;
   ayahText: string;
+  /** Hizb-scope (1-60). */
+  hizb?: number;
+  /** Juz-scope (1-30). */
+  juz?: number;
   timestamp: number;
   type?: 'mushaf' | 'transliteration';
+}
+
+/** Polymorphic bookmark match key for isBookmarked / removeBookmark. */
+export type BookmarkKey =
+  | { scope: 'ayah'; surah: number; ayah: number }
+  | { scope: 'hizb'; hizb: number }
+  | { scope: 'juz'; juz: number };
+
+function bookmarkMatchesKey(b: Bookmark, k: BookmarkKey): boolean {
+  const bScope = b.scope ?? 'ayah';
+  if (k.scope !== bScope) return false;
+  if (k.scope === 'ayah') return b.surahNumber === k.surah && b.ayahNumber === k.ayah;
+  if (k.scope === 'hizb') return b.hizb === k.hizb;
+  return b.juz === k.juz;
 }
 
 export interface LocationData {
@@ -117,8 +144,8 @@ interface AppContextValue extends AppSettings {
   locationUtcOffset: number | null;
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
-  removeBookmark: (surahNumber: number, ayahNumber: number) => void;
-  isBookmarked: (surahNumber: number, ayahNumber: number) => boolean;
+  removeBookmark: (keyOrSurah: BookmarkKey | number, ayahNumber?: number) => void;
+  isBookmarked: (keyOrSurah: BookmarkKey | number, ayahNumber?: number) => boolean;
   updateSettings: (partial: Partial<AppSettings>) => void;
   lastReadPage: number;
   setLastReadPage: (page: number) => void;
@@ -247,7 +274,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const merged = { ...DEFAULT_SETTINGS, ...parsed };
           setSettings(merged);
         }
-        if (b) setBookmarks(JSON.parse(b));
+        if (b) {
+          // Migrate legacy ayah-only bookmarks: stamp them with scope='ayah'.
+          const raw = JSON.parse(b) as Bookmark[];
+          const migrated = raw.map(x => ({ ...x, scope: x.scope ?? ('ayah' as BookmarkScope) }));
+          setBookmarks(migrated);
+        }
         if (lrp) setLastReadPageState(parseInt(lrp, 10));
         if (lrs) setLastReadSurahState(parseInt(lrs, 10));
         if (cc) setCountryCode(cc);
@@ -413,23 +445,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const addBookmark = async (b: Bookmark) => {
+    const scope: BookmarkScope = b.scope ?? 'ayah';
+    const bWithScope: Bookmark = { ...b, scope };
+    const key: BookmarkKey =
+      scope === 'ayah' ? { scope: 'ayah', surah: b.surahNumber, ayah: b.ayahNumber }
+      : scope === 'hizb' ? { scope: 'hizb', hizb: b.hizb ?? 0 }
+      : { scope: 'juz', juz: b.juz ?? 0 };
     setBookmarks(prev => {
-      const next = [b, ...prev.filter(x => !(x.surahNumber === b.surahNumber && x.ayahNumber === b.ayahNumber))];
+      const next = [bWithScope, ...prev.filter(x => !bookmarkMatchesKey(x, key))];
       AsyncStorage.setItem('bookmarks', JSON.stringify(next));
       return next;
     });
   };
 
-  const removeBookmark = async (surahNumber: number, ayahNumber: number) => {
+  const removeBookmark = async (keyOrSurah: BookmarkKey | number, ayahNumber?: number) => {
+    const key: BookmarkKey = typeof keyOrSurah === 'number'
+      ? { scope: 'ayah', surah: keyOrSurah, ayah: ayahNumber ?? 0 }
+      : keyOrSurah;
     setBookmarks(prev => {
-      const next = prev.filter(x => !(x.surahNumber === surahNumber && x.ayahNumber === ayahNumber));
+      const next = prev.filter(x => !bookmarkMatchesKey(x, key));
       AsyncStorage.setItem('bookmarks', JSON.stringify(next));
       return next;
     });
   };
 
-  const isBookmarked = (surahNumber: number, ayahNumber: number) =>
-    bookmarks.some(b => b.surahNumber === surahNumber && b.ayahNumber === ayahNumber);
+  const isBookmarked = (keyOrSurah: BookmarkKey | number, ayahNumber?: number): boolean => {
+    const key: BookmarkKey = typeof keyOrSurah === 'number'
+      ? { scope: 'ayah', surah: keyOrSurah, ayah: ayahNumber ?? 0 }
+      : keyOrSurah;
+    return bookmarks.some(b => bookmarkMatchesKey(b, key));
+  };
 
   const setLastReadPage = async (page: number) => {
     setLastReadPageState(page);

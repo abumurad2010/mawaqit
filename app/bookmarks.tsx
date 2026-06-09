@@ -24,6 +24,7 @@ export default function BookmarksScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const renderItem = ({ item }: { item: Bookmark }) => {
+    const scope = item.scope ?? 'ayah';
     const isTranslit = item.type === 'transliteration';
     const navigate = () => {
       Haptics.selectionAsync();
@@ -32,39 +33,69 @@ export default function BookmarksScreen() {
           pathname: '/surah-transliteration/[number]',
           params: { number: String(item.surahNumber) },
         });
-      } else {
-        const page = getAyahPage(item.surahNumber, item.ayahNumber);
-        router.push({
-          pathname: '/quran-reader',
-          params: {
-            page: String(page),
-            highlightSurah: String(item.surahNumber),
-            highlightAyah: String(item.ayahNumber),
-          },
-        });
+        return;
       }
+      const page = item.page ?? getAyahPage(item.surahNumber, item.ayahNumber);
+      const params: Record<string, string> = { page: String(page) };
+      if (scope === 'ayah') {
+        params.highlightSurah = String(item.surahNumber);
+        params.highlightAyah = String(item.ayahNumber);
+      }
+      router.push({ pathname: '/quran-reader', params });
     };
+
+    // Per-scope dot colour and badge label.
+    const dotColor =
+      isTranslit ? C.tint
+      : scope === 'hizb' ? C.tint
+      : scope === 'juz' ? '#8B7E48'
+      : C.gold;
+    const scopeBadge =
+      scope === 'hizb' ? { label: tr.bookmark_scope_hizb ?? 'Hizb', icon: 'bookmark' as const }
+      : scope === 'juz' ? { label: tr.bookmark_scope_juz ?? 'Juz', icon: 'bookmarks' as const }
+      : null;
+
+    // Main title line — for ayah keep surah name (existing); for hizb/juz
+    // show the scope number prominently.
+    const titleText =
+      scope === 'hizb' ? `${tr.hizb ?? 'Hizb'} ${item.hizb ?? '?'}`
+      : scope === 'juz' ? `${tr.juz ?? 'Juz'} ${item.juz ?? '?'}`
+      : item.surahName;
+
+    // Meta line.
+    const metaText =
+      scope === 'hizb' ? `${tr.page ?? 'Page'} ${item.page ?? '?'}`
+      : scope === 'juz' ? `${tr.page ?? 'Page'} ${item.page ?? '?'}`
+      : `${tr.ayah} ${item.ayahNumber}`;
+
     return (
     <View style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
         <Pressable onPress={navigate} style={styles.rowBody}>
-          <View style={[styles.goldDot, { backgroundColor: isTranslit ? C.tint : C.gold }]} />
+          <View style={[styles.goldDot, { backgroundColor: dotColor }]} />
           <View style={styles.info}>
             <View style={styles.surahNameRow}>
               <Text style={[styles.surahName, { color: C.text, fontFamily: 'Amiri_700Bold', flex: 1 }]}>
-                {item.surahName}
+                {titleText}
               </Text>
-              {isTranslit && (
+              {isTranslit ? (
                 <View style={[styles.typeBadge, { backgroundColor: C.tintLight, borderColor: C.tint }]}>
                   <Ionicons name="language" size={10} color={C.tint} />
                   <Text style={[styles.typeBadgeText, { color: C.tint }]}>
                     {tr.translit}
                   </Text>
                 </View>
-              )}
+              ) : scopeBadge ? (
+                <View style={[styles.typeBadge, { backgroundColor: C.tintLight, borderColor: C.tint }]}>
+                  <Ionicons name={scopeBadge.icon} size={10} color={C.tint} />
+                  <Text style={[styles.typeBadgeText, { color: C.tint }]}>
+                    {scopeBadge.label}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <View style={styles.metaRow}>
               <Text style={[styles.ayahNum, { color: C.textSecond, fontWeight: fw }]}>
-                {`${tr.ayah} ${item.ayahNumber}`}
+                {metaText}
               </Text>
               {!!item.timestamp && (
                 <Text style={[styles.timestamp, { color: C.textMuted, fontWeight: fw }]}>
@@ -78,13 +109,20 @@ export default function BookmarksScreen() {
                 </Text>
               )}
             </View>
-            <Text style={[styles.preview, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
-              {item.ayahText}…
-            </Text>
+            {scope === 'ayah' && !!item.ayahText && (
+              <Text style={[styles.preview, { color: C.textMuted, fontWeight: fw, fontFamily: 'Amiri_400Regular' }]} numberOfLines={2}>
+                {item.ayahText}…
+              </Text>
+            )}
           </View>
         </Pressable>
         <Pressable
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); removeBookmark(item.surahNumber, item.ayahNumber); }}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            if (scope === 'ayah') removeBookmark(item.surahNumber, item.ayahNumber);
+            else if (scope === 'hizb') removeBookmark({ scope: 'hizb', hizb: item.hizb ?? 0 });
+            else removeBookmark({ scope: 'juz', juz: item.juz ?? 0 });
+          }}
           style={({ pressed }) => [styles.deleteBtn, { opacity: pressed ? 0.6 : 1 }]}
         >
           <Text style={{ color: C.danger, fontSize: 13, fontWeight: '600' }}>{(tr as any).delete_label ?? 'Delete'}</Text>
