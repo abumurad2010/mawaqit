@@ -45,7 +45,9 @@ import {
   getAyahPage,
   getHafsPage,
   getHizbForPage,
+  getHizbStartAt,
   getJuzForPage,
+  getJuzStartAt,
   HIZB_START_PAGES,
   TOTAL_PAGES,
   type HafsAyah,
@@ -367,18 +369,46 @@ function MushafPageBody({
             {g.ayat.map((a, ai) => {
               const bookmarked = isBookmarkedFn(a.surahNum, a.ayahNum);
               const highlighted = highlightTarget?.surah === a.surahNum && highlightTarget?.ayah === a.ayahNum;
+              // Boundary markers — prepended inline before the ayah that
+              // opens a new juz / hizb. Juz markers are more prominent
+              // (Arabic-Indic number on a larger glyph); hizb markers are
+              // a plain rub-el-hizb ornament without a label. We don't
+              // show a hizb marker when a juz marker is also present on
+              // the same ayah (every odd-numbered hizb is a juz start —
+              // the juz marker subsumes it).
+              const juzN = getJuzStartAt(a.surahNum, a.ayahNum);
+              const hizbN = juzN ? 0 : getHizbStartAt(a.surahNum, a.ayahNum);
               return (
-                <Text
-                  key={ai}
-                  suppressHighlighting
-                  onLongPress={() => onLongPressAyah({ surah: a.surahNum, ayah: a.ayahNum })}
-                  style={{
-                    color: highlighted ? ornamentColor : (bookmarked ? '#C8860A' : textColor),
-                    backgroundColor: highlighted ? ornamentColor + '22' : undefined,
-                  }}
-                >
-                  {a.text + ' '}
-                </Text>
+                <React.Fragment key={ai}>
+                  {juzN > 0 ? (
+                    <Text style={{
+                      color: ornamentColor,
+                      fontFamily: 'Amiri_700Bold',
+                      fontSize: fontSize * 0.85,
+                    }}>
+                      {`۞ جزء ${toArabicIndic(juzN)} ۞ `}
+                    </Text>
+                  ) : null}
+                  {hizbN > 0 ? (
+                    <Text style={{
+                      color: ornamentColor,
+                      fontFamily: 'Amiri_400Regular',
+                      fontSize: fontSize * 0.85,
+                    }}>
+                      {`۞ `}
+                    </Text>
+                  ) : null}
+                  <Text
+                    suppressHighlighting
+                    onLongPress={() => onLongPressAyah({ surah: a.surahNum, ayah: a.ayahNum })}
+                    style={{
+                      color: highlighted ? ornamentColor : (bookmarked ? '#C8860A' : textColor),
+                      backgroundColor: highlighted ? ornamentColor + '22' : undefined,
+                    }}
+                  >
+                    {a.text + ' '}
+                  </Text>
+                </React.Fragment>
               );
             })}
           </Text>

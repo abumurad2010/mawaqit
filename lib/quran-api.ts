@@ -469,6 +469,64 @@ export function getHafsPage(pageNum: number): ReadonlyArray<HafsAyah> {
   return HAFS_BY_PAGE[pageNum - 1];
 }
 
+/* ──────────────────────────────────────────────────────────────────────
+ * Juz + Hizb boundary markers — inline ornaments rendered in the reader
+ * before the ayah that opens a new juz / hizb.
+ *
+ * JUZ_START_AYAT: 30 entries. Computed from the hafs-data jozz field by
+ *   scanning for transitions: the first ayah whose jozz differs from the
+ *   previous ayah's jozz is that juz's start. Exact and complete.
+ *
+ * HIZB_START_AYAT: 60 entries. Derived from the canonical HIZB_START_PAGES
+ *   table: for each hizb N, find the first ayah on HIZB_START_PAGES[N-1].
+ *   This is exact for the 30 hizbs that align with juz boundaries (those
+ *   ARE always page starts) and approximate for the 30 mid-juz hizbs
+ *   (Madani-Mushaf mid-juz hizb starts often coincide with page starts;
+ *   when they don't, the marker lands on the first ayah of the start page
+ *   rather than the canonical hizb-start ayah). Good enough for visual
+ *   indication — anchoring the marker to ayah-1-of-hizb-page keeps the
+ *   data computation simple and avoids bundling an extra mapping file.
+ * ───────────────────────────────────────────────────────────────────── */
+
+/** Key into JUZ_START_AYAT / HIZB_START_AYAT. */
+function juzHizbKey(surah: number, ayah: number): string {
+  return `${surah}:${ayah}`;
+}
+
+export const JUZ_START_AYAT: Readonly<Record<string, number>> = (() => {
+  const out: Record<string, number> = {};
+  let lastJuz = 0;
+  for (const row of HAFS_DATA) {
+    if (row.jozz !== lastJuz) {
+      out[juzHizbKey(row.sora, row.aya_no)] = row.jozz;
+      lastJuz = row.jozz;
+    }
+  }
+  return out;
+})();
+
+export const HIZB_START_AYAT: Readonly<Record<string, number>> = (() => {
+  const out: Record<string, number> = {};
+  for (let h = 1; h <= 60; h++) {
+    const startPage = HIZB_START_PAGES[h - 1];
+    const first = HAFS_BY_PAGE[startPage - 1]?.[0];
+    if (first) {
+      out[juzHizbKey(first.surahNum, first.ayahNum)] = h;
+    }
+  }
+  return out;
+})();
+
+/** Returns the juz number (1-30) if this ayah opens a new juz, else 0. */
+export function getJuzStartAt(surah: number, ayah: number): number {
+  return JUZ_START_AYAT[juzHizbKey(surah, ayah)] ?? 0;
+}
+
+/** Returns the hizb number (1-60) if this ayah opens a new hizb, else 0. */
+export function getHizbStartAt(surah: number, ayah: number): number {
+  return HIZB_START_AYAT[juzHizbKey(surah, ayah)] ?? 0;
+}
+
 /** The 15 sajdah (prostration) ayahs. `word` is the specific Arabic word to underline. */
 export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number; word: string }> = [
   { surah: 7,  ayah: 206, word: 'يسجدون'       },
