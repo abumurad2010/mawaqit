@@ -49,8 +49,19 @@ import {
 } from '@/lib/quran-api';
 
 const QURAN_FONT = 'KFGQPCHafs';
-const INITIAL_FONT = 24;
-const MAX_FONT = 26;
+/** Initial guess for pages with a surah banner (page 1 Al-Fatiha, page 2
+ *  Al-Baqarah start, etc.). These pages render with a centered breathing
+ *  layout (justifyContent: space-evenly) so the banner sits in the right
+ *  vertical area regardless of how much surrounding text exists. We keep
+ *  the start size modest so a single surah header + bismillah still
+ *  reads gracefully on Al-Fatiha. */
+const INITIAL_FONT_WITH_BANNER = 24;
+/** Initial guess for pages that are ONE flowing ayah group with no banner
+ *  (e.g. page 3 Al-Baqarah cont'd). These pages render top-aligned and
+ *  the fit-loop shrinks ONLY on overflow, so a larger starting size
+ *  ensures the text grows to fill the available area before shrinking. */
+const INITIAL_FONT_NO_BANNER = 32;
+const MAX_FONT = 32;
 const MIN_FONT = 16;
 const FONT_STEP = 0.5;
 const SAFETY_BUFFER = 8;
@@ -88,32 +99,34 @@ function OrnateSurahBanner({
   if (!meta) return null;
   const innerW = width;
   const innerH = height;
-  const titleSize = Math.max(13, Math.min(20, innerH * 0.5));
+  const titleSize = Math.max(15, Math.min(22, innerH * 0.34));
+  const medR = Math.min(13, innerH * 0.2);
+  const medCX = Math.max(28, innerW * 0.08);
   return (
-    <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ width, height, alignItems: 'center', justifyContent: 'center', marginVertical: 4 }}>
       <Svg width={innerW} height={innerH} viewBox={`0 0 ${innerW} ${innerH}`}>
-        {/* Outer frame */}
+        {/* Outer frame — thick border with generous margin */}
         <Rect
-          x={3} y={3}
-          width={innerW - 6} height={innerH - 6}
-          rx={3} ry={3}
-          stroke={color} strokeWidth={1.2} fill="transparent"
+          x={5} y={5}
+          width={innerW - 10} height={innerH - 10}
+          rx={4} ry={4}
+          stroke={color} strokeWidth={1.4} fill="transparent"
         />
-        {/* Inner frame */}
+        {/* Inner frame — thinner, gives a doubled-edge look */}
         <Rect
-          x={6} y={6}
-          width={innerW - 12} height={innerH - 12}
+          x={10} y={10}
+          width={innerW - 20} height={innerH - 20}
           rx={2} ry={2}
           stroke={color} strokeWidth={0.5} fill="transparent"
         />
-        {/* Left medallion — three concentric */}
-        <Circle cx={22} cy={innerH / 2} r={7} stroke={color} strokeWidth={0.8} fill="transparent" />
-        <Circle cx={22} cy={innerH / 2} r={4} stroke={color} strokeWidth={0.6} fill="transparent" />
-        <Circle cx={22} cy={innerH / 2} r={1.6} fill={color} />
+        {/* Left medallion — three concentric circles, larger so they read */}
+        <Circle cx={medCX} cy={innerH / 2} r={medR} stroke={color} strokeWidth={0.9} fill="transparent" />
+        <Circle cx={medCX} cy={innerH / 2} r={medR * 0.62} stroke={color} strokeWidth={0.6} fill="transparent" />
+        <Circle cx={medCX} cy={innerH / 2} r={medR * 0.22} fill={color} />
         {/* Right medallion */}
-        <Circle cx={innerW - 22} cy={innerH / 2} r={7} stroke={color} strokeWidth={0.8} fill="transparent" />
-        <Circle cx={innerW - 22} cy={innerH / 2} r={4} stroke={color} strokeWidth={0.6} fill="transparent" />
-        <Circle cx={innerW - 22} cy={innerH / 2} r={1.6} fill={color} />
+        <Circle cx={innerW - medCX} cy={innerH / 2} r={medR} stroke={color} strokeWidth={0.9} fill="transparent" />
+        <Circle cx={innerW - medCX} cy={innerH / 2} r={medR * 0.62} stroke={color} strokeWidth={0.6} fill="transparent" />
+        <Circle cx={innerW - medCX} cy={innerH / 2} r={medR * 0.22} fill={color} />
       </Svg>
       <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
         <Text
@@ -190,8 +203,11 @@ function MushafPageBody({
   }
 
   const lineHeight = fontSize * LINE_HEIGHT_MULT;
-  const bannerHeight = Math.max(38, fontSize * 1.7);
-  const bismillahHeight = Math.max(22, fontSize * 1.3);
+  // Thicker banner — feels like a panel, not a thin label. Internal padding
+  // pushes the title up off the bottom border and the medallions sit with
+  // breathing room above and below them.
+  const bannerHeight = Math.max(58, fontSize * 2.6);
+  const bismillahHeight = Math.max(26, fontSize * 1.5);
 
   return (
     <>
@@ -278,17 +294,45 @@ function MushafPageView({
   const innerWidth = width - horizPad * 2;
   const available = height - vertPad * 2 - SAFETY_BUFFER;
 
+  // Page composition — decides initial font + layout policy.
+  //   hasBanner  : any group on this page starts a surah (banner + breathing
+  //                space; Al-Fatiha / Al-Baqarah start aesthetic).
+  //   multiGroup : two or more surahs share the page (mid-page transitions
+  //                like 293 Al-Isra→Al-Kahf, 604 with three short surahs).
+  //   Single dense group, no banner (most pages — 3, 4, 50, 292):
+  //     start font HIGH (32) so the text naturally fills top-to-bottom;
+  //     justifyContent: 'flex-start' so the first line sits at the top.
+  //   Banner or multi-group:
+  //     start font modest (24), use 'space-evenly' to distribute groups
+  //     evenly — preserves the centered breathing-space layout users
+  //     specifically asked us to keep on pages 1 and 2.
+  const { hasBanner, multiGroup } = useMemo(() => {
+    let banner = false;
+    let lastSurah = -1;
+    let nGroups = 0;
+    for (const a of ayat) {
+      if (a.surahNum !== lastSurah) {
+        nGroups++;
+        lastSurah = a.surahNum;
+        if (a.ayahNum === 1) banner = true;
+      }
+    }
+    return { hasBanner: banner, multiGroup: nGroups > 1 };
+  }, [ayat]);
+  const useBreathingLayout = hasBanner || multiGroup;
+  const initialFont = useBreathingLayout ? INITIAL_FONT_WITH_BANNER : INITIAL_FONT_NO_BANNER;
+
   const cachedFont = FIT_CACHE[fitKey(pageNum, available)];
-  const [fontSize, setFontSize] = useState<number>(cachedFont ?? INITIAL_FONT);
+  const [fontSize, setFontSize] = useState<number>(cachedFont ?? initialFont);
   const lastKey = useRef<string>('');
   useEffect(() => {
     const key = fitKey(pageNum, available);
     if (lastKey.current !== key) {
       lastKey.current = key;
       const cached = FIT_CACHE[key];
-      setFontSize(cached ?? INITIAL_FONT);
+      setFontSize(cached ?? initialFont);
     }
-  }, [pageNum, available]);
+  }, [pageNum, available, initialFont]);
 
   const onMeasure = useCallback((e: LayoutChangeEvent) => {
     const measured = e.nativeEvent.layout.height;
@@ -301,9 +345,12 @@ function MushafPageView({
       if (measured > available) {
         // eslint-disable-next-line no-console
         console.warn(`[Mushaf] Page ${pageNum} overflows at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(`[Mushaf] Page ${pageNum} fit: layout=${useBreathingLayout ? 'breathing' : 'fill'} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)}`);
       }
     }
-  }, [fontSize, available, pageNum]);
+  }, [fontSize, available, pageNum, useBreathingLayout]);
 
   if (ayat.length === 0) {
     return <View style={{ width, height, backgroundColor: bgColor }} />;
@@ -343,8 +390,12 @@ function MushafPageView({
             onLongPressAyah={onLongPressAyah}
           />
         </View>
-        {/* Visible distributed render — groups spread vertically. */}
-        <View style={{ flex: 1, justifyContent: 'space-evenly' }}>
+        {/* Visible render — breathing/centered when there's a banner or
+            multiple surahs on this page (preserves the Al-Fatiha and
+            Al-Baqarah-start aesthetic); top-aligned & fill-height for
+            single-group continuation pages so the text covers the whole
+            page rather than bunching in the middle. */}
+        <View style={{ flex: 1, justifyContent: useBreathingLayout ? 'space-evenly' : 'flex-start' }}>
           <MushafPageBody
             ayat={ayat}
             width={innerWidth}
