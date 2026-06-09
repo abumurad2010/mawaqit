@@ -343,6 +343,17 @@ function MushafPageBody({
               </Text>
             </View>
           )}
+          {/* textAlign: 'justify' justifies every line of an ayah-group
+              EXCEPT the last one — that's the CSS/React Native default and
+              there is no `textAlignLast` prop on RN's TextStyle (the only
+              accepted textAlign values are auto | left | right | center |
+              justify; see node_modules/react-native/Libraries/StyleSheet/
+              StyleSheetTypes.d.ts:537). The printed Madani Mushaf follows
+              the same convention — the trailing line of a passage sits at
+              its natural width — so this matches authentic Mushaf
+              typography. Do not introduce per-visual-line Views again to
+              "fix" this; the structural rewrite caused right-edge clipping
+              regressions (see TEST-5 → TEST-6 rollback for context). */}
           <Text
             style={{
               color: textColor,
