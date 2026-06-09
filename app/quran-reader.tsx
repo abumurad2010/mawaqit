@@ -33,7 +33,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import Svg, { Rect, Circle, Ellipse } from 'react-native-svg';
+import Svg, { Rect, Circle, Ellipse, Path, G } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -67,7 +67,7 @@ const FONT_STEP = 0.5;
 const SAFETY_BUFFER = 8;
 const LINE_HEIGHT_MULT = 1.5;
 const MINI_LABEL_HEIGHT = 26;
-const PAGE_OVAL_HEIGHT = 30;
+const PAGE_OVAL_HEIGHT = 38;
 const ICON_BAR_HEIGHT = 44;
 const CHROME_FADE_MS = 240;
 /** Muted ornament gold, harmonises with both dark and light backgrounds. */
@@ -90,6 +90,52 @@ interface AyahKey { surah: number; ayah: number }
  * The frame is intentionally muted gold/grey so it reads as decoration
  * rather than chrome.
  * ──────────────────────────────────────────────────────────────────────── */
+/** Build an 8-pointed star ("rub el hizb"-style rosette) SVG path centered at (cx, cy)
+ *  with outer radius R and inner radius r. Renders as a Path. */
+function eightPointStar(cx: number, cy: number, R: number, r: number): string {
+  const pts: string[] = [];
+  for (let i = 0; i < 16; i++) {
+    const angle = (Math.PI / 8) * i - Math.PI / 2;
+    const rad = i % 2 === 0 ? R : r;
+    const x = cx + rad * Math.cos(angle);
+    const y = cy + rad * Math.sin(angle);
+    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+  }
+  return `M ${pts[0]} L ${pts.slice(1).join(' L ')} Z`;
+}
+
+/** 8-petaled flower outline as a sequence of triangle petals.
+ *  Slightly denser visual than the star — works well as the outer ring. */
+function petalRing(cx: number, cy: number, R: number, innerR: number): string {
+  const out: string[] = [];
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const a2 = ((i + 0.5) / n) * Math.PI * 2 - Math.PI / 2;
+    const a3 = ((i + 1) / n) * Math.PI * 2 - Math.PI / 2;
+    const p0 = [cx + innerR * Math.cos(a), cy + innerR * Math.sin(a)];
+    const tip = [cx + R * Math.cos(a2), cy + R * Math.sin(a2)];
+    const p2 = [cx + innerR * Math.cos(a3), cy + innerR * Math.sin(a3)];
+    out.push(`M ${p0[0].toFixed(2)},${p0[1].toFixed(2)} L ${tip[0].toFixed(2)},${tip[1].toFixed(2)} L ${p2[0].toFixed(2)},${p2[1].toFixed(2)} Z`);
+  }
+  return out.join(' ');
+}
+
+/** Decorative arabesque rosette: outer 8-petal ring, mid 8-point star, inner ring, centre dot. */
+function Rosette({ cx, cy, R, color }: { cx: number; cy: number; R: number; color: string }) {
+  const innerR = R * 0.62;
+  const starR = R * 0.5;
+  const starInner = R * 0.28;
+  return (
+    <G>
+      <Path d={petalRing(cx, cy, R, innerR)} fill={color} fillOpacity={0.18} stroke={color} strokeWidth={0.5} />
+      <Circle cx={cx} cy={cy} r={innerR} stroke={color} strokeWidth={0.6} fill="none" />
+      <Path d={eightPointStar(cx, cy, starR, starInner)} stroke={color} strokeWidth={0.7} fill={color} fillOpacity={0.35} />
+      <Circle cx={cx} cy={cy} r={R * 0.14} fill={color} />
+    </G>
+  );
+}
+
 function OrnateSurahBanner({
   surahNum, color, textColor, width, height,
 }: {
@@ -99,34 +145,65 @@ function OrnateSurahBanner({
   if (!meta) return null;
   const innerW = width;
   const innerH = height;
-  const titleSize = Math.max(15, Math.min(22, innerH * 0.34));
-  const medR = Math.min(13, innerH * 0.2);
-  const medCX = Math.max(28, innerW * 0.08);
+  const titleSize = Math.max(16, Math.min(24, innerH * 0.32));
+  // Generous medallion: 35% of banner height, but capped so it sits neatly inside.
+  const medR = Math.min(innerH * 0.32, 22);
+  const medCX = Math.max(medR + 14, innerW * 0.1);
+  const cy = innerH / 2;
+  // Flourish curve endpoints: from inner edge of each medallion toward the title.
+  const flourishStart = medCX + medR + 2;
+  const flourishEnd = innerW / 2 - innerW * 0.18;
+  const flourishStartR = innerW - flourishStart;
+  const flourishEndR = innerW - flourishEnd;
   return (
-    <View style={{ width, height, alignItems: 'center', justifyContent: 'center', marginVertical: 4 }}>
+    <View style={{ width, height, alignItems: 'center', justifyContent: 'center', marginVertical: 6 }}>
       <Svg width={innerW} height={innerH} viewBox={`0 0 ${innerW} ${innerH}`}>
-        {/* Outer frame — thick border with generous margin */}
+        {/* Outer frame — substantial border with rounded corners */}
         <Rect
-          x={5} y={5}
-          width={innerW - 10} height={innerH - 10}
-          rx={4} ry={4}
-          stroke={color} strokeWidth={1.4} fill="transparent"
+          x={6} y={6}
+          width={innerW - 12} height={innerH - 12}
+          rx={6} ry={6}
+          stroke={color} strokeWidth={1.6} fill="none"
         />
-        {/* Inner frame — thinner, gives a doubled-edge look */}
+        {/* Inner frame — dotted, gives the doubled-edge ornament look */}
         <Rect
-          x={10} y={10}
-          width={innerW - 20} height={innerH - 20}
-          rx={2} ry={2}
-          stroke={color} strokeWidth={0.5} fill="transparent"
+          x={13} y={13}
+          width={innerW - 26} height={innerH - 26}
+          rx={3} ry={3}
+          stroke={color} strokeWidth={0.7} fill="none"
+          strokeDasharray="2 2"
         />
-        {/* Left medallion — three concentric circles, larger so they read */}
-        <Circle cx={medCX} cy={innerH / 2} r={medR} stroke={color} strokeWidth={0.9} fill="transparent" />
-        <Circle cx={medCX} cy={innerH / 2} r={medR * 0.62} stroke={color} strokeWidth={0.6} fill="transparent" />
-        <Circle cx={medCX} cy={innerH / 2} r={medR * 0.22} fill={color} />
-        {/* Right medallion */}
-        <Circle cx={innerW - medCX} cy={innerH / 2} r={medR} stroke={color} strokeWidth={0.9} fill="transparent" />
-        <Circle cx={innerW - medCX} cy={innerH / 2} r={medR * 0.62} stroke={color} strokeWidth={0.6} fill="transparent" />
-        <Circle cx={innerW - medCX} cy={innerH / 2} r={medR * 0.22} fill={color} />
+        {/* Small diamond dots along the inner edge — top + bottom rows */}
+        {Array.from({ length: 5 }).map((_, i) => {
+          const x = innerW / 2 - 40 + i * 20;
+          return (
+            <G key={`top-${i}`}>
+              <Path d={`M ${x},${20} l 1.6,1.6 l -1.6,1.6 l -1.6,-1.6 Z`} fill={color} />
+              <Path d={`M ${x},${innerH - 20} l 1.6,1.6 l -1.6,1.6 l -1.6,-1.6 Z`} fill={color} />
+            </G>
+          );
+        })}
+        {/* Left rosette */}
+        <Rosette cx={medCX} cy={cy} R={medR} color={color} />
+        {/* Right rosette */}
+        <Rosette cx={innerW - medCX} cy={cy} R={medR} color={color} />
+        {/* Flourishes — gentle s-curves from each rosette toward the title */}
+        <Path
+          d={`M ${flourishStart},${cy} Q ${(flourishStart + flourishEnd) / 2},${cy - 8} ${flourishEnd},${cy}`}
+          stroke={color} strokeWidth={0.7} fill="none"
+        />
+        <Path
+          d={`M ${flourishStart},${cy} Q ${(flourishStart + flourishEnd) / 2},${cy + 8} ${flourishEnd},${cy}`}
+          stroke={color} strokeWidth={0.7} fill="none"
+        />
+        <Path
+          d={`M ${flourishStartR},${cy} Q ${(flourishStartR + flourishEndR) / 2},${cy - 8} ${flourishEndR},${cy}`}
+          stroke={color} strokeWidth={0.7} fill="none"
+        />
+        <Path
+          d={`M ${flourishStartR},${cy} Q ${(flourishStartR + flourishEndR) / 2},${cy + 8} ${flourishEndR},${cy}`}
+          stroke={color} strokeWidth={0.7} fill="none"
+        />
       </Svg>
       <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
         <Text
@@ -135,6 +212,7 @@ function OrnateSurahBanner({
             fontFamily: 'Amiri_700Bold',
             fontSize: titleSize,
             textAlign: 'center',
+            paddingHorizontal: 4,
           }}
           numberOfLines={1}
           ellipsizeMode="clip"
@@ -152,21 +230,33 @@ function OrnateSurahBanner({
  * shape.
  * ──────────────────────────────────────────────────────────────────────── */
 function PageNumberFrame({
-  pageNum, color, width = 64, height = 24,
+  pageNum, color, width = 90, height = 32,
 }: { pageNum: number; color: string; width?: number; height?: number }) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const ovalLeft = 14;
+  const ovalRight = width - 14;
+  // Almond / vesica-style outer shape — two arcs meeting at sharp points.
+  const almond = `M ${ovalLeft},${cy} Q ${cx},${1} ${ovalRight},${cy} Q ${cx},${height - 1} ${ovalLeft},${cy} Z`;
   return (
     <View style={{ width, height, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-        <Ellipse cx={width / 2} cy={height / 2} rx={width / 2 - 1} ry={height / 2 - 1}
-          stroke={color} strokeWidth={0.7} fill="transparent" />
-        <Ellipse cx={width / 2} cy={height / 2} rx={width / 2 - 5} ry={height / 2 - 5}
-          stroke={color} strokeWidth={0.4} fill="transparent" />
-        {/* Tiny tasseled dots flanking the oval */}
-        <Circle cx={2} cy={height / 2} r={1} fill={color} />
-        <Circle cx={width - 2} cy={height / 2} r={1} fill={color} />
+        {/* Outer almond */}
+        <Path d={almond} stroke={color} strokeWidth={0.9} fill="none" />
+        {/* Inner dotted ellipse — sits inside the almond, narrower */}
+        <Ellipse cx={cx} cy={cy} rx={(ovalRight - ovalLeft) / 2 - 3} ry={cy - 5}
+          stroke={color} strokeWidth={0.5} fill="none" strokeDasharray="1.5 1.5" />
+        {/* Left tassel — bead cluster */}
+        <Circle cx={ovalLeft - 2} cy={cy} r={1.6} fill={color} />
+        <Circle cx={ovalLeft - 6} cy={cy} r={1.1} fill={color} />
+        <Circle cx={ovalLeft - 10} cy={cy} r={0.7} fill={color} />
+        {/* Right tassel — bead cluster */}
+        <Circle cx={ovalRight + 2} cy={cy} r={1.6} fill={color} />
+        <Circle cx={ovalRight + 6} cy={cy} r={1.1} fill={color} />
+        <Circle cx={ovalRight + 10} cy={cy} r={0.7} fill={color} />
       </Svg>
       <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color, fontFamily: 'Amiri_700Bold', fontSize: 11, letterSpacing: 0.5 }}>
+        <Text style={{ color, fontFamily: 'Amiri_700Bold', fontSize: 14, letterSpacing: 0.5 }}>
           {toArabicIndic(pageNum)}
         </Text>
       </View>
@@ -203,10 +293,10 @@ function MushafPageBody({
   }
 
   const lineHeight = fontSize * LINE_HEIGHT_MULT;
-  // Thicker banner — feels like a panel, not a thin label. Internal padding
-  // pushes the title up off the bottom border and the medallions sit with
-  // breathing room above and below them.
-  const bannerHeight = Math.max(58, fontSize * 2.6);
+  // Substantial banner — proper Madani Mushaf decorative panel, not a label.
+  // The 90 pt floor guarantees room for the rosettes + dotted border +
+  // calligraphic title with ~20 pt of breathing space above and below.
+  const bannerHeight = Math.max(90, fontSize * 3.5);
   const bismillahHeight = Math.max(26, fontSize * 1.5);
 
   return (
@@ -319,8 +409,25 @@ function MushafPageView({
     }
     return { hasBanner: banner, multiGroup: nGroups > 1 };
   }, [ayat]);
-  const useBreathingLayout = hasBanner || multiGroup;
-  const initialFont = useBreathingLayout ? INITIAL_FONT_WITH_BANNER : INITIAL_FONT_NO_BANNER;
+  // Three-mode layout policy:
+  //   multi-group pages (293, 312, 604)         → 'space-between'
+  //       Two or more surah groups: pin the first group to the page top and
+  //       the last group to the page bottom; the gap between them grows to
+  //       fill all remaining vertical space (per the user spec — Maryam
+  //       content near top, Taha content near bottom, banner sits between).
+  //   single-group banner pages (1, 2, 50, 187) → 'space-around'
+  //       One surah with a banner — Al-Fatiha / Al-Baqarah start aesthetic.
+  //       Banner + ayat sit as one unit, vertically centered with equal
+  //       breathing space above and below.
+  //   single-group no-banner pages (3, 4, …)    → 'flex-start'
+  //       Dense continuation pages: top-align so the first line sits at
+  //       the page top; the higher INITIAL_FONT_NO_BANNER lets the text
+  //       run down to the bottom edge before the fit-loop shrinks it.
+  const layoutPolicy: 'space-between' | 'space-around' | 'flex-start' =
+    multiGroup ? 'space-between'
+      : hasBanner ? 'space-around'
+        : 'flex-start';
+  const initialFont = (hasBanner || multiGroup) ? INITIAL_FONT_WITH_BANNER : INITIAL_FONT_NO_BANNER;
 
   const cachedFont = FIT_CACHE[fitKey(pageNum, available)];
   const [fontSize, setFontSize] = useState<number>(cachedFont ?? initialFont);
@@ -347,10 +454,10 @@ function MushafPageView({
         console.warn(`[Mushaf] Page ${pageNum} overflows at MIN_FONT=${MIN_FONT}; measured=${measured}px available=${available}px`);
       } else {
         // eslint-disable-next-line no-console
-        console.log(`[Mushaf] Page ${pageNum} fit: layout=${useBreathingLayout ? 'breathing' : 'fill'} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)}`);
+        console.log(`[Mushaf] Page ${pageNum} fit: policy=${layoutPolicy} fontSize=${fontSize} measured=${Math.round(measured)} available=${Math.round(available)}`);
       }
     }
-  }, [fontSize, available, pageNum, useBreathingLayout]);
+  }, [fontSize, available, pageNum, layoutPolicy]);
 
   if (ayat.length === 0) {
     return <View style={{ width, height, backgroundColor: bgColor }} />;
@@ -390,12 +497,9 @@ function MushafPageView({
             onLongPressAyah={onLongPressAyah}
           />
         </View>
-        {/* Visible render — breathing/centered when there's a banner or
-            multiple surahs on this page (preserves the Al-Fatiha and
-            Al-Baqarah-start aesthetic); top-aligned & fill-height for
-            single-group continuation pages so the text covers the whole
-            page rather than bunching in the middle. */}
-        <View style={{ flex: 1, justifyContent: useBreathingLayout ? 'space-evenly' : 'flex-start' }}>
+        {/* Visible render — see layoutPolicy comment above for the
+            three-mode policy (space-between / space-around / flex-start). */}
+        <View style={{ flex: 1, justifyContent: layoutPolicy }}>
           <MushafPageBody
             ayat={ayat}
             width={innerWidth}

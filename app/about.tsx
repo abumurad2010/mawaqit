@@ -15,6 +15,10 @@ const GOLD = '#C9A84C';
 const riwaqLogoDark = require('@/assets/images/riwaq-labs-logo-dark.jpg');
 const riwaqLogoLight = require('@/assets/images/riwaq-labs-logo.png');
 const appIcon = require('@/assets/images/icon.png');
+/** JS-bundle cache marker — Constants.expoConfig.version reads from the
+ *  native shell's embedded config, which we can't refresh over Metro. This
+ *  constant lives in the JS bundle so any code reload updates it. */
+const JS_BUILD_MARKER = 'TEST-2';
 const APP_VERSION: string = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function AboutScreen() {
@@ -59,7 +63,7 @@ export default function AboutScreen() {
             {tr.about_app_tagline}
           </Text>
           <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 4 }}>
-            v{APP_VERSION}
+            v{APP_VERSION}  ·  JS:{JS_BUILD_MARKER}
           </Text>
         </View>
 
@@ -215,7 +219,7 @@ export default function AboutScreen() {
         {/* ─── SECTION 7: Footer ─── */}
         <View style={[styles.section, { alignItems: 'center', gap: 8 }]}>
           <Text style={[styles.footerVersion, { color: C.textMuted }]}>
-            {`Mawaqit | مواقيت  v${APP_VERSION}`}
+            {`Mawaqit | مواقيت  v${APP_VERSION}  ·  JS:${JS_BUILD_MARKER}`}
           </Text>
           <View style={styles.footerLinks}>
             <Pressable onPress={() => Linking.openURL('https://mawaqits.com/privacy')}>
