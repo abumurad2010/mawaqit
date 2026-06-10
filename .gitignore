@@ -39,3 +39,15 @@ yarn-error.*
 .env
 *.ipa
 *.aab
+
+# Claude Code metadata
+.claude/
+
+# QPC V2 staging payload — ~500 MB of source SVG/font archives + extracted
+# scratch files used only to derive assets/fonts/qcf-v2/ + assets/mushaf-v2/.
+# Not needed at runtime; never committed.
+qul-v2-staging/
+
+# Local Xcode build output for on-device builds. Per-machine, regeneratable.
+ios/build_device/
+ios/build/

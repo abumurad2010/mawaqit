@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, FlatList, Pressable, Platform,
 } from 'react-native';
 import { SERIF_EN } from '@/constants/typography';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';import { getAyahPage } from '@/lib/quran-api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getAyahPage, SURAH_META } from '@/lib/quran-api';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -12,6 +13,28 @@ import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Bookmark } from '@/contexts/AppContext';
+
+/** Convert Western digits in a string to Arabic-Indic, in-place. */
+function toArabicIndic(s: string | number): string {
+  return String(s).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
+}
+
+/** Localized Gregorian date+time for a bookmark timestamp.
+ *  TEST-27: numeric-only DD/MM/YYYY HH:MM. Gregorian everywhere — bypasses
+ *  Intl date formatter entirely (some locales return Hijri or insert month
+ *  names) and builds the string from raw Date getters so the format is fixed.
+ *  Arabic UI: transliterate Latin digits to Arabic-Indic in-place. */
+function formatBookmarkDate(ts: number, isAr: boolean): string {
+  const d = new Date(ts);
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  const dd = pad(d.getDate());
+  const mm = pad(d.getMonth() + 1);
+  const yyyy = String(d.getFullYear());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  const out = `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  return isAr ? toArabicIndic(out) : out;
+}
 
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
@@ -22,6 +45,25 @@ export default function BookmarksScreen() {
   const isAr = lang === 'ar';
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+
+  // TEST-27 helpers
+  const num = (n: number | string | undefined) => {
+    if (n === undefined || n === null || n === '') return '?';
+    return isAr ? toArabicIndic(n) : String(n);
+  };
+  const surahDisplay = (i: Bookmark) => {
+    const meta = SURAH_META[i.surahNumber - 1];
+    if (!meta) return i.surahName;
+    return isAr ? meta.arabic : (meta.transliteration ?? i.surahName);
+  };
+  const rubTitleAr = (hizb: number, quarter?: number) => {
+    const fraction = ['', '١/٤ ', '١/٢ ', '٣/٤ '][(quarter ?? 1) - 1];
+    return `${fraction}الحزب ${num(hizb)}`;
+  };
+  const rubTitleEn = (hizb: number, quarter?: number) => {
+    const fraction = ['', '1/4 ', '1/2 ', '3/4 '][(quarter ?? 1) - 1];
+    return `${fraction}${tr.hizb ?? 'Hizb'} ${hizb}`;
+  };
 
   const renderItem = ({ item }: { item: Bookmark }) => {
     const scope = item.scope ?? 'ayah';
@@ -47,26 +89,33 @@ export default function BookmarksScreen() {
     // Per-scope dot colour and badge label.
     const dotColor =
       isTranslit ? C.tint
+      : scope === 'rub' ? C.tint
       : scope === 'hizb' ? C.tint
       : scope === 'juz' ? '#8B7E48'
       : C.gold;
     const scopeBadge =
-      scope === 'hizb' ? { label: tr.bookmark_scope_hizb ?? 'Hizb', icon: 'bookmark' as const }
+      scope === 'rub' ? { label: tr.bookmark_scope_rub ?? 'Hizb quarter', icon: 'bookmark' as const }
+      : scope === 'hizb' ? { label: tr.bookmark_scope_hizb ?? 'Hizb', icon: 'bookmark' as const }
       : scope === 'juz' ? { label: tr.bookmark_scope_juz ?? 'Juz', icon: 'bookmarks' as const }
       : null;
 
-    // Main title line — for ayah keep surah name (existing); for hizb/juz
-    // show the scope number prominently.
+    // Main title line.
+    // - ayah: localized surah name.
+    // - rub:  e.g. "٣/٤ الحزب ٥" (Arabic) / "3/4 Hizb 5" (English).
+    // - hizb (legacy): "حزب N" / "Hizb N".
+    // - juz  (legacy): "جزء N" / "Juz N".
     const titleText =
-      scope === 'hizb' ? `${tr.hizb ?? 'Hizb'} ${item.hizb ?? '?'}`
-      : scope === 'juz' ? `${tr.juz ?? 'Juz'} ${item.juz ?? '?'}`
-      : item.surahName;
+      scope === 'rub'  ? (isAr ? rubTitleAr(item.hizb ?? 0, item.quarter) : rubTitleEn(item.hizb ?? 0, item.quarter))
+      : scope === 'hizb' ? `${tr.hizb ?? 'Hizb'} ${num(item.hizb)}`
+      : scope === 'juz' ? `${tr.juz ?? 'Juz'} ${num(item.juz)}`
+      : surahDisplay(item);
 
-    // Meta line.
+    // Meta line — all digits locale-consistent.
     const metaText =
-      scope === 'hizb' ? `${tr.page ?? 'Page'} ${item.page ?? '?'}`
-      : scope === 'juz' ? `${tr.page ?? 'Page'} ${item.page ?? '?'}`
-      : `${tr.ayah} ${item.ayahNumber}`;
+      scope === 'rub' ? `${tr.page ?? 'Page'} ${num(item.page)}`
+      : scope === 'hizb' ? `${tr.page ?? 'Page'} ${num(item.page)}`
+      : scope === 'juz' ? `${tr.page ?? 'Page'} ${num(item.page)}`
+      : `${tr.ayah} ${num(item.ayahNumber)}`;
 
     return (
     <View style={[styles.row, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
@@ -99,13 +148,7 @@ export default function BookmarksScreen() {
               </Text>
               {!!item.timestamp && (
                 <Text style={[styles.timestamp, { color: C.textMuted, fontWeight: fw }]}>
-                  {new Date(item.timestamp).toLocaleDateString(lang === 'ar' ? 'ar-SA' : undefined, {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })}
-                  {' · '}
-                  {new Date(item.timestamp).toLocaleTimeString(lang === 'ar' ? 'ar-SA' : undefined, {
-                    hour: '2-digit', minute: '2-digit',
-                  })}
+                  {formatBookmarkDate(item.timestamp, isAr)}
                 </Text>
               )}
             </View>
@@ -120,6 +163,7 @@ export default function BookmarksScreen() {
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             if (scope === 'ayah') removeBookmark(item.surahNumber, item.ayahNumber);
+            else if (scope === 'rub') removeBookmark({ scope: 'rub', hizb: item.hizb ?? 0, quarter: (item.quarter ?? 1) as 1 | 2 | 3 | 4 });
             else if (scope === 'hizb') removeBookmark({ scope: 'hizb', hizb: item.hizb ?? 0 });
             else removeBookmark({ scope: 'juz', juz: item.juz ?? 0 });
           }}
@@ -161,7 +205,13 @@ export default function BookmarksScreen() {
       ) : (
         <FlatList
           data={bookmarks}
-          keyExtractor={item => `${item.surahNumber}-${item.ayahNumber}`}
+          keyExtractor={item => {
+            const s = item.scope ?? 'ayah';
+            if (s === 'ayah') return `ayah-${item.surahNumber}-${item.ayahNumber}-${item.type ?? 'mushaf'}`;
+            if (s === 'rub')  return `rub-${item.hizb}-${item.quarter}`;
+            if (s === 'hizb') return `hizb-${item.hizb}`;
+            return `juz-${item.juz}`;
+          }}
           renderItem={renderItem}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomInset + 40 }}
           scrollEnabled={!!bookmarks.length}

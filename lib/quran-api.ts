@@ -527,6 +527,54 @@ export function getHizbStartAt(surah: number, ayah: number): number {
   return HIZB_START_AYAT[juzHizbKey(surah, ayah)] ?? 0;
 }
 
+/* ──────────────────────────────────────────────────────────────────────
+ * Rub-el-hizb (¼ of a hizb) — 240 quarters total = 60 hizb × 4.
+ *
+ * Source: the QPC V2 layout DB does not include rub markers (line_types
+ * are only ayah/surah_name/basmallah), so the table is DERIVED here:
+ * walk each hizb's ayahs in reading order and split into 4 equal-count
+ * quarters by ayah index. Quarter 1 is the hizb start (always aligned
+ * with HIZB_START_PAGES). Quarters 2/3/4 land on the page of the ayah
+ * at indices floor(n/4), floor(2n/4), floor(3n/4) within the hizb.
+ *
+ * This approximation may drift a page from the printed Madinah Mushaf
+ * on some hizbs, but is exact in count (240) and stable enough for the
+ * header label that shows which quarter is active at the top of the page.
+ * ───────────────────────────────────────────────────────────────────── */
+
+export interface RubQuarter { hizb: number; quarter: 1 | 2 | 3 | 4; page: number; }
+
+export const RUB_QUARTERS: ReadonlyArray<RubQuarter> = (() => {
+  const byHizb: HafsAyah[][] = Array.from({ length: 60 }, () => []);
+  for (let pg = 1; pg <= 604; pg++) {
+    const h = getHizbForPage(pg);
+    for (const a of HAFS_BY_PAGE[pg - 1] ?? []) byHizb[h - 1].push(a);
+  }
+  const out: RubQuarter[] = [];
+  for (let h = 1; h <= 60; h++) {
+    const ayahs = byHizb[h - 1];
+    const n = ayahs.length || 1;
+    for (let q = 1 as 1 | 2 | 3 | 4; q <= 4; q = (q + 1) as 1 | 2 | 3 | 4) {
+      const idx = Math.floor(((q - 1) * n) / 4);
+      const ayah = ayahs[idx] ?? ayahs[0];
+      out.push({ hizb: h, quarter: q, page: ayah?.page ?? HIZB_START_PAGES[h - 1] });
+    }
+  }
+  return out;
+})();
+
+/** Returns the rub-el-hizb (hizb + quarter 1..4) active at the top of `page`. */
+export function getRubForPage(page: number): RubQuarter {
+  if (page <= 1) return RUB_QUARTERS[0];
+  let lo = 0, hi = RUB_QUARTERS.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (RUB_QUARTERS[mid].page <= page) lo = mid;
+    else hi = mid - 1;
+  }
+  return RUB_QUARTERS[lo];
+}
+
 /** The 15 sajdah (prostration) ayahs. `word` is the specific Arabic word to underline. */
 export const SAJDAH_AYAHS: ReadonlyArray<{ surah: number; ayah: number; word: string }> = [
   { surah: 7,  ayah: 206, word: 'يسجدون'       },

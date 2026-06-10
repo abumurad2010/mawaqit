@@ -1,71 +1,72 @@
 /**
- * Quran reader — Madani Mushaf, text-rendered with the official KFGQPC Hafs
- * Uthmanic Script font (v18).
+ * Quran reader — Madani Mushaf, rendered with the QPC V2 per-page fonts
+ * (TEST-10 — Stage 1 of the QCF V2 migration).
  *
- * Font: King Fahd Glorious Quran Printing Complex, https://qurancomplex.gov.sa/en/techquran/dev/
- *   Font files distributed via github.com/thetruetruth/quran-data-kfgqpc.
- *   License: KFGQPC permits free use for Quranic rendering.
+ * Layout source: QUL's QPC V2 release. 604 page fonts (p1.ttf..p604.ttf)
+ *   each carry only the glyphs for one page; per-word data lives in
+ *   assets/mushaf-v2/{001..604}.json — line-grouped, with line_type
+ *   (`ayah` | `basmallah` | `surah_name`) and an `is_centered` flag that
+ *   tells us whether the line should be centered or justified.
  *
- * Page data: hafsData_v18.json from the same upstream repo (MIT-licensed).
+ * Render model:
+ *   - Each page = N rows (8 on pages 1-2, 15 on pages 3-604), one row
+ *     per layout line.
+ *   - Ayah lines: a single <Text> with the page-N font, glyphs joined,
+ *     textAlign driven by is_centered (centered on Al-Fatiha and surah
+ *     ends; justified everywhere else).
+ *   - basmallah lines: centered Bismillah in KFGQPC Hafs (we don't
+ *     have a basmallah glyph in the words stream).
+ *   - surah_name lines: existing OrnateSurahBanner sized to fill the
+ *     line slot. Stage-3 will replace this with the V2 header glyphs.
  *
- * Sizing policy — UNIFORM (TEST-9):
- *   One fontSize / lineHeight for every page. Sparse pages (Al-Fatiha, end
- *   of surahs) keep their natural breathing space; dense pages fill more.
- *   The reading experience stays CONSISTENT across all 604 pages. No
- *   per-page fit-loop, no off-screen measurement, no stretched lineHeight.
+ * Font loading:
+ *   - Page fonts are NOT in startup useFonts. The reader calls
+ *     loadPageFont(page) on mount + prefetches page±1.
+ *   - While the font is loading the row is rendered transparently so
+ *     glyphs don't appear in a fallback typeface, then fade in once
+ *     the family is registered.
  *
- * Last-line policy:
- *   Each ayah-group renders as a justified body Text containing ayat 1..N-1
- *   plus a sibling centered Text containing ayah N. RN's justify never
- *   justifies a trailing partial line; centering the last ayah makes that
- *   imperfection look intentional rather than ragged.
+ * Removed (stage 1 only — stage 2/3 work):
+ *   - free-flow justified <Text> / centered-tail hack from TEST-9
+ *   - inline JuzSeparator SVG
+ *   - per-page fit-to-content loop, off-screen measurement, FIT_CACHE
  *
- * Layout:
- *   - vertically distributed page content (justifyContent policy by page type)
- *   - ornate bordered surah banner with end medallions (drawn in SVG)
- *   - ornate inline juz separator (SVG almond frame, "جزء N" inside)
- *   - subtle minimal-chrome default: tiny surah label top-left, juz label
- *     top-right, decorative oval page number at the bottom
- *   - TAP page → reveal a full chrome bar (back / ToC / search / bookmark);
- *     TAP again hides it.
- *   - LONG-PRESS ayah → ayah-precise bookmark.
- *   - SWIPE → page navigation (RTL-aware via the reversed data array).
+ * Retained:
+ *   - FlatList paging + initialScrollIndex (instant navigation)
+ *   - Tap-to-reveal chrome bar
+ *   - Decorative oval page-number frame
+ *
+ * Stage 1 caveat: long-press ayah bookmarking is currently a NO-OP — the
+ * QCF render path doesn't yet wire onLongPress through per-word elements.
+ * Stage 2 will rebuild bookmarks at the word/ayah level.
  */
 import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Platform, Alert, FlatList, ActionSheetIOS,
-  useWindowDimensions, Animated,
+  View, Text, StyleSheet, Pressable, Platform, FlatList,
+  useWindowDimensions, Animated, ActionSheetIOS, Alert,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import Svg, { Rect, Circle, Ellipse, Path, G } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import {
   SURAH_META,
   getAyahPage,
   getHafsPage,
-  getHizbForPage,
   getJuzForPage,
-  getJuzStartAt,
-  HIZB_START_PAGES,
+  getRubForPage,
   TOTAL_PAGES,
-  type HafsAyah,
 } from '@/lib/quran-api';
-import type { BookmarkScope } from '@/contexts/AppContext';
+import { getQcfPage, type QcfPage, type QcfLine } from '@/assets/mushaf-v2';
+import { QCF_V2_FONT_FAMILY } from '@/assets/fonts/qcf-v2-map';
+import { loadPageFont, isPageFontLoaded, prefetchAdjacentFonts } from '@/lib/qcf-font-loader';
 
-const QURAN_FONT = 'KFGQPCHafs';
-
-/** Uniform base font size — same on every page. Sparse pages just keep
- *  their natural empty space; dense pages fill more. Trades
- *  fill-the-screen for cross-page consistency. */
-const BASE_FONT = 22;
-const LINE_HEIGHT_MULT = 1.5;
-const BASE_LINE_HEIGHT = BASE_FONT * LINE_HEIGHT_MULT;
+const FALLBACK_FONT = 'KFGQPCHafs';
 
 const MINI_LABEL_HEIGHT = 26;
 const PAGE_OVAL_HEIGHT = 38;
@@ -78,8 +79,6 @@ const GOLD_DARK  = '#C9A875';
 function toArabicIndic(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
 }
-
-interface AyahKey { surah: number; ayah: number }
 
 /* ─────────────────────────────────────────────────────────────────────────
  * OrnateSurahBanner — Madani-style bordered frame with end medallions
@@ -262,214 +261,210 @@ function PageNumberFrame({
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * JuzSeparator — ornate inline juz divider.
- * Drawn as an almond/vesica frame with bezier curves, flanked by hairline
- * rules and bead clusters. Muted gold border, "جزء N" Amiri bold inside.
- * Sized to feel like a section divider — wider than a single line of text
- * but smaller and lighter than the OrnateSurahBanner.
+ * MushafPageBody — pure render from a QcfPage. Each line is one row whose
+ * height equals `lineSlot`. Ayah lines use the p{N} font; the row anchors
+ * the line's natural-width text at the right margin via flex-direction
+ * row-reverse + justify-content flex-start. surah_name lines render the
+ * existing ornate banner; basmallah lines render a centered KFGQPC Hafs
+ * string (Stage 3 will replace both with V2 glyphs).
  * ──────────────────────────────────────────────────────────────────────── */
-function JuzSeparator({ juz, color, width }: { juz: number; color: string; width: number }) {
-  const h = 44;
-  const frameW = 120;
-  const frameH = 30;
-  const cx = width / 2;
-  const cy = h / 2;
-  const fLeft = cx - frameW / 2;
-  const fRight = cx + frameW / 2;
-  const fTop = cy - frameH / 2;
-  const fBot = cy + frameH / 2;
-  // Almond shape — two cubic curves meeting at the horizontal centre points.
-  // Control points pulled in slightly so the frame has a soft eye-shape,
-  // not a sharp lens.
-  const ctrlOff = 24;
-  const almond =
-    `M ${fLeft} ${cy} ` +
-    `C ${fLeft + ctrlOff} ${fTop}, ${fRight - ctrlOff} ${fTop}, ${fRight} ${cy} ` +
-    `C ${fRight - ctrlOff} ${fBot}, ${fLeft + ctrlOff} ${fBot}, ${fLeft} ${cy} Z`;
-  return (
-    <View style={{ width, height: h, marginVertical: 4, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={width} height={h} viewBox={`0 0 ${width} ${h}`}>
-        {/* Side hairline rules */}
-        <Path d={`M 22 ${cy} L ${fLeft - 16} ${cy}`} stroke={color} strokeWidth={0.7} />
-        <Path d={`M ${fRight + 16} ${cy} L ${width - 22} ${cy}`} stroke={color} strokeWidth={0.7} />
-        {/* Bead clusters flanking the frame */}
-        <Circle cx={fLeft - 12} cy={cy} r={2.1} fill={color} />
-        <Circle cx={fLeft - 7}  cy={cy} r={1.2} fill={color} />
-        <Circle cx={fRight + 12} cy={cy} r={2.1} fill={color} />
-        <Circle cx={fRight + 7}  cy={cy} r={1.2} fill={color} />
-        {/* Almond frame — outer stroke + faint inner fill */}
-        <Path d={almond} stroke={color} strokeWidth={1.1} fill={color} fillOpacity={0.05} />
-        {/* Inner echo — slightly inset, gives the doubled-edge ornament look */}
-        <Path
-          d={
-            `M ${fLeft + 4} ${cy} ` +
-            `C ${fLeft + ctrlOff + 2} ${fTop + 4}, ${fRight - ctrlOff - 2} ${fTop + 4}, ${fRight - 4} ${cy} ` +
-            `C ${fRight - ctrlOff - 2} ${fBot - 4}, ${fLeft + ctrlOff + 2} ${fBot - 4}, ${fLeft + 4} ${cy} Z`
-          }
-          stroke={color} strokeWidth={0.4} fill="none"
-        />
-      </Svg>
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color, fontFamily: 'Amiri_700Bold', fontSize: 15, letterSpacing: 0.4 }}>
-          {`جزء ${toArabicIndic(juz)}`}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-/* ── Page content body — uniform sizing, justified body + centered tail ── */
 function MushafPageBody({
-  ayat, width, textColor, ornamentColor,
-  highlightTarget, isBookmarkedFn, onLongPressAyah,
+  pageNum, pageData, fontReady,
+  width, lineSlot, fontSize,
+  textColor, ornamentColor,
+  onLongPressWord,
+  isAyahBookmarked,
+  bookmarkColor,
+  onLineMeasured,
+  isMeasuring,
 }: {
-  ayat: ReadonlyArray<HafsAyah>;
+  pageNum: number;
+  pageData: QcfPage;
+  fontReady: boolean;
   width: number;
+  lineSlot: number;
+  fontSize: number;
   textColor: string;
   ornamentColor: string;
-  highlightTarget: AyahKey | null;
-  isBookmarkedFn: (s: number, a: number) => boolean;
-  onLongPressAyah: (target: AyahKey) => void;
+  onLongPressWord: (verseKey: string) => void;
+  isAyahBookmarked: (verseKey: string) => boolean;
+  bookmarkColor: string;
+  onLineMeasured: (idx: number, width: number) => void;
+  isMeasuring: boolean;
 }) {
-  // Groups break on surah change OR juz change. A juz boundary mid-surah
-  // produces two groups, with the ornate JuzSeparator rendered between
-  // them (see render below).
-  type Group = {
-    surahNum: number;
-    isSurahStart: boolean;
-    hasBismillah: boolean;
-    juzStart: number;
-    ayat: HafsAyah[];
-  };
-  const groups: Group[] = [];
-  for (const a of ayat) {
-    const last = groups[groups.length - 1];
-    const juzStartHere = getJuzStartAt(a.surahNum, a.ayahNum);
-    const sameSurahNoBreak = last && last.surahNum === a.surahNum && !juzStartHere;
-    if (sameSurahNoBreak) {
-      last!.ayat.push(a);
-    } else {
-      const meta = SURAH_META[a.surahNum - 1];
-      const isSurahStart = a.ayahNum === 1;
-      const hasBismillah = isSurahStart && !!meta?.hasBismillah && a.surahNum !== 1;
-      groups.push({
-        surahNum: a.surahNum,
-        isSurahStart,
-        hasBismillah,
-        juzStart: juzStartHere,
-        ayat: [a],
-      });
-    }
-  }
-
-  // Banner / bismillah heights scale with the uniform base font.
-  const bannerHeight = Math.max(90, BASE_FONT * 3.5);
-  const bismillahHeight = Math.max(26, BASE_FONT * 1.5);
-
-  const renderAyahInner = (a: HafsAyah, ai: number) => {
-    const bookmarked = isBookmarkedFn(a.surahNum, a.ayahNum);
-    const highlighted = highlightTarget?.surah === a.surahNum && highlightTarget?.ayah === a.ayahNum;
-    return (
-      <Text
-        key={ai}
-        suppressHighlighting
-        onLongPress={() => onLongPressAyah({ surah: a.surahNum, ayah: a.ayahNum })}
-        style={{
-          color: highlighted ? ornamentColor : (bookmarked ? '#C8860A' : textColor),
-          backgroundColor: highlighted ? ornamentColor + '22' : undefined,
-        }}
-      >
-        {a.text + ' '}
-      </Text>
-    );
-  };
+  const family = fontReady ? QCF_V2_FONT_FAMILY(pageNum) : FALLBACK_FONT;
 
   return (
     <>
-      {groups.map((g, gi) => {
-        const lastIdx = g.ayat.length - 1;
-        const bodyAyat = g.ayat.slice(0, lastIdx);
-        const tailAyah = g.ayat[lastIdx];
-        // Render the juz separator above any group that opens a new juz,
-        // EXCEPT when the group also starts a surah (the surah banner is
-        // the more prominent ornament and supersedes the juz marker —
-        // happens at At-Tawbah, Maryam, etc.).
-        const showJuzMarker = g.juzStart > 0 && !g.isSurahStart;
-        return (
-          <View key={gi}>
-            {g.isSurahStart && (
-              <OrnateSurahBanner
-                surahNum={g.surahNum}
-                color={ornamentColor}
-                textColor={textColor}
-                width={width}
-                height={bannerHeight}
-              />
-            )}
-            {g.hasBismillah && (
-              <View style={{ height: bismillahHeight, justifyContent: 'center' }}>
-                <Text
-                  style={{
-                    color: textColor,
-                    fontFamily: QURAN_FONT,
-                    fontSize: BASE_FONT * 0.95,
-                    lineHeight: bismillahHeight,
-                    textAlign: 'center',
-                    writingDirection: 'rtl',
-                  }}
-                >
-                  بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
-                </Text>
-              </View>
-            )}
-            {showJuzMarker && (
-              <JuzSeparator juz={g.juzStart} color={ornamentColor} width={width} />
-            )}
-            {/* Body — justified. Contains all ayat in the group EXCEPT the
-                last one. RN's justify leaves the trailing partial line
-                unjustified (CSS spec); putting only ayat 1..N-1 here keeps
-                that ragged line short and lets the centered tail below
-                close the group cleanly. */}
-            {bodyAyat.length > 0 && (
-              <Text
-                style={{
-                  color: textColor,
-                  fontFamily: QURAN_FONT,
-                  fontSize: BASE_FONT,
-                  lineHeight: BASE_LINE_HEIGHT,
-                  textAlign: 'justify',
-                  writingDirection: 'rtl',
-                }}
-              >
-                {bodyAyat.map(renderAyahInner)}
-              </Text>
-            )}
-            {/* Tail — centered last ayah. Makes RN's unavoidable
-                trailing-line behaviour read as intentional Mushaf
-                typography rather than ragged justify. */}
-            <Text
-              style={{
-                color: textColor,
-                fontFamily: QURAN_FONT,
-                fontSize: BASE_FONT,
-                lineHeight: BASE_LINE_HEIGHT,
-                textAlign: 'center',
-                writingDirection: 'rtl',
-              }}
-            >
-              {renderAyahInner(tailAyah, lastIdx)}
-            </Text>
-          </View>
-        );
-      })}
+      {pageData.lines.map((line, idx) => (
+        <MushafLineRow
+          key={idx}
+          lineIdx={idx}
+          line={line}
+          width={width}
+          lineSlot={lineSlot}
+          fontSize={fontSize}
+          family={family}
+          fontReady={fontReady}
+          textColor={textColor}
+          ornamentColor={ornamentColor}
+          onLongPressWord={onLongPressWord}
+          isAyahBookmarked={isAyahBookmarked}
+          bookmarkColor={bookmarkColor}
+          onLineMeasured={onLineMeasured}
+          isMeasuring={isMeasuring}
+        />
+      ))}
     </>
   );
 }
 
-/* ── One Mushaf page — uniform sizing, no fit-loop, no measurement ── */
+function MushafLineRow({
+  line, lineIdx, width, lineSlot, fontSize, family, fontReady, textColor, ornamentColor,
+  onLongPressWord, isAyahBookmarked, bookmarkColor,
+  onLineMeasured, isMeasuring,
+}: {
+  line: QcfLine;
+  lineIdx: number;
+  width: number;
+  lineSlot: number;
+  fontSize: number;
+  family: string;
+  fontReady: boolean;
+  textColor: string;
+  ornamentColor: string;
+  onLongPressWord: (verseKey: string) => void;
+  isAyahBookmarked: (verseKey: string) => boolean;
+  bookmarkColor: string;
+  onLineMeasured: (idx: number, width: number) => void;
+  isMeasuring: boolean;
+}) {
+  if (line.line_type === 'surah_name') {
+    return (
+      <View style={{ width: '100%', height: lineSlot }}>
+        <OrnateSurahBanner
+          surahNum={line.surah_number}
+          color={ornamentColor}
+          textColor={textColor}
+          width={width}
+          height={lineSlot}
+        />
+      </View>
+    );
+  }
+
+  if (line.line_type === 'basmallah') {
+    return (
+      <View style={{ width: '100%', height: lineSlot, justifyContent: 'center' }}>
+        <Text
+          style={{
+            color: textColor,
+            fontFamily: FALLBACK_FONT,
+            fontSize: fontSize * 0.85,
+            lineHeight: lineSlot,
+            textAlign: 'center',
+            writingDirection: 'rtl',
+          }}
+        >
+          بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ
+        </Text>
+      </View>
+    );
+  }
+
+  // ayah row — TEST-25R:
+  //
+  // ANCHORING: The line row is `flexDirection: 'row-reverse'` +
+  // `justifyContent: flex-start` (centered for is_centered=1). The Text has
+  // NO width:'100%' and NO textAlign — it sizes to its content's natural
+  // width and is positioned by the flex parent. With row-reverse, flex-start
+  // is the VISUAL RIGHT EDGE, so the Text frame's right edge sits at the row's
+  // right edge — meaning the first word's first (rightmost) letter is pinned
+  // to the right margin. If naturalWidth > innerWidth the OVERSHOOT extends
+  // LEFTWARD past the row's left edge (off the tail side, which is the
+  // intended overflow direction); page padding 14px absorbs minor overshoot.
+  // The prior `textAlign: 'right'` + `width:'100%'` chain was getting
+  // re-interpreted under iOS RTL semantics so that excess spilled off the
+  // *right* (clipping the first letters). The flex approach is direction-
+  // agnostic: row-reverse's start IS the visual right regardless of
+  // I18nManager.isRTL.
+  //
+  // SINGLE-RUN SHAPING: still a single parent <Text> with nested per-word
+  // <Text> children. iOS treats nested Text children as attributed-string
+  // sub-ranges of the same CoreText run, so glyph advances are computed
+  // for the whole line as one shaped run — no per-word frame rounding,
+  // no kasra/diacritic clip on the leftmost ink of any word.
+  //
+  // MEASUREMENT: onTextLayout fires once with the line's measured natural
+  // width; the page reports the max line width back via onLineMeasured to
+  // compute a per-page fit-to-content fontSize (cached per page).
+  return (
+    <View
+      style={{
+        width: '100%',
+        height: lineSlot,
+        flexDirection: 'row-reverse',
+        justifyContent: line.is_centered ? 'center' : 'flex-start',
+        alignItems: 'center',
+        overflow: 'visible',
+      }}
+    >
+      <Text
+        allowFontScaling={false}
+        // TEST-26: per-line auto-shrink safety net. The per-page fit calibration
+        // (TEST-25) targets the WIDEST measured line at 98.5% of innerWidth, so
+        // most lines render at the calibrated size unchanged. A handful of lines
+        // measured at the reference fontSize don't scale linearly to the fitted
+        // fontSize (glyph hinting / sub-pixel positioning isn't proportional),
+        // and slip past the safety margin — the user saw إِذْ / إِنَّكَ losing
+        // the leading إ.
+        //
+        // maxWidth: width constrains the Text frame so the per-line auto-shrink
+        // actually triggers (without a width cap, adjustsFontSizeToFit is a
+        // no-op against intrinsic sizing). numberOfLines={1} forbids wrapping.
+        // minimumFontScale={0.92} caps the shrink at -8% so an outlier line is
+        // visually almost-identical to its neighbours, no jarring small line.
+        // Nested <Text> children inherit the scaled fontSize.
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.92}
+        onTextLayout={(isMeasuring && fontReady) ? (e) => {
+          // Only measure once the page font is actually applied — fallback font
+          // widths would skew the fit calibration.
+          const w = e.nativeEvent.lines?.[0]?.width;
+          if (typeof w === 'number' && w > 0) onLineMeasured(lineIdx, w);
+        } : undefined}
+        style={{
+          maxWidth: width,
+          color: textColor,
+          fontFamily: family,
+          fontSize,
+          lineHeight: lineSlot,
+          writingDirection: 'rtl',
+          opacity: (fontReady && !isMeasuring) ? 1 : 0,
+        }}
+      >
+        {line.words.map((w, idx) => {
+          const marked = isAyahBookmarked(w.verse_key);
+          return (
+            <Text
+              key={idx}
+              onLongPress={() => onLongPressWord(w.verse_key)}
+              style={marked ? { color: bookmarkColor } : undefined}
+            >
+              {w.text}
+            </Text>
+          );
+        })}
+      </Text>
+    </View>
+  );
+}
+
+/* ── One Mushaf page — line-grid render from QPC V2 layout data ──── */
 function MushafPageView({
   pageNum, width, height, textColor, ornamentColor, bgColor,
-  highlightTarget, isBookmarkedFn, onLongPressAyah, onTap,
+  onTap, onLongPressWord, isAyahBookmarked, bookmarkColor,
 }: {
   pageNum: number;
   width: number;
@@ -477,64 +472,110 @@ function MushafPageView({
   textColor: string;
   ornamentColor: string;
   bgColor: string;
-  highlightTarget: AyahKey | null;
-  isBookmarkedFn: (s: number, a: number) => boolean;
-  onLongPressAyah: (target: AyahKey) => void;
   onTap: () => void;
+  onLongPressWord: (verseKey: string) => void;
+  isAyahBookmarked: (verseKey: string) => boolean;
+  bookmarkColor: string;
 }) {
-  const ayat = getHafsPage(pageNum);
-  const horizPad = 10;
+  const pageData = useMemo(() => getQcfPage(pageNum), [pageNum]);
+  // TEST-23: was 10. At the TEST-22 design-ratio fontSize the rightmost glyph
+  // of each RTL line is anchored at the content right edge (x = W - horizPad);
+  // its ink overshoots its advance box on the right by a few px and got
+  // clipped by the page-level overflow:'hidden' (kept for vertical row
+  // boundaries). Widening horizontal padding gives both margins symmetric
+  // breathing room without changing the divisor — fontSize tracks the new
+  // (slightly smaller) innerWidth so the line still fills both margins.
+  const horizPad = 14;
   const vertPad = 6;
   const innerWidth = width - horizPad * 2;
+  const innerHeight = height - vertPad * 2;
 
-  // Page composition — drives the vertical layout policy. Font sizing is
-  // uniform across all pages, so we no longer pick an initial size here.
-  //   hasBanner  : any group on this page starts a surah.
-  //   multiGroup : two or more surahs share the page.
-  const { hasBanner, multiGroup } = useMemo(() => {
-    let banner = false;
-    let lastSurah = -1;
-    let nGroups = 0;
-    for (const a of ayat) {
-      if (a.surahNum !== lastSurah) {
-        nGroups++;
-        lastSurah = a.surahNum;
-        if (a.ayahNum === 1) banner = true;
-      }
+  // Track per-page font readiness. Page font loads on demand; until it
+  // resolves the ayah rows render transparently so glyphs never flash
+  // in the wrong typeface.
+  const [fontReady, setFontReady] = useState(() => isPageFontLoaded(pageNum));
+  useEffect(() => {
+    let cancelled = false;
+    if (!isPageFontLoaded(pageNum)) setFontReady(false);
+    loadPageFont(pageNum).then(() => { if (!cancelled) setFontReady(true); });
+    prefetchAdjacentFonts(pageNum);
+    return () => { cancelled = true; };
+  }, [pageNum]);
+
+  const tapGesture = useMemo(
+    () => Gesture.Tap()
+      .maxDuration(250)
+      .onEnd((_, success) => {
+        'worklet';
+        if (success) runOnJS(onTap)();
+      }),
+    [onTap]
+  );
+
+  // TEST-25R: per-page fit-to-content fontSize, calibrated by measuring the
+  // page's widest ayah line at a REFERENCE fontSize and scaling down so the
+  // worst line lands at TARGET_FILL_RATIO of innerWidth. The reference uses
+  // the QPC V2 design ratio (1:15.4) as a starting probe; the measured fit
+  // is cached per (page, innerWidth) so subsequent visits skip measurement.
+  //
+  // Why per-page: glyph advances vary enough across pages that a single
+  // global divisor either clips the densest pages (49/207/254 with 10-11
+  // words/line) or leaves the lightest pages short. Measuring the page's
+  // own widest line eliminates the guess.
+  //
+  // Why TARGET_FILL_RATIO = 0.985: leaves a ~1.5% safety margin against
+  // sub-pixel glyph-ink overshoot past the advance box (the TEST-23/25
+  // right-edge clip cause), without giving back so much that a visible
+  // left band returns.
+  const REFERENCE_DIVISOR = 15.4;
+  const TARGET_FILL_RATIO = 0.985;
+  const referenceFontSize = innerWidth / REFERENCE_DIVISOR;
+
+  const fitCacheKey = `${pageNum}-${Math.round(innerWidth)}`;
+  const [fitFontSize, setFitFontSize] = useState<number | null>(
+    () => PAGE_FONT_SIZE_CACHE.get(fitCacheKey) ?? null
+  );
+  const measuredWidthsRef = useRef<Record<number, number>>({});
+  useEffect(() => {
+    // Reset cache lookup when key changes (orientation, page swap)
+    measuredWidthsRef.current = {};
+    setFitFontSize(PAGE_FONT_SIZE_CACHE.get(fitCacheKey) ?? null);
+  }, [fitCacheKey]);
+
+  const handleLineMeasured = useCallback((idx: number, w: number) => {
+    if (fitFontSize !== null) return;
+    if (!pageData) return;
+    measuredWidthsRef.current[idx] = w;
+    const ayahIdxs: number[] = [];
+    pageData.lines.forEach((l, i) => {
+      if (l.line_type === 'ayah' && !l.is_centered) ayahIdxs.push(i);
+    });
+    if (ayahIdxs.length === 0) {
+      // No ayah lines on this page (e.g. an early surah-name-only page) —
+      // skip fit and use reference.
+      PAGE_FONT_SIZE_CACHE.set(fitCacheKey, referenceFontSize);
+      setFitFontSize(referenceFontSize);
+      return;
     }
-    return { hasBanner: banner, multiGroup: nGroups > 1 };
-  }, [ayat]);
-  // Layout policy:
-  //   multi-group pages (293, 604)              → 'space-between'
-  //       Pin first group top, last group bottom; the gap fills the rest.
-  //   single-group banner pages (1, 2, 50, 187) → 'space-around'
-  //       Banner + ayat as one unit, vertically centered with breathing
-  //       space above and below.
-  //   single-group no-banner pages (3, 4, …)    → 'flex-start'
-  //       Dense pages: top-align. Sparse continuation pages will have
-  //       natural empty space below — that's authentic Madani Mushaf.
-  const layoutPolicy: 'space-between' | 'space-around' | 'flex-start' =
-    multiGroup ? 'space-between'
-      : hasBanner ? 'space-around'
-        : 'flex-start';
+    const allMeasured = ayahIdxs.every(i => typeof measuredWidthsRef.current[i] === 'number');
+    if (!allMeasured) return;
+    const maxW = Math.max(...ayahIdxs.map(i => measuredWidthsRef.current[i]));
+    const target = innerWidth * TARGET_FILL_RATIO;
+    const newSize = maxW > 0 && maxW > target
+      ? referenceFontSize * (target / maxW)
+      : referenceFontSize;
+    PAGE_FONT_SIZE_CACHE.set(fitCacheKey, newSize);
+    setFitFontSize(newSize);
+  }, [fitFontSize, pageData, innerWidth, referenceFontSize, fitCacheKey]);
 
-  if (ayat.length === 0) {
+  if (!pageData) {
     return <View style={{ width, height, backgroundColor: bgColor }} />;
   }
 
-  // GestureDetector with a short Tap. gesture-handler's recognizer runs
-  // parallel to RN's Text gesture system so it fires reliably regardless of
-  // where on the page the user taps — including on top of an ayah Text.
-  const tapGesture = useMemo(
-    () =>
-      Gesture.Tap()
-        .maxDuration(250)
-        .onEnd((_, success) => {
-          'worklet';
-          if (success) runOnJS(onTap)();
-        }),
-    [onTap]
-  );
+  const lineCount = pageData.lines.length;
+  const lineSlot = innerHeight / lineCount;
+  const isMeasuring = fitFontSize === null;
+  const fontSize = fitFontSize ?? referenceFontSize;
 
   return (
     <GestureDetector gesture={tapGesture}>
@@ -545,15 +586,21 @@ function MushafPageView({
           overflow: 'hidden',
         }}
       >
-        <View style={{ flex: 1, justifyContent: layoutPolicy }}>
+        <View style={{ flex: 1 }}>
           <MushafPageBody
-            ayat={ayat}
+            pageNum={pageNum}
+            pageData={pageData}
+            fontReady={fontReady}
             width={innerWidth}
+            lineSlot={lineSlot}
+            fontSize={fontSize}
             textColor={textColor}
             ornamentColor={ornamentColor}
-            highlightTarget={highlightTarget}
-            isBookmarkedFn={isBookmarkedFn}
-            onLongPressAyah={onLongPressAyah}
+            onLongPressWord={onLongPressWord}
+            isAyahBookmarked={isAyahBookmarked}
+            bookmarkColor={bookmarkColor}
+            onLineMeasured={handleLineMeasured}
+            isMeasuring={isMeasuring}
           />
         </View>
       </View>
@@ -561,17 +608,21 @@ function MushafPageView({
   );
 }
 
+/** Cache of measured fit-to-content fontSize per (pageNum, innerWidth). Avoids
+ *  re-measuring on revisit. */
+const PAGE_FONT_SIZE_CACHE = new Map<string, number>();
+
 /* ── Reader screen ───────────────────────────────────────────────── */
 export default function QuranReaderScreen() {
   const params = useLocalSearchParams<{ page?: string; highlightSurah?: string; highlightAyah?: string; timestamp?: string }>();
   const initialPage = Math.max(1, Math.min(TOTAL_PAGES, parseInt(params.page ?? '1', 10)));
-  const highlightSurahParam = parseInt(params.highlightSurah ?? '0', 10);
-  const highlightAyahParam  = parseInt(params.highlightAyah  ?? '0', 10);
 
   const { width: W, height: H } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const { isDark, lang, setLastReadPage, setLastReadSurah,
-          addBookmark, removeBookmark, isBookmarked, colors } = useApp();
+  const {
+    isDark, lang, setLastReadPage, setLastReadSurah, colors,
+    bookmarks, addBookmark, isBookmarked,
+  } = useApp();
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -581,11 +632,6 @@ export default function QuranReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
   const [pageNum, setPageNum] = useState(initialPage);
-  const [highlightTarget, setHighlightTarget] = useState<AyahKey | null>(
-    highlightSurahParam && highlightAyahParam
-      ? { surah: highlightSurahParam, ayah: highlightAyahParam }
-      : null
-  );
   const [chromeVisible, setChromeVisible] = useState(false);
   const chromeAnim = useRef(new Animated.Value(0)).current;
 
@@ -600,12 +646,6 @@ export default function QuranReaderScreen() {
     }).start();
   }, [chromeVisible, chromeAnim]);
 
-  useEffect(() => {
-    if (!highlightTarget) return;
-    const tid = setTimeout(() => setHighlightTarget(null), 3000);
-    return () => clearTimeout(tid);
-  }, [highlightTarget]);
-
   // Arabic: reverse the data so a finger-left drag decreases the index = next page.
   const pageFromIdx = useCallback(
     (idx: number) => (isAr ? (TOTAL_PAGES - idx) : (idx + 1)),
@@ -617,10 +657,12 @@ export default function QuranReaderScreen() {
   );
 
   useEffect(() => {
+    // STAGE 1: highlight-ayah pin removed (per-line render doesn't yet
+    // support per-ayah colorization). Page-jump on navigation still
+    // honored so search / bookmark links land on the correct page.
     if (!params.highlightSurah || !params.highlightAyah) return;
     const surah = parseInt(params.highlightSurah, 10);
     const ayah = parseInt(params.highlightAyah, 10);
-    setHighlightTarget({ surah, ayah });
     const newPage = getAyahPage(surah, ayah);
     if (newPage !== pageNum) {
       setPageNum(newPage);
@@ -644,112 +686,94 @@ export default function QuranReaderScreen() {
   const displaySurah = currentAyat[0]?.surahNum ?? 1;
   const displayMeta = SURAH_META[displaySurah - 1];
   const surahLabel = displayMeta ? (isAr ? displayMeta.arabic : displayMeta.transliteration) : '';
-  // Juz from the page's first ayah; hizb from the canonical HIZB_START_PAGES table.
+  // Juz from the page's first ayah; rub-el-hizb (1/4 granularity) from the
+  // derived 240-entry table — count is 60 hizb × 4 quarters. Header shows the
+  // rub active at the TOP of the page, with the quarter as a FRACTION
+  // (١/٤ / ١/٢ / ٣/٤) rather than a spelled-out Arabic word. Q1 (hizb start)
+  // renders without a fraction prefix.
   const juzNum = currentAyat[0]?.juz ?? getJuzForPage(pageNum);
-  const hizbNum = getHizbForPage(pageNum);
+  const rub = getRubForPage(pageNum);
+  const fractionAr = ['', '١/٤ ', '١/٢ ', '٣/٤ '][rub.quarter - 1];
+  const fractionEn = ['', '1/4 ', '1/2 ', '3/4 '][rub.quarter - 1];
   const juzLabel = isAr
-    ? `جزء ${toArabicIndic(juzNum)} · حزب ${toArabicIndic(hizbNum)}`
-    : `${tr.juz} ${juzNum} · ${tr.hizb} ${hizbNum}`;
+    ? `جزء ${toArabicIndic(juzNum)} · ${fractionAr}الحزب ${toArabicIndic(rub.hizb)}`
+    : `${tr.juz} ${juzNum} · ${fractionEn}${tr.hizb} ${rub.hizb}`;
 
-  // Three-scope bookmark dispatcher: given a scope and the long-pressed ayah,
-  // toggle the corresponding bookmark. Reuses the AppContext API which now
-  // accepts a polymorphic BookmarkKey.
-  const toggleBookmark = useCallback((target: AyahKey, scope: BookmarkScope) => {
+  const handleTap = useCallback(() => {
+    setChromeVisible(v => !v);
+  }, []);
+
+  // TEST-27: long-press → two-option bookmark sheet (ayah + rub-el-hizb).
+  // - The 'hizb' option is replaced by 'rub' (1/4 granularity from the
+  //   240-quarter table used by the header). Always saves at the rub the
+  //   pressed ayah falls in; jump target is the rub's start page.
+  // - The juz option is removed entirely; existing juz bookmarks remain
+  //   functional from the bookmarks list (legacy data preserved).
+  // - No checkmark prefixes, no toggle UX. Selecting always saves (the
+  //   AppContext addBookmark de-duplicates by key, so re-selecting an
+  //   identical bookmark is a no-op).
+  const saveBookmark = useCallback((surah: number, ayah: number, scope: 'ayah' | 'rub') => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const meta = SURAH_META[target.surah - 1];
-    const ayahPage = getAyahPage(target.surah, target.ayah);
+    const meta = SURAH_META[surah - 1];
+    const ayahPage = getAyahPage(surah, ayah);
     if (scope === 'ayah') {
-      const key = { scope: 'ayah' as const, surah: target.surah, ayah: target.ayah };
-      if (isBookmarked(key)) {
-        removeBookmark(key);
-      } else {
-        addBookmark({
-          scope: 'ayah',
-          surahNumber: target.surah,
-          surahName: meta?.transliteration ?? '',
-          ayahNumber: target.ayah,
-          ayahText: '',
-          page: ayahPage,
-          timestamp: Date.now(),
-        });
-      }
-      return;
-    }
-    if (scope === 'hizb') {
-      const hizb = getHizbForPage(ayahPage);
-      const key = { scope: 'hizb' as const, hizb };
-      const hizbStartPage = HIZB_START_PAGES[hizb - 1] ?? ayahPage;
-      if (isBookmarked(key)) {
-        removeBookmark(key);
-      } else {
-        addBookmark({
-          scope: 'hizb',
-          surahNumber: target.surah,
-          surahName: meta?.transliteration ?? '',
-          ayahNumber: target.ayah,
-          ayahText: '',
-          hizb,
-          page: hizbStartPage,
-          timestamp: Date.now(),
-        });
-      }
-      return;
-    }
-    // juz
-    const juz = getJuzForPage(ayahPage);
-    const key = { scope: 'juz' as const, juz };
-    // First hizb in juz N is hizb 2N-1. That hizb's start page is the juz start.
-    const juzStartPage = HIZB_START_PAGES[(juz - 1) * 2] ?? ayahPage;
-    if (isBookmarked(key)) {
-      removeBookmark(key);
-    } else {
       addBookmark({
-        scope: 'juz',
-        surahNumber: target.surah,
+        scope: 'ayah',
+        surahNumber: surah,
         surahName: meta?.transliteration ?? '',
-        ayahNumber: target.ayah,
+        ayahNumber: ayah,
         ayahText: '',
-        juz,
-        page: juzStartPage,
+        page: ayahPage,
         timestamp: Date.now(),
+        type: 'mushaf',
       });
+      return;
     }
-  }, [isBookmarked, addBookmark, removeBookmark]);
+    // 'rub' — derive the (hizb, quarter, start page) from the same 240-quarter
+    // table as the header. getRubForPage takes a PAGE and returns the rub
+    // active at that page's top; for an arbitrary ayah we want the rub the
+    // ayah itself sits in, so pass the ayah's page.
+    const rub = getRubForPage(ayahPage);
+    addBookmark({
+      scope: 'rub',
+      surahNumber: surah,
+      surahName: meta?.transliteration ?? '',
+      ayahNumber: ayah,
+      ayahText: '',
+      hizb: rub.hizb,
+      quarter: rub.quarter,
+      page: rub.page,
+      timestamp: Date.now(),
+      type: 'mushaf',
+    });
+  }, [addBookmark]);
 
-  const handleLongPressAyah = useCallback((target: AyahKey) => {
+  const handleLongPressWord = useCallback((verseKey: string) => {
+    const [s, a] = verseKey.split(':').map(n => parseInt(n, 10));
+    if (!s || !a) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const meta = SURAH_META[target.surah - 1];
-    const ayahPage = getAyahPage(target.surah, target.ayah);
-    const hizb = getHizbForPage(ayahPage);
-    const juz = getJuzForPage(ayahPage);
+    const meta = SURAH_META[s - 1];
+    const ayahPage = getAyahPage(s, a);
+    const rub = getRubForPage(ayahPage);
+    const fractionAr2 = ['', '١/٤ ', '١/٢ ', '٣/٤ '][rub.quarter - 1];
+    const fractionEn2 = ['', '1/4 ', '1/2 ', '3/4 '][rub.quarter - 1];
     const headerLabel = isAr
-      ? `${meta?.arabic ?? ''} — آية ${toArabicIndic(target.ayah)} · حزب ${toArabicIndic(hizb)} · جزء ${toArabicIndic(juz)}`
-      : `${meta?.transliteration ?? ''} — ${tr.ayah} ${target.ayah} · ${tr.hizb} ${hizb} · ${tr.juz} ${juz}`;
-
-    const ayahKey = { scope: 'ayah' as const, surah: target.surah, ayah: target.ayah };
-    const hizbKey = { scope: 'hizb' as const, hizb };
-    const juzKey = { scope: 'juz' as const, juz };
-    const ayahMarked = isBookmarked(ayahKey);
-    const hizbMarked = isBookmarked(hizbKey);
-    const juzMarked = isBookmarked(juzKey);
-    const mark = (on: boolean) => on ? '✓ ' : '';
-    const ayahLabel = `${mark(ayahMarked)}${tr.bookmark_save_ayah ?? 'Bookmark this ayah'}`;
-    const hizbLabel = `${mark(hizbMarked)}${tr.bookmark_save_hizb ?? 'Bookmark this hizb'}`;
-    const juzLabel  = `${mark(juzMarked)}${tr.bookmark_save_juz ?? 'Bookmark this juz'}`;
+      ? `${meta?.arabic ?? ''} — آية ${toArabicIndic(a)} · ${fractionAr2}الحزب ${toArabicIndic(rub.hizb)}`
+      : `${meta?.transliteration ?? ''} — ${tr.ayah ?? 'Ayah'} ${a} · ${fractionEn2}${tr.hizb} ${rub.hizb}`;
+    const ayahLabel = tr.bookmark_save_ayah ?? 'Bookmark this ayah';
+    const rubLabel  = tr.bookmark_save_rub  ?? 'Bookmark this hizb quarter';
     const cancelLabel = tr.btn_cancel ?? 'Cancel';
-
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
           title: tr.bookmark_choose_scope ?? 'Choose what to bookmark',
           message: headerLabel,
-          options: [ayahLabel, hizbLabel, juzLabel, cancelLabel],
-          cancelButtonIndex: 3,
+          options: [ayahLabel, rubLabel, cancelLabel],
+          cancelButtonIndex: 2,
         },
         (idx) => {
-          if (idx === 0) toggleBookmark(target, 'ayah');
-          else if (idx === 1) toggleBookmark(target, 'hizb');
-          else if (idx === 2) toggleBookmark(target, 'juz');
+          if (idx === 0) saveBookmark(s, a, 'ayah');
+          else if (idx === 1) saveBookmark(s, a, 'rub');
         }
       );
       return;
@@ -758,23 +782,26 @@ export default function QuranReaderScreen() {
       tr.bookmark_choose_scope ?? 'Choose what to bookmark',
       headerLabel,
       [
-        { text: ayahLabel, onPress: () => toggleBookmark(target, 'ayah') },
-        { text: hizbLabel, onPress: () => toggleBookmark(target, 'hizb') },
-        { text: juzLabel,  onPress: () => toggleBookmark(target, 'juz') },
+        { text: ayahLabel, onPress: () => saveBookmark(s, a, 'ayah') },
+        { text: rubLabel,  onPress: () => saveBookmark(s, a, 'rub') },
         { text: cancelLabel, style: 'cancel' },
       ]
     );
-  }, [isBookmarked, tr, isAr, toggleBookmark]);
+  }, [tr, isAr, saveBookmark]);
 
-  const handleTap = useCallback(() => {
-    setChromeVisible(v => !v);
-  }, []);
+  // Bookmarked-ayah tint: subtle. Resolves verseKey → bool via the existing
+  // AppContext key API; the per-word render below colors marked words.
+  const isAyahBookmarked = useCallback((verseKey: string) => {
+    const [s, a] = verseKey.split(':').map(n => parseInt(n, 10));
+    if (!s || !a) return false;
+    return isBookmarked({ scope: 'ayah', surah: s, ayah: a });
+  }, [isBookmarked, bookmarks]);
+  const bookmarkColor = C.gold ?? '#E0A22A';
 
   const renderItem = useCallback(({ item }: { item: number }) => (
-    // key={item} forces React to mount a fresh MushafPageView instance whenever
-    // the page number changes — eliminates state leakage (cached fontSize,
-    // stretchedLH) from a recycled FlatList child when virtualization
-    // restores it for a different page than it last rendered.
+    // key={item} forces a fresh MushafPageView per page identity, so a
+    // recycled FlatList child never restores with the previous page's
+    // font-ready state.
     <MushafPageView
       key={item}
       pageNum={item}
@@ -783,12 +810,12 @@ export default function QuranReaderScreen() {
       textColor={C.text}
       ornamentColor={ornamentColor}
       bgColor={isDark ? '#0D0D0D' : '#FAF6EE'}
-      highlightTarget={highlightTarget}
-      isBookmarkedFn={isBookmarked}
-      onLongPressAyah={handleLongPressAyah}
       onTap={handleTap}
+      onLongPressWord={handleLongPressWord}
+      isAyahBookmarked={isAyahBookmarked}
+      bookmarkColor={bookmarkColor}
     />
-  ), [pageWidth, pageHeight, C, isDark, ornamentColor, highlightTarget, isBookmarked, handleLongPressAyah, handleTap]);
+  ), [pageWidth, pageHeight, C, isDark, ornamentColor, handleTap, handleLongPressWord, isAyahBookmarked, bookmarkColor]);
 
   const data = useMemo(() => {
     const arr = Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1);
@@ -871,17 +898,17 @@ export default function QuranReaderScreen() {
         <View style={styles.iconBarRow}>
           <View style={styles.iconGroup}>
             <Pressable
-              onPress={() => router.back()}
+              // TEST-28: back ALWAYS goes to the Table of Contents, never
+              // history-back. Uses router.replace so the reader is swapped
+              // for the ToC in the stack (no reader↔ToC depth buildup if
+              // the user toggles between them). The ToC's own back action
+              // exits to the Quran tab.
+              onPress={() => router.replace('/quran-toc')}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
             >
               <Ionicons name="chevron-back" size={18} color={C.tint} />
             </Pressable>
             <Pressable
-              // replace, not push — opening ToC swaps the reader for the ToC
-              // screen in the stack (rather than stacking on top). Combined
-              // with the ToC's own router.replace back to the reader, the
-              // stack stays flat: one back tap returns to wherever the user
-              // entered the reader from (Quran tab / search / bookmarks).
               onPress={() => router.replace('/quran-toc')}
               style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
             >

@@ -50,8 +50,11 @@ export interface PrayerNotifConfig {
 export type PrayerNotifType = PrayerNotifConfig;
 export type SecondLang = Lang | 'auto';
 
-/** Bookmark scope — discriminates between the three reading-position kinds. */
-export type BookmarkScope = 'ayah' | 'hizb' | 'juz';
+/** Bookmark scope — discriminates between the reading-position kinds.
+ *  TEST-27: 'rub' is the active scope for new hizb-quarter bookmarks (saves a
+ *  specific rub-el-hizb). 'hizb' (full hizb) and 'juz' are LEGACY — kept so
+ *  user-saved records survive, but the long-press UI no longer creates them. */
+export type BookmarkScope = 'ayah' | 'rub' | 'hizb' | 'juz';
 
 export interface Bookmark {
   /** New: scope discriminator. Older records without `scope` are treated as 'ayah'. */
@@ -64,9 +67,11 @@ export interface Bookmark {
   surahName: string;
   ayahNumber: number;
   ayahText: string;
-  /** Hizb-scope (1-60). */
+  /** Hizb number (1-60) — populated for rub, hizb, and (transitively) juz. */
   hizb?: number;
-  /** Juz-scope (1-30). */
+  /** Rub-el-hizb quarter (1-4) within the hizb. Only set for scope 'rub'. */
+  quarter?: 1 | 2 | 3 | 4;
+  /** Juz-scope (1-30) — legacy. */
   juz?: number;
   timestamp: number;
   type?: 'mushaf' | 'transliteration';
@@ -75,6 +80,7 @@ export interface Bookmark {
 /** Polymorphic bookmark match key for isBookmarked / removeBookmark. */
 export type BookmarkKey =
   | { scope: 'ayah'; surah: number; ayah: number }
+  | { scope: 'rub'; hizb: number; quarter: 1 | 2 | 3 | 4 }
   | { scope: 'hizb'; hizb: number }
   | { scope: 'juz'; juz: number };
 
@@ -82,6 +88,7 @@ function bookmarkMatchesKey(b: Bookmark, k: BookmarkKey): boolean {
   const bScope = b.scope ?? 'ayah';
   if (k.scope !== bScope) return false;
   if (k.scope === 'ayah') return b.surahNumber === k.surah && b.ayahNumber === k.ayah;
+  if (k.scope === 'rub')  return b.hizb === k.hizb && b.quarter === k.quarter;
   if (k.scope === 'hizb') return b.hizb === k.hizb;
   return b.juz === k.juz;
 }
@@ -449,6 +456,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const bWithScope: Bookmark = { ...b, scope };
     const key: BookmarkKey =
       scope === 'ayah' ? { scope: 'ayah', surah: b.surahNumber, ayah: b.ayahNumber }
+      : scope === 'rub'  ? { scope: 'rub',  hizb: b.hizb ?? 0, quarter: (b.quarter ?? 1) as 1 | 2 | 3 | 4 }
       : scope === 'hizb' ? { scope: 'hizb', hizb: b.hizb ?? 0 }
       : { scope: 'juz', juz: b.juz ?? 0 };
     setBookmarks(prev => {

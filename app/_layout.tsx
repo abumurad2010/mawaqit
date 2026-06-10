@@ -199,6 +199,12 @@ function RootLayoutNav() {
       <Stack.Screen name="quran-toc" options={{ headerShown: false, presentation: 'modal' }} />
       <Stack.Screen name="bookmarks" options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="search" options={{ headerShown: false, presentation: 'modal' }} />
+      {/* TEST-28: edge-swipe-back disabled on the reader so it can't bypass the
+          chrome's back action (which always routes to the ToC, never history). */}
+      <Stack.Screen
+        name="quran-reader"
+        options={{ headerShown: false, gestureEnabled: false, fullScreenGestureEnabled: false }}
+      />
     </Stack>
   );
 }
