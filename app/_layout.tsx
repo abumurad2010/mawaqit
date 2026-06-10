@@ -220,6 +220,10 @@ export default function RootLayout() {
     'ScheherazadeNew': require('../assets/fonts/ScheherazadeNew-Regular.ttf'),
     'AmiriRegular': require('../assets/fonts/Amiri-Regular.ttf'),
     'AmiriQuran': require('../assets/fonts/AmiriQuran-Regular.ttf'),
+    // TEST-29 (hafs-smart-experiment spike): KFGQPC Hafs Smart — single PUA-
+    // encoded font that replaces the 200 MB per-page QPC V2 fonts. Loaded for
+    // the spike route /hafs-smart-spike only; the QPC V2 reader is unaffected.
+    'HafsSmart': require('../assets/fonts/HafsSmart_08.ttf'),
   });
 
   useEffect(() => {

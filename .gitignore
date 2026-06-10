@@ -50,4 +50,5 @@ qul-v2-staging/
 
 # Local Xcode build output for on-device builds. Per-machine, regeneratable.
 ios/build_device/
+ios/build_device_release/
 ios/build/

@@ -65,8 +65,20 @@ import {
 import { getQcfPage, type QcfPage, type QcfLine } from '@/assets/mushaf-v2';
 import { QCF_V2_FONT_FAMILY } from '@/assets/fonts/qcf-v2-map';
 import { loadPageFont, isPageFontLoaded, prefetchAdjacentFonts } from '@/lib/qcf-font-loader';
+import { getHsPage, type HsPage } from '@/assets/mushaf-hs';
 
 const FALLBACK_FONT = 'KFGQPCHafs';
+
+// TEST-31: render-engine switch. 'hafs-smart' uses the single PUA-encoded
+// HafsSmart font + per-page mushaf-hs/{NNN}.json (~2.3 MB total) — the
+// production reader; 'qpc-v2' remains compiled in as a verified fallback
+// using the per-page p{N}.ttf fonts (~200 MB) + mushaf-v2 layouts. Flip the
+// constant to revert. The two paths share the same shell (page rounding,
+// FlatList paging, chrome, bookmarks, search-jump) — only the layout source
+// and font family differ.
+const MUSHAF_ENGINE: 'hafs-smart' | 'qpc-v2' = 'hafs-smart';
+
+const HAFS_SMART_FONT_FAMILY = 'HafsSmart';
 
 const MINI_LABEL_HEIGHT = 26;
 const PAGE_OVAL_HEIGHT = 38;
@@ -260,13 +272,120 @@ function PageNumberFrame({
   );
 }
 
+/**
+ * TEST-31: Compose a Hafs Smart page into the existing QcfPage-shaped line
+ * grid that MushafLineRow consumes — one helper, no new render path needed.
+ *
+ * Rules (all derived from the hs data alone; no join against mushaf-v2):
+ * - lineCount = 8 for pages 1 and 2 (Fatiha + Al-Baqarah start), else 15.
+ * - Top-of-page header band: contiguous empty slots at the top precede the
+ *   first ayah. 1-slot header = surah-name (Fatiha + Al-Tawbah edge case);
+ *   2-slot header = surah-name + basmallah.
+ * - Mid-page surah transitions: empty slots between an outgoing surah's last
+ *   ayah and the next surah's first ayah follow the same 1/2-slot pattern
+ *   (Al-Tawbah-only single-slot).
+ * - is_centered: Fatiha (page 1) all ayah lines centered; everything else
+ *   not centered. Centered short surah-end lines are not yet re-applied
+ *   from mushaf-v2 (low-frequency — 30 occurrences total — refinement
+ *   slated for after the migration lands).
+ *
+ * Each composed `ayah` line carries N "words" — one per ayah SEGMENT
+ * occupying that slot (an ayah's segment is its part of the slot). Each
+ * "word" has `text` = the segment's PUA glyph stream and `verse_key` =
+ * `${surah}:${ayah}` so the existing long-press → bookmark pipeline works
+ * unchanged (resolution is exact at the ayah level — not the word level,
+ * since the hs source is per-ayah not per-word).
+ */
+/** True for the ornamental opening pair: in the printed muṣḥaf pages 1 and 2
+ *  are an 8-row centered block (banner + short centered ayah lines), not the
+ *  body-page 15-line grid. */
+function isOrnamentalPage(p: number): boolean {
+  return p === 1 || p === 2;
+}
+
+function composeHsPage(hs: HsPage): QcfPage {
+  const lineCount = isOrnamentalPage(hs.page) ? 8 : 15;
+  type Seg = { surah: number; ayah: number; text: string };
+  const slots: Array<Seg[]> = Array.from({ length: lineCount }, () => []);
+  // Walk ayahs in line_start order (the source already sorts this way, but
+  // be explicit for safety).
+  const ayahs = [...hs.ayahs].sort((a, b) => a.line_start - b.line_start || a.ayah - b.ayah);
+  for (const r of ayahs) {
+    let segments = r.text.split('\n');
+    if (segments.length > 0 && segments[segments.length - 1] === '') {
+      segments = segments.slice(0, -1);
+    }
+    for (let k = 0; k < segments.length; k++) {
+      const slot = r.line_start - 1 + k;
+      if (slot < 0 || slot >= lineCount) continue;
+      slots[slot].push({ surah: r.surah, ayah: r.ayah, text: segments[k] });
+    }
+  }
+  // Now classify each slot: empty slots are header (surah_name / basmallah).
+  // TEST-32: BOTH pages 1 and 2 (the ornamental opening pair) get all-centered
+  // treatment. Previously only page 1; page 2 was rendering body-page-aligned
+  // because is_centered wasn't being set on its ayah/basmallah lines.
+  const lines: QcfLine[] = [];
+  const isFatiha = isOrnamentalPage(hs.page);
+  for (let i = 0; i < lineCount; i++) {
+    const segs = slots[i];
+    if (segs.length === 0) {
+      // Determine whether this empty slot is a surah_name or basmallah.
+      // Find the next non-empty slot below.
+      let nextSurah = 0;
+      for (let j = i + 1; j < lineCount; j++) {
+        if (slots[j].length > 0) { nextSurah = slots[j][0].surah; break; }
+      }
+      if (nextSurah === 0) {
+        // Shouldn't happen — treat as ayah empty.
+        lines.push({ line: i + 1, line_type: 'ayah', is_centered: false, words: [] });
+        continue;
+      }
+      // Count contiguous empty slots starting at i.
+      let runEnd = i;
+      while (runEnd < lineCount && slots[runEnd].length === 0) runEnd++;
+      const run = runEnd - i;
+      if (run === 2) {
+        // Standard: surah_name then basmallah
+        lines.push({ line: i + 1, line_type: 'surah_name', is_centered: true, surah_number: nextSurah, words: [] });
+        lines.push({ line: i + 2, line_type: 'basmallah', is_centered: true, words: [] });
+        i = i + 1; // outer loop will i++ to i+2
+      } else if (run === 1) {
+        // Al-Tawbah (no basmallah) — or Al-Fatiha's own surah-name slot
+        lines.push({ line: i + 1, line_type: 'surah_name', is_centered: true, surah_number: nextSurah, words: [] });
+      } else {
+        // 3+ empty slots in a row shouldn't happen given integrity gate, but
+        // bail out gracefully.
+        for (let k = 0; k < run; k++) {
+          lines.push({ line: i + k + 1, line_type: 'ayah', is_centered: false, words: [] });
+        }
+        i = runEnd - 1;
+      }
+    } else {
+      // Ayah line — one "word" per segment, carrying its verse_key.
+      lines.push({
+        line: i + 1,
+        line_type: 'ayah',
+        is_centered: isFatiha,
+        words: segs.map((s, idx) => ({
+          id: idx,
+          text: s.text,
+          verse_key: `${s.surah}:${s.ayah}`,
+          word: idx + 1,
+        })),
+      });
+    }
+  }
+  return { page: hs.page, lines };
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * MushafPageBody — pure render from a QcfPage. Each line is one row whose
- * height equals `lineSlot`. Ayah lines use the p{N} font; the row anchors
- * the line's natural-width text at the right margin via flex-direction
- * row-reverse + justify-content flex-start. surah_name lines render the
- * existing ornate banner; basmallah lines render a centered KFGQPC Hafs
- * string (Stage 3 will replace both with V2 glyphs).
+ * height equals `lineSlot`. Ayah lines use the active engine's font; the
+ * row anchors the line's natural-width text at the right margin via
+ * flex-direction row-reverse + justify-content flex-start. surah_name
+ * lines render the existing ornate banner; basmallah lines render a
+ * centered KFGQPC Hafs string.
  * ──────────────────────────────────────────────────────────────────────── */
 function MushafPageBody({
   pageNum, pageData, fontReady,
@@ -292,7 +411,12 @@ function MushafPageBody({
   onLineMeasured: (idx: number, width: number) => void;
   isMeasuring: boolean;
 }) {
-  const family = fontReady ? QCF_V2_FONT_FAMILY(pageNum) : FALLBACK_FONT;
+  // TEST-31: pick the font family for the active engine. Under 'hafs-smart'
+  // the family is fixed for every page (the PUA-encoded KFGQPC Hafs Smart
+  // font holds all 604 pages' worth of word-shape glyphs at PUA codepoints).
+  const family = MUSHAF_ENGINE === 'hafs-smart'
+    ? HAFS_SMART_FONT_FAMILY
+    : (fontReady ? QCF_V2_FONT_FAMILY(pageNum) : FALLBACK_FONT);
 
   return (
     <>
@@ -477,24 +601,31 @@ function MushafPageView({
   isAyahBookmarked: (verseKey: string) => boolean;
   bookmarkColor: string;
 }) {
-  const pageData = useMemo(() => getQcfPage(pageNum), [pageNum]);
-  // TEST-23: was 10. At the TEST-22 design-ratio fontSize the rightmost glyph
-  // of each RTL line is anchored at the content right edge (x = W - horizPad);
-  // its ink overshoots its advance box on the right by a few px and got
-  // clipped by the page-level overflow:'hidden' (kept for vertical row
-  // boundaries). Widening horizontal padding gives both margins symmetric
-  // breathing room without changing the divisor — fontSize tracks the new
-  // (slightly smaller) innerWidth so the line still fills both margins.
+  // TEST-31: source the page from the active engine.
+  // - 'hafs-smart': compose the per-page JSON from mushaf-hs/ into the same
+  //   QcfPage shape MushafLineRow consumes.
+  // - 'qpc-v2': the legacy per-page layout from mushaf-v2/.
+  const pageData = useMemo(() => {
+    if (MUSHAF_ENGINE === 'hafs-smart') {
+      const hs = getHsPage(pageNum);
+      return hs ? composeHsPage(hs) : null;
+    }
+    return getQcfPage(pageNum);
+  }, [pageNum]);
   const horizPad = 14;
   const vertPad = 6;
   const innerWidth = width - horizPad * 2;
   const innerHeight = height - vertPad * 2;
 
-  // Track per-page font readiness. Page font loads on demand; until it
-  // resolves the ayah rows render transparently so glyphs never flash
-  // in the wrong typeface.
-  const [fontReady, setFontReady] = useState(() => isPageFontLoaded(pageNum));
+  // TEST-31: under 'hafs-smart' the single HafsSmart_08 font is registered
+  // at app boot via useFonts; no per-page load step. Under 'qpc-v2' we still
+  // load p{pageNum}.ttf on demand and prefetch adjacent pages.
+  const [fontReady, setFontReady] = useState(() => MUSHAF_ENGINE === 'hafs-smart' || isPageFontLoaded(pageNum));
   useEffect(() => {
+    if (MUSHAF_ENGINE === 'hafs-smart') {
+      setFontReady(true);
+      return;
+    }
     let cancelled = false;
     if (!isPageFontLoaded(pageNum)) setFontReady(false);
     loadPageFont(pageNum).then(() => { if (!cancelled) setFontReady(true); });
@@ -573,7 +704,14 @@ function MushafPageView({
   }
 
   const lineCount = pageData.lines.length;
-  const lineSlot = innerHeight / lineCount;
+  // TEST-32: pages 1 and 2 (ornamental opening) use the BODY-PAGE row rhythm
+  // (innerHeight/15) for each of their 8 rows — NOT innerHeight/8 which would
+  // stretch each row across ~12.5% of the page and visually balloon line
+  // spacing. The resulting 8-row block height is 8/15 ≈ 53% of innerHeight;
+  // it is vertically centered in the page via justifyContent below. Body
+  // pages keep their original innerHeight/15 = innerHeight/lineCount.
+  const isCompact = isOrnamentalPage(pageNum);
+  const lineSlot = isCompact ? innerHeight / 15 : innerHeight / lineCount;
   const isMeasuring = fitFontSize === null;
   const fontSize = fitFontSize ?? referenceFontSize;
 
@@ -586,7 +724,7 @@ function MushafPageView({
           overflow: 'hidden',
         }}
       >
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, justifyContent: isCompact ? 'center' : 'flex-start' }}>
           <MushafPageBody
             pageNum={pageNum}
             pageData={pageData}
