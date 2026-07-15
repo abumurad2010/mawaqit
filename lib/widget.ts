@@ -133,6 +133,7 @@ export function updateWidgetFromParams(params: {
   asrMethod: AsrMethod;
   maghribOffset: number;
   lang: Lang;
+  timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
 }): void {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
@@ -147,6 +148,7 @@ export function updateWidgetFromParams(params: {
       method: params.method,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      timezone: params.timezone ?? null,
     });
     const tm = calculatePrayerTimes({
       lat: params.lat,
@@ -155,6 +157,7 @@ export function updateWidgetFromParams(params: {
       method: params.method,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      timezone: params.timezone ?? null,
     });
     updateWidgetTimeline(t, tm, params.lang);
   } catch {

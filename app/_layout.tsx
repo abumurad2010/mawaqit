@@ -47,6 +47,7 @@ async function maybePromptForRating(params: {
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
   maghribOffset: number;
+  timezone?: string | null;
 }): Promise<void> {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
@@ -82,6 +83,7 @@ async function maybePromptForRating(params: {
         method: params.calcMethod,
         asrMethod: params.asrMethod,
         maghribOffset: params.maghribOffset,
+        timezone: params.timezone ?? null,
       });
       const FIVE_MIN_MS = 5 * 60 * 1000;
       const nearPrayer = [times.fajr, times.dhuhr, times.asr, times.maghrib, times.isha].some(
@@ -113,6 +115,7 @@ function RootLayoutNav() {
     calcMethod,
     asrMethod,
     maghribOffset,
+    locationTimezone,
   } = useApp();
   const appState = useRef(AppState.currentState);
   const hasRedirected = useRef(false);
@@ -160,10 +163,10 @@ function RootLayoutNav() {
       ratingChecked.current = true;
       const effectiveLocation =
         locationMode === 'manual' && manualLocation ? manualLocation : location;
-      maybePromptForRating({ effectiveLocation, calcMethod, asrMethod, maghribOffset });
+      maybePromptForRating({ effectiveLocation, calcMethod, asrMethod, maghribOffset, timezone: locationTimezone });
     }, 4000);
     return () => clearTimeout(timer);
-  }, [location, locationMode, manualLocation, calcMethod, asrMethod, maghribOffset]);
+  }, [location, locationMode, manualLocation, calcMethod, asrMethod, maghribOffset, locationTimezone]);
 
   useEffect(() => {
     if (Platform.OS === 'web') return;

@@ -29,6 +29,12 @@ export interface PrayerTimesParams {
   method?: CalcMethod;
   asrMethod?: AsrMethod;
   maghribOffset?: number; // minutes after sunset
+  /** IANA timezone of the LOCATION (e.g. "Europe/London"). When provided, prayer
+   *  instants are anchored to the correct local calendar day in THAT zone — needed
+   *  so absolute instants (notifications, countdowns) are right in manual mode where
+   *  the device timezone differs from the location. Null/undefined → device-local
+   *  anchoring, which is correct in GPS mode (device is physically in the location). */
+  timezone?: string | null;
 }
 
 export interface PrayerTimes {
@@ -94,51 +100,39 @@ function sunPosition(jd: number): { declination: number; equation: number } {
   return { declination: dec, equation: EqT };
 }
 
-/** Time at which sun reaches a given altitude angle */
-function hourAngle(angle: number, lat: number, dec: number): number {
+/**
+ * Time (decimal hours from transit) at which the sun reaches a given altitude
+ * angle, or `null` when the sun never reaches that angle on this day.
+ *
+ * Returning `null` (instead of the old sentinel `18`) is what makes the
+ * high-latitude handling possible: at London (51.5°N) in mid-summer the sun
+ * never descends to −18° (Fajr) or −17° (Isha), so those depression angles are
+ * unreachable and the caller must fall back to a night-fraction rule rather
+ * than pretend the twilight happens "18 hours from noon" (which wrapped Fajr
+ * into the previous evening and Isha into the next morning — the v1.3.5 bug).
+ */
+function hourAngle(angle: number, lat: number, dec: number): number | null {
   const cost = (Math.sin(toRad(angle)) - Math.sin(toRad(lat)) * Math.sin(toRad(dec)))
              / (Math.cos(toRad(lat)) * Math.cos(toRad(dec)));
-  if (cost < -1) return 18; // always below horizon (polar night) → use midnight
-  if (cost > 1)  return 0;  // always above horizon (polar day)
+  if (cost < -1 || cost > 1) return null; // angle unreachable this day
   return toDeg(Math.acos(cost)) / 15;
 }
 
-/** Dhuhr time (solar noon) */
-function dhuhrTime(jd: number, lng: number): number {
-  const { equation } = sunPosition(jd);
-  return 12 - equation - lng / 15;
-}
 
-/** Asr shadow factor: standard = 1, hanafi = 2 */
-function asrTime(jd: number, lat: number, dhuhr: number, method: AsrMethod): number {
-  const { declination } = sunPosition(jd);
-  const factor = method === 'hanafi' ? 2 : 1;
-  const cotAngle = factor + Math.tan(toRad(Math.abs(lat - declination)));
-  const angle = toDeg(Math.atan(1 / cotAngle));
-  return dhuhr + hourAngle(angle, lat, declination);
-}
-
-/** Convert decimal UTC hour to a Date, anchored to UTC midnight of the LOCAL calendar date. */
-function decimalToDate(h: number, date: Date): Date {
-  // Anchor to UTC midnight of the LOCAL calendar date so prayer times belong
-  // to the correct local day even in UTC+ zones where UTC midnight precedes local midnight.
-  const utcMidnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-  const result = new Date(utcMidnight + h * 3600 * 1000);
-
-  // Guard for extreme UTC± offsets (e.g. UTC+12→+14 with western longitudes like
-  // Kiribati/Samoa, or UTC−12) where large fajrUTC values cause the result to spill
-  // into the wrong local calendar day (exactly 24 h off → the reported 32-hour bug).
-  // If the local date of the result doesn't match the input date, shift by ±24 h.
-  if (
-    result.getFullYear() !== date.getFullYear() ||
-    result.getMonth()    !== date.getMonth()    ||
-    result.getDate()     !== date.getDate()
-  ) {
-    const delta = result > date ? -86_400_000 : 86_400_000;
-    return new Date(result.getTime() + delta);
+/** Y-M-D key of an absolute instant AS SEEN in `timezone` (IANA), or in device-local
+ *  time when timezone is null. Used to anchor prayer instants to the correct local
+ *  calendar day. */
+function zoneDateKey(instant: Date, timezone: string | null): string {
+  if (timezone) {
+    try {
+      const p = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      }).formatToParts(instant);
+      const g = (t: string) => p.find(x => x.type === t)!.value;
+      return `${g('year')}-${g('month')}-${g('day')}`;
+    } catch { /* fall through to device-local */ }
   }
-
-  return result;
+  return `${instant.getFullYear()}-${String(instant.getMonth() + 1).padStart(2, '0')}-${String(instant.getDate()).padStart(2, '0')}`;
 }
 
 export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
@@ -149,6 +143,7 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
     method = 'MWL',
     asrMethod = 'standard',
     maghribOffset = 5,
+    timezone = null,
   } = params;
 
   const m = METHODS[method];
@@ -163,16 +158,30 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
   // Transit (Dhuhr) in UTC decimal hours
   const transit = 12 - equation - lng / 15;
 
-  // Sunrise / Sunset angle (−0.8333° accounts for refraction and solar disc size)
+  // Sunrise / Sunset angle (−0.8333° accounts for refraction and solar disc size).
+  // At extreme (polar) latitudes the sun may never cross the horizon; hourAngle
+  // returns null and we fall back to a full/empty day so nightLen stays sane.
   const sunAngle = -0.8333;
-  const ha = hourAngle(sunAngle, lat, declination);
+  const noonAltitude = 90 - Math.abs(lat - declination); // solar altitude at transit
+  const haRaw = hourAngle(sunAngle, lat, declination);
+  const ha = haRaw ?? (noonAltitude > sunAngle ? 12 : 0); // polar day → 12h, polar night → 0h
 
   const sunriseUTC = transit - ha;
   const sunsetUTC  = transit + ha;
 
-  // Fajr
+  // Night length (decimal hours) used by the high-latitude twilight rule below.
+  const nightLen = 24 - (sunsetUTC - sunriseUTC);
+
+  // ── Fajr — with high-latitude fallback ──────────────────────────────────────
+  // At high latitudes in summer the sun never descends to the Fajr depression
+  // angle (e.g. −18°), so hourAngle returns null. The "AngleBased" method
+  // (recommended by ISNA/PrayTimes for lat > ~48°) sets Fajr no earlier than a
+  // fraction of the night before sunrise: portion = (fajrAngle / 60) × night.
+  // When the angle IS reachable we still clamp to that limit so a barely-reachable
+  // angle near the horizon can't push Fajr absurdly early.
   const fajrHA = hourAngle(-m.fajrAngle, lat, declination);
-  const fajrUTC = transit - fajrHA;
+  const fajrLimit = sunriseUTC - (m.fajrAngle / 60) * nightLen; // earliest allowed Fajr
+  const fajrUTC = fajrHA === null ? fajrLimit : Math.max(transit - fajrHA, fajrLimit);
 
   // Dhuhr
   const dhuhrUTC = transit;
@@ -181,34 +190,65 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
   const asrFactor = asrMethod === 'hanafi' ? 2 : 1;
   const cotA = asrFactor + Math.tan(toRad(Math.abs(lat - declination)));
   const asrAngle = toDeg(Math.atan(1 / cotA));
-  const asrHA = hourAngle(asrAngle, lat, declination);
+  const asrHA = hourAngle(asrAngle, lat, declination) ?? 0; // polar: degenerate → transit
   const asrUTC = transit + asrHA;
 
   // Maghrib = sunset + offset (in minutes)
   const maghribUTC = sunsetUTC + maghribOffset / 60;
 
-  // Isha
+  // ── Isha — with high-latitude fallback ──────────────────────────────────────
   // For angle-based methods: Isha = adjusted Maghrib + twilight duration.
   // twilightDuration = time between astronomical sunset and Isha angle (ishaHA − ha).
   // Using maghribUTC (sunset + offset) as the base ensures the Maghrib safety
   // margin is respected — Isha is always measured from when Maghrib actually begins.
+  // When the Isha depression angle is unreachable (high-latitude summer), fall back
+  // to the AngleBased limit: Isha no later than (ishaAngle / 60) × night after Maghrib.
   let ishaUTC: number;
   if (m.ishaMins !== undefined) {
     // Fixed-minutes methods (Makkah, Qatar): already relative to Maghrib
     ishaUTC = maghribUTC + m.ishaMins / 60;
   } else {
-    const ishaHA = hourAngle(-(m.ishaAngle ?? 17), lat, declination);
-    const twilightDuration = ishaHA - ha; // decimal hours from sunset to Isha
-    ishaUTC = maghribUTC + twilightDuration;
+    const ishaAngle = m.ishaAngle ?? 17;
+    const ishaHA = hourAngle(-ishaAngle, lat, declination);
+    const ishaLimit = maghribUTC + (ishaAngle / 60) * nightLen; // latest allowed Isha
+    ishaUTC = ishaHA === null
+      ? ishaLimit
+      : Math.min(maghribUTC + (ishaHA - ha), ishaLimit);
   }
 
+  // ── Anchor the whole set to the correct local calendar day ───────────────────
+  // Every prayer's UTC hour is measured from the same astronomical noon, so the
+  // set shares ONE day-shift. We derive it once from the transit (solar noon — an
+  // unambiguous reference that always lands near local midday) by choosing the
+  // ±24h shift that places transit on the viewed calendar day IN THE LOCATION ZONE,
+  // then apply that SAME shift to every prayer.
+  //
+  // Why one uniform shift and not a per-prayer guard: a per-prayer guard forces
+  // each prayer onto the viewed day independently, which (a) wrongly drags a
+  // legitimately-past-midnight Isha back ~24h at high latitudes, corrupting its
+  // absolute instant (dropped/mis-fired notifications), and (b) can only ever be
+  // right at the date line by coincidence. Anchoring on transit and shifting the
+  // set uniformly keeps Isha's true instant (it may fall in the next local day's
+  // early hours) while still correcting whole-day offsets at extreme longitudes
+  // (Kiribati/Samoa UTC+13/+14, UTC−12) using the location's true civil offset.
+  const utcMidnight = Date.UTC(y, mo - 1, d);
+  const targetKey = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  let shiftH = 0;
+  for (const cand of [0, -24, 24]) {
+    if (zoneDateKey(new Date(utcMidnight + (transit + cand) * 3600_000), timezone) === targetKey) {
+      shiftH = cand;
+      break;
+    }
+  }
+  const make = (h: number) => new Date(utcMidnight + (h + shiftH) * 3600_000);
+
   return {
-    fajr:    decimalToDate(fajrUTC,    date),
-    sunrise: decimalToDate(sunriseUTC, date),
-    dhuhr:   decimalToDate(dhuhrUTC,   date),
-    asr:     decimalToDate(asrUTC,     date),
-    maghrib: decimalToDate(maghribUTC, date),
-    isha:    decimalToDate(ishaUTC,    date),
+    fajr:    make(fajrUTC),
+    sunrise: make(sunriseUTC),
+    dhuhr:   make(dhuhrUTC),
+    asr:     make(asrUTC),
+    maghrib: make(maghribUTC),
+    isha:    make(ishaUTC),
   };
 }
 
@@ -222,7 +262,9 @@ export function formatTime(date: Date, use24h = false, amStr = 'AM', pmStr = 'PM
 }
 
 /** Format time at a specific UTC offset (for manual locations).
- *  Pass null to fall back to device local time. */
+ *  Pass null to fall back to device local time.
+ *  @deprecated Prefer formatTimeInZone, which is DST-aware. Kept for the
+ *  astronomy/moon helpers that still operate in numeric-offset space. */
 export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, use24h = false, amStr = 'AM', pmStr = 'PM'): string {
   if (utcOffsetHours === null) return formatTime(date, use24h, amStr, pmStr);
   const utcMin = date.getUTCHours() * 60 + date.getUTCMinutes();
@@ -233,6 +275,71 @@ export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, us
   const period = h >= 12 ? pmStr : amStr;
   const h12 = h % 12 || 12;
   return `${h12}:${m} ${period}`;
+}
+
+/**
+ * Format a UTC instant as wall-clock time in a specific IANA timezone
+ * (e.g. "Europe/London"). Unlike formatTimeAtOffset, this is DST-aware — the
+ * offset is resolved by Intl for the exact instant, so a July time renders in
+ * BST (+1) and a January time in GMT (+0) automatically, with no manual toggle.
+ *
+ * Pass `timezone = null` to fall back to device-local time (correct for GPS/auto
+ * mode, where the device is physically in the location). If the JS runtime lacks
+ * IANA-zone support the Intl call throws and we degrade gracefully to
+ * device-local formatting rather than crashing.
+ */
+export function formatTimeInZone(
+  date: Date,
+  timezone: string | null,
+  use24h = false,
+  amStr = 'AM',
+  pmStr = 'PM',
+): string {
+  if (!timezone) return formatTime(date, use24h, amStr, pmStr);
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+    let h = parseInt(parts.find(p => p.type === 'hour')?.value ?? 'NaN', 10);
+    const mm = parts.find(p => p.type === 'minute')?.value ?? '00';
+    if (Number.isNaN(h)) return formatTime(date, use24h, amStr, pmStr);
+    if (h === 24) h = 0; // some engines emit '24' for midnight under hour12:false
+    if (use24h) return `${h.toString().padStart(2, '0')}:${mm}`;
+    const period = h >= 12 ? pmStr : amStr;
+    const h12 = h % 12 || 12;
+    return `${h12}:${mm} ${period}`;
+  } catch {
+    return formatTime(date, use24h, amStr, pmStr);
+  }
+}
+
+/**
+ * DST-aware UTC offset (in hours) for an IANA timezone at a given instant.
+ * Returns null if `timezone` is null or the zone can't be resolved. Used by the
+ * astronomy helpers (moon phases, crescent windows) that still compute in
+ * numeric-offset space — this gives them a real, DST-correct offset instead of
+ * the old crude longitude/15 approximation.
+ */
+export function zoneOffsetHours(timezone: string | null, date: Date): number | null {
+  if (!timezone) return null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).formatToParts(date);
+    const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value ?? 'NaN', 10);
+    let hh = get('hour'); if (hh === 24) hh = 0;
+    const asUTC = Date.UTC(get('year'), get('month') - 1, get('day'), hh, get('minute'), get('second'));
+    if (Number.isNaN(asUTC)) return null;
+    return Math.round((asUTC - date.getTime()) / 60000) / 60;
+  } catch {
+    return null;
+  }
 }
 
 /**

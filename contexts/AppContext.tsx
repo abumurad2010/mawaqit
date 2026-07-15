@@ -9,6 +9,8 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import { zoneOffsetHours } from '@/lib/prayer-times';
+import tzlookup from 'tz-lookup'; // types provided by types/tz-lookup.d.ts
 import { updateWidgetFromParams } from '@/lib/widget';
 
 import type { Lang } from '@/constants/i18n';
@@ -94,6 +96,9 @@ interface AppSettings {
   eidPrayerTime: string; // "HH:MM" official Eid prayer time (shown only on Eid days)
   iqamaOffsets: Record<string, number>; // per-prayer iqama delay in minutes (user overrides)
   thikrRemindersEnabled: boolean;
+  /** @deprecated No longer used. DST is now handled automatically via the
+   *  location's IANA timezone (see locationTimezone). Field kept so persisted
+   *  settings from ≤1.3.5 still parse; safe to remove in a future migration. */
   dstEnabled: boolean;
   defaultTab: string;
   selectedAdhan: string;
@@ -115,6 +120,9 @@ interface AppContextValue extends AppSettings {
   setMaghribUserAdj: (adj: number) => void;
   countryCode: string | null;
   locationUtcOffset: number | null;
+  /** IANA timezone for a manual location (e.g. "Europe/London"), or null in
+   *  GPS/auto mode where device-local time is used. DST-aware display key. */
+  locationTimezone: string | null;
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
   removeBookmark: (surahNumber: number, ayahNumber: number) => void;
@@ -275,9 +283,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const maghribBase = getMaghribOffset(effectiveCountryCode);
   const maghribOffset = maghribBase + maghribUserAdj;
 
+  // For a MANUAL location we resolve the real IANA timezone from its coordinates
+  // (tz-lookup, fully offline). GPS/auto mode stays null — the device is
+  // physically in the location, so device-local time already tracks DST.
+  const locationTimezone: string | null =
+    settings.locationMode === 'manual' && settings.manualLocation
+      ? (() => {
+          try { return tzlookup(settings.manualLocation.lat, settings.manualLocation.lng); }
+          catch { return null; }
+        })()
+      : null;
+
+  // Numeric offset kept for the astronomy helpers (moon phases, crescent windows)
+  // that still work in offset space. Now DST-aware — derived from the resolved
+  // timezone for the current instant — instead of the old crude lng/15 guess.
+  // Falls back to lng/15 only if the zone can't be resolved.
   const locationUtcOffset: number | null =
     settings.locationMode === 'manual' && settings.manualLocation
-      ? Math.round(settings.manualLocation.lng / 15)
+      ? (zoneOffsetHours(locationTimezone, new Date())
+          ?? Math.round(settings.manualLocation.lng / 15))
       : null;
 
   const isDark =
@@ -309,9 +333,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('[Notifications] rescheduleAll skipped — effectiveLocation is null');
       return;
     }
-    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled, dstEnabled } = settings;
+    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled } = settings;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
-    const dstOffsetMs = dstEnabled ? 3600000 : 0;
     console.log(`[Notifications] rescheduleAll triggered — hasAny=${hasAny} thikrEnabled=${thikrRemindersEnabled} location=${effectiveLocation.lat.toFixed(3)},${effectiveLocation.lng.toFixed(3)}`);
 
     const rescheduleAll = async () => {
@@ -332,9 +355,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             tahajjudTime: settings.tahajjudTime ?? '03:00',
             selectedAdhan: settings.selectedAdhan ?? 'makkah',
             prayerAdhan: settings.prayerAdhan ?? {},
-            dstOffsetMs,
             prePrayerReminder: settings.prePrayerReminder ?? 0,
             jumuahTime: settings.jumuahTime ?? null,
+            timezone: locationTimezone,
           });
         } else {
           await cancelAllPrayerNotifications();
@@ -347,7 +370,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             calcMethod,
             asrMethod,
             maghribOffset,
-            dstOffsetMs,
+            timezone: locationTimezone,
             reservedSlots: prayerCount,
           });
         } else {
@@ -366,12 +389,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           asrMethod,
           maghribOffset,
           lang,
+          timezone: locationTimezone,
         });
       } catch { /* non-critical */ }
     };
 
     rescheduleAll();
-  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.dstEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime]);
+  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime]);
 
   // Date-rollover watcher: while the app stays open across midnight, push a
   // fresh widget timeline so "today" rolls to the next calendar day.
@@ -386,6 +410,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           asrMethod: settings.asrMethod,
           maghribOffset,
           lang: settings.lang,
+          timezone: locationTimezone,
         });
       } catch { /* non-critical */ }
     };
@@ -396,7 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const msUntilMidnight = tomorrow.getTime() - now.getTime();
     const timeoutId = setTimeout(tick, msUntilMidnight);
     return () => clearTimeout(timeoutId);
-  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset]);
+  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
@@ -473,6 +498,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setMaghribUserAdj,
       countryCode: effectiveCountryCode,
       locationUtcOffset,
+      locationTimezone,
       bookmarks,
       addBookmark,
       removeBookmark,
@@ -489,7 +515,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       quranNavTarget,
       setQuranNavTarget,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, locationUtcOffset, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, locationUtcOffset, locationTimezone, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
   );
 
   if (!loaded) return null;

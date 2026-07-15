@@ -16,7 +16,7 @@ import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import {
-  calculatePrayerTimes, formatTimeAtOffset,
+  calculatePrayerTimes, formatTimeAtOffset, formatTimeInZone,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import {
@@ -76,7 +76,7 @@ const CAL_FS_KEY = 'calendar_font_size';
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, hijriAdjustment, colors } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, locationTimezone, hijriAdjustment, colors } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
@@ -127,9 +127,10 @@ export default function CalendarScreen() {
       method: calcMethod,
       asrMethod,
       maghribOffset,
+      timezone: locationTimezone,
     });
     setPrayerTimes(times);
-  }, [selectedDate, location, calcMethod, asrMethod, maghribOffset]);
+  }, [selectedDate, location, calcMethod, asrMethod, maghribOffset, locationTimezone]);
 
   // Moon phase for the selected date
   const selectedMoon = useMemo<MoonPhaseInfo>(() => {
@@ -164,6 +165,7 @@ export default function CalendarScreen() {
           method: calcMethod,
           asrMethod,
           maghribOffset,
+          timezone: locationTimezone,
         });
         const sunsetMs = (times.maghrib as Date).getTime();
         // At crescent sighting, moon is ~1–2 days old; each day adds ~50 min of visibility
@@ -173,7 +175,7 @@ export default function CalendarScreen() {
       }
       return { conjunction: nm, crescentDate, sunset, moonset };
     });
-  }, [lookupNewMoons, location, locationUtcOffset, calcMethod, asrMethod, maghribOffset]);
+  }, [lookupNewMoons, location, locationUtcOffset, locationTimezone, calcMethod, asrMethod, maghribOffset]);
 
   // ── Crescent help text (all 15 languages) ──────────────────────────────────
   const CRESCENT_HELP: Record<string, string> = {
@@ -509,7 +511,7 @@ export default function CalendarScreen() {
                         </Text>
                       </View>
                       <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw, fontSize: cFS.prayer }]}>
-                        {prayerTimes ? formatTimeAtOffset(prayerTimes[key], locationUtcOffset, false, tr.am, tr.pm) : '—'}
+                        {prayerTimes ? formatTimeInZone(prayerTimes[key], locationTimezone, false, tr.am, tr.pm) : '—'}
                       </Text>
                     </View>
                     <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />

@@ -21,7 +21,7 @@ import Colors from '@/constants/colors';
 import { useApp, getDefaultIqamaOffsets } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
 import {
-  calculatePrayerTimes, formatTime, formatTimeAtOffset, getNextPrayer, getCountdown,
+  calculatePrayerTimes, formatTime, formatTimeInZone, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate, LANG_LOCALE } from '@/lib/hijri';
@@ -58,7 +58,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
+    updateSettings, locationUtcOffset, locationTimezone, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
     jumuahTime: jumuahTimeSetting,
     showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
@@ -220,9 +220,10 @@ export default function PrayerTimesScreen() {
       method: calcMethod,
       asrMethod,
       maghribOffset,
+      timezone: locationTimezone,
     });
     setTimes(computed);
-  }, [location, viewingDate, calcMethod, asrMethod, maghribOffset]);
+  }, [location, viewingDate, calcMethod, asrMethod, maghribOffset, locationTimezone]);
 
   // todayTimes is ALWAYS today's prayer times, computed synchronously (useMemo, not
   // useEffect) so there is never a null/stale window at app open, background-restore
@@ -240,11 +241,12 @@ export default function PrayerTimesScreen() {
       method: calcMethod,
       asrMethod,
       maghribOffset,
+      timezone: locationTimezone,
     });
     return result;
   // _todayKey changes at local midnight, ensuring the memo refreshes for the new day
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, _todayKey, calcMethod, asrMethod, maghribOffset]);
+  }, [location, _todayKey, calcMethod, asrMethod, maghribOffset, locationTimezone]);
 
   // Minute-precision key — changes only once per minute so nextPrayer doesn't
   // recalculate on every 1-second tick (prayer times are minute-granular).
@@ -315,11 +317,12 @@ export default function PrayerTimesScreen() {
       const t = calculatePrayerTimes({
         lat: location.lat, lng: location.lng,
         date: d, method: calcMethod, asrMethod, maghribOffset,
+        timezone: locationTimezone,
       });
       return t.fajr;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, calcMethod, asrMethod, maghribOffset, _todayKey]);
+  }, [location, calcMethod, asrMethod, maghribOffset, _todayKey, locationTimezone]);
 
   // Step 2: pick the first candidate that is still in the future — re-evaluated
   // every second via `now` state, so it transitions cleanly across midnight.
@@ -764,7 +767,7 @@ export default function PrayerTimesScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.prayerTime, { color: passed ? C.textMuted : C.text, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                  {formatTimeAtOffset(firstAdhanTime, locationUtcOffset, false, tr.am, tr.pm)}
+                  {formatTimeInZone(firstAdhanTime, locationTimezone, false, tr.am, tr.pm)}
                 </Text>
               </View>
               <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -806,10 +809,13 @@ export default function PrayerTimesScreen() {
                     styles.prayerTime,
                     { color: active ? C.tint : passed ? C.textMuted : C.text, fontWeight: active ? '700' : fw, fontSize: pFS, lineHeight: pLH }
                   ]}>
-                    {times ? formatTimeAtOffset(
-                      (key === 'dhuhr' && jumuahDisplayTime) ? jumuahDisplayTime : times[key],
-                      locationUtcOffset, false, tr.am, tr.pm
-                    ) : '—'}
+                    {times
+                      ? ((key === 'dhuhr' && jumuahDisplayTime)
+                          // Jumu'ah is a user-entered wall-clock time — show it exactly as typed.
+                          ? formatTime(jumuahDisplayTime, false, tr.am, tr.pm)
+                          // Astronomical prayer instant — render in the location's timezone (DST-aware).
+                          : formatTimeInZone(times[key], locationTimezone, false, tr.am, tr.pm))
+                      : '—'}
                   </Text>
                 </View>
                 <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -836,7 +842,7 @@ export default function PrayerTimesScreen() {
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: eidTime < now ? C.textMuted : C.tint, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                      {formatTimeAtOffset(eidTime, locationUtcOffset, false, tr.am, tr.pm)}
+                      {formatTime(eidTime, false, tr.am, tr.pm)}
                     </Text>
                   </View>
                   <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -864,7 +870,7 @@ export default function PrayerTimesScreen() {
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: dhuhaTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                      {formatTimeAtOffset(dhuhaTime, locationUtcOffset, false, tr.am, tr.pm)}
+                      {formatTime(dhuhaTime, false, tr.am, tr.pm)}
                     </Text>
                   </View>
                   <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -892,7 +898,7 @@ export default function PrayerTimesScreen() {
                       </View>
                     </View>
                     <Text style={[styles.prayerTime, { color: tahajjudTime < now ? C.textMuted : C.gold, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                      {formatTimeAtOffset(tahajjudTime, locationUtcOffset, false, tr.am, tr.pm)}
+                      {formatTime(tahajjudTime, false, tr.am, tr.pm)}
                     </Text>
                   </View>
                 </View>

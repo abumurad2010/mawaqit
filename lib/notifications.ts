@@ -157,7 +157,7 @@ export async function scheduleThikrNotifications(params: {
   asrMethod: AsrMethod;
   maghribOffset: number;
   daysAhead?: number;
-  dstOffsetMs?: number;
+  timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
   reservedSlots?: number; // notifications already scheduled (iOS budget tracking)
 }) {
   if (!isNative) return;
@@ -168,7 +168,6 @@ export async function scheduleThikrNotifications(params: {
   const thikrBudget = isIos
     ? Math.max(0, IOS_MAX_NOTIFICATIONS - (params.reservedSlots ?? 0))
     : Infinity;
-  const dstOffsetMs = params.dstOffsetMs ?? 0;
   let thikrScheduled = 0;
   const tr = t(lang);
   const title = tr.thikr_reminder_title;
@@ -199,11 +198,12 @@ export async function scheduleThikrNotifications(params: {
       method: params.calcMethod,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      timezone: params.timezone ?? null,
     });
 
-    const fajrMs = times.fajr.getTime() + dstOffsetMs;
+    const fajrMs = times.fajr.getTime();
     // Window ends 5 hours after Isha
-    const ishaMs = times.isha.getTime() + dstOffsetMs + THIKR_WINDOW_AFTER_ISHA_MS;
+    const ishaMs = times.isha.getTime() + THIKR_WINDOW_AFTER_ISHA_MS;
 
     // Unique seed per calendar day (YYYYMMDD integer) XORed with device salt
     const daySeed =
@@ -278,12 +278,12 @@ export async function schedulePrayerNotifications(params: {
   firstAdhanOffset?: number;
   countryCode?: string | null;
   locationUtcOffset?: number | null;
+  timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
   daysAhead?: number;
   dhuhaTime?: string;     // "HH:MM" exact local time
   tahajjudTime?: string;  // "HH:MM" exact local time
   selectedAdhan?: string;
   prayerAdhan?: Record<string, string>;
-  dstOffsetMs?: number;
   prePrayerReminder?: number;
   jumuahTime?: string | null;
 }): Promise<number> {
@@ -300,7 +300,6 @@ export async function schedulePrayerNotifications(params: {
   const firstAdhanBody = tr.its_time_for_first_adhan;
   // iOS 64-slot budget: 3 days × enabled prayers (adhans) + 30 thikr + N pre-prayer reminders
   const daysAhead = params.daysAhead ?? 3;
-  const dstOffsetMs = params.dstOffsetMs ?? 0;
   const now = new Date();
   let scheduledCount = 0;
   let skippedPastCount = 0;
@@ -334,22 +333,23 @@ export async function schedulePrayerNotifications(params: {
       method: params.calcMethod,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      timezone: params.timezone ?? null,
     });
 
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;
     const jumuahTimeStr = isFriday ? (params.jumuahTime ?? null) : null;
 
     const prayerTimeMap: Record<string, Date | null> = {
-      fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs + dstOffsetMs) : null,
-      fajr: new Date(times.fajr.getTime() + dstOffsetMs),
-      dhuha: new Date(parseExactTime(params.dhuhaTime ?? '07:30', date).getTime() + dstOffsetMs),
+      fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs) : null,
+      fajr: times.fajr,
+      dhuha: parseExactTime(params.dhuhaTime ?? '07:30', date),
       dhuhr: jumuahTimeStr
-        ? new Date(parseExactTime(jumuahTimeStr, date).getTime() + dstOffsetMs)
-        : new Date(times.dhuhr.getTime() + dstOffsetMs),
-      asr: new Date(times.asr.getTime() + dstOffsetMs),
-      maghrib: new Date(times.maghrib.getTime() + dstOffsetMs),
-      isha: new Date(times.isha.getTime() + dstOffsetMs),
-      qiyam: new Date(parseExactTime(params.tahajjudTime ?? '03:00', date).getTime() + dstOffsetMs),
+        ? parseExactTime(jumuahTimeStr, date)
+        : times.dhuhr,
+      asr: times.asr,
+      maghrib: times.maghrib,
+      isha: times.isha,
+      qiyam: parseExactTime(params.tahajjudTime ?? '03:00', date),
     };
 
     for (const [prayerKey, cfg] of Object.entries(prayerNotifications)) {
