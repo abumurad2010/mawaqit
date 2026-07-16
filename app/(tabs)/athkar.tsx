@@ -2188,7 +2188,13 @@ function ReaderScreen({
       const required = thikr.count;
       const current = Math.min(getCount(category.id, thikr), required);
       const done = isDone(category.id, thikr, required);
-      const translation = (i18n[athkarLang] as any)?.[thikr.translationKey] ?? '';
+      // 90 of 202 meaning keys are missing from every non-English partial, so a
+      // missing lookup fell through to '' — Arabic + transliteration then a BLANK
+      // meaning. Fall back to the English base (never blank) instead. No new
+      // translations are generated; this is fallback only.
+      const translation = (i18n[athkarLang] as any)?.[thikr.translationKey]
+        ?? (i18n.en as any)?.[thikr.translationKey]
+        ?? '';
       return {
         key: `b-${i}`,
         arabic: thikr.arabic,
