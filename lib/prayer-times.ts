@@ -4,6 +4,9 @@
  * Accurate for any location in the world
  */
 
+
+import * as adhan from 'adhan';
+
 export type CalcMethod =
   | 'MWL'
   | 'ISNA'
@@ -19,13 +22,14 @@ export type CalcMethod =
   | 'Turkey'
   | 'France'
   | 'Russia'
+  | 'Moonsighting'
   | 'Custom';
 
 export type AsrMethod = 'standard' | 'hanafi';
 
-/** Rule applied for Fajr/Isha when the depression angle is unreachable
- *  (persistent twilight above ~48° latitude). */
-export type HighLatRule = 'angle_based' | 'middle_of_night' | 'one_seventh' | 'fixed_interval';
+/** High-latitude rule for Fajr/Isha when the depression angle is unreachable
+ *  (persistent twilight above ~48deg). Maps directly to adhan's HighLatitudeRule. */
+export type HighLatRule = 'middle_of_night' | 'seventh_of_night' | 'twilight_angle';
 
 /** User-set parameters for the 'Custom' calculation method. */
 export interface CustomMethodParams {
@@ -46,20 +50,12 @@ export interface PrayerTimesParams {
   date?: Date;
   method?: CalcMethod;
   asrMethod?: AsrMethod;
-  maghribOffset?: number; // minutes after sunset
-  /** IANA timezone of the LOCATION (e.g. "Europe/London"). When provided, prayer
-   *  instants are anchored to the correct local calendar day in THAT zone — needed
-   *  so absolute instants (notifications, countdowns) are right in manual mode where
-   *  the device timezone differs from the location. Null/undefined → device-local
-   *  anchoring, which is correct in GPS mode (device is physically in the location). */
+  maghribOffset?: number; // per-country/user ihtiyat minutes after sunset (lib/maghrib-offsets.ts)
+  /** IANA timezone of the LOCATION. Only used by callers for display (formatTimeInZone);
+   *  adhan computes absolute instants for the date's calendar day at the coordinates. */
   timezone?: string | null;
-  /** High-latitude rule for Fajr/Isha when the depression angle is unreachable.
-   *  Defaults to 'one_seventh'. */
+  /** High-latitude rule (adhan). When omitted, adhan's per-method default applies. */
   highLatRule?: HighLatRule;
-  /** For highLatRule='fixed_interval': minutes before sunrise for Fajr (default 113)
-   *  and minutes after Maghrib for Isha (default 73). Fitted to UK mosque timetables. */
-  fixedFajrMins?: number;
-  fixedIshaMins?: number;
   /** Parameters for method='Custom' (user-set angles + per-prayer offsets). */
   customParams?: CustomMethodParams;
 }
@@ -71,112 +67,75 @@ export interface PrayerTimes {
   asr: Date;
   maghrib: Date;
   isha: Date;
-  /** True solar transit (astronomical noon) — Dhuhr must be strictly after this. */
+  /** True solar transit (astronomical noon) - Dhuhr must be strictly after this. */
   transit: Date;
 }
 
-interface MethodParams {
-  fajrAngle: number;
-  ishaAngle?: number;
-  /** Fixed minutes after Maghrib for Isha (Umm Al-Qura, Qatar) — overrides ishaAngle. */
-  ishaInterval?: number;
-  // ── Per-prayer minute adjustments, applied AFTER the astronomical calc (default 0).
-  //    Independent of the per-COUNTRY maghrib table in lib/maghrib-offsets.ts. ──
-  fajrMins?: number;
-  sunriseMins?: number;
-  dhuhrMins?: number;
-  asrMins?: number;
-  maghribMins?: number;
-  ishaMins?: number;
-}
-
-// Angles from the standard references; per-prayer adjustments (dhuhrMins, Turkey's
-// sunrise/asr/maghrib) mirror adhan-js methodAdjustments. dhuhrMins gives Dhuhr its
-// precautionary margin so it lands after the meridian (see TASK 2 / ceil below).
-const METHODS: Record<CalcMethod, MethodParams> = {
-  MWL:          { fajrAngle: 18,   ishaAngle: 17,   dhuhrMins: 1 },
-  ISNA:         { fajrAngle: 15,   ishaAngle: 15,   dhuhrMins: 1 },
-  Egypt:        { fajrAngle: 19.5, ishaAngle: 17.5, dhuhrMins: 1 },
-  MakkahUmmQura:{ fajrAngle: 18.5, ishaInterval: 90 },
-  Karachi:      { fajrAngle: 18,   ishaAngle: 18,   dhuhrMins: 1 },
-  Jordan:       { fajrAngle: 18,   ishaAngle: 17 },
-  Kuwait:       { fajrAngle: 18,   ishaAngle: 17.5 },
-  Qatar:        { fajrAngle: 18,   ishaInterval: 90 },
-  Algeria:      { fajrAngle: 18,   ishaAngle: 17 },
-  Morocco:      { fajrAngle: 18,   ishaAngle: 17 },
-  Singapore:    { fajrAngle: 20,   ishaAngle: 18,   dhuhrMins: 1 },
-  // Diyanet (Turkey): MWL angles + published per-prayer adjustments.
-  Turkey:       { fajrAngle: 18,   ishaAngle: 17,   sunriseMins: -7, dhuhrMins: 5, asrMins: 4, maghribMins: 7 },
-  France:       { fajrAngle: 12,   ishaAngle: 12 },
-  Russia:       { fajrAngle: 16,   ishaAngle: 15 },
-  // Custom is fully overridden by params.customParams; these are inert fallbacks.
-  Custom:       { fajrAngle: 18,   ishaAngle: 17 },
+type AdhanHighLat = (typeof adhan.HighLatitudeRule)[keyof typeof adhan.HighLatitudeRule];
+const HIGH_LAT_MAP: Record<HighLatRule, AdhanHighLat> = {
+  middle_of_night: adhan.HighLatitudeRule.MiddleOfTheNight,
+  seventh_of_night: adhan.HighLatitudeRule.SeventhOfTheNight,
+  twilight_angle: adhan.HighLatitudeRule.TwilightAngle,
 };
 
-function toRad(d: number) { return d * Math.PI / 180; }
-function toDeg(r: number) { return r * 180 / Math.PI; }
-function fixAngle(a: number) { return a - 360 * Math.floor(a / 360); }
-function fixHour(a: number)  { return a - 24  * Math.floor(a / 24);  }
-
-/** Julian Day Number */
-function julianDay(year: number, month: number, day: number): number {
-  if (month <= 2) { year -= 1; month += 12; }
-  const A = Math.floor(year / 100);
-  const B = 2 - A + Math.floor(A / 4);
-  return Math.floor(365.25 * (year + 4716))
-       + Math.floor(30.6001 * (month + 1))
-       + day + B - 1524.5;
-}
-
-/** Sun position for a given Julian Day */
-function sunPosition(jd: number): { declination: number; equation: number } {
-  const D = jd - 2451545.0;
-  const g = fixAngle(357.529 + 0.98560028 * D);
-  const q = fixAngle(280.459 + 0.98564736 * D);
-  const L = fixAngle(q + 1.9150 * Math.sin(toRad(g)) + 0.0200 * Math.sin(toRad(2 * g)));
-  const e = 23.439 - 0.00000036 * D;
-  const sinDec = Math.sin(toRad(e)) * Math.sin(toRad(L));
-  const dec = toDeg(Math.asin(sinDec));
-  const RA = toDeg(Math.atan2(Math.cos(toRad(e)) * Math.sin(toRad(L)), Math.cos(toRad(L)))) / 15;
-  const EqT = q / 15 - fixHour(RA);
-  return { declination: dec, equation: EqT };
+/**
+ * Build adhan CalculationParameters for a shipped method. Nine map to adhan's
+ * native factories; five (Jordan, Algeria, Morocco, France/UOIF, Russia) use
+ * CalculationMethod.Other() with parameters sourced from Aladhan's published
+ * method list (api.aladhan.com/v1/methods). Custom is fully user-defined.
+ */
+function buildParams(method: CalcMethod, custom?: CustomMethodParams): adhan.CalculationParameters {
+  const CM = adhan.CalculationMethod;
+  switch (method) {
+    case 'MWL':           return CM.MuslimWorldLeague();
+    case 'ISNA':          return CM.NorthAmerica();
+    case 'Egypt':         return CM.Egyptian();
+    case 'MakkahUmmQura': return CM.UmmAlQura();
+    case 'Karachi':       return CM.Karachi();
+    case 'Kuwait':        return CM.Kuwait();
+    case 'Qatar':         return CM.Qatar();
+    case 'Singapore':     return CM.Singapore();
+    case 'Turkey':        return CM.Turkey();
+    case 'Moonsighting':  return CM.MoonsightingCommittee();
+    // Aladhan 23 - Jordan: Fajr 18, Isha 18, Maghrib +5 min
+    case 'Jordan':  { const p = CM.Other(); p.fajrAngle = 18; p.ishaAngle = 18; p.methodAdjustments.maghrib = 5; return p; }
+    // Aladhan 19 - Algeria: Fajr 18, Isha 17
+    case 'Algeria': { const p = CM.Other(); p.fajrAngle = 18; p.ishaAngle = 17; return p; }
+    // Aladhan 21 - Morocco: Fajr 19, Isha 17
+    case 'Morocco': { const p = CM.Other(); p.fajrAngle = 19; p.ishaAngle = 17; return p; }
+    // Aladhan 12 - UOIF France: Fajr 12, Isha 12
+    case 'France':  { const p = CM.Other(); p.fajrAngle = 12; p.ishaAngle = 12; return p; }
+    // Aladhan 14 - Russia: Fajr 16, Isha 15
+    case 'Russia':  { const p = CM.Other(); p.fajrAngle = 16; p.ishaAngle = 15; return p; }
+    case 'Custom': {
+      const p = CM.Other();
+      p.fajrAngle = custom?.fajrAngle ?? 18;
+      if (custom?.ishaInterval) p.ishaInterval = custom.ishaInterval;
+      else p.ishaAngle = custom?.ishaAngle ?? 17;
+      if (custom) {
+        p.methodAdjustments.fajr    = custom.fajrMins    ?? 0;
+        p.methodAdjustments.sunrise = custom.sunriseMins ?? 0;
+        p.methodAdjustments.dhuhr   = custom.dhuhrMins   ?? 0;
+        p.methodAdjustments.asr     = custom.asrMins     ?? 0;
+        p.methodAdjustments.maghrib = custom.maghribMins ?? 0;
+        p.methodAdjustments.isha    = custom.ishaMins    ?? 0;
+      }
+      return p;
+    }
+    default: return CM.MuslimWorldLeague();
+  }
 }
 
 /**
- * Time (decimal hours from transit) at which the sun reaches a given altitude
- * angle, or `null` when the sun never reaches that angle on this day.
+ * Compute prayer times using adhan-js (the ecosystem-standard engine). Returns
+ * absolute instants; render with formatTimeInZone for the location's wall-clock.
  *
- * Returning `null` (instead of the old sentinel `18`) is what makes the
- * high-latitude handling possible: at London (51.5°N) in mid-summer the sun
- * never descends to −18° (Fajr) or −17° (Isha), so those depression angles are
- * unreachable and the caller must fall back to a night-fraction rule rather
- * than pretend the twilight happens "18 hours from noon" (which wrapped Fajr
- * into the previous evening and Isha into the next morning — the v1.3.5 bug).
+ * adhan carries each method's own per-prayer adjustments (e.g. Diyanet Turkey's
+ * sunrise -7 / dhuhr +5 / asr +4 / maghrib +7) and its dhuhr precautionary margin,
+ * so Turkey is no longer MWL-with-a-label and Dhuhr no longer lands on the meridian.
+ * The per-country/user maghrib ihtiyat (maghribOffset) is applied on top, kept
+ * separate from the method table.
  */
-function hourAngle(angle: number, lat: number, dec: number): number | null {
-  const cost = (Math.sin(toRad(angle)) - Math.sin(toRad(lat)) * Math.sin(toRad(dec)))
-             / (Math.cos(toRad(lat)) * Math.cos(toRad(dec)));
-  if (cost < -1 || cost > 1) return null; // angle unreachable this day
-  return toDeg(Math.acos(cost)) / 15;
-}
-
-
-/** Y-M-D key of an absolute instant AS SEEN in `timezone` (IANA), or in device-local
- *  time when timezone is null. Used to anchor prayer instants to the correct local
- *  calendar day. */
-function zoneDateKey(instant: Date, timezone: string | null): string {
-  if (timezone) {
-    try {
-      const p = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
-      }).formatToParts(instant);
-      const g = (t: string) => p.find(x => x.type === t)!.value;
-      return `${g('year')}-${g('month')}-${g('day')}`;
-    } catch { /* fall through to device-local */ }
-  }
-  return `${instant.getFullYear()}-${String(instant.getMonth() + 1).padStart(2, '0')}-${String(instant.getDate()).padStart(2, '0')}`;
-}
-
 export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
   const {
     lat,
@@ -184,164 +143,47 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
     date = new Date(),
     method = 'MWL',
     asrMethod = 'standard',
-    maghribOffset = 5,
-    timezone = null,
-    highLatRule = 'one_seventh',
-    fixedFajrMins = 113,
-    fixedIshaMins = 73,
+    maghribOffset = 0,
+    highLatRule,
     customParams,
   } = params;
 
-  // Effective method params. For 'Custom', the user-set customParams fully define it.
-  const m: MethodParams = method === 'Custom' && customParams
-    ? {
-        fajrAngle: customParams.fajrAngle,
-        ishaAngle: customParams.ishaInterval !== undefined ? undefined : customParams.ishaAngle,
-        ishaInterval: customParams.ishaInterval,
-        fajrMins: customParams.fajrMins, sunriseMins: customParams.sunriseMins,
-        dhuhrMins: customParams.dhuhrMins, asrMins: customParams.asrMins,
-        maghribMins: customParams.maghribMins, ishaMins: customParams.ishaMins,
-      }
-    : METHODS[method];
+  const coords = new adhan.Coordinates(lat, lng);
+  const p = buildParams(method, customParams);
+  p.madhab = asrMethod === 'hanafi' ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi;
+  if (highLatRule) p.highLatitudeRule = HIGH_LAT_MAP[highLatRule];
+  // Beyond the polar circle even sunrise/sunset are undefined; resolve to the
+  // nearest latitude that has valid times rather than returning NaN.
+  p.polarCircleResolution = adhan.PolarCircleResolution.AqrabBalad;
+  // Per-country / user Maghrib ihtiyat, layered on adhan's method output.
+  p.adjustments.maghrib = (p.adjustments.maghrib ?? 0) + maghribOffset;
 
-  const y = date.getFullYear();
-  const mo = date.getMonth() + 1;
-  const d = date.getDate();
-  const jd = julianDay(y, mo, d);
+  const pt = new adhan.PrayerTimes(coords, date, p);
 
-  const { declination, equation } = sunPosition(jd);
+  // True solar transit = midpoint of the astronomical sunrise/sunset. Computed from
+  // a reference method with no sunrise/maghrib adjustments so it is method-independent.
+  const refParams = adhan.CalculationMethod.MuslimWorldLeague();
+  refParams.polarCircleResolution = adhan.PolarCircleResolution.AqrabBalad;
+  const ref = new adhan.PrayerTimes(coords, date, refParams);
+  const transit = new Date((ref.sunrise.getTime() + ref.sunset.getTime()) / 2);
 
-  // Transit (Dhuhr) in UTC decimal hours
-  const transit = 12 - equation - lng / 15;
-
-  // Sunrise / Sunset angle (−0.8333° accounts for refraction and solar disc size).
-  // At extreme (polar) latitudes the sun may never cross the horizon; hourAngle
-  // returns null and we fall back to a full/empty day so nightLen stays sane.
-  const sunAngle = -0.8333;
-  const noonAltitude = 90 - Math.abs(lat - declination); // solar altitude at transit
-  const haRaw = hourAngle(sunAngle, lat, declination);
-  const ha = haRaw ?? (noonAltitude > sunAngle ? 12 : 0); // polar day → 12h, polar night → 0h
-
-  const sunriseUTC = transit - ha;
-  const sunsetUTC  = transit + ha;
-
-  // Night length (decimal hours) used by the high-latitude twilight rule below.
-  const nightLen = 24 - (sunsetUTC - sunriseUTC);
-
-  // Maghrib base = astronomical sunset + per-COUNTRY ihtiyat (maghribOffset). The
-  // per-METHOD maghribMins adjustment is applied later, at display, so it does NOT
-  // propagate into the Isha base.
-  const maghribUTC = sunsetUTC + maghribOffset / 60;
-
-  // ── High-latitude rule limits for Fajr/Isha ─────────────────────────────────
-  // Applied when the depression angle is unreachable (persistent twilight above
-  // ~48°). Four selectable rules; default 'one_seventh'. Fajr uses sunrise as the
-  // base; Isha uses sunset (astronomical) for the night-fraction rules and Maghrib
-  // for fixed_interval (matching how UK mosques publish the interval).
-  const ishaAngleDeg = m.ishaAngle ?? 17;
-  const ruleFajrUTC = (() => {
-    switch (highLatRule) {
-      case 'angle_based':     return sunriseUTC - (m.fajrAngle / 60) * nightLen;
-      case 'middle_of_night': return sunriseUTC - nightLen / 2;
-      case 'fixed_interval':  return sunriseUTC - fixedFajrMins / 60;
-      case 'one_seventh':
-      default:                return sunriseUTC - nightLen / 7;
-    }
-  })();
-  const ruleIshaUTC = (() => {
-    switch (highLatRule) {
-      case 'angle_based':     return sunsetUTC + (ishaAngleDeg / 60) * nightLen;
-      case 'middle_of_night': return sunsetUTC + nightLen / 2;
-      case 'fixed_interval':  return maghribUTC + fixedIshaMins / 60;
-      case 'one_seventh':
-      default:                return sunsetUTC + nightLen / 7;
-    }
-  })();
-
-  // Fajr: true depression time whenever the angle is reachable (matches every
-  // reference below ~50°); the high-latitude rule applies ONLY when the angle is
-  // unreachable (persistent twilight). No clamp on the reachable branch — clamping
-  // would wrongly delay Fajr at moderate latitudes with short summer nights.
-  const fajrHA = hourAngle(-m.fajrAngle, lat, declination);
-  const fajrUTC = fajrHA === null ? ruleFajrUTC : transit - fajrHA;
-
-  // Dhuhr = true solar transit (precautionary dhuhrMins + ceil applied at display).
-  const dhuhrUTC = transit;
-
-  // Asr — altitude is ABOVE horizon, so angle is positive
-  const asrFactor = asrMethod === 'hanafi' ? 2 : 1;
-  const cotA = asrFactor + Math.tan(toRad(Math.abs(lat - declination)));
-  const asrAngle = toDeg(Math.atan(1 / cotA));
-  const asrHA = hourAngle(asrAngle, lat, declination) ?? 0; // polar: degenerate → transit
-  const asrUTC = transit + asrHA;
-
-  // ── Isha ────────────────────────────────────────────────────────────────────
-  // Fixed-interval methods (Umm Al-Qura, Qatar): Isha is a set number of minutes
-  // after Maghrib. Otherwise Isha = Maghrib + twilight duration, capped by the
-  // selected high-latitude rule when the Isha angle is unreachable.
-  let ishaUTC: number;
-  if (m.ishaInterval !== undefined) {
-    ishaUTC = maghribUTC + m.ishaInterval / 60;
-  } else {
-    const ishaHA = hourAngle(-ishaAngleDeg, lat, declination);
-    // Persistent twilight — Fajr angle unreachable (so the "night" the twilight
-    // rule needs never fully forms) OR the Isha angle itself unreachable — applies
-    // the selected high-latitude rule directly. Otherwise the true twilight time.
-    ishaUTC = (fajrHA === null || ishaHA === null)
-      ? ruleIshaUTC
-      : maghribUTC + (ishaHA - ha);
+  // Guarantee Dhuhr strictly after transit: methods with a zero dhuhr adjustment and
+  // adhan's nearest-minute rounding can land on/just before the meridian (a forbidden
+  // time). Bump to the next minute only in that case; adhan's dhuhr margin is otherwise
+  // already applied and rounded.
+  let dhuhr = pt.dhuhr;
+  if (dhuhr.getTime() <= transit.getTime()) {
+    dhuhr = new Date((Math.floor(dhuhr.getTime() / 60000) + 1) * 60000);
   }
-
-  // ── Anchor the whole set to the correct local calendar day ───────────────────
-  // Every prayer's UTC hour is measured from the same astronomical noon, so the
-  // set shares ONE day-shift. We derive it once from the transit (solar noon — an
-  // unambiguous reference that always lands near local midday) by choosing the
-  // ±24h shift that places transit on the viewed calendar day IN THE LOCATION ZONE,
-  // then apply that SAME shift to every prayer.
-  //
-  // Why one uniform shift and not a per-prayer guard: a per-prayer guard forces
-  // each prayer onto the viewed day independently, which (a) wrongly drags a
-  // legitimately-past-midnight Isha back ~24h at high latitudes, corrupting its
-  // absolute instant (dropped/mis-fired notifications), and (b) can only ever be
-  // right at the date line by coincidence. Anchoring on transit and shifting the
-  // set uniformly keeps Isha's true instant (it may fall in the next local day's
-  // early hours) while still correcting whole-day offsets at extreme longitudes
-  // (Kiribati/Samoa UTC+13/+14, UTC−12) using the location's true civil offset.
-  const utcMidnight = Date.UTC(y, mo - 1, d);
-  const targetKey = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  let shiftH = 0;
-  for (const cand of [0, -24, 24]) {
-    if (zoneDateKey(new Date(utcMidnight + (transit + cand) * 3600_000), timezone) === targetKey) {
-      shiftH = cand;
-      break;
-    }
-  }
-  const make = (h: number) => new Date(utcMidnight + (h + shiftH) * 3600_000);
-
-  // ── Per-prayer method minute adjustments (default 0) ─────────────────────────
-  // Applied here, after the astronomical calc, so display and notification share
-  // the same values. Independent of the per-COUNTRY maghrib table (maghribOffset,
-  // already folded into maghribUTC).
-  const transitInstant = make(transit);
-  const dhuhrInstant = (() => {
-    // Dhuhr must fall STRICTLY after solar transit. Apply dhuhrMins, then round UP
-    // to the next minute (ceil) — this is what gives adhan's zero-adjustment
-    // methods their effective +1, and guarantees strictness even at exact-minute
-    // transits. See TASK 2.
-    const base = make(dhuhrUTC + (m.dhuhrMins ?? 0) / 60).getTime();
-    let ceilMs = Math.ceil(base / 60_000) * 60_000;
-    if (ceilMs <= transitInstant.getTime()) ceilMs += 60_000;
-    return new Date(ceilMs);
-  })();
 
   return {
-    fajr:    make(fajrUTC   + (m.fajrMins    ?? 0) / 60),
-    sunrise: make(sunriseUTC + (m.sunriseMins ?? 0) / 60),
-    dhuhr:   dhuhrInstant,
-    asr:     make(asrUTC    + (m.asrMins     ?? 0) / 60),
-    maghrib: make(maghribUTC + (m.maghribMins ?? 0) / 60),
-    isha:    make(ishaUTC   + (m.ishaMins    ?? 0) / 60),
-    transit: transitInstant,
+    fajr: pt.fajr,
+    sunrise: pt.sunrise,
+    dhuhr,
+    asr: pt.asr,
+    maghrib: pt.maghrib,
+    isha: pt.isha,
+    transit,
   };
 }
 
@@ -541,3 +383,4 @@ export function getCountdown(target: Date): string {
   const s = (totalSecs % 60).toString().padStart(2, '0');
   return `${h}:${m}:${s}`;
 }
+
