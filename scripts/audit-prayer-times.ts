@@ -331,32 +331,41 @@ for (const [name, lat, lng, zone, dateStr, expect] of [
   }
 }
 
-// 5. Switch POSITION == resolved state (isDstActive is exactly what the UI renders
-//    in 'auto'). Zone is resolved from coordinates via tz-lookup, so this holds in
-//    every location mode. London/Berlin flip by season; Amman/Riyadh/Karachi/Jakarta
-//    and Phoenix (Arizona, no DST) are off year-round; Denver is on in summer.
-for (const [name, lat, lng, dateStr, expectOn] of [
-  ['London', 51.5074, -0.1278, '2026-07-16', true],
-  ['London', 51.5074, -0.1278, '2026-01-15', false],
-  ['Berlin', 52.5200, 13.4050, '2026-07-16', true],
-  ['Berlin', 52.5200, 13.4050, '2026-01-15', false],
-  ['Amman', 31.9539, 35.9106, '2026-07-16', false],
-  ['Amman', 31.9539, 35.9106, '2026-01-15', false],
-  ['Riyadh', 24.7136, 46.6753, '2026-07-16', false],
-  ['Riyadh', 24.7136, 46.6753, '2026-01-15', false],
-  ['Karachi', 24.8607, 67.0011, '2026-07-16', false],
-  ['Karachi', 24.8607, 67.0011, '2026-01-15', false],
-  ['Jakarta', -6.2088, 106.8456, '2026-07-16', false],
-  ['Jakarta', -6.2088, 106.8456, '2026-01-15', false],
-  ['Phoenix', 33.4484, -112.0740, '2026-07-16', false],
-  ['Phoenix', 33.4484, -112.0740, '2026-01-15', false],
-  ['Denver', 39.7392, -104.9903, '2026-07-16', true],
-] as const) {
-  const zone = tzlookup(lat, lng);                       // resolved from coords, as the app does
-  const { y, m, d } = parseDate(dateStr);
-  const resolved = isDstActive(zone, new Date(Date.UTC(y, m - 1, d, 12)));
-  if (resolved !== expectOn)
-    fail({ city: name, date: dateStr, mode: 'manual', assertion: 'DST-switch-position', prayer: zone, expected: `${expectOn ? 'on' : 'off'}`, actual: `${resolved}` });
+// 5. Switch POSITION == resolved state, per LOCATION MODE and its zone SOURCE:
+//    • manual → tz-lookup(coords)             — a manually-picked city, no device zone to trust
+//    • gps    → the OS device timezone (Intl) — the device is physically at the location
+//    The two SOURCES agree for ordinary cities but diverge where tz-lookup's
+//    polygons are coarse: the Hopi Reservation resolves to America/Denver (which
+//    adopts DST) yet the device reads America/Phoenix (Arizona, no DST). GPS mode
+//    must use the device zone — that is the regression this fixes.
+{
+  const CASES: [string, number, number, string, string, boolean, boolean][] = [
+    // name,     lat,      lng,       OS-device-zone,    date,         expManual, expGps
+    ['London',  51.5074,  -0.1278,   'Europe/London',   '2026-07-16', true,  true ],
+    ['London',  51.5074,  -0.1278,   'Europe/London',   '2026-01-15', false, false],
+    ['Berlin',  52.5200,  13.4050,   'Europe/Berlin',   '2026-07-16', true,  true ],
+    ['Berlin',  52.5200,  13.4050,   'Europe/Berlin',   '2026-01-15', false, false],
+    ['Amman',   31.9539,  35.9106,   'Asia/Amman',      '2026-07-16', false, false],
+    ['Riyadh',  24.7136,  46.6753,   'Asia/Riyadh',     '2026-07-16', false, false],
+    ['Karachi', 24.8607,  67.0011,   'Asia/Karachi',    '2026-07-16', false, false],
+    ['Jakarta', -6.2088,  106.8456,  'Asia/Jakarta',    '2026-07-16', false, false],
+    ['Phoenix', 33.4484,  -112.0740, 'America/Phoenix', '2026-07-16', false, false],
+    ['Denver',  39.7392,  -104.9903, 'America/Denver',  '2026-07-16', true,  true ],
+    // Divergent case — the reason the zone SOURCE matters:
+    ['Hopi',    35.8600,  -110.5300, 'America/Phoenix', '2026-07-16', true,  false],
+  ];
+  for (const [name, lat, lng, deviceZone, dateStr, expManual, expGps] of CASES) {
+    const { y, m, d } = parseDate(dateStr);
+    const at = new Date(Date.UTC(y, m - 1, d, 12));
+    const manualZone = tzlookup(lat, lng);   // manual-mode source
+    const gpsZone = deviceZone;              // gps-mode source (OS device zone)
+    const rM = isDstActive(manualZone, at);
+    const rG = isDstActive(gpsZone, at);
+    if (rM !== expManual)
+      fail({ city: name, date: dateStr, mode: 'manual', assertion: 'DST-switch-position', prayer: manualZone, expected: `${expManual ? 'on' : 'off'}`, actual: `${rM}` });
+    if (rG !== expGps)
+      fail({ city: name, date: dateStr, mode: 'gps', assertion: 'DST-switch-position', prayer: gpsZone, expected: `${expGps ? 'on' : 'off'}`, actual: `${rG}` });
+  }
 }
 
 // ── A10 — legacy dstEnabled has no effect (structural: no consumer in logic) ────

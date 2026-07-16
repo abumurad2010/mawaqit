@@ -319,17 +319,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ? getRecommendedMethod(effectiveCountryCode, effectiveLocation?.lat ?? null)
     : settings.calcMethod;
 
-  // Resolve the real IANA timezone from the effective coordinates (tz-lookup, fully
-  // offline) in BOTH manual and GPS modes. This removes the old GPS/manual
-  // asymmetry: the coordinates are authoritative, so if the device clock is in the
-  // wrong zone (travelling, tzdata not updated) the resolved zone is still correct.
-  // The DST switch and zone-based rendering therefore apply everywhere.
-  const locationTimezone: string | null = effectiveLocation
-    ? (() => {
-        try { return tzlookup(effectiveLocation.lat, effectiveLocation.lng); }
-        catch { return null; }
-      })()
-    : null;
+  // Resolve a non-null IANA timezone in BOTH modes — so the DST switch renders
+  // everywhere — but from the RIGHT source in each:
+  //   • GPS/auto → the OS device timezone (Intl). In GPS mode the device is
+  //     physically where you are, so its zone is authoritative — the same source
+  //     every other app on the phone trusts. Do NOT re-derive from coordinates:
+  //     tz-lookup's polygons are coarse (e.g. the Hopi Reservation resolves to
+  //     America/Denver and would adopt DST, but the device correctly reads
+  //     America/Phoenix, which does not — the exact case the override exists for).
+  //   • manual → tz-lookup(coords), because a manually-picked city has no device
+  //     zone to trust. If tz-lookup is wrong there, the manual on/off override is
+  //     the escape hatch.
+  const locationTimezone: string | null = (() => {
+    if (settings.locationMode === 'manual' && settings.manualLocation) {
+      try { return tzlookup(settings.manualLocation.lat, settings.manualLocation.lng); }
+      catch { return null; }
+    }
+    if (effectiveLocation) {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null; }
+      catch { return null; }
+    }
+    return null;
+  })();
 
   // Numeric offset kept for the astronomy helpers (moon phases, crescent windows)
   // that still work in offset space. DST-aware — derived from the resolved timezone
