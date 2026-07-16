@@ -16,7 +16,7 @@ import Colors from '@/constants/colors';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import {
-  calculatePrayerTimes, formatTimeAtOffset, formatTimeInZone,
+  calculatePrayerTimes, formatTimeAtOffset, formatTimeInZone, formatPrayerTime,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import {
@@ -76,7 +76,7 @@ const CAL_FS_KEY = 'calendar_font_size';
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, locationTimezone, highLatRule, customMethod, hijriAdjustment, colors } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, locationTimezone, dstOverrideOffset, highLatRule, customMethod, hijriAdjustment, colors } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
@@ -515,7 +515,7 @@ export default function CalendarScreen() {
                         </Text>
                       </View>
                       <Text style={[styles.prayerTime, { color: C.textSecond, fontWeight: fw, fontSize: cFS.prayer }]}>
-                        {prayerTimes ? formatTimeInZone(prayerTimes[key], locationTimezone, false, tr.am, tr.pm) : '—'}
+                        {prayerTimes ? formatPrayerTime(prayerTimes[key], locationTimezone, dstOverrideOffset, false, tr.am, tr.pm) : '—'}
                       </Text>
                     </View>
                     <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }]} />

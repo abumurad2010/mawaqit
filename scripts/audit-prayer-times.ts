@@ -16,6 +16,8 @@ import {
   calculatePrayerTimes,
   formatTime,
   formatTimeInZone,
+  formatPrayerTime,
+  standardOffset,
   zoneOffsetHours,
   type CalcMethod,
   type AsrMethod,
@@ -256,6 +258,77 @@ for (const fx of CITIES) {
   }
 }
 process.env.TZ = 'UTC';
+
+// ── DST override assertions ──────────────────────────────────────────────────
+// Replicates AppContext's DST logic and checks display + notification-shift
+// consistency across auto/on/off. Contributes to the gate via `failures`.
+const parseHM = (s: string) => { const [h, m] = s.split(':').map(Number); return h! * 60 + m!; };
+const wrapDiff = (a: number, b: number) => { let d = a - b; if (d > 720) d -= 1440; if (d < -720) d += 1440; return d; };
+for (const fx of CITIES) {
+  const zone = fx.zone;
+  for (const dateStr of DATES) {
+    const { y, m, d } = parseDate(dateStr);
+    const refDate = new Date(Date.UTC(y, m - 1, d));
+    const autoOff = zoneOffsetHours(zone, refDate);
+    const std = standardOffset(zone, refDate);
+    if (autoOff === null || std === null) continue;
+    const offOn = std + 1, offOff = std;
+    const shiftOn = Math.round((offOn - autoOff) * 60) * 60000;
+    const shiftOff = Math.round((offOff - autoOff) * 60) * 60000;
+    // On a DST-transition day the zone offset changes mid-day, so a single fixed-offset
+    // override cannot match per-instant zone rendering — a known limitation of the
+    // override (users should keep 'auto' on transition days). Skip the A8 instant check
+    // there; auto-identical and on/off-60 still hold and are still verified.
+    const transitionDay = zoneOffsetHours(zone, new Date(Date.UTC(y, m - 1, d, 0))) !==
+                          zoneOffsetHours(zone, new Date(Date.UTC(y, m - 1, d, 23)));
+    const times: any = calculatePrayerTimes({ lat: fx.lat, lng: fx.lng, date: new Date(y, m - 1, d, 12), method: METHOD, asrMethod: ASR, maghribOffset: MAGHRIB_OFFSET, timezone: zone });
+    for (const p of PRAYERS) {
+      const inst = times[p];
+      if (isNaN(inst.getTime())) continue;
+      const baseline = formatTimeInZone(inst, zone, true);
+      const dispAuto = formatPrayerTime(inst, zone, null, true);
+      const dispOn = formatPrayerTime(inst, zone, offOn, true);
+      const dispOff = formatPrayerTime(inst, zone, offOff, true);
+      // 1. auto MUST be identical to today's (formatTimeInZone) output
+      if (dispAuto !== baseline)
+        fail({ city: fx.name, date: dateStr, mode: 'manual', assertion: 'DST-auto-identical', prayer: p, expected: baseline, actual: dispAuto });
+      // 2. on vs off differ by exactly 60 minutes
+      if (Math.abs(wrapDiff(parseHM(dispOn), parseHM(dispOff))) !== 60)
+        fail({ city: fx.name, date: dateStr, mode: 'manual', assertion: 'DST-on-off-60', prayer: p, expected: '±60min', actual: `${dispOn} vs ${dispOff}` });
+      // 3. A8: notification instant (shifted) rendered at the device/zone offset == the displayed wall-clock
+      if (!transitionDay) {
+        const notifOn = new Date(inst.getTime() + shiftOn);
+        const notifOff = new Date(inst.getTime() + shiftOff);
+        if (formatTimeInZone(notifOn, zone, true) !== dispOn)
+          fail({ city: fx.name, date: dateStr, mode: 'manual', assertion: 'DST-A8-on', prayer: p, expected: dispOn, actual: formatTimeInZone(notifOn, zone, true) });
+        if (formatTimeInZone(notifOff, zone, true) !== dispOff)
+          fail({ city: fx.name, date: dateStr, mode: 'manual', assertion: 'DST-A8-off', prayer: p, expected: dispOff, actual: formatTimeInZone(notifOff, zone, true) });
+      }
+    }
+  }
+}
+// 4. Specific: London 2026-07-16 auto==on; London 2026-01-15 auto==off; Riyadh auto==off both dates.
+for (const [name, lat, lng, zone, dateStr, expect] of [
+  ['London', 51.5074, -0.1278, 'Europe/London', '2026-07-16', 'on'],
+  ['London', 51.5074, -0.1278, 'Europe/London', '2026-01-15', 'off'],
+  ['Riyadh', 24.7136, 46.6753, 'Asia/Riyadh', '2026-07-16', 'off'],
+  ['Riyadh', 24.7136, 46.6753, 'Asia/Riyadh', '2026-01-15', 'off'],
+] as const) {
+  const { y, m, d } = parseDate(dateStr);
+  const refDate = new Date(Date.UTC(y, m - 1, d));
+  const autoOff = zoneOffsetHours(zone, refDate)!, std = standardOffset(zone, refDate)!;
+  const t: any = calculatePrayerTimes({ lat, lng, date: new Date(y, m - 1, d, 12), method: METHOD, asrMethod: ASR, maghribOffset: MAGHRIB_OFFSET, timezone: zone });
+  const eqOffset = expect === 'on' ? std + 1 : std;
+  const autoEqExpect = Math.abs(autoOff - eqOffset) < 0.01;
+  if (!autoEqExpect)
+    fail({ city: name, date: dateStr, mode: 'manual', assertion: 'DST-auto-equals-' + expect, prayer: 'offset', expected: `auto(${autoOff})==${expect}(${eqOffset})`, actual: `${autoOff}` });
+  // also confirm displayed prayers identical between auto and the expected mode
+  for (const p of PRAYERS) {
+    if (isNaN(t[p].getTime())) continue;
+    if (formatPrayerTime(t[p], zone, null, true) !== formatPrayerTime(t[p], zone, eqOffset, true))
+      fail({ city: name, date: dateStr, mode: 'manual', assertion: 'DST-auto-display-' + expect, prayer: p, expected: 'auto==' + expect, actual: 'differ' });
+  }
+}
 
 // ── A10 — legacy dstEnabled has no effect (structural: no consumer in logic) ────
 const ROOT = join(__dirname, '..');

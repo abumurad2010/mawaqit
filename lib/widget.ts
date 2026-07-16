@@ -138,6 +138,7 @@ export function updateWidgetFromParams(params: {
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
   highLatRule?: HighLatRule;
   customParams?: CustomMethodParams;
+  dstShiftMs?: number;
 }): void {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
@@ -167,7 +168,14 @@ export function updateWidgetFromParams(params: {
       highLatRule: params.highLatRule,
       customParams: params.customParams,
     });
-    updateWidgetTimeline(t, tm, params.lang);
+    const dsh = params.dstShiftMs ?? 0;
+    const shift = (pt: PrayerTimes): PrayerTimes => dsh === 0 ? pt : ({
+      fajr: new Date(pt.fajr.getTime()+dsh), sunrise: new Date(pt.sunrise.getTime()+dsh),
+      dhuhr: new Date(pt.dhuhr.getTime()+dsh), asr: new Date(pt.asr.getTime()+dsh),
+      maghrib: new Date(pt.maghrib.getTime()+dsh), isha: new Date(pt.isha.getTime()+dsh),
+      transit: new Date(pt.transit.getTime()+dsh),
+    });
+    updateWidgetTimeline(shift(t), shift(tm), params.lang);
   } catch {
     // non-critical
   }

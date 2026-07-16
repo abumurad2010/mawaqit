@@ -203,7 +203,9 @@ export function formatTime(date: Date, use24h = false, amStr = 'AM', pmStr = 'PM
 export function formatTimeAtOffset(date: Date, utcOffsetHours: number | null, use24h = false, amStr = 'AM', pmStr = 'PM'): string {
   if (utcOffsetHours === null) return formatTime(date, use24h, amStr, pmStr);
   const utcMin = date.getUTCHours() * 60 + date.getUTCMinutes();
-  const localMin = ((utcMin + Math.round(utcOffsetHours) * 60) % 1440 + 1440) % 1440;
+  // Round to whole minutes (not whole hours) so fractional zones — +3:30 (Tehran),
+  // +4:30 (Kabul), +5:30 (India), +5:45 (Kathmandu) — render correctly.
+  const localMin = ((utcMin + Math.round(utcOffsetHours * 60)) % 1440 + 1440) % 1440;
   const h = Math.floor(localMin / 60);
   const m = (localMin % 60).toString().padStart(2, '0');
   if (use24h) return `${h.toString().padStart(2, '0')}:${m}`;
@@ -315,6 +317,40 @@ export function zoneOffsetHours(timezone: string | null, date: Date): number | n
   } catch {
     return null;
   }
+}
+
+/**
+ * Standard-time UTC offset (hours) for an IANA zone, ignoring DST. DST always ADDS,
+ * so the minimum of the January and July offsets is standard time in both
+ * hemispheres. Returns null if the zone can't be resolved. Used by the DST override.
+ */
+export function standardOffset(zone: string | null, refDate: Date = new Date()): number | null {
+  if (!zone) return null;
+  const y = refDate.getFullYear();
+  const jan = zoneOffsetHours(zone, new Date(Date.UTC(y, 0, 1)));
+  const jul = zoneOffsetHours(zone, new Date(Date.UTC(y, 6, 1)));
+  if (jan === null || jul === null) return null;
+  return Math.min(jan, jul);
+}
+
+/**
+ * Render a prayer instant for display. When `overrideOffset` is null the time is
+ * rendered in the IANA zone (DST-aware via Intl — the 'auto' DST mode). When a
+ * fixed offset is given (DST override 'on'/'off'), the instant is rendered at that
+ * offset, bypassing the device's tzdata.
+ */
+export function formatPrayerTime(
+  date: Date,
+  zone: string | null,
+  overrideOffset: number | null | undefined,
+  use24h = false,
+  amStr = 'AM',
+  pmStr = 'PM',
+): string {
+  if (overrideOffset !== null && overrideOffset !== undefined) {
+    return formatTimeAtOffset(date, overrideOffset, use24h, amStr, pmStr);
+  }
+  return formatTimeInZone(date, zone, use24h, amStr, pmStr);
 }
 
 /**

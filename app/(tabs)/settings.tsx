@@ -38,6 +38,7 @@ export default function SettingsScreen() {
     iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
     selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
     jumuahTime, highLatRule, customMethod, location,
+    dstMode, dstResolved,
     updateSettings,
   } = useApp();
   const isHighLat = !!location && Math.abs(location.lat) > 48;
@@ -1004,6 +1005,43 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               ))}
+            </View>
+          )}
+
+          {/* Daylight Saving override — manual locations only (in GPS mode the device
+              clock already tracks DST, so the override is inert and the row is hidden) */}
+          {dstResolved.applicable && (
+            <View style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
+              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                  {tr.dstSetting}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {(['auto', 'on', 'off'] as const).map(mode => {
+                    const sel = dstMode === mode;
+                    const label = mode === 'auto' ? tr.dst_auto : mode === 'on' ? tr.dst_on : tr.dst_off;
+                    return (
+                      <Pressable
+                        key={mode}
+                        onPress={() => { Haptics.selectionAsync(); updateSettings({ dstMode: mode }); }}
+                        style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: sel ? C.tint : C.backgroundSecond }}
+                      >
+                        <Text style={{ color: sel ? '#fff' : C.text, fontSize: 13, fontFamily: SANS }}>{label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+              <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                {dstMode === 'auto'
+                  ? `${tr.dst_auto} — ${dstResolved.on ? tr.dst_currently_on : tr.dst_currently_off} (${dstResolved.abbrev ? dstResolved.abbrev + (isRtl ? '، ' : ', ') : ''}${dstResolved.offsetLabel})`
+                  : `${dstMode === 'on' ? tr.dst_on : tr.dst_off} (${dstResolved.offsetLabel})`}
+              </Text>
+              {dstResolved.mismatch && (
+                <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                  {'⚠ ' + tr.dst_mismatch_warn}
+                </Text>
+              )}
             </View>
           )}
 

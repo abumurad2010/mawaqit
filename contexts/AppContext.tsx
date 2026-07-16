@@ -9,7 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod, HighLatRule, CustomMethodParams } from '@/lib/prayer-times';
-import { zoneOffsetHours } from '@/lib/prayer-times';
+import { zoneOffsetHours, standardOffset } from '@/lib/prayer-times';
 import tzlookup from 'tz-lookup'; // types provided by types/tz-lookup.d.ts
 import { updateWidgetFromParams } from '@/lib/widget';
 
@@ -90,6 +90,10 @@ interface AppSettings {
   customMethod: CustomMethodParams;
   /** Whether the one-time high-latitude explainer sheet has been shown. */
   highLatSheetSeen: boolean;
+  /** Daylight-saving override for manual locations. 'auto' = trust the IANA zone
+   *  (device tzdata); 'on'/'off' force standard-time+1 / standard-time. Escape hatch
+   *  for stale device tzdata (Morocco Ramadan, Iran 2022, Lebanon 2023). */
+  dstMode: 'auto' | 'on' | 'off';
   locationMode: 'auto' | 'manual';
   manualLocation: LocationData | null;
   fontSize: 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
@@ -132,6 +136,13 @@ interface AppContextValue extends AppSettings {
   /** IANA timezone for a manual location (e.g. "Europe/London"), or null in
    *  GPS/auto mode where device-local time is used. DST-aware display key. */
   locationTimezone: string | null;
+  /** Fixed display offset for the DST override ('on'/'off'); null = auto (use zone). */
+  dstOverrideOffset: number | null;
+  /** Milliseconds to shift absolute instants (notifications/widget) so the alarm
+   *  fires at the displayed wall-clock under a DST override. 0 in auto mode. */
+  dstShiftMs: number;
+  /** Resolved DST state for the Settings subtitle. */
+  dstResolved: { applicable: boolean; on: boolean; offsetLabel: string; abbrev: string | null; mismatch: boolean };
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
   removeBookmark: (surahNumber: number, ayahNumber: number) => void;
@@ -161,6 +172,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   highLatRule: 'seventh_of_night',
   customMethod: { fajrAngle: 18, ishaAngle: 17 },
   highLatSheetSeen: false,
+  dstMode: 'auto',
   locationMode: 'auto',
   manualLocation: null,
   fontSize: 'medium',
@@ -328,6 +340,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ?? Math.round(settings.manualLocation.lng / 15))
       : null;
 
+  // ── Daylight-saving override (manual locations only) ─────────────────────────
+  // auto → trust the IANA zone (device tzdata); on → standard+1; off → standard.
+  // dstOverrideOffset drives display (formatPrayerTime); dstShiftMs shifts the
+  // absolute instant for notifications/widget so the alarm fires at the displayed
+  // wall-clock on the (possibly stale) device clock. In GPS/auto-location mode
+  // locationTimezone is null → override inert (the device clock is authoritative).
+  const _dstNow = new Date();
+  const dstAutoOffset = zoneOffsetHours(locationTimezone, _dstNow);
+  const dstStandard = standardOffset(locationTimezone, _dstNow);
+  const dstOverrideOffset: number | null =
+    settings.dstMode === 'auto' || dstStandard === null
+      ? null
+      : settings.dstMode === 'on'
+      ? dstStandard + 1
+      : dstStandard;
+  const dstShiftMs =
+    dstOverrideOffset !== null && dstAutoOffset !== null
+      ? Math.round((dstOverrideOffset - dstAutoOffset) * 60) * 60000
+      : 0;
+  const dstEffectiveOffset =
+    settings.dstMode === 'auto' ? dstAutoOffset : dstOverrideOffset;
+  const _utcLabel = (off: number | null): string => {
+    if (off === null) return '';
+    const sign = off < 0 ? '-' : '+';
+    const abs = Math.abs(off);
+    const h = Math.floor(abs);
+    const mm = Math.round((abs - h) * 60);
+    return mm === 0 ? `UTC${sign}${h}` : `UTC${sign}${h}:${String(mm).padStart(2, '0')}`;
+  };
+  let _tzAbbrev: string | null = null;
+  if (locationTimezone) {
+    try {
+      _tzAbbrev = new Intl.DateTimeFormat('en-US', { timeZone: locationTimezone, timeZoneName: 'short' })
+        .formatToParts(_dstNow).find(p => p.type === 'timeZoneName')?.value ?? null;
+    } catch { _tzAbbrev = null; }
+  }
+  const dstResolved = {
+    applicable: locationTimezone !== null,          // false in GPS/auto-location mode
+    on: dstEffectiveOffset !== null && dstStandard !== null && dstEffectiveOffset > dstStandard,
+    offsetLabel: _utcLabel(dstEffectiveOffset),
+    abbrev: settings.dstMode === 'auto' ? _tzAbbrev : null, // Intl abbrev only meaningful in auto
+    mismatch:
+      settings.dstMode !== 'auto' &&
+      dstOverrideOffset !== null &&
+      dstAutoOffset !== null &&
+      Math.abs(dstOverrideOffset - dstAutoOffset) > 0.01,
+  };
+
   const isDark =
     settings.themeMode === 'dark'
       ? true
@@ -385,6 +445,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             timezone: locationTimezone,
             highLatRule,
             customParams,
+            dstShiftMs,
           });
         } else {
           await cancelAllPrayerNotifications();
@@ -400,6 +461,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             timezone: locationTimezone,
             highLatRule,
             customParams,
+            dstShiftMs,
             reservedSlots: prayerCount,
           });
         } else {
@@ -426,7 +488,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     rescheduleAll();
-  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, settings.highLatRule, settings.customMethod]);
+  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, settings.highLatRule, settings.customMethod, dstShiftMs]);
 
   // Date-rollover watcher: while the app stays open across midnight, push a
   // fresh widget timeline so "today" rolls to the next calendar day.
@@ -444,6 +506,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           timezone: locationTimezone,
           highLatRule: settings.highLatRule,
           customParams: settings.calcMethod === 'Custom' ? settings.customMethod : undefined,
+          dstShiftMs,
         });
       } catch { /* non-critical */ }
     };
@@ -454,7 +517,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const msUntilMidnight = tomorrow.getTime() - now.getTime();
     const timeoutId = setTimeout(tick, msUntilMidnight);
     return () => clearTimeout(timeoutId);
-  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, settings.highLatRule, settings.customMethod]);
+  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, settings.highLatRule, settings.customMethod, dstShiftMs]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
@@ -533,6 +596,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       countryCode: effectiveCountryCode,
       locationUtcOffset,
       locationTimezone,
+      dstOverrideOffset,
+      dstShiftMs,
+      dstResolved,
       bookmarks,
       addBookmark,
       removeBookmark,
@@ -549,7 +615,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       quranNavTarget,
       setQuranNavTarget,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, effectiveCalcMethod, locationUtcOffset, locationTimezone, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, effectiveCalcMethod, locationUtcOffset, locationTimezone, dstOverrideOffset, dstShiftMs, dstResolved, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
   );
 
   if (!loaded) return null;

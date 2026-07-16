@@ -160,6 +160,7 @@ export async function scheduleThikrNotifications(params: {
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
   highLatRule?: HighLatRule;
   customParams?: CustomMethodParams;
+  dstShiftMs?: number;
   reservedSlots?: number; // notifications already scheduled (iOS budget tracking)
 }) {
   if (!isNative) return;
@@ -205,9 +206,10 @@ export async function scheduleThikrNotifications(params: {
       customParams: params.customParams,
     });
 
-    const fajrMs = times.fajr.getTime();
+    const _dst = params.dstShiftMs ?? 0;
+    const fajrMs = times.fajr.getTime() + _dst;
     // Window ends 5 hours after Isha
-    const ishaMs = times.isha.getTime() + THIKR_WINDOW_AFTER_ISHA_MS;
+    const ishaMs = times.isha.getTime() + _dst + THIKR_WINDOW_AFTER_ISHA_MS;
 
     // Unique seed per calendar day (YYYYMMDD integer) XORed with device salt
     const daySeed =
@@ -285,6 +287,7 @@ export async function schedulePrayerNotifications(params: {
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
   highLatRule?: HighLatRule;
   customParams?: CustomMethodParams;
+  dstShiftMs?: number;
   daysAhead?: number;
   dhuhaTime?: string;     // "HH:MM" exact local time
   tahajjudTime?: string;  // "HH:MM" exact local time
@@ -346,17 +349,22 @@ export async function schedulePrayerNotifications(params: {
 
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;
     const jumuahTimeStr = isFriday ? (params.jumuahTime ?? null) : null;
+    // DST override: shift ASTRONOMICAL prayer instants so the alarm fires at the
+    // displayed wall-clock. User wall-clock alarms (Dhuha/Qiyam/Jumuah) are literal
+    // and NOT shifted.
+    const dstShiftMs = params.dstShiftMs ?? 0;
+    const sh = (d: Date) => new Date(d.getTime() + dstShiftMs);
 
     const prayerTimeMap: Record<string, Date | null> = {
-      fajrFirst: firstAdhanMs > 0 ? new Date(times.fajr.getTime() - firstAdhanMs) : null,
-      fajr: times.fajr,
+      fajrFirst: firstAdhanMs > 0 ? sh(new Date(times.fajr.getTime() - firstAdhanMs)) : null,
+      fajr: sh(times.fajr),
       dhuha: parseExactTime(params.dhuhaTime ?? '07:30', date),
       dhuhr: jumuahTimeStr
         ? parseExactTime(jumuahTimeStr, date)
-        : times.dhuhr,
-      asr: times.asr,
-      maghrib: times.maghrib,
-      isha: times.isha,
+        : sh(times.dhuhr),
+      asr: sh(times.asr),
+      maghrib: sh(times.maghrib),
+      isha: sh(times.isha),
       qiyam: parseExactTime(params.tahajjudTime ?? '03:00', date),
     };
 

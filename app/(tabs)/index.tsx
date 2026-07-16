@@ -21,7 +21,7 @@ import Colors from '@/constants/colors';
 import { useApp, getDefaultIqamaOffsets } from '@/contexts/AppContext';
 import { t, isRtlLang } from '@/constants/i18n';
 import {
-  calculatePrayerTimes, formatTime, formatTimeInZone, getNextPrayer, getCountdown,
+  calculatePrayerTimes, formatTime, formatPrayerTime, getNextPrayer, getCountdown,
   type PrayerTimes as PrayerTimesType,
 } from '@/lib/prayer-times';
 import { gregorianToHijri, formatHijriDate, LANG_LOCALE } from '@/lib/hijri';
@@ -58,7 +58,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, locationTimezone, highLatRule, customMethod, hijriAdjustment, colors, firstAdhanOffset, fontSize,
+    updateSettings, locationUtcOffset, locationTimezone, dstOverrideOffset, highLatRule, customMethod, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
     jumuahTime: jumuahTimeSetting,
     showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
@@ -773,7 +773,7 @@ export default function PrayerTimesScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.prayerTime, { color: passed ? C.textMuted : C.text, fontWeight: fw, fontSize: pFS, lineHeight: pLH }]}>
-                  {formatTimeInZone(firstAdhanTime, locationTimezone, false, tr.am, tr.pm)}
+                  {formatPrayerTime(firstAdhanTime, locationTimezone, dstOverrideOffset, false, tr.am, tr.pm)}
                 </Text>
               </View>
               <View style={[styles.rowDivider, { backgroundColor: C.separator }]} />
@@ -820,7 +820,7 @@ export default function PrayerTimesScreen() {
                           // Jumu'ah is a user-entered wall-clock time — show it exactly as typed.
                           ? formatTime(jumuahDisplayTime, false, tr.am, tr.pm)
                           // Astronomical prayer instant — render in the location's timezone (DST-aware).
-                          : formatTimeInZone(times[key], locationTimezone, false, tr.am, tr.pm))
+                          : formatPrayerTime(times[key], locationTimezone, dstOverrideOffset, false, tr.am, tr.pm))
                       : '—'}
                   </Text>
                 </View>
