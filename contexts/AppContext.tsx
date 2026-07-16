@@ -16,7 +16,6 @@ import { updateWidgetFromParams } from '@/lib/widget';
 import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { BUNDLED_LANGS, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
-import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
 import { getRecommendedMethod } from '@/lib/method-by-country';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications, cancelThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
@@ -188,6 +187,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 const VALID_CALC_METHODS = [
   'MWL','ISNA','Egypt','MakkahUmmQura','Karachi','Jordan',
   'Kuwait','Qatar','Algeria','Morocco','Singapore','Turkey','France','Russia',
+  'Moonsighting','Custom',
 ];
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -294,8 +294,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ? settings.manualLocation.countryCode
       : countryCode;
 
-  const maghribBase = getMaghribOffset(effectiveCountryCode);
-  const maghribOffset = maghribBase + maghribUserAdj;
+  // The per-country Maghrib ihtiyat is now supplied by adhan's own method parameters
+  // (e.g. Diyanet Turkey +7, Jordan +5). The old per-country DEFAULT table would
+  // stack on top of that (Turkey +12, Jordan +10), so it is no longer applied — only
+  // the user's explicit tune (maghribUserAdj) is layered on adhan's output.
+  const maghribBase = 0;
+  const maghribOffset = maghribUserAdj;
 
   // Effective method: follows the location recommendation (Moonsighting for the UK
   // and above ~48°) until the user picks one explicitly (calcMethodAuto → false).

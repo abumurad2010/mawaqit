@@ -1272,7 +1272,7 @@ export default function SettingsScreen() {
               {/* Stepper */}
               <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
                 <Pressable
-                  onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(v => Math.max(v - 1, -maghribBase)); }}
+                  onPress={() => { Haptics.selectionAsync(); setDraftAdjustment(v => Math.max(v - 1, -15)); }}
                   style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
                 >
                   <Ionicons name="remove" size={16} color={C.tint} />
