@@ -63,8 +63,21 @@ export function getMethodForCountry(countryCode: string | null): CalcMethod {
   return COUNTRY_METHODS[countryCode.toUpperCase()] ?? 'MWL';
 }
 
+/**
+ * Recommended (and default) method for a location. The Moonsighting Committee
+ * Worldwide model (basis of the London Unified Prayer Timetable) is recommended
+ * for the UK and for any location above ~48° latitude, where it carries its own
+ * high-latitude handling — so no twilight-rule choice is needed. Everywhere else
+ * falls back to the per-country default.
+ */
+export function getRecommendedMethod(countryCode: string | null, lat: number | null): CalcMethod {
+  const cc = countryCode?.toUpperCase() ?? null;
+  if (cc === 'GB' || (lat !== null && Math.abs(lat) > 48)) return 'Moonsighting';
+  return getMethodForCountry(cc);
+}
+
 export const ALL_CALC_METHODS: CalcMethod[] = [
   'MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi',
   'Jordan', 'Kuwait', 'Qatar', 'Algeria', 'Morocco',
-  'Singapore', 'Turkey', 'France', 'Russia', 'Custom',
+  'Singapore', 'Turkey', 'France', 'Russia', 'Moonsighting', 'Custom',
 ];
