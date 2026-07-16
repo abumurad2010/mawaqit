@@ -2116,7 +2116,13 @@ function ReaderScreen({
   restoredPosition = 0, onPositionChange,
   userCatItems, onUserCatItemsSave,
 }: ReaderProps) {
-  const athkarRtl = isRtlLang(athkarLang);
+  // The MEANING follows the app UI language (lang) — decoupled from athkarLang,
+  // which only drives the transliteration script. This makes the meaning reachable
+  // for Arabic/Urdu/Persian users: those languages can't be the transliteration
+  // language (SUPPORTED_TRANSLIT_LANGS excludes them), so the meaning previously
+  // resolved to English (or blank). Now it resolves in their own language.
+  const meaningLang = lang as Lang;
+  const meaningRtl = isRtlLang(meaningLang);
   const [userCounts, setUserCounts] = useState<Record<string, number>>({});
 
   const handleReset = useCallback(() => {
@@ -2192,7 +2198,7 @@ function ReaderScreen({
       // missing lookup fell through to '' — Arabic + transliteration then a BLANK
       // meaning. Fall back to the English base (never blank) instead. No new
       // translations are generated; this is fallback only.
-      const translation = (i18n[athkarLang] as any)?.[thikr.translationKey]
+      const translation = (i18n[meaningLang] as any)?.[thikr.translationKey]
         ?? (i18n.en as any)?.[thikr.translationKey]
         ?? '';
       return {
@@ -2200,7 +2206,7 @@ function ReaderScreen({
         arabic: thikr.arabic,
         transliteration: thikr.transliteration,
         translation,
-        translationRtl: athkarRtl,
+        translationRtl: meaningRtl,
         required,
         current,
         done,
@@ -2224,7 +2230,7 @@ function ReaderScreen({
       };
     });
     return [...builtin, ...user];
-  }, [category, counts, userCatItems, userCounts, athkarLang, athkarRtl, getCount, isDone]);
+  }, [category, counts, userCatItems, userCounts, athkarLang, meaningLang, meaningRtl, getCount, isDone]);
 
   const handleTap = useCallback((page: SwipePage) => {
     if (page.builtinThikr && page.builtinIndex !== undefined) {
