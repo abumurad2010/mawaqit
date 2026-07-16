@@ -38,7 +38,7 @@ export default function SettingsScreen() {
     iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
     selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
     jumuahTime, highLatRule, customMethod, location,
-    dstMode, dstResolved,
+    dstResolved,
     updateSettings,
   } = useApp();
   const isHighLat = !!location && Math.abs(location.lat) > 48;
@@ -1008,40 +1008,37 @@ export default function SettingsScreen() {
             </View>
           )}
 
-          {/* Daylight Saving override — manual locations only (in GPS mode the device
-              clock already tracks DST, so the override is inert and the row is hidden) */}
+          {/* Daylight Saving — one switch whose POSITION is the resolved effective
+              state. In 'auto' it reflects the IANA zone for today (London: on in
+              summer, off in winter) untouched; flipping it pins a manual on/off
+              override (the escape hatch when the map is wrong, e.g. the Hopi
+              Reservation resolving to America/Denver). Applies in every location
+              mode — the zone is resolved from coordinates, GPS included. */}
           {dstResolved.applicable && (
             <View style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
               <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
                   {tr.dstSetting}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {(['auto', 'on', 'off'] as const).map(mode => {
-                    const sel = dstMode === mode;
-                    const label = mode === 'auto' ? tr.dst_auto : mode === 'on' ? tr.dst_on : tr.dst_off;
-                    return (
-                      <Pressable
-                        key={mode}
-                        onPress={() => { Haptics.selectionAsync(); updateSettings({ dstMode: mode }); }}
-                        style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: sel ? C.tint : C.backgroundSecond }}
-                      >
-                        <Text style={{ color: sel ? '#fff' : C.text, fontSize: 13, fontFamily: SANS }}>{label}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                <Switch
+                  value={dstResolved.on}
+                  onValueChange={(v) => { Haptics.selectionAsync(); updateSettings({ dstMode: v ? 'on' : 'off' }); }}
+                  trackColor={{ false: C.separator, true: C.tint + '88' }}
+                  thumbColor={dstResolved.on ? C.tint : C.textMuted}
+                />
               </View>
-              <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                {dstMode === 'auto'
-                  ? `${tr.dst_auto} — ${dstResolved.on ? tr.dst_currently_on : tr.dst_currently_off} (${dstResolved.abbrev ? dstResolved.abbrev + (isRtl ? '، ' : ', ') : ''}${dstResolved.offsetLabel})`
-                  : `${dstMode === 'on' ? tr.dst_on : tr.dst_off} (${dstResolved.offsetLabel})`}
-              </Text>
-              {dstResolved.mismatch && (
-                <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                  {'⚠ ' + tr.dst_mismatch_warn}
+              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <Text style={{ flex: 1, color: dstResolved.manual ? C.tint : C.textMuted, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                  {dstResolved.manual
+                    ? tr.dst_manual
+                    : `${tr.dst_auto} · ${dstResolved.abbrev ? `${dstResolved.abbrev} (${dstResolved.offsetLabel})` : dstResolved.offsetLabel}`}
                 </Text>
-              )}
+                {dstResolved.manual && (
+                  <Pressable onPress={() => { Haptics.selectionAsync(); updateSettings({ dstMode: 'auto' }); }} hitSlop={8}>
+                    <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }}>{tr.dst_reset_auto}</Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
           )}
 

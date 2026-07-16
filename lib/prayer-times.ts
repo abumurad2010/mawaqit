@@ -334,6 +334,20 @@ export function standardOffset(zone: string | null, refDate: Date = new Date()):
 }
 
 /**
+ * Whether daylight saving is in force in `zone` on `date`: the zone's offset for
+ * that instant exceeds its standard (non-DST) offset. Date-dependent — London is
+ * true on 16 Jul (BST) and false on 15 Jan (GMT); Amman/Riyadh are false always.
+ * Returns null when the zone can't be resolved. This is the truth the DST switch
+ * position renders in 'auto' mode.
+ */
+export function isDstActive(zone: string | null, date: Date): boolean | null {
+  const off = zoneOffsetHours(zone, date);
+  const std = standardOffset(zone, date);
+  if (off === null || std === null) return null;
+  return off > std;
+}
+
+/**
  * Render a prayer instant for display. When `overrideOffset` is null the time is
  * rendered in the IANA zone (DST-aware via Intl — the 'auto' DST mode). When a
  * fixed offset is given (DST override 'on'/'off'), the instant is rendered at that

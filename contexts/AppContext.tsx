@@ -9,7 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod, HighLatRule, CustomMethodParams } from '@/lib/prayer-times';
-import { zoneOffsetHours, standardOffset } from '@/lib/prayer-times';
+import { zoneOffsetHours, standardOffset, isDstActive } from '@/lib/prayer-times';
 import tzlookup from 'tz-lookup'; // types provided by types/tz-lookup.d.ts
 import { updateWidgetFromParams } from '@/lib/widget';
 
@@ -142,7 +142,7 @@ interface AppContextValue extends AppSettings {
    *  fires at the displayed wall-clock under a DST override. 0 in auto mode. */
   dstShiftMs: number;
   /** Resolved DST state for the Settings subtitle. */
-  dstResolved: { applicable: boolean; on: boolean; offsetLabel: string; abbrev: string | null; mismatch: boolean };
+  dstResolved: { applicable: boolean; on: boolean; manual: boolean; offsetLabel: string; abbrev: string | null; mismatch: boolean };
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
   removeBookmark: (surahNumber: number, ayahNumber: number) => void;
@@ -319,36 +319,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ? getRecommendedMethod(effectiveCountryCode, effectiveLocation?.lat ?? null)
     : settings.calcMethod;
 
-  // For a MANUAL location we resolve the real IANA timezone from its coordinates
-  // (tz-lookup, fully offline). GPS/auto mode stays null — the device is
-  // physically in the location, so device-local time already tracks DST.
-  const locationTimezone: string | null =
-    settings.locationMode === 'manual' && settings.manualLocation
-      ? (() => {
-          try { return tzlookup(settings.manualLocation.lat, settings.manualLocation.lng); }
-          catch { return null; }
-        })()
-      : null;
+  // Resolve the real IANA timezone from the effective coordinates (tz-lookup, fully
+  // offline) in BOTH manual and GPS modes. This removes the old GPS/manual
+  // asymmetry: the coordinates are authoritative, so if the device clock is in the
+  // wrong zone (travelling, tzdata not updated) the resolved zone is still correct.
+  // The DST switch and zone-based rendering therefore apply everywhere.
+  const locationTimezone: string | null = effectiveLocation
+    ? (() => {
+        try { return tzlookup(effectiveLocation.lat, effectiveLocation.lng); }
+        catch { return null; }
+      })()
+    : null;
 
   // Numeric offset kept for the astronomy helpers (moon phases, crescent windows)
-  // that still work in offset space. Now DST-aware — derived from the resolved
-  // timezone for the current instant — instead of the old crude lng/15 guess.
-  // Falls back to lng/15 only if the zone can't be resolved.
-  const locationUtcOffset: number | null =
-    settings.locationMode === 'manual' && settings.manualLocation
-      ? (zoneOffsetHours(locationTimezone, new Date())
-          ?? Math.round(settings.manualLocation.lng / 15))
-      : null;
+  // that still work in offset space. DST-aware — derived from the resolved timezone
+  // for the current instant — instead of the old crude lng/15 guess. Falls back to
+  // lng/15 only if the zone can't be resolved.
+  const locationUtcOffset: number | null = effectiveLocation
+    ? (zoneOffsetHours(locationTimezone, new Date())
+        ?? Math.round(effectiveLocation.lng / 15))
+    : null;
 
-  // ── Daylight-saving override (manual locations only) ─────────────────────────
-  // auto → trust the IANA zone (device tzdata); on → standard+1; off → standard.
-  // dstOverrideOffset drives display (formatPrayerTime); dstShiftMs shifts the
-  // absolute instant for notifications/widget so the alarm fires at the displayed
-  // wall-clock on the (possibly stale) device clock. In GPS/auto-location mode
-  // locationTimezone is null → override inert (the device clock is authoritative).
+  // ── Daylight-saving resolution + override (all location modes) ───────────────
+  // The zone is resolved from coordinates in every mode, so the switch is always
+  // meaningful. auto → trust the IANA zone per-instant (Intl, DST-aware); on →
+  // force standard+1; off → force standard. In auto mode the display path renders
+  // per-instant in the zone (dstOverrideOffset stays null, so it tracks DST as the
+  // viewed date changes); on/off pin a fixed offset and shift the notification /
+  // widget instants by dstShiftMs so the alarm fires at the displayed wall-clock
+  // even on a stale device clock. The switch POSITION is the resolved effective
+  // state, date-dependent in auto (London: BST in Jul, GMT in Jan).
   const _dstNow = new Date();
   const dstAutoOffset = zoneOffsetHours(locationTimezone, _dstNow);
   const dstStandard = standardOffset(locationTimezone, _dstNow);
+  const dstAutoOn = isDstActive(locationTimezone, _dstNow); // null if zone unresolved
   const dstOverrideOffset: number | null =
     settings.dstMode === 'auto' || dstStandard === null
       ? null
@@ -377,10 +381,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch { _tzAbbrev = null; }
   }
   const dstResolved = {
-    applicable: locationTimezone !== null,          // false in GPS/auto-location mode
-    on: dstEffectiveOffset !== null && dstStandard !== null && dstEffectiveOffset > dstStandard,
+    applicable: locationTimezone !== null,       // true in both modes once the zone resolves
+    // Switch position = resolved effective state (date-dependent in auto).
+    on: settings.dstMode === 'auto' ? (dstAutoOn ?? false) : settings.dstMode === 'on',
+    manual: settings.dstMode !== 'auto',
     offsetLabel: _utcLabel(dstEffectiveOffset),
-    abbrev: settings.dstMode === 'auto' ? _tzAbbrev : null, // Intl abbrev only meaningful in auto
+    abbrev: _tzAbbrev,                           // zone abbrev (BST/GMT/…) for the auto subtitle
     mismatch:
       settings.dstMode !== 'auto' &&
       dstOverrideOffset !== null &&
@@ -483,6 +489,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           timezone: locationTimezone,
           highLatRule,
           customParams,
+          dstShiftMs,
         });
       } catch { /* non-critical */ }
     };
