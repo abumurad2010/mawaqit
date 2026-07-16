@@ -79,5 +79,5 @@ export function getRecommendedMethod(countryCode: string | null, lat: number | n
 export const ALL_CALC_METHODS: CalcMethod[] = [
   'MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi',
   'Jordan', 'Kuwait', 'Qatar', 'Algeria', 'Morocco',
-  'Singapore', 'Turkey', 'France', 'Russia', 'Moonsighting', 'Custom',
+  'Singapore', 'Turkey', 'France', 'Russia', 'Moonsighting',
 ];

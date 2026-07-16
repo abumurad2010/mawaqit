@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
-import type { CalcMethod, AsrMethod, HighLatRule, CustomMethodParams } from '@/lib/prayer-times';
+import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
 import { zoneOffsetHours, standardOffset, isDstActive } from '@/lib/prayer-times';
 import tzlookup from 'tz-lookup'; // types provided by types/tz-lookup.d.ts
 import { updateWidgetFromParams } from '@/lib/widget';
@@ -84,12 +84,6 @@ interface AppSettings {
    *  set false the moment the user picks a method explicitly. */
   calcMethodAuto: boolean;
   asrMethod: AsrMethod;
-  /** High-latitude rule for Fajr/Isha when the depression angle is unreachable. */
-  highLatRule: HighLatRule;
-  /** User-set parameters for the 'Custom' calculation method. */
-  customMethod: CustomMethodParams;
-  /** Whether the one-time high-latitude explainer sheet has been shown. */
-  highLatSheetSeen: boolean;
   /** Daylight-saving override for manual locations. 'auto' = trust the IANA zone
    *  (device tzdata); 'on'/'off' force standard-time+1 / standard-time. Escape hatch
    *  for stale device tzdata (Morocco Ramadan, Iran 2022, Lebanon 2023). */
@@ -142,7 +136,7 @@ interface AppContextValue extends AppSettings {
    *  fires at the displayed wall-clock under a DST override. 0 in auto mode. */
   dstShiftMs: number;
   /** Resolved DST state for the Settings subtitle. */
-  dstResolved: { applicable: boolean; on: boolean; manual: boolean; offsetLabel: string; abbrev: string | null; mismatch: boolean };
+  dstResolved: { applicable: boolean; on: boolean; autoOn: boolean; offsetLabel: string; abbrev: string | null; mismatch: boolean };
   bookmarks: Bookmark[];
   addBookmark: (b: Bookmark) => void;
   removeBookmark: (surahNumber: number, ayahNumber: number) => void;
@@ -169,9 +163,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   calcMethod: 'MWL',
   calcMethodAuto: true,
   asrMethod: 'standard',
-  highLatRule: 'seventh_of_night',
-  customMethod: { fajrAngle: 18, ishaAngle: 17 },
-  highLatSheetSeen: false,
   dstMode: 'auto',
   locationMode: 'auto',
   manualLocation: null,
@@ -199,7 +190,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 const VALID_CALC_METHODS = [
   'MWL','ISNA','Egypt','MakkahUmmQura','Karachi','Jordan',
   'Kuwait','Qatar','Algeria','Morocco','Singapore','Turkey','France','Russia',
-  'Moonsighting','Custom',
+  'Moonsighting',
 ];
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -393,9 +384,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
   const dstResolved = {
     applicable: locationTimezone !== null,       // true in both modes once the zone resolves
-    // Switch position = resolved effective state (date-dependent in auto).
+    // Resolved effective state for the current selection (date-dependent in auto).
     on: settings.dstMode === 'auto' ? (dstAutoOn ?? false) : settings.dstMode === 'on',
-    manual: settings.dstMode !== 'auto',
+    // What 'auto' resolves to today — the "expected" value shown when an override disagrees.
+    autoOn: dstAutoOn ?? false,
     offsetLabel: _utcLabel(dstEffectiveOffset),
     abbrev: _tzAbbrev,                           // zone abbrev (BST/GMT/…) for the auto subtitle
     mismatch:
@@ -434,8 +426,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('[Notifications] rescheduleAll skipped — effectiveLocation is null');
       return;
     }
-    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled, highLatRule } = settings;
-    const customParams = calcMethod === 'Custom' ? settings.customMethod : undefined;
+    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled } = settings;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
     console.log(`[Notifications] rescheduleAll triggered — hasAny=${hasAny} thikrEnabled=${thikrRemindersEnabled} location=${effectiveLocation.lat.toFixed(3)},${effectiveLocation.lng.toFixed(3)}`);
 
@@ -460,8 +451,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             prePrayerReminder: settings.prePrayerReminder ?? 0,
             jumuahTime: settings.jumuahTime ?? null,
             timezone: locationTimezone,
-            highLatRule,
-            customParams,
             dstShiftMs,
           });
         } else {
@@ -476,8 +465,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             asrMethod,
             maghribOffset,
             timezone: locationTimezone,
-            highLatRule,
-            customParams,
             dstShiftMs,
             reservedSlots: prayerCount,
           });
@@ -498,15 +485,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           maghribOffset,
           lang,
           timezone: locationTimezone,
-          highLatRule,
-          customParams,
           dstShiftMs,
         });
       } catch { /* non-critical */ }
     };
 
     rescheduleAll();
-  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, settings.highLatRule, settings.customMethod, dstShiftMs]);
+  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, dstShiftMs]);
 
   // Date-rollover watcher: while the app stays open across midnight, push a
   // fresh widget timeline so "today" rolls to the next calendar day.
@@ -522,8 +507,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           maghribOffset,
           lang: settings.lang,
           timezone: locationTimezone,
-          highLatRule: settings.highLatRule,
-          customParams: settings.calcMethod === 'Custom' ? settings.customMethod : undefined,
           dstShiftMs,
         });
       } catch { /* non-critical */ }
@@ -535,7 +518,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const msUntilMidnight = tomorrow.getTime() - now.getTime();
     const timeoutId = setTimeout(tick, msUntilMidnight);
     return () => clearTimeout(timeoutId);
-  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, settings.highLatRule, settings.customMethod, dstShiftMs]);
+  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, dstShiftMs]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

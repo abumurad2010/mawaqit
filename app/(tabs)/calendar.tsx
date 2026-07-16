@@ -76,7 +76,7 @@ const CAL_FS_KEY = 'calendar_font_size';
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, locationTimezone, dstOverrideOffset, highLatRule, customMethod, hijriAdjustment, colors } = useApp();
+  const { isDark, lang, location, calcMethod, asrMethod, maghribOffset, locationUtcOffset, locationTimezone, dstOverrideOffset, hijriAdjustment, colors } = useApp();
   const C = colors;
   const fw = C.fontWeightNormal;
   const tr = t(lang);
@@ -128,8 +128,6 @@ export default function CalendarScreen() {
       asrMethod,
       maghribOffset,
       timezone: locationTimezone,
-      highLatRule,
-      customParams: calcMethod === 'Custom' ? customMethod : undefined,
     });
     setPrayerTimes(times);
   }, [selectedDate, location, calcMethod, asrMethod, maghribOffset, locationTimezone]);
@@ -168,8 +166,6 @@ export default function CalendarScreen() {
           asrMethod,
           maghribOffset,
           timezone: locationTimezone,
-      highLatRule,
-      customParams: calcMethod === 'Custom' ? customMethod : undefined,
         });
         const sunsetMs = (times.maghrib as Date).getTime();
         // At crescent sighting, moon is ~1–2 days old; each day adds ~50 min of visibility

@@ -37,16 +37,10 @@ export default function SettingsScreen() {
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
     iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
     selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
-    jumuahTime, highLatRule, customMethod, location,
-    dstResolved,
+    jumuahTime, location,
+    dstMode, dstResolved,
     updateSettings,
   } = useApp();
-  const isHighLat = !!location && Math.abs(location.lat) > 48;
-  const HIGH_LAT_RULES = ['middle_of_night', 'seventh_of_night', 'twilight_angle'] as const;
-  const HL_LABEL_KEY: Record<string, keyof typeof tr> = {
-    middle_of_night: 'hl_middle', seventh_of_night: 'hl_seventh', twilight_angle: 'hl_angle',
-  };
-  const [showHighLatModal, setShowHighLatModal] = useState(false);
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -819,7 +813,7 @@ export default function SettingsScreen() {
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowDefaultTabModal(true); }}
-            style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
+            style={[styles.settingRow, { borderBottomWidth: dstResolved.applicable ? 1 : 0, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
           >
             <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 10, flex: 1 }}>
               <Ionicons name="home-outline" size={18} color={C.tint} />
@@ -837,6 +831,32 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name={isRtl ? 'chevron-left' : 'chevron-right'} size={18} color={C.textMuted} />
             </View>
           </Pressable>
+
+          {/* Daylight Saving — three-state control (Auto / On / Off), directly under
+              Start Screen exactly as in v1.3.5. Auto is date-dependent; the subtitle
+              states the truth for the SELECTED state and only warns when a forced
+              on/off actually disagrees with what the zone resolves to today. */}
+          {dstResolved.applicable && (
+            <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
+              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                  {tr.dstSetting}
+                </Text>
+                <View style={styles.chips}>
+                  <Chip value={tr.dst_auto} selected={dstMode === 'auto'} onPress={() => updateSettings({ dstMode: 'auto' })} />
+                  <Chip value={tr.dst_on}   selected={dstMode === 'on'}   onPress={() => updateSettings({ dstMode: 'on' })} />
+                  <Chip value={tr.dst_off}  selected={dstMode === 'off'}  onPress={() => updateSettings({ dstMode: 'off' })} />
+                </View>
+              </View>
+              <Text style={{ color: dstResolved.mismatch ? C.tint : C.textMuted, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
+                {dstMode === 'auto'
+                  ? `${tr.dst_auto} · ${dstResolved.abbrev ? `${dstResolved.abbrev} (${dstResolved.offsetLabel})` : dstResolved.offsetLabel}`
+                  : !dstResolved.mismatch
+                    ? `${dstMode === 'on' ? tr.dst_on : tr.dst_off} · ${dstResolved.offsetLabel}`
+                    : `${dstMode === 'on' ? tr.dst_on : tr.dst_off} · ${tr.dst_may_not_match} (${tr.dst_expected}: ${dstResolved.autoOn ? tr.dst_on : tr.dst_off})`}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Accessibility */}
@@ -965,112 +985,6 @@ export default function SettingsScreen() {
               <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
             </View>
           </Pressable>
-
-          {/* High-latitude method — only shown above ~48° where the twilight angle is unreachable */}
-          {isHighLat && (
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); setShowHighLatModal(true); }}
-              style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
-            >
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                  {tr.highLatMethod}
-                </Text>
-                <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
-                  {tr[HL_LABEL_KEY[highLatRule]] as string}
-                </Text>
-              </View>
-              <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
-            </Pressable>
-          )}
-
-          {/* Custom method — user-set Fajr/Isha angles (the general solution for
-              any local variation without Mawaqit claiming authority over fiqh) */}
-          {calcMethod === 'Custom' && (
-            <View style={{ paddingHorizontal: 4 }}>
-              {([
-                { key: 'fajrAngle' as const, label: tr.custom_fajr_angle },
-                { key: 'ishaAngle' as const, label: tr.custom_isha_angle },
-              ]).map(({ key, label }) => (
-                <View key={key} style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center' }]}>
-                  <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>{label}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                    <Pressable onPress={() => { Haptics.selectionAsync(); updateSettings({ customMethod: { ...customMethod, [key]: Math.max(0, Math.round(((customMethod[key] ?? 18) - 0.5) * 2) / 2) } }); }} hitSlop={8}>
-                      <Ionicons name="remove-circle-outline" size={26} color={C.tint} />
-                    </Pressable>
-                    <Text style={{ color: C.text, fontSize: 16, minWidth: 48, textAlign: 'center', fontFamily: SANS }}>{(customMethod[key] ?? 18).toFixed(1)}°</Text>
-                    <Pressable onPress={() => { Haptics.selectionAsync(); updateSettings({ customMethod: { ...customMethod, [key]: Math.min(25, Math.round(((customMethod[key] ?? 18) + 0.5) * 2) / 2) } }); }} hitSlop={8}>
-                      <Ionicons name="add-circle-outline" size={26} color={C.tint} />
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Daylight Saving — one switch whose POSITION is the resolved effective
-              state. In 'auto' it reflects the IANA zone for today (London: on in
-              summer, off in winter) untouched; flipping it pins a manual on/off
-              override (the escape hatch when the map is wrong, e.g. the Hopi
-              Reservation resolving to America/Denver). Applies in every location
-              mode — the zone is resolved from coordinates, GPS included. */}
-          {dstResolved.applicable && (
-            <View style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
-              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                  {tr.dstSetting}
-                </Text>
-                <Switch
-                  value={dstResolved.on}
-                  onValueChange={(v) => { Haptics.selectionAsync(); updateSettings({ dstMode: v ? 'on' : 'off' }); }}
-                  trackColor={{ false: C.separator, true: C.tint + '88' }}
-                  thumbColor={dstResolved.on ? C.tint : C.textMuted}
-                />
-              </View>
-              <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <Text style={{ flex: 1, color: dstResolved.manual ? C.tint : C.textMuted, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }}>
-                  {dstResolved.manual
-                    ? tr.dst_manual
-                    : `${tr.dst_auto} · ${dstResolved.abbrev ? `${dstResolved.abbrev} (${dstResolved.offsetLabel})` : dstResolved.offsetLabel}`}
-                </Text>
-                {dstResolved.manual && (
-                  <Pressable onPress={() => { Haptics.selectionAsync(); updateSettings({ dstMode: 'auto' }); }} hitSlop={8}>
-                    <Text style={{ color: C.tint, fontSize: 12, fontWeight: '600', fontFamily: isRtl ? 'Amiri_400Regular' : SANS }}>{tr.dst_reset_auto}</Text>
-                  </Pressable>
-                )}
-              </View>
-            </View>
-          )}
-
-          {/* High-latitude rule picker modal */}
-          <Modal visible={showHighLatModal} animationType="slide" transparent presentationStyle="pageSheet">
-            <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
-                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>{tr.highLatMethod}</Text>
-                <Pressable onPress={() => setShowHighLatModal(false)}><Ionicons name="close" size={22} color={C.textSecond} /></Pressable>
-              </View>
-              <ScrollView>
-                <Text style={{ color: C.textSecond, fontSize: 13, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, padding: 16, textAlign: isRtl ? 'right' : 'left' }}>
-                  {tr.highLatDesc}
-                </Text>
-                {HIGH_LAT_RULES.map((r) => {
-                  const selected = highLatRule === r;
-                  return (
-                    <Pressable
-                      key={r}
-                      onPress={() => { Haptics.selectionAsync(); updateSettings({ highLatRule: r, highLatSheetSeen: true }); setShowHighLatModal(false); }}
-                      style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
-                    >
-                      <Text style={[styles.settingLabel, { flex: 1, color: selected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                        {tr[HL_LABEL_KEY[r]] as string}
-                      </Text>
-                      {selected && <Ionicons name="checkmark" size={20} color={C.tint} />}
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          </Modal>
 
           {/* Method picker modal */}
           <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">

@@ -22,27 +22,9 @@ export type CalcMethod =
   | 'Turkey'
   | 'France'
   | 'Russia'
-  | 'Moonsighting'
-  | 'Custom';
+  | 'Moonsighting';
 
 export type AsrMethod = 'standard' | 'hanafi';
-
-/** High-latitude rule for Fajr/Isha when the depression angle is unreachable
- *  (persistent twilight above ~48deg). Maps directly to adhan's HighLatitudeRule. */
-export type HighLatRule = 'middle_of_night' | 'seventh_of_night' | 'twilight_angle';
-
-/** User-set parameters for the 'Custom' calculation method. */
-export interface CustomMethodParams {
-  fajrAngle: number;
-  ishaAngle: number;
-  ishaInterval?: number; // if set, Isha is this many minutes after Maghrib (overrides ishaAngle)
-  fajrMins?: number;
-  sunriseMins?: number;
-  dhuhrMins?: number;
-  asrMins?: number;
-  maghribMins?: number;
-  ishaMins?: number;
-}
 
 export interface PrayerTimesParams {
   lat: number;
@@ -54,10 +36,6 @@ export interface PrayerTimesParams {
   /** IANA timezone of the LOCATION. Only used by callers for display (formatTimeInZone);
    *  adhan computes absolute instants for the date's calendar day at the coordinates. */
   timezone?: string | null;
-  /** High-latitude rule (adhan). When omitted, adhan's per-method default applies. */
-  highLatRule?: HighLatRule;
-  /** Parameters for method='Custom' (user-set angles + per-prayer offsets). */
-  customParams?: CustomMethodParams;
 }
 
 export interface PrayerTimes {
@@ -71,20 +49,13 @@ export interface PrayerTimes {
   transit: Date;
 }
 
-type AdhanHighLat = (typeof adhan.HighLatitudeRule)[keyof typeof adhan.HighLatitudeRule];
-const HIGH_LAT_MAP: Record<HighLatRule, AdhanHighLat> = {
-  middle_of_night: adhan.HighLatitudeRule.MiddleOfTheNight,
-  seventh_of_night: adhan.HighLatitudeRule.SeventhOfTheNight,
-  twilight_angle: adhan.HighLatitudeRule.TwilightAngle,
-};
-
 /**
- * Build adhan CalculationParameters for a shipped method. Nine map to adhan's
+ * Build adhan CalculationParameters for a shipped method. Ten map to adhan's
  * native factories; five (Jordan, Algeria, Morocco, France/UOIF, Russia) use
  * CalculationMethod.Other() with parameters sourced from Aladhan's published
- * method list (api.aladhan.com/v1/methods). Custom is fully user-defined.
+ * method list (api.aladhan.com/v1/methods).
  */
-function buildParams(method: CalcMethod, custom?: CustomMethodParams): adhan.CalculationParameters {
+function buildParams(method: CalcMethod): adhan.CalculationParameters {
   const CM = adhan.CalculationMethod;
   switch (method) {
     case 'MWL':           return CM.MuslimWorldLeague();
@@ -107,21 +78,6 @@ function buildParams(method: CalcMethod, custom?: CustomMethodParams): adhan.Cal
     case 'France':  { const p = CM.Other(); p.fajrAngle = 12; p.ishaAngle = 12; return p; }
     // Aladhan 14 - Russia: Fajr 16, Isha 15
     case 'Russia':  { const p = CM.Other(); p.fajrAngle = 16; p.ishaAngle = 15; return p; }
-    case 'Custom': {
-      const p = CM.Other();
-      p.fajrAngle = custom?.fajrAngle ?? 18;
-      if (custom?.ishaInterval) p.ishaInterval = custom.ishaInterval;
-      else p.ishaAngle = custom?.ishaAngle ?? 17;
-      if (custom) {
-        p.methodAdjustments.fajr    = custom.fajrMins    ?? 0;
-        p.methodAdjustments.sunrise = custom.sunriseMins ?? 0;
-        p.methodAdjustments.dhuhr   = custom.dhuhrMins   ?? 0;
-        p.methodAdjustments.asr     = custom.asrMins     ?? 0;
-        p.methodAdjustments.maghrib = custom.maghribMins ?? 0;
-        p.methodAdjustments.isha    = custom.ishaMins    ?? 0;
-      }
-      return p;
-    }
     default: return CM.MuslimWorldLeague();
   }
 }
@@ -144,14 +100,22 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
     method = 'MWL',
     asrMethod = 'standard',
     maghribOffset = 0,
-    highLatRule,
-    customParams,
   } = params;
 
   const coords = new adhan.Coordinates(lat, lng);
-  const p = buildParams(method, customParams);
+  const p = buildParams(method);
   p.madhab = asrMethod === 'hanafi' ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi;
-  if (highLatRule) p.highLatitudeRule = HIGH_LAT_MAP[highLatRule];
+  // High-latitude rule is derived from the METHOD, not a user setting or a country
+  // table. Moonsighting carries its own seasonal high-latitude handling, so leave
+  // adhan's native behaviour (the rule is inert for it). Every other method gets
+  // SeventhOfTheNight: adhan's own default is MiddleOfTheNight, which at London on
+  // 16 Jul collapses both Fajr and Isha onto solar midnight (01:06 / 01:06) —
+  // degenerate. SeventhOfTheNight gives 03:55 / 22:18: Fajr late (the safe direction)
+  // and Isha within ~5 min of the London Unified timetable. This is a fallback for
+  // users who overrode away from the recommended method, not a fiqh claim.
+  if (method !== 'Moonsighting') {
+    p.highLatitudeRule = adhan.HighLatitudeRule.SeventhOfTheNight;
+  }
   // Beyond the polar circle even sunrise/sunset are undefined; resolve to the
   // nearest latitude that has valid times rather than returning NaN.
   p.polarCircleResolution = adhan.PolarCircleResolution.AqrabBalad;

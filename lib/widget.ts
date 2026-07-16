@@ -5,8 +5,6 @@ import {
   type AsrMethod,
   type CalcMethod,
   type PrayerTimes,
-  type HighLatRule,
-  type CustomMethodParams,
 } from '@/lib/prayer-times';
 
 // Per-language abbreviations for each prayer key.
@@ -136,8 +134,6 @@ export function updateWidgetFromParams(params: {
   maghribOffset: number;
   lang: Lang;
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
-  highLatRule?: HighLatRule;
-  customParams?: CustomMethodParams;
   dstShiftMs?: number;
 }): void {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
@@ -154,8 +150,6 @@ export function updateWidgetFromParams(params: {
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
       timezone: params.timezone ?? null,
-      highLatRule: params.highLatRule,
-      customParams: params.customParams,
     });
     const tm = calculatePrayerTimes({
       lat: params.lat,
@@ -165,8 +159,6 @@ export function updateWidgetFromParams(params: {
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
       timezone: params.timezone ?? null,
-      highLatRule: params.highLatRule,
-      customParams: params.customParams,
     });
     const dsh = params.dstShiftMs ?? 0;
     const shift = (pt: PrayerTimes): PrayerTimes => dsh === 0 ? pt : ({

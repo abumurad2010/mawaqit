@@ -368,6 +368,40 @@ for (const [name, lat, lng, zone, dateStr, expect] of [
   }
 }
 
+// 6. DST WARNING fires ONLY on genuine mismatch (a forced on/off disagrees with the
+//    zone's resolved state today), and names the expected value. Mirrors the Settings
+//    subtitle: auto never warns; mismatch(on) = !autoOn; mismatch(off) = autoOn; the
+//    expected label shown is the auto-resolved state, which (when warning) is the
+//    opposite of the forced mode.
+{
+  const mismatch = (mode: 'auto' | 'on' | 'off', autoOn: boolean) =>
+    mode === 'auto' ? false : mode === 'on' ? !autoOn : autoOn;
+  // name, zone, date, autoOn, [warn@auto, warn@on, warn@off]
+  const WCASES: [string, string, string, boolean, [boolean, boolean, boolean]][] = [
+    ['London', 'Europe/London',    '2026-07-16', true,  [false, false, true ]], // BST → off disagrees
+    ['London', 'Europe/London',    '2026-01-15', false, [false, true,  false]], // GMT → on disagrees
+    ['Amman',  'Asia/Amman',       '2026-07-16', false, [false, true,  false]], // no DST → on disagrees
+    ['Amman',  'Asia/Amman',       '2026-01-15', false, [false, true,  false]],
+    ['Sydney', 'Australia/Sydney', '2026-01-15', true,  [false, false, true ]], // southern summer → on
+  ];
+  for (const [name, zone, dateStr, autoOnExp, warnExp] of WCASES) {
+    const { y, m, d } = parseDate(dateStr);
+    const at = new Date(Date.UTC(y, m - 1, d, 12));
+    const autoOn = isDstActive(zone, at) ?? false;
+    if (autoOn !== autoOnExp)
+      fail({ city: name, date: dateStr, mode: 'manual', assertion: 'DST-autoOn', prayer: zone, expected: `${autoOnExp}`, actual: `${autoOn}` });
+    (['auto', 'on', 'off'] as const).forEach((mode, i) => {
+      const warn = mismatch(mode, autoOn);
+      if (warn !== warnExp[i])
+        fail({ city: name, date: dateStr, mode: 'manual', assertion: `DST-warn-${mode}`, prayer: zone, expected: `warn=${warnExp[i]}`, actual: `warn=${warn}` });
+      // when a forced mode warns, the expected (auto-resolved) label is the opposite of the forced mode
+      const expectedLabel = autoOn ? 'on' : 'off';
+      if (mode !== 'auto' && warn && expectedLabel === mode)
+        fail({ city: name, date: dateStr, mode: 'manual', assertion: `DST-warn-expected-${mode}`, prayer: zone, expected: `opposite of ${mode}`, actual: expectedLabel });
+    });
+  }
+}
+
 // ── A10 — legacy dstEnabled has no effect (structural: no consumer in logic) ────
 const ROOT = join(__dirname, '..');
 function scan(rel: string) { try { return readFileSync(join(ROOT, rel), 'utf8'); } catch { return ''; } }

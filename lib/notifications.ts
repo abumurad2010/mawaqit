@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePrayerTimes } from './prayer-times';
-import type { CalcMethod, AsrMethod, HighLatRule, CustomMethodParams } from './prayer-times';
+import type { CalcMethod, AsrMethod } from './prayer-times';
 import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
@@ -158,8 +158,6 @@ export async function scheduleThikrNotifications(params: {
   maghribOffset: number;
   daysAhead?: number;
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
-  highLatRule?: HighLatRule;
-  customParams?: CustomMethodParams;
   dstShiftMs?: number;
   reservedSlots?: number; // notifications already scheduled (iOS budget tracking)
 }) {
@@ -202,8 +200,6 @@ export async function scheduleThikrNotifications(params: {
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
       timezone: params.timezone ?? null,
-      highLatRule: params.highLatRule,
-      customParams: params.customParams,
     });
 
     const _dst = params.dstShiftMs ?? 0;
@@ -285,8 +281,6 @@ export async function schedulePrayerNotifications(params: {
   countryCode?: string | null;
   locationUtcOffset?: number | null;
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
-  highLatRule?: HighLatRule;
-  customParams?: CustomMethodParams;
   dstShiftMs?: number;
   daysAhead?: number;
   dhuhaTime?: string;     // "HH:MM" exact local time
@@ -343,8 +337,6 @@ export async function schedulePrayerNotifications(params: {
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
       timezone: params.timezone ?? null,
-      highLatRule: params.highLatRule,
-      customParams: params.customParams,
     });
 
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;

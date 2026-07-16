@@ -58,7 +58,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, locationTimezone, dstOverrideOffset, highLatRule, customMethod, hijriAdjustment, colors, firstAdhanOffset, fontSize,
+    updateSettings, locationUtcOffset, locationTimezone, dstOverrideOffset, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
     jumuahTime: jumuahTimeSetting,
     showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
@@ -221,8 +221,6 @@ export default function PrayerTimesScreen() {
       asrMethod,
       maghribOffset,
       timezone: locationTimezone,
-      highLatRule,
-      customParams: calcMethod === 'Custom' ? customMethod : undefined,
     });
     setTimes(computed);
   }, [location, viewingDate, calcMethod, asrMethod, maghribOffset, locationTimezone]);
@@ -244,8 +242,6 @@ export default function PrayerTimesScreen() {
       asrMethod,
       maghribOffset,
       timezone: locationTimezone,
-      highLatRule,
-      customParams: calcMethod === 'Custom' ? customMethod : undefined,
     });
     return result;
   // _todayKey changes at local midnight, ensuring the memo refreshes for the new day
@@ -322,8 +318,6 @@ export default function PrayerTimesScreen() {
         lat: location.lat, lng: location.lng,
         date: d, method: calcMethod, asrMethod, maghribOffset,
         timezone: locationTimezone,
-      highLatRule,
-      customParams: calcMethod === 'Custom' ? customMethod : undefined,
       });
       return t.fajr;
     });
