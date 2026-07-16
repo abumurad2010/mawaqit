@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, ZoomIn, FadeIn, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -1628,6 +1629,11 @@ function SwipeableReader(props: SwipeableReaderProps) {
   } = props;
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  // The tab bar is position:'absolute' with a translucent BlurView, so this reader
+  // renders BEHIND it. useBottomTabBarHeight() gives the full bar height (tab bar +
+  // home-indicator inset) so the bottom action row clears it — insets.bottom alone
+  // (the home indicator only) left the skip-to-complete button half-hidden.
+  const tabBarHeight = useBottomTabBarHeight();
   const trContent = t(athkarLang);
   const cardFS = FONT_STEPS[athkarFontSize];
   const listRef = useRef<FlatList<SwipePage>>(null);
@@ -1788,8 +1794,6 @@ function SwipeableReader(props: SwipeableReaderProps) {
             renderItem={({ item: page, index }) => {
               const isHighlighted = searchHighlightIndex === index && !!searchHighlightQuery;
               const transliterationVisible = !transliterationCollapsed[page.key];
-              const showDoneButton = page.required > 3 && !page.done;
-
               return (
                 <View style={{ width: screenWidth, paddingHorizontal: 20 }}>
                   <View style={{ alignItems: 'center', paddingTop: 16 }}>
@@ -1935,7 +1939,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
           />
 
           {/* Bottom counter + arrows row */}
-          <View style={{ paddingHorizontal: 16, paddingBottom: bottomInset + 12, paddingTop: 6, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: tabBarHeight + 12, paddingTop: 6, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Pressable
               onPress={goPrev}
               disabled={currentIndex === 0}
@@ -1971,7 +1975,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
                       {pages[currentIndex]!.current}/{pages[currentIndex]!.required}
                     </Text>
                   </Pressable>
-                  {pages[currentIndex]!.required > 3 && !pages[currentIndex]!.done && (
+                  {pages[currentIndex]!.required > 7 && !pages[currentIndex]!.done && (
                     <Pressable
                       onPress={() => onDone(pages[currentIndex]!)}
                       style={({ pressed }) => ({
