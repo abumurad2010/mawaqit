@@ -203,6 +203,14 @@ for (const fx of CITIES) {
       }
       pass.A3 = mono;
 
+      // A3b — Dhuhr MUST fall strictly after true solar transit (never at/before the
+      // meridian, a forbidden prayer time). Enforced every city × date × mode.
+      pass.A3b = times.dhuhr.getTime() > times.transit.getTime();
+      if (!pass.A3b) {
+        fail({ city: fx.name, date: dateStr, mode, assertion: 'A3b-dhuhr-after-transit', prayer: 'dhuhr',
+          expected: `> transit ${times.transit.toISOString().slice(11, 19)}Z`, actual: `${times.dhuhr.toISOString().slice(11, 19)}Z` });
+      }
+
       // A4 — same-day sanity. fajr..maghrib on the queried day (in location zone);
       // isha within 6h after maghrib (may cross midnight). At |lat|>60 near solstice
       // even sunset legitimately crosses midnight, so allow maghrib on D or early D+1.
@@ -296,7 +304,7 @@ let a10Parse = false;
 try { const s = JSON.parse('{"dstEnabled":true,"calcMethod":"MWL"}'); a10Parse = s.dstEnabled === true; } catch {}
 
 // ══ REPORT ══════════════════════════════════════════════════════════════════════
-const ASSERTIONS = ['A1', 'A2', 'A3', 'A4', 'A5', 'A8', 'A9'];
+const ASSERTIONS = ['A1', 'A2', 'A3', 'A3b', 'A4', 'A5', 'A8', 'A9'];
 console.log('\n================ AUDIT MATRIX (city × date × mode) ================');
 console.log('city         date        mode    ' + ASSERTIONS.join('  '));
 for (const r of rows) {
