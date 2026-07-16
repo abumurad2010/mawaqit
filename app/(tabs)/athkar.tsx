@@ -31,6 +31,7 @@ const GRID_ORDER_KEY = 'athkar_grid_order';
 const GRID_REORDER_HINT_KEY = 'athkar_grid_reorder_hint_shown';
 const THIKR_READER_HINT_KEY = 'athkar_thikr_reader_hint_shown';
 const THIKR_GROUP_HINT_KEY = 'athkar_thikr_group_hint_shown';
+const TAP_COUNT_HINT_KEY = 'athkar_tap_count_hint_shown';
 // Per-category tap-progress + reader position: { date, counts, position }.
 const PROGRESS_KEY_PREFIX = 'athkar_progress_';
 
@@ -399,6 +400,7 @@ export default function AthkarScreen() {
   const [copyHintShown, setCopyHintShown] = useState(true);
   const [thikrReaderHintShown, setThikrReaderHintShown] = useState(true);
   const [thikrGroupHintShown, setThikrGroupHintShown] = useState(true);
+  const [tapCountHintShown, setTapCountHintShown] = useState(true);
   const [gridOrder, setGridOrder] = useState<string[]>([]);
   const [gridReorderHintShown, setGridReorderHintShown] = useState(true);
   const [displayMode, setDisplayMode] = useState<'arabic' | 'full'>(
@@ -476,6 +478,9 @@ export default function AthkarScreen() {
     }).catch(() => {});
     AsyncStorage.getItem(THIKR_GROUP_HINT_KEY).then(val => {
       setThikrGroupHintShown(val === 'true');
+    }).catch(() => {});
+    AsyncStorage.getItem(TAP_COUNT_HINT_KEY).then(val => {
+      setTapCountHintShown(val === 'true');
     }).catch(() => {});
     AsyncStorage.getItem(GRID_ORDER_KEY).then(raw => {
       if (raw) setGridOrder(JSON.parse(raw));
@@ -702,6 +707,11 @@ export default function AthkarScreen() {
     AsyncStorage.setItem(FAV_HINT_KEY, 'true').catch(() => {});
   }, []);
 
+  const dismissTapCountHint = useCallback(() => {
+    setTapCountHintShown(true);
+    AsyncStorage.setItem(TAP_COUNT_HINT_KEY, 'true').catch(() => {});
+  }, []);
+
   return (
     <View style={{ flex: 1 }}>
       {showPersonalReader ? (
@@ -744,6 +754,8 @@ export default function AthkarScreen() {
           highlightQuery={highlightQuery}
           restoredPosition={restoredPosition}
           onPositionChange={handlePositionChange}
+          tapCountHintShown={tapCountHintShown}
+          onTapCountHintDismiss={dismissTapCountHint}
           userCatItems={userCatItems[selectedCategory.id] ?? []}
           onUserCatItemsSave={(items) => saveUserCatItems(selectedCategory.id, items)}
           copyHintShown={copyHintShown}
@@ -1630,6 +1642,8 @@ interface ReaderProps {
   highlightQuery?: string;
   restoredPosition?: number;
   onPositionChange?: (index: number) => void;
+  tapCountHintShown?: boolean;
+  onTapCountHintDismiss?: () => void;
   userCatItems: PersonalThikrItem[];
   onUserCatItemsSave: (items: PersonalThikrItem[]) => void;
   copyHintShown: boolean;
@@ -1670,6 +1684,9 @@ interface SwipeableReaderProps {
   searchHighlightQuery?: string;
   /** Notified when the reader page changes, so the parent can persist position. */
   onPositionChange?: (index: number) => void;
+  /** One-time "tap the text to count" hint: shown until the first tap. */
+  tapCountHintShown?: boolean;
+  onTapCountHintDismiss?: () => void;
   /** Custom title for the header chips/back row. */
   showLangToggleInHeader?: boolean;
 }
@@ -1700,6 +1717,8 @@ function SwipeableReader(props: SwipeableReaderProps) {
     searchHighlightIndex = -1,
     searchHighlightQuery = '',
     onPositionChange,
+    tapCountHintShown = true,
+    onTapCountHintDismiss,
     showLangToggleInHeader = true,
   } = props;
 
@@ -1891,8 +1910,11 @@ function SwipeableReader(props: SwipeableReaderProps) {
                     contentContainerStyle={{ paddingBottom: bottomInset + 24, alignItems: 'stretch' }}
                     showsVerticalScrollIndicator={false}
                   >
-                    {/* Arabic — large, centered, long-press to copy */}
+                    {/* Arabic — large, centered. TAP to count (increments this thikr),
+                        long-press to copy. The count logic (increment → mark done →
+                        auto-advance) lives in the parent onTap; reused here, not forked. */}
                     <Pressable
+                      onPress={() => { onTap(page); if (!tapCountHintShown) onTapCountHintDismiss?.(); }}
                       onLongPress={() => handleCopy(page.arabic)}
                       delayLongPress={350}
                       style={({ pressed }) => ({
@@ -1900,11 +1922,11 @@ function SwipeableReader(props: SwipeableReaderProps) {
                         borderRadius: 18,
                         backgroundColor: isHighlighted
                           ? C.tint + '18'
-                          : page.done ? C.tint + '12' : C.backgroundCard,
-                        borderWidth: StyleSheet.hairlineWidth,
+                          : page.done ? C.tint + '12' : (pressed ? C.tint + '14' : C.backgroundCard),
+                        borderWidth: pressed ? 1 : StyleSheet.hairlineWidth,
                         borderColor: isHighlighted ? C.tint + '88'
-                          : page.done ? C.tint + '55' : C.separator,
-                        opacity: pressed ? 0.95 : 1,
+                          : page.done ? C.tint + '55' : (pressed ? C.tint : C.separator),
+                        transform: [{ scale: pressed ? 0.985 : 1 }],
                       })}
                     >
                       <Text
@@ -2038,24 +2060,33 @@ function SwipeableReader(props: SwipeableReaderProps) {
             <View style={{ flex: 1, alignItems: 'center', gap: 6 }}>
               {pages[currentIndex] && (
                 <>
-                  <Pressable
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onTap(pages[currentIndex]!); }}
-                    style={({ pressed }) => ({
+                  {/* One-time hint that the Arabic itself is the tap target. */}
+                  {!tapCountHintShown && !pages[currentIndex]!.done && (
+                    <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="hand-left-outline" size={12} color={C.tint} />
+                      <Text style={{ fontSize: 11, color: C.tint, fontFamily: isRtl ? 'Amiri_400Regular' : 'Inter_600SemiBold' }}>
+                        {tr.thikr_tap_count_hint}
+                      </Text>
+                    </View>
+                  )}
+                  {/* Passive count readout — current/required. NOT a tap target:
+                      counting happens by tapping the Arabic thikr itself. */}
+                  <View
+                    style={{
                       paddingHorizontal: 24,
                       paddingVertical: 12,
                       borderRadius: 999,
                       borderWidth: 2,
                       borderColor: pages[currentIndex]!.done ? C.tint : C.separator,
                       backgroundColor: pages[currentIndex]!.done ? C.tint : C.backgroundCard,
-                      opacity: pressed ? 0.85 : 1,
                       minWidth: 130,
                       alignItems: 'center',
-                    })}
+                    }}
                   >
                     <Text style={{ fontSize: 22, fontWeight: '800', fontFamily: 'Inter_700Bold', color: pages[currentIndex]!.done ? C.tintText : C.text }}>
                       {pages[currentIndex]!.current}/{pages[currentIndex]!.required}
                     </Text>
-                  </Pressable>
+                  </View>
                   {pages[currentIndex]!.required > 7 && !pages[currentIndex]!.done && (
                     <Pressable
                       onPress={() => onDone(pages[currentIndex]!)}
@@ -2114,6 +2145,7 @@ function ReaderScreen({
   displayMode, athkarLang, athkarFontSize,
   highlightIdx = -1, highlightQuery = '',
   restoredPosition = 0, onPositionChange,
+  tapCountHintShown = true, onTapCountHintDismiss,
   userCatItems, onUserCatItemsSave,
 }: ReaderProps) {
   // The MEANING follows the app UI language (lang) — decoupled from athkarLang,
@@ -2298,6 +2330,8 @@ function ReaderScreen({
         initialIndex={initialIndex}
         searchHighlightIndex={searchIndex}
         onPositionChange={onPositionChange}
+        tapCountHintShown={tapCountHintShown}
+        onTapCountHintDismiss={onTapCountHintDismiss}
         searchHighlightQuery={highlightQuery}
       />
 
