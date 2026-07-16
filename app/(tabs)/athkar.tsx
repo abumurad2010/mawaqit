@@ -31,8 +31,8 @@ const GRID_ORDER_KEY = 'athkar_grid_order';
 const GRID_REORDER_HINT_KEY = 'athkar_grid_reorder_hint_shown';
 const THIKR_READER_HINT_KEY = 'athkar_thikr_reader_hint_shown';
 const THIKR_GROUP_HINT_KEY = 'athkar_thikr_group_hint_shown';
-const THIKR_ORDER_KEY_PREFIX = 'thikr_order_';
-const THIKR_UNIFIED_ORDER_KEY_PREFIX = 'thikr_unified_order_';
+// Per-category tap-progress + reader position: { date, counts, position }.
+const PROGRESS_KEY_PREFIX = 'athkar_progress_';
 
 interface PersonalThikrItem {
   id: string;
@@ -60,8 +60,22 @@ const FONT_STEPS: Record<AthkarFontSize, { tile: number; arabic: number; transli
 };
 
 
-function getKey(catId: string, idx: number) {
-  return `${catId}_${idx}`;
+// Stable, insertion-proof progress key for a built-in thikr. Hashes the immutable
+// Arabic text + translationKey rather than the array INDEX, so adding adhkar to a
+// category never shifts indices and never misattributes saved counts. (Favourites,
+// grid order and personal athkar key on category id and stay insertion-safe — untouched.)
+function hashStr(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+function thikrKey(catId: string, thikr: Thikr): string {
+  return `${catId}_${hashStr(`${thikr.arabic}\u0000${thikr.translationKey}`)}`;
+}
+
+/** Local calendar-date key (device midnight boundary) for the daily reset. */
+function localDateKey(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
 
 // Must mirror stripArabicDiacritics in quran-api.ts — same regex for consistent search/highlight.
@@ -398,6 +412,34 @@ export default function AthkarScreen() {
   const readerRef = useRef<FlatList<Thikr>>(null);
   const pendingAdvance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Progress persistence (tap counts + reader position, per category) ─────────
+  // Position (currentIndex) lives inside SwipeableReader; the parent mirrors the
+  // latest via positionRef so a save always writes both fields together.
+  const [restoredPosition, setRestoredPosition] = useState(0);
+  const positionRef = useRef(0);
+  const countsRef = useRef<Record<string, number>>({});
+  const selectedCategoryRef = useRef<AthkarCategory | null>(null);
+  const suppressPersistRef = useRef(false);
+  useEffect(() => { countsRef.current = counts; }, [counts]);
+  useEffect(() => { selectedCategoryRef.current = selectedCategory; }, [selectedCategory]);
+  const saveProgress = useCallback((catId: string, cnts: Record<string, number>, position: number) => {
+    const rec = { date: localDateKey(), counts: cnts, position };
+    AsyncStorage.setItem(PROGRESS_KEY_PREFIX + catId, JSON.stringify(rec)).catch(() => {});
+  }, []);
+  // Persist whenever counts change while a category is open. Skipped once right
+  // after a load (suppressPersistRef) so restoring never rewrites, and skipped
+  // when no category is open so closeCategory's setCounts({}) can't wipe storage.
+  useEffect(() => {
+    if (!selectedCategory) return;
+    if (suppressPersistRef.current) { suppressPersistRef.current = false; return; }
+    saveProgress(selectedCategory.id, counts, positionRef.current);
+  }, [counts, selectedCategory, saveProgress]);
+  const handlePositionChange = useCallback((index: number) => {
+    positionRef.current = index;
+    const cat = selectedCategoryRef.current;
+    if (cat) saveProgress(cat.id, countsRef.current, index);
+  }, [saveProgress]);
+
   // Reset to category list when tab icon is pressed while already on this tab
   useLayoutEffect(() => {
     const unsubscribe = (navigation as any).addListener('tabPress', () => {
@@ -551,7 +593,33 @@ export default function AthkarScreen() {
     setHighlightThikrIdx(hlIdx ?? -1);
     setHighlightQuery(hlQuery ?? '');
     setSelectedCategory(cat);
+    // Clear synchronously (suppress the resulting persist), then load saved progress.
+    suppressPersistRef.current = true;
     setCounts({});
+    positionRef.current = 0;
+    setRestoredPosition(0);
+    AsyncStorage.getItem(PROGRESS_KEY_PREFIX + cat.id).then(raw => {
+      let loadedCounts: Record<string, number> = {};
+      let loadedPos = 0;
+      if (raw) {
+        try {
+          const rec = JSON.parse(raw);
+          // Morning/evening athkar are day-bound: yesterday's completions must not
+          // count today. Boundary = device local midnight (localDateKey) — chosen
+          // over a Fajr boundary so athkar stays decoupled from prayer-times/location
+          // and the reset is predictable. Other categories persist indefinitely.
+          const isDaily = cat.id === 'morning' || cat.id === 'evening';
+          if (!isDaily || rec.date === localDateKey()) {
+            loadedCounts = rec.counts ?? {};
+            loadedPos = typeof rec.position === 'number' ? rec.position : 0;
+          }
+        } catch { /* corrupt record → fresh start */ }
+      }
+      suppressPersistRef.current = true;   // restoring must not rewrite
+      setCounts(loadedCounts);
+      positionRef.current = loadedPos;
+      setRestoredPosition(loadedPos);
+    }).catch(() => {});
     AsyncStorage.getItem(USER_CAT_KEY_PREFIX + cat.id).then(raw => {
       if (raw) setUserCatItems(prev => ({ ...prev, [cat.id]: JSON.parse(raw) }));
     }).catch(() => {});
@@ -577,7 +645,7 @@ export default function AthkarScreen() {
   }, []);
 
   const handleTap = useCallback((cat: AthkarCategory, thikr: Thikr, idx: number) => {
-    const key = getKey(cat.id, idx);
+    const key = thikrKey(cat.id, thikr);
     setCounts(prev => {
       const cur = prev[key] ?? 0;
       if (cur >= thikr.count) return prev;
@@ -588,7 +656,7 @@ export default function AthkarScreen() {
         pendingAdvance.current = setTimeout(() => {
           const nextIncompleteIdx = cat.adhkar.findIndex((d, i) => {
             if (i <= idx) return false;
-            const k = getKey(cat.id, i);
+            const k = thikrKey(cat.id, d);
             return (prev[k] ?? 0) < d.count;
           });
           if (nextIncompleteIdx !== -1) {
@@ -600,24 +668,24 @@ export default function AthkarScreen() {
     });
   }, []);
 
-  const getCount = useCallback((catId: string, idx: number) => {
-    return counts[getKey(catId, idx)] ?? 0;
+  const getCount = useCallback((catId: string, thikr: Thikr) => {
+    return counts[thikrKey(catId, thikr)] ?? 0;
   }, [counts]);
 
-  const isDone = useCallback((catId: string, idx: number, required: number) => {
-    return (counts[getKey(catId, idx)] ?? 0) >= required;
+  const isDone = useCallback((catId: string, thikr: Thikr, required: number) => {
+    return (counts[thikrKey(catId, thikr)] ?? 0) >= required;
   }, [counts]);
 
   const handleDone = useCallback((cat: AthkarCategory, thikr: Thikr, idx: number) => {
     if (pendingAdvance.current) clearTimeout(pendingAdvance.current);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setCounts(prev => {
-      const key = getKey(cat.id, idx);
+      const key = thikrKey(cat.id, thikr);
       if ((prev[key] ?? 0) >= thikr.count) return prev;
       const updated = { ...prev, [key]: thikr.count };
       const nextIncompleteIdx = cat.adhkar.findIndex((d, i) => {
         if (i <= idx) return false;
-        const k = getKey(cat.id, i);
+        const k = thikrKey(cat.id, d);
         return (updated[k] ?? 0) < d.count;
       });
       if (nextIncompleteIdx !== -1) {
@@ -674,6 +742,8 @@ export default function AthkarScreen() {
           athkarFontSize={athkarFontSize}
           highlightIdx={highlightThikrIdx}
           highlightQuery={highlightQuery}
+          restoredPosition={restoredPosition}
+          onPositionChange={handlePositionChange}
           userCatItems={userCatItems[selectedCategory.id] ?? []}
           onUserCatItemsSave={(items) => saveUserCatItems(selectedCategory.id, items)}
           copyHintShown={copyHintShown}
@@ -1547,8 +1617,8 @@ interface ReaderProps {
   bottomInset: number;
   readerRef: React.RefObject<FlatList<Thikr> | null>;
   counts: Record<string, number>;
-  getCount: (catId: string, idx: number) => number;
-  isDone: (catId: string, idx: number, required: number) => boolean;
+  getCount: (catId: string, thikr: Thikr) => number;
+  isDone: (catId: string, thikr: Thikr, required: number) => boolean;
   onTap: (cat: AthkarCategory, thikr: Thikr, idx: number) => void;
   onDone: (cat: AthkarCategory, thikr: Thikr, idx: number) => void;
   onBack: () => void;
@@ -1558,6 +1628,8 @@ interface ReaderProps {
   athkarFontSize: AthkarFontSize;
   highlightIdx?: number;
   highlightQuery?: string;
+  restoredPosition?: number;
+  onPositionChange?: (index: number) => void;
   userCatItems: PersonalThikrItem[];
   onUserCatItemsSave: (items: PersonalThikrItem[]) => void;
   copyHintShown: boolean;
@@ -1596,6 +1668,8 @@ interface SwipeableReaderProps {
   initialIndex?: number;
   searchHighlightIndex?: number;
   searchHighlightQuery?: string;
+  /** Notified when the reader page changes, so the parent can persist position. */
+  onPositionChange?: (index: number) => void;
   /** Custom title for the header chips/back row. */
   showLangToggleInHeader?: boolean;
 }
@@ -1625,6 +1699,7 @@ function SwipeableReader(props: SwipeableReaderProps) {
     initialIndex = 0,
     searchHighlightIndex = -1,
     searchHighlightQuery = '',
+    onPositionChange,
     showLangToggleInHeader = true,
   } = props;
 
@@ -1639,6 +1714,12 @@ function SwipeableReader(props: SwipeableReaderProps) {
   const listRef = useRef<FlatList<SwipePage>>(null);
   const [currentIndex, setCurrentIndex] = useState(Math.max(0, Math.min(initialIndex, pages.length - 1)));
   const [transliterationCollapsed, setTransliterationCollapsed] = useState<Record<string, boolean>>({});
+
+  // Notify the parent when the page changes so it can persist the position.
+  // Via a ref so a changing callback identity doesn't refire on every render.
+  const onPosRef = useRef(onPositionChange);
+  useEffect(() => { onPosRef.current = onPositionChange; });
+  useEffect(() => { onPosRef.current?.(currentIndex); }, [currentIndex]);
 
   // Toast for copy feedback.
   const [toastVisible, setToastVisible] = useState(false);
@@ -2032,6 +2113,7 @@ function ReaderScreen({
   counts, getCount, isDone, onTap, onDone, onBack, onReset,
   displayMode, athkarLang, athkarFontSize,
   highlightIdx = -1, highlightQuery = '',
+  restoredPosition = 0, onPositionChange,
   userCatItems, onUserCatItemsSave,
 }: ReaderProps) {
   const athkarRtl = isRtlLang(athkarLang);
@@ -2104,8 +2186,8 @@ function ReaderScreen({
   const pages: SwipePage[] = useMemo(() => {
     const builtin: SwipePage[] = category.adhkar.map((thikr, i) => {
       const required = thikr.count;
-      const current = Math.min(getCount(category.id, i), required);
-      const done = isDone(category.id, i, required);
+      const current = Math.min(getCount(category.id, thikr), required);
+      const done = isDone(category.id, thikr, required);
       const translation = (i18n[athkarLang] as any)?.[thikr.translationKey] ?? '';
       return {
         key: `b-${i}`,
@@ -2170,10 +2252,15 @@ function ReaderScreen({
   const catNameRtl = displayMode === 'arabic' || isRtlLang(athkarLang);
 
   // Map a search highlight catalog index → corresponding builtin page index.
-  const initialIndex = useMemo(() => {
-    if (highlightIdx < 0) return 0;
+  // Search highlight target (>=0 only while searching). When not searching, open
+  // at the restored reader position instead.
+  const searchIndex = useMemo(() => {
+    if (highlightIdx < 0) return -1;
     return pages.findIndex(p => p.builtinIndex === highlightIdx);
   }, [highlightIdx, pages]);
+  const initialIndex = searchIndex >= 0
+    ? searchIndex
+    : Math.max(0, Math.min(restoredPosition, pages.length - 1));
 
   return (
     <>
@@ -2196,8 +2283,9 @@ function ReaderScreen({
         athkarLang={athkarLang}
         athkarFontSize={athkarFontSize}
         displayMode={displayMode}
-        initialIndex={initialIndex >= 0 ? initialIndex : 0}
-        searchHighlightIndex={initialIndex >= 0 ? initialIndex : -1}
+        initialIndex={initialIndex}
+        searchHighlightIndex={searchIndex}
+        onPositionChange={onPositionChange}
         searchHighlightQuery={highlightQuery}
       />
 
