@@ -66,5 +66,5 @@ export function getMethodForCountry(countryCode: string | null): CalcMethod {
 export const ALL_CALC_METHODS: CalcMethod[] = [
   'MWL', 'ISNA', 'Egypt', 'MakkahUmmQura', 'Karachi',
   'Jordan', 'Kuwait', 'Qatar', 'Algeria', 'Morocco',
-  'Singapore', 'Turkey', 'France', 'Russia',
+  'Singapore', 'Turkey', 'France', 'Russia', 'Custom',
 ];
