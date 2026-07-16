@@ -16,7 +16,7 @@ import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
-import { ALL_CALC_METHODS, getMethodForCountry } from '@/lib/method-by-country';
+import { ALL_CALC_METHODS, getRecommendedMethod } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import { scheduleTestNotification } from '@/lib/notifications';
 import { getPreviousTab } from '@/lib/prev-tab';
@@ -41,9 +41,9 @@ export default function SettingsScreen() {
     updateSettings,
   } = useApp();
   const isHighLat = !!location && Math.abs(location.lat) > 48;
-  const HIGH_LAT_RULES = ['angle_based', 'middle_of_night', 'one_seventh', 'fixed_interval'] as const;
+  const HIGH_LAT_RULES = ['middle_of_night', 'seventh_of_night', 'twilight_angle'] as const;
   const HL_LABEL_KEY: Record<string, keyof typeof tr> = {
-    angle_based: 'hl_angle', middle_of_night: 'hl_middle', one_seventh: 'hl_seventh', fixed_interval: 'hl_fixed',
+    middle_of_night: 'hl_middle', seventh_of_night: 'hl_seventh', twilight_angle: 'hl_angle',
   };
   const [showHighLatModal, setShowHighLatModal] = useState(false);
   const C = colors;
@@ -419,7 +419,7 @@ export default function SettingsScreen() {
     Alert.alert(title, body);
   };
 
-  const recommendedMethod = getMethodForCountry(countryCode);
+  const recommendedMethod = getRecommendedMethod(countryCode, location?.lat ?? null);
 
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -496,6 +496,7 @@ export default function SettingsScreen() {
 
     updateSettings({
       calcMethod: draftCalcMethod,
+      calcMethodAuto: false, // saving Settings locks the chosen method as explicit
       asrMethod: draftAsrMethod,
       hijriAdjustment: draftHijri,
       prayerNotifications: finalNotifications,

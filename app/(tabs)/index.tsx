@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { SERIF_EN } from '@/constants/typography';
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  Platform, Image, PanResponder, AppState, Modal,
+  Platform, Image, PanResponder, AppState,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -58,7 +58,7 @@ export default function PrayerTimesScreen() {
   const {
     isDark, lang, calcMethod, asrMethod, maghribOffset,
     locationMode, manualLocation, location, setLocation,
-    updateSettings, locationUtcOffset, locationTimezone, highLatRule, customMethod, highLatSheetSeen, hijriAdjustment, colors, firstAdhanOffset, fontSize,
+    updateSettings, locationUtcOffset, locationTimezone, highLatRule, customMethod, hijriAdjustment, colors, firstAdhanOffset, fontSize,
     dhuhaTime: dhuhaTimeSetting, tahajjudTime: tahajjudTimeSetting,
     jumuahTime: jumuahTimeSetting,
     showDhuha, showQiyam, eidPrayerTime: eidPrayerTimeSetting,
@@ -932,39 +932,6 @@ export default function PrayerTimesScreen() {
 
       <LocationModal visible={showManual} onClose={() => setShowManual(false)} />
 
-      {/* One-time high-latitude explainer — shown above ~48° so the user chooses a
-          Fajr/Isha rule rather than having one silently applied. */}
-      <Modal
-        visible={!!location && Math.abs(location.lat) > 48 && !highLatSheetSeen}
-        animationType="fade"
-        transparent
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: C.backgroundCard, borderRadius: 16, padding: 20, gap: 12 }}>
-            <Text style={{ color: C.text, fontSize: 18, fontWeight: '700', fontFamily: isAr ? 'Amiri_700Bold' : SERIF_EN, textAlign: isAr ? 'right' : 'left', writingDirection: isAr ? 'rtl' : 'ltr' }}>
-              {tr.hl_sheet_title}
-            </Text>
-            <Text style={{ color: C.textSecond, fontSize: 14, lineHeight: 20, fontFamily: isAr ? 'Amiri_400Regular' : undefined, textAlign: isAr ? 'right' : 'left', writingDirection: isAr ? 'rtl' : 'ltr' }}>
-              {tr.hl_sheet_body}
-            </Text>
-            {(['angle_based', 'middle_of_night', 'one_seventh', 'fixed_interval'] as const).map(r => {
-              const labelKey = { angle_based: 'hl_angle', middle_of_night: 'hl_middle', one_seventh: 'hl_seventh', fixed_interval: 'hl_fixed' }[r] as keyof typeof tr;
-              const selected = highLatRule === r;
-              return (
-                <Pressable
-                  key={r}
-                  onPress={() => { Haptics.selectionAsync(); updateSettings({ highLatRule: r, highLatSheetSeen: true }); }}
-                  style={{ flexDirection: isAr ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }}
-                >
-                  <Text style={{ color: selected ? C.tint : C.text, fontSize: 15, fontFamily: isAr ? 'Amiri_400Regular' : undefined }}>
-                    {tr[labelKey] as string}{selected ? '  ✓' : ''}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

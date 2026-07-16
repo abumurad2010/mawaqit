@@ -17,6 +17,7 @@ import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { BUNDLED_LANGS, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import { getMaghribOffset, DEFAULT_OFFSET } from '@/lib/maghrib-offsets';
+import { getRecommendedMethod } from '@/lib/method-by-country';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications, cancelThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
 import type { AccessibilityTheme, ColorPalette } from '@/constants/colors';
@@ -80,6 +81,9 @@ interface AppSettings {
   themeMode: 'auto' | 'light' | 'dark';
   accessibilityTheme: AccessibilityTheme;
   calcMethod: CalcMethod;
+  /** When true, calcMethod follows the location recommendation (getRecommendedMethod);
+   *  set false the moment the user picks a method explicitly. */
+  calcMethodAuto: boolean;
   asrMethod: AsrMethod;
   /** High-latitude rule for Fajr/Isha when the depression angle is unreachable. */
   highLatRule: HighLatRule;
@@ -153,8 +157,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   themeMode: 'dark',
   accessibilityTheme: 'default',
   calcMethod: 'MWL',
+  calcMethodAuto: true,
   asrMethod: 'standard',
-  highLatRule: 'one_seventh',
+  highLatRule: 'seventh_of_night',
   customMethod: { fajrAngle: 18, ishaAngle: 17 },
   highLatSheetSeen: false,
   locationMode: 'auto',
@@ -291,6 +296,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const maghribBase = getMaghribOffset(effectiveCountryCode);
   const maghribOffset = maghribBase + maghribUserAdj;
+
+  // Effective method: follows the location recommendation (Moonsighting for the UK
+  // and above ~48°) until the user picks one explicitly (calcMethodAuto → false).
+  const effectiveCalcMethod: CalcMethod = settings.calcMethodAuto
+    ? getRecommendedMethod(effectiveCountryCode, effectiveLocation?.lat ?? null)
+    : settings.calcMethod;
 
   // For a MANUAL location we resolve the real IANA timezone from its coordinates
   // (tz-lookup, fully offline). GPS/auto mode stays null — the device is
@@ -504,6 +515,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppContextValue>(
     () => ({
       ...settings,
+      calcMethod: effectiveCalcMethod, // override raw setting with the location-aware effective method
       isDark,
       isRtl,
       colors,
@@ -533,7 +545,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       quranNavTarget,
       setQuranNavTarget,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, locationUtcOffset, locationTimezone, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, effectiveCalcMethod, locationUtcOffset, locationTimezone, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
   );
 
   if (!loaded) return null;
