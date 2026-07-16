@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
-import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import type { CalcMethod, AsrMethod, HighLatRule, CustomMethodParams } from '@/lib/prayer-times';
 import { zoneOffsetHours } from '@/lib/prayer-times';
 import tzlookup from 'tz-lookup'; // types provided by types/tz-lookup.d.ts
 import { updateWidgetFromParams } from '@/lib/widget';
@@ -81,6 +81,12 @@ interface AppSettings {
   accessibilityTheme: AccessibilityTheme;
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
+  /** High-latitude rule for Fajr/Isha when the depression angle is unreachable. */
+  highLatRule: HighLatRule;
+  /** User-set parameters for the 'Custom' calculation method. */
+  customMethod: CustomMethodParams;
+  /** Whether the one-time high-latitude explainer sheet has been shown. */
+  highLatSheetSeen: boolean;
   locationMode: 'auto' | 'manual';
   manualLocation: LocationData | null;
   fontSize: 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
@@ -148,6 +154,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   accessibilityTheme: 'default',
   calcMethod: 'MWL',
   asrMethod: 'standard',
+  highLatRule: 'one_seventh',
+  customMethod: { fajrAngle: 18, ishaAngle: 17 },
+  highLatSheetSeen: false,
   locationMode: 'auto',
   manualLocation: null,
   fontSize: 'medium',
@@ -333,7 +342,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('[Notifications] rescheduleAll skipped — effectiveLocation is null');
       return;
     }
-    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled } = settings;
+    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled, highLatRule } = settings;
+    const customParams = calcMethod === 'Custom' ? settings.customMethod : undefined;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
     console.log(`[Notifications] rescheduleAll triggered — hasAny=${hasAny} thikrEnabled=${thikrRemindersEnabled} location=${effectiveLocation.lat.toFixed(3)},${effectiveLocation.lng.toFixed(3)}`);
 
@@ -358,6 +368,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             prePrayerReminder: settings.prePrayerReminder ?? 0,
             jumuahTime: settings.jumuahTime ?? null,
             timezone: locationTimezone,
+            highLatRule,
+            customParams,
           });
         } else {
           await cancelAllPrayerNotifications();
@@ -371,6 +383,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             asrMethod,
             maghribOffset,
             timezone: locationTimezone,
+            highLatRule,
+            customParams,
             reservedSlots: prayerCount,
           });
         } else {
@@ -390,12 +404,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           maghribOffset,
           lang,
           timezone: locationTimezone,
+          highLatRule,
+          customParams,
         });
       } catch { /* non-critical */ }
     };
 
     rescheduleAll();
-  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime]);
+  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, settings.highLatRule, settings.customMethod]);
 
   // Date-rollover watcher: while the app stays open across midnight, push a
   // fresh widget timeline so "today" rolls to the next calendar day.
@@ -411,6 +427,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           maghribOffset,
           lang: settings.lang,
           timezone: locationTimezone,
+          highLatRule: settings.highLatRule,
+          customParams: settings.calcMethod === 'Custom' ? settings.customMethod : undefined,
         });
       } catch { /* non-critical */ }
     };
@@ -421,7 +439,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const msUntilMidnight = tomorrow.getTime() - now.getTime();
     const timeoutId = setTimeout(tick, msUntilMidnight);
     return () => clearTimeout(timeoutId);
-  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone]);
+  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, settings.highLatRule, settings.customMethod]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };

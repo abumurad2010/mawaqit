@@ -14,7 +14,7 @@ import { queryClient } from '@/lib/query-client';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { playAthan } from '@/lib/audio';
-import { calculatePrayerTimes, type CalcMethod, type AsrMethod } from '@/lib/prayer-times';
+import { calculatePrayerTimes, type CalcMethod, type AsrMethod, type HighLatRule } from '@/lib/prayer-times';
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -48,6 +48,7 @@ async function maybePromptForRating(params: {
   asrMethod: AsrMethod;
   maghribOffset: number;
   timezone?: string | null;
+  highLatRule?: HighLatRule;
 }): Promise<void> {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   try {
@@ -84,6 +85,7 @@ async function maybePromptForRating(params: {
         asrMethod: params.asrMethod,
         maghribOffset: params.maghribOffset,
         timezone: params.timezone ?? null,
+        highLatRule: params.highLatRule,
       });
       const FIVE_MIN_MS = 5 * 60 * 1000;
       const nearPrayer = [times.fajr, times.dhuhr, times.asr, times.maghrib, times.isha].some(
@@ -116,6 +118,7 @@ function RootLayoutNav() {
     asrMethod,
     maghribOffset,
     locationTimezone,
+    highLatRule,
   } = useApp();
   const appState = useRef(AppState.currentState);
   const hasRedirected = useRef(false);
@@ -163,7 +166,7 @@ function RootLayoutNav() {
       ratingChecked.current = true;
       const effectiveLocation =
         locationMode === 'manual' && manualLocation ? manualLocation : location;
-      maybePromptForRating({ effectiveLocation, calcMethod, asrMethod, maghribOffset, timezone: locationTimezone });
+      maybePromptForRating({ effectiveLocation, calcMethod, asrMethod, maghribOffset, timezone: locationTimezone, highLatRule });
     }, 4000);
     return () => clearTimeout(timer);
   }, [location, locationMode, manualLocation, calcMethod, asrMethod, maghribOffset, locationTimezone]);

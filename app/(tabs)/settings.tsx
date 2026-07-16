@@ -37,9 +37,15 @@ export default function SettingsScreen() {
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
     iqamaOffsets, thikrRemindersEnabled, defaultTab, fontSize,
     selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
-    jumuahTime,
+    jumuahTime, highLatRule, customMethod, location,
     updateSettings,
   } = useApp();
+  const isHighLat = !!location && Math.abs(location.lat) > 48;
+  const HIGH_LAT_RULES = ['angle_based', 'middle_of_night', 'one_seventh', 'fixed_interval'] as const;
+  const HL_LABEL_KEY: Record<string, keyof typeof tr> = {
+    angle_based: 'hl_angle', middle_of_night: 'hl_middle', one_seventh: 'hl_seventh', fixed_interval: 'hl_fixed',
+  };
+  const [showHighLatModal, setShowHighLatModal] = useState(false);
   const C = colors;
   const tr = t(lang);
   const isAr = lang === 'ar';
@@ -957,6 +963,78 @@ export default function SettingsScreen() {
               <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
             </View>
           </Pressable>
+
+          {/* High-latitude method — only shown above ~48° where the twilight angle is unreachable */}
+          {isHighLat && (
+            <Pressable
+              onPress={() => { Haptics.selectionAsync(); setShowHighLatModal(true); }}
+              style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
+            >
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                  {tr.highLatMethod}
+                </Text>
+                <Text style={{ color: C.tint, fontSize: 12, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }} numberOfLines={1}>
+                  {tr[HL_LABEL_KEY[highLatRule]] as string}
+                </Text>
+              </View>
+              <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
+            </Pressable>
+          )}
+
+          {/* Custom method — user-set Fajr/Isha angles (the general solution for
+              any local variation without Mawaqit claiming authority over fiqh) */}
+          {calcMethod === 'Custom' && (
+            <View style={{ paddingHorizontal: 4 }}>
+              {([
+                { key: 'fajrAngle' as const, label: tr.custom_fajr_angle },
+                { key: 'ishaAngle' as const, label: tr.custom_isha_angle },
+              ]).map(({ key, label }) => (
+                <View key={key} style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center' }]}>
+                  <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>{label}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <Pressable onPress={() => { Haptics.selectionAsync(); updateSettings({ customMethod: { ...customMethod, [key]: Math.max(0, Math.round(((customMethod[key] ?? 18) - 0.5) * 2) / 2) } }); }} hitSlop={8}>
+                      <Ionicons name="remove-circle-outline" size={26} color={C.tint} />
+                    </Pressable>
+                    <Text style={{ color: C.text, fontSize: 16, minWidth: 48, textAlign: 'center', fontFamily: SANS }}>{(customMethod[key] ?? 18).toFixed(1)}°</Text>
+                    <Pressable onPress={() => { Haptics.selectionAsync(); updateSettings({ customMethod: { ...customMethod, [key]: Math.min(25, Math.round(((customMethod[key] ?? 18) + 0.5) * 2) / 2) } }); }} hitSlop={8}>
+                      <Ionicons name="add-circle-outline" size={26} color={C.tint} />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* High-latitude rule picker modal */}
+          <Modal visible={showHighLatModal} animationType="slide" transparent presentationStyle="pageSheet">
+            <View style={[styles.modalContainer, { backgroundColor: C.background }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+                <Text style={[styles.modalTitle, { color: C.text, fontFamily: isRtl ? 'Amiri_700Bold' : SANS }]}>{tr.highLatMethod}</Text>
+                <Pressable onPress={() => setShowHighLatModal(false)}><Ionicons name="close" size={22} color={C.textSecond} /></Pressable>
+              </View>
+              <ScrollView>
+                <Text style={{ color: C.textSecond, fontSize: 13, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, padding: 16, textAlign: isRtl ? 'right' : 'left' }}>
+                  {tr.highLatDesc}
+                </Text>
+                {HIGH_LAT_RULES.map((r) => {
+                  const selected = highLatRule === r;
+                  return (
+                    <Pressable
+                      key={r}
+                      onPress={() => { Haptics.selectionAsync(); updateSettings({ highLatRule: r, highLatSheetSeen: true }); setShowHighLatModal(false); }}
+                      style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
+                    >
+                      <Text style={[styles.settingLabel, { flex: 1, color: selected ? C.tint : C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                        {tr[HL_LABEL_KEY[r]] as string}
+                      </Text>
+                      {selected && <Ionicons name="checkmark" size={20} color={C.tint} />}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </Modal>
 
           {/* Method picker modal */}
           <Modal visible={showMethodModal} animationType="slide" transparent presentationStyle="pageSheet">

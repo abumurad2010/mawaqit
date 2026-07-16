@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePrayerTimes } from './prayer-times';
-import type { CalcMethod, AsrMethod } from './prayer-times';
+import type { CalcMethod, AsrMethod, HighLatRule, CustomMethodParams } from './prayer-times';
 import type { LocationData, PrayerNotifConfig } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Lang } from '@/constants/i18n';
@@ -158,6 +158,8 @@ export async function scheduleThikrNotifications(params: {
   maghribOffset: number;
   daysAhead?: number;
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
+  highLatRule?: HighLatRule;
+  customParams?: CustomMethodParams;
   reservedSlots?: number; // notifications already scheduled (iOS budget tracking)
 }) {
   if (!isNative) return;
@@ -199,6 +201,8 @@ export async function scheduleThikrNotifications(params: {
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
       timezone: params.timezone ?? null,
+      highLatRule: params.highLatRule,
+      customParams: params.customParams,
     });
 
     const fajrMs = times.fajr.getTime();
@@ -279,6 +283,8 @@ export async function schedulePrayerNotifications(params: {
   countryCode?: string | null;
   locationUtcOffset?: number | null;
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
+  highLatRule?: HighLatRule;
+  customParams?: CustomMethodParams;
   daysAhead?: number;
   dhuhaTime?: string;     // "HH:MM" exact local time
   tahajjudTime?: string;  // "HH:MM" exact local time
@@ -334,6 +340,8 @@ export async function schedulePrayerNotifications(params: {
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
       timezone: params.timezone ?? null,
+      highLatRule: params.highLatRule,
+      customParams: params.customParams,
     });
 
     const firstAdhanMs = (params.firstAdhanOffset ?? 0) * 60 * 1000;
