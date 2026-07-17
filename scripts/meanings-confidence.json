@@ -1,0 +1,14 @@
+{
+  "_note": "Per-entry, per-language confidence:'low' flags for the athkar meaning translations. Marks cells where the MEANING is sound but a specific idiomatic/terminological register choice would most benefit from a native scholarly review. NOT wholesale — the vast majority of the 2388 cells are standard-register and unflagged. This file is metadata for review only; it is not consumed by the app or by import-meanings.ts.",
+  "low": {
+    "athkar_in_prayer_i8": ["ha", "sw", "zh"],
+    "athkar_after_tashahhud_i5": ["ha"],
+    "athkar_in_prayer_i5": ["ha"],
+    "athkar_in_prayer_i13": ["ha"],
+    "athkar_sleep_i2": ["ha", "sw"],
+    "athkar_waswas_i6": ["ha", "sw"],
+    "athkar_qunut_i1": ["ha"],
+    "athkar_morning_i8": ["ha"],
+    "athkar_faraj_4": ["ha"]
+  }
+}

@@ -70,10 +70,13 @@ const blockStart: Record<string, number> = {};
 const startRe = /^  ([a-z]{2}): \{\s*$/;
 let seenTranslations = false;
 for (let i = 0; i < lines.length; i++) {
+  // `en` is `en: base` (a reference) — its keys live in the `const base = {` object,
+  // so English insertions (e.g. the newly-imported keys) go there, not in a partial.
+  if (lines[i].startsWith('const base = {') || lines[i].startsWith('const base: ')) blockStart['en'] = i;
   if (lines[i].startsWith('const translations')) seenTranslations = true;
   if (!seenTranslations) continue;
   const m = lines[i].match(startRe);
-  if (m && ALL_LANGS.includes(m[1]) && !(m[1] in blockStart)) blockStart[m[1]] = i;
+  if (m && ALL_LANGS.includes(m[1]) && m[1] !== 'en' && !(m[1] in blockStart)) blockStart[m[1]] = i;
 }
 function esc(v: string) { return v.includes("'") ? `"${v.replace(/"/g, '\\"')}"` : `'${v}'`; }
 // Build per-language insertions.
