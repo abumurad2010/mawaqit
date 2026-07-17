@@ -22,6 +22,18 @@ import AppLogo from '@/components/AppLogo';
 
 const COMPASS_SIZE = 280;
 const SPRING = { mass: 0.08, damping: 12, stiffness: 180 };
+// ── Heading-signal tuning (see the fix report) ────────────────────────────────
+// Sensor rate: raw magnetometer runs far faster than the eye needs (60 Hz on iOS)
+// and that speed IS the jitter. 50 ms (20 Hz) is smooth to the eye at a third of
+// the samples. Android stays 100 ms (its magnetometer burst-lags below that).
+const HEADING_INTERVAL_MS = Platform.OS === 'android' ? 100 : 50;
+// Circular-EMA smoothing factor. Lower = smoother/slightly laggier. 0.2 at 20 Hz
+// ≈ 250 ms time-constant: steady when stationary, still keeps up when walking.
+const HEADING_EMA = 0.2;
+// Lock hysteresis: lock at a tighter angle than it releases, so it can't chatter
+// at the boundary. Lock ≤5°, hold until >8°.
+const LOCK_ENTER_DEG = 5;
+const LOCK_EXIT_DEG = 8;
 const NEEDLE_LENGTH = COMPASS_SIZE / 2 - 20;
 const CENTER = COMPASS_SIZE / 2;
 
@@ -77,6 +89,10 @@ export default function QiblaScreen() {
   const qiblaRotation = useSharedValue(0);
   const aligned = useSharedValue(0);
   const prevHeading = useRef(-1);          // -1 = "no reading yet"
+  // Circular EMA state — we smooth the sin/cos components of the heading, not the
+  // degrees, so the 359°→0° wrap can never average to the wrong direction.
+  const sinRef = useRef<number | null>(null);
+  const cosRef = useRef<number | null>(null);
   const prevCompassRot = useRef(0);        // accumulated (unwrapped) compass rotation
   const prevQiblaRot = useRef(0);          // accumulated (unwrapped) Qibla rotation
   const hapticFired = useRef(false);
@@ -123,29 +139,38 @@ export default function QiblaScreen() {
       let sub: any;
       let cancelled = false;
       prevHeading.current = -1; // fresh start on each focus / reset
+      sinRef.current = null;
+      cosRef.current = null;
       hapticFired.current = false; // allow haptic to re-fire on next alignment
       (async () => {
         const avail = await Magnetometer.isAvailableAsync();
         if (!avail || cancelled) { setMagnetometerAvailable(false); return; }
-        // iOS handles 60 Hz fine; Android magnetometer at 16 ms causes
-        // burst-delivery lag on most hardware — 100 ms (10 Hz) is more reliable.
-        Magnetometer.setUpdateInterval(Platform.OS === 'android' ? 100 : 16);
+        Magnetometer.setUpdateInterval(HEADING_INTERVAL_MS);
         sub = Magnetometer.addListener(({ x, y }) => {
           let angle = Math.atan2(-x, y) * (180 / Math.PI);
           angle = (angle + 360) % 360;
+          const rad = angle * (Math.PI / 180);
+          const s = Math.sin(rad);
+          const c = Math.cos(rad);
 
           // Snap to first real reading so the compass starts correct immediately
-          if (prevHeading.current < 0) {
+          const ps = sinRef.current;
+          const pc = cosRef.current;
+          if (ps === null || pc === null) {
+            sinRef.current = s;
+            cosRef.current = c;
             prevHeading.current = angle;
             setHeading(angle);
             return;
           }
 
-          // α=0.7 at 60 Hz — responsive with minimal noise
-          let diff = angle - prevHeading.current;
-          if (diff > 180) diff -= 360;
-          if (diff < -180) diff += 360;
-          const smoothed = (prevHeading.current + diff * 0.7 + 360) % 360;
+          // Circular EMA: smooth the sin and cos components, then recover the angle.
+          // Wrap-safe by construction — no 359°→0° averaging artefact.
+          const ns = ps + HEADING_EMA * (s - ps);
+          const nc = pc + HEADING_EMA * (c - pc);
+          sinRef.current = ns;
+          cosRef.current = nc;
+          const smoothed = (Math.atan2(ns, nc) * (180 / Math.PI) + 360) % 360;
           prevHeading.current = smoothed;
 
           // Compass rose animation (inline — avoids cascading useEffect at 60 Hz)
@@ -168,7 +193,8 @@ export default function QiblaScreen() {
 
             const alignDiff = Math.abs(((bearing - smoothed + 180 + 360) % 360) - 180);
             const wasLocked = lockedRef.current;
-            const isAligned = wasLocked ? alignDiff <= 6 : alignDiff <= 2;
+            // Hysteresis: enter lock within LOCK_ENTER_DEG, hold until beyond LOCK_EXIT_DEG.
+            const isAligned = wasLocked ? alignDiff <= LOCK_EXIT_DEG : alignDiff <= LOCK_ENTER_DEG;
             lockedRef.current = isAligned;
             // Batch these with setHeading so React does a single re-render
             setHeading(smoothed);
