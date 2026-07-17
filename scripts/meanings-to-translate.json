@@ -1,0 +1,1481 @@
+[
+  {
+    "key": "athkar_afterprayer_1",
+    "arabic": "أَسْتَغْفِرُ اللَّهَ",
+    "transliteration": "Astaghfirullāh.",
+    "english_meaning": "I seek forgiveness from Allah. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_2",
+    "arabic": "اللَّهُمَّ أَنْتَ السَّلَامُ، وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ",
+    "transliteration": "Allāhumma antas-salām, wa minkas-salām, tabārakta yā dhal-jalāli wal-ikrām.",
+    "english_meaning": "O Allah, You are Peace and from You comes peace. Blessed are You, O Possessor of glory and honour.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_3",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ، وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ",
+    "transliteration": "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Allāhumma lā māniʿa limā aʿṭayt, wa lā muʿṭiya limā manaʿt, wa lā yanfaʿu dhal-jaddi minkal-jadd.",
+    "english_meaning": "None has the right to be worshipped except Allah, alone, without any partner, to Him belongs all sovereignty and praise, and He is over all things omnipotent. O Allah, none can withhold what You give, and none can give what You withhold, and no wealth or majesty can benefit anyone as from You is all wealth and majesty.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_4",
+    "arabic": "سُبْحَانَ اللَّهِ",
+    "transliteration": "Subḥānallāh.",
+    "english_meaning": "Glory is to Allah. (33×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_5",
+    "arabic": "الْحَمْدُ لِلَّهِ",
+    "transliteration": "Al-ḥamdu lillāh.",
+    "english_meaning": "All praise is for Allah. (33×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_6",
+    "arabic": "اللَّهُ أَكْبَرُ",
+    "transliteration": "Allāhu akbar.",
+    "english_meaning": "Allah is the greatest. (33×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_7",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    "transliteration": "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr.",
+    "english_meaning": "None has the right to be worshipped except Allah, alone, without any partner, to Him belongs all sovereignty and praise, and He is over all things omnipotent.",
+    "takhrij": "من قالها مائة مرة في يوم كانت له عدل عشر رقاب، وكتب له مائة حسنة، ومحيت عنه مائة سيئة، وكانت حرزًا من الشيطان يومه ذلك حتى يمسي، ولم يأت أحد بأفضل مما جاء به إلا أحد عمل أكثر من ذلك. البخاري 4/ 95، ومسلم 4/ 2071",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_8",
+    "arabic": "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ",
+    "transliteration": "Allāhumma aʿinnī ʿalā dhikrika wa shukrika wa ḥusni ʿibādatik.",
+    "english_meaning": "O Allah, help me to remember You, to give thanks to You, and to worship You in the best manner.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_afterprayer_9",
+    "arabic": "آيَةُ الْكُرْسِيِّ — اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ...",
+    "transliteration": "Āyat al-Kursī — recite Al-Baqarah 2:255",
+    "english_meaning": "Āyat al-Kursī — recite Al-Baqarah 2:255. Whoever recites it after every obligatory prayer, nothing will prevent him from entering Paradise.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_anxiety_1",
+    "arabic": "اللَّهُمَّ إِنِّي عَبْدُكَ، ابْنُ عَبْدِكَ، ابْنُ أَمَتِكَ، نَاصِيَتِي بِيَدِكَ، مَاضٍ فِيَّ حُكْمُكَ، عَدْلٌ فِيَّ قَضَاؤُكَ، أَسْأَلُكَ بِكُلِّ اسْمٍ هُوَ لَكَ سَمَّيْتَ بِهِ نَفْسَكَ، أَوْ أَنْزَلْتَهُ فِي كِتَابِكَ، أَوْ عَلَّمْتَهُ أَحَدًا مِنْ خَلْقِكَ، أَوِ اسْتَأْثَرْتَ بِهِ فِي عِلْمِ الْغَيْبِ عِنْدَكَ، أَنْ تَجْعَلَ الْقُرْآنَ رَبِيعَ قَلْبِي، وَنُورَ صَدْرِي، وَجِلَاءَ حُزْنِي، وَذَهَابَ هَمِّي",
+    "transliteration": "Allāhumma innī ʿabduk, ibnu ʿabdik, ibnu amatik, nāṣiyatī biyadik, māḍin fiyya ḥukmuk, ʿadlun fiyya qaḍāʾuk. Asʾaluka bikulli ismin huwa lak, sammayta bihi nafsak, aw anzaltahu fī kitābik, aw ʿallamtahu aḥadan min khalqik, aw istaʾtharta bihi fī ʿilmil-ghaybi ʿindak, an tajʿalal-Qurʾāna rabīʿa qalbī, wa nūra ṣadrī, wa jalāʾa ḥuznī, wa dhahāba hammī.",
+    "english_meaning": "O Allah, I am Your servant, the son of Your servant, the son of Your female servant. My forelock is in Your hand. Your command over me is forever executed and Your decree over me is just. I ask You by every name belonging to You which You have named Yourself with, or revealed in Your Book, or taught to any of Your creation, or You have preserved in the knowledge of the unseen with You, that You make the Quran the life of my heart, the light of my chest, a departure for my sorrow, and a release for my anxiety.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_anxiety_2",
+    "arabic": "اللَّهُمَّ رَحْمَتَكَ أَرْجُو، فَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ، وَأَصْلِحْ لِي شَأْنِي كُلَّهُ، لَا إِلَهَ إِلَّا أَنْتَ",
+    "transliteration": "Allāhumma raḥmataka arjū, fa lā takilnī ilā nafsī ṭarfata ʿayn, wa aṣliḥ lī shaʾnī kullahu, lā ilāha illā ant.",
+    "english_meaning": "O Allah, Your mercy I hope for. Do not leave me in charge of my own affairs for even the blink of an eye. Rectify all my affairs. None has the right to be worshipped except You.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_anxiety_3",
+    "arabic": "لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ",
+    "transliteration": "Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn.",
+    "english_meaning": "None has the right to be worshipped except You. Glory is to You. Verily I have been among the wrongdoers. [The supplication of Yunus ﷺ from the belly of the whale]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_calamity_1",
+    "arabic": "إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ، اللَّهُمَّ أْجُرْنِي فِي مُصِيبَتِي، وَأَخْلِفْ لِي خَيْرًا مِنْهَا",
+    "transliteration": "Innā lillāhi wa innā ilayhi rājiʿūn. Allāhumma ʾjurnī fī muṣībatī wa akhlif lī khayran minhā.",
+    "english_meaning": "Verily we belong to Allah and to Him we shall return. O Allah, reward me in my calamity and replace it with something better. [Upon any affliction]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_calamity_2",
+    "arabic": "إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ",
+    "transliteration": "Innā lillāhi wa innā ilayhi rājiʿūn.",
+    "english_meaning": "Verily we belong to Allah and to Him we shall return. [Al-Baqarah 2:156 — said upon hearing of a death or loss]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_calamity_3",
+    "arabic": "اللَّهُمَّ اغْفِرْ لَهُ وَارْفَعْ دَرَجَتَهُ فِي الْمَهْدِيِّينَ، وَاخْلُفْهُ فِي عَقِبِهِ فِي الْغَابِرِينَ، وَاغْفِرْ لَنَا وَلَهُ يَا رَبَّ الْعَالَمِينَ، وَافْسَحْ لَهُ فِي قَبْرِهِ وَنَوِّرْ لَهُ فِيهِ",
+    "transliteration": "Allāhummagh-fir lahu warfaʿ darajatahu fil-mahdiyyīn, wakhlufhu fī ʿaqibihi fil-ghābirīn, waghfir lanā wa lahu yā rabbal-ʿālamīn, wafsaḥ lahu fī qabrihi wa nawwir lahu fīh.",
+    "english_meaning": "O Allah, forgive him and elevate his station among the rightly guided, and be a successor to his descendants who remain. Forgive us and him, O Lord of the worlds, and make spacious his grave and illuminate it for him. [Said for the deceased]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_calamity_4",
+    "arabic": "اللَّهُمَّ اغْفِرْ لِحَيِّنَا وَمَيِّتِنَا وَشَاهِدِنَا وَغَائِبِنَا وَصَغِيرِنَا وَكَبِيرِنَا وَذَكَرِنَا وَأُنْثَانَا، اللَّهُمَّ مَنْ أَحْيَيْتَهُ مِنَّا فَأَحْيِهِ عَلَى الْإِسْلَامِ، وَمَنْ تَوَفَّيْتَهُ مِنَّا فَتَوَفَّهُ عَلَى الْإِيمَانِ",
+    "transliteration": "Allāhummagh-fir liḥayyinā wa mayyitinā wa shāhidinā wa ghāʾibinā wa ṣaghīrinā wa kabīrinā wa dhakarinā wa unthānā. Allāhumma man aḥyaytahu minnā fa aḥyihi ʿalal-islām, wa man tawaffaytahu minnā fa tawaffahu ʿalal-īmān.",
+    "english_meaning": "O Allah, forgive our living and our dead, those present and those absent, our young and our old, our males and our females. O Allah, whomever You give life among us, give him life upon Islam; and whomever You cause to die, cause him to die upon faith.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_debt_1",
+    "arabic": "اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ، وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ",
+    "transliteration": "Allāhummak-finī biḥalālika ʿan ḥarāmik, wa aghnini bifaḍlika ʿamman siwāk.",
+    "english_meaning": "O Allah, suffice me with what You have made lawful, keeping me from what You have made unlawful, and enrich me with Your favour so that I need no one other than You.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_debt_2",
+    "arabic": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْمَأْثَمِ وَالْمَغْرَمِ",
+    "transliteration": "Allāhumma innī aʿūdhu bika minal-maʾthami wal-maghram.",
+    "english_meaning": "O Allah, I seek refuge in You from sin and from debt.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_debt_3",
+    "arabic": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ",
+    "transliteration": "Allāhumma innī aʿūdhu bika minal-hammi wal-ḥazan, wal-ʿajzi wal-kasal, wal-bukhli wal-jubn, wa ḍalaʿid-dayni wa ghalabatir-rijāl.",
+    "english_meaning": "O Allah, I seek refuge in You from worry and grief, from incapacity and laziness, from miserliness and cowardice, from the burden of debt and from being overpowered by others.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_distress_1",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ الْعَظِيمُ الْحَلِيمُ، لَا إِلَهَ إِلَّا اللَّهُ رَبُّ الْعَرْشِ الْعَظِيمِ، لَا إِلَهَ إِلَّا اللَّهُ رَبُّ السَّمَاوَاتِ وَرَبُّ الْأَرْضِ وَرَبُّ الْعَرْشِ الْكَرِيمِ",
+    "transliteration": "Lā ilāha illallāhul-ʿaẓīmul-ḥalīm. Lā ilāha illallāhu rabbul-ʿarshil-ʿaẓīm. Lā ilāha illallāhu rabus-samāwāti wa rabbul-arḍi wa rabbul-ʿarshil-karīm.",
+    "english_meaning": "None has the right to be worshipped except Allah, the Almighty, the Forbearing. None has the right to be worshipped except Allah, Lord of the mighty throne. None has the right to be worshipped except Allah, Lord of the heavens, Lord of the earth and Lord of the noble throne.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_distress_2",
+    "arabic": "اللَّهُ اللَّهُ رَبِّي لَا أُشْرِكُ بِهِ شَيْئًا",
+    "transliteration": "Allāhu Allāhu rabbī lā ushriku bihi shayʾā.",
+    "english_meaning": "Allah, Allah is my Lord. I do not associate anything with Him. (7×)",
+    "takhrij": "أخرجه أبو داود 2/ 87 وانظر صحيح ابن ماجة 2/ 335",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_distress_3",
+    "arabic": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+    "transliteration": "Ḥasbunallāhu wa niʿmal-wakīl.",
+    "english_meaning": "Allah is sufficient for us and He is the best disposer of affairs. [Said by Ibrahim ﷺ when thrown into the fire]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_evening_1",
+    "arabic": "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ وَلَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذِهِ اللَّيْلَةِ وَخَيْرَ مَا بَعْدَهَا، وَأَعُوذُ بِكَ مِنْ شَرِّ هَذِهِ اللَّيْلَةِ وَشَرِّ مَا بَعْدَهَا، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+    "transliteration": "Amsaynā wa amsal-mulku lillāh, wal-ḥamdu lillāh, wa lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Rabbi asʾaluka khayra mā fī hādhihil-laylati wa khayra mā baʿdahā, wa aʿūdhu bika min sharri hādhihil-laylati wa sharri mā baʿdahā. Rabbi aʿūdhu bika minal-kasali wa sūʾil-kibar. Rabbi aʿūdhu bika min ʿadhābin fin-nār wa ʿadhābin fil-qabr.",
+    "english_meaning": "We have reached the evening and at this very time all sovereignty belongs to Allah. All praise is for Allah. None has the right to be worshipped except Allah, alone, without any partner. My Lord, I ask You for the good of this night and the good of what follows it, and I seek refuge in You from its evil and the evil of what follows it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and punishment in the grave.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_faraj_1",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ الْعَظِيمُ الْحَلِيمُ، لَا إِلَهَ إِلَّا اللَّهُ رَبُّ الْعَرْشِ الْعَظِيمِ، لَا إِلَهَ إِلَّا اللَّهُ رَبُّ السَّمَاوَاتِ وَرَبُّ الْأَرْضِ وَرَبُّ الْعَرْشِ الْكَرِيمِ",
+    "transliteration": "Lā ilāha illallāhul-ʿaẓīmul-ḥalīm. Lā ilāha illallāhu rabbul-ʿarshil-ʿaẓīm. Lā ilāha illallāhu rabus-samāwāti wa rabbul-arḍi wa rabbul-ʿarshil-karīm.",
+    "english_meaning": "None has the right to be worshipped except Allah, the Almighty, the Forbearing. None has the right to be worshipped except Allah, Lord of the mighty throne. None has the right to be worshipped except Allah, Lord of the heavens, Lord of the earth and Lord of the noble throne.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_faraj_2",
+    "arabic": "لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ",
+    "transliteration": "Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn.",
+    "english_meaning": "None has the right to be worshipped except You. Glory is to You. Verily I have been among the wrongdoers. (40×) [The supplication of Yunus ﷺ — reported to remove hardship]",
+    "takhrij": "التّرمذي 5/ 529، والحاكم، وصحّحه ووافقه الذّهبيّ 1/ 505، وانظر صحيح التّرمذي 3/ 168",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_faraj_3",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ يَا اللَّهُ بِأَنَّكَ الْوَاحِدُ الْأَحَدُ الصَّمَدُ الَّذِي لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ، أَنْ تَغْفِرَ لِي ذُنُوبِي إِنَّكَ أَنْتَ الْغَفُورُ الرَّحِيمُ",
+    "transliteration": "Allāhumma innī asʾaluka yā Allāhu bi annaka al-wāḥidul-aḥaduṣ-ṣamadulladhī lam yalid wa lam yūlad wa lam yakun lahu kufuwan aḥad, an taghfira lī dhunūbī innaka antal-ghafūrur-raḥīm.",
+    "english_meaning": "O Allah, I ask You — You are Allah, the One, the Eternal Refuge, Who neither begets nor is born, nor is there to Him any equivalent — that You forgive me my sins. Verily You are the Forgiving, the Merciful.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_faraj_4",
+    "arabic": "اللَّهُمَّ فَارِجَ الْهَمِّ، كَاشِفَ الْغَمِّ، مُجِيبَ دَعْوَةِ الْمُضْطَرِّينَ، رَحْمَانَ الدُّنْيَا وَالْآخِرَةِ وَرَحِيمَهُمَا، أَنْتَ تَرْحَمُنِي فَارْحَمْنِي رَحْمَةً تُغْنِينِي بِهَا عَنْ رَحْمَةِ مَنْ سِوَاكَ",
+    "transliteration": "Allāhumma fārijal-hamm, kāshifal-ghamm, mujība daʿwatil-muḍṭarrīn, raḥmānad-dunyā wal-ākhirati wa raḥīmahumā, anta tarḥamunī farḥamnī raḥmatan tughninī bihā ʿan raḥmati man siwāk.",
+    "english_meaning": "O Allah, Remover of worry, Reliever of grief, Answerer of the call of the distressed, Most Merciful in this life and the next — You have mercy on me, so have mercy on me with a mercy that makes me independent of the mercy of anyone other than You.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_friday_1",
+    "arabic": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
+    "transliteration": "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā ṣallayta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd. Allāhumma bārik ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā bārakta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd.",
+    "english_meaning": "O Allah, send prayers upon Muhammad and upon the family of Muhammad, as You sent prayers upon Ibrahim and upon the family of Ibrahim. O Allah, send blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and upon the family of Ibrahim. You are indeed Worthy of Praise, Full of Glory. (100×) [Abundant on Fridays]",
+    "takhrij": "البخاري مع الفتح 6/ 408",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_friday_2",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِأَنَّ لَكَ الْحَمْدَ، لَا إِلَهَ إِلَّا أَنْتَ، الْمَنَّانُ، بَدِيعُ السَّمَاوَاتِ وَالْأَرْضِ، يَا ذَا الْجَلَالِ وَالْإِكْرَامِ، يَا حَيُّ يَا قَيُّومُ، إِنِّي أَسْأَلُكَ الْجَنَّةَ وَأَعُوذُ بِكَ مِنَ النَّارِ",
+    "transliteration": "Allāhumma innī asʾaluka bi anna lakal-ḥamd, lā ilāha illā ant, al-mannān, badīʿas-samāwāti wal-arḍ, yā dhal-jalāli wal-ikrām, yā ḥayyu yā qayyūm, innī asʾalukal-jannata wa aʿūdhu bika minan-nār.",
+    "english_meaning": "O Allah, I ask You, as all praise belongs to You, none has the right to be worshipped except You, the Bestower of gifts, Creator of the heavens and earth, O Possessor of glory and honour, O Ever Living, O Sustainer — I ask You for Paradise and seek refuge in You from the Fire.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_friday_3",
+    "arabic": "سُورَةُ الْكَهْفِ — يُستحب قراءتها كاملةً يوم الجمعة",
+    "transliteration": "Sūrat al-Kahf — Recommended to recite in full on Fridays",
+    "english_meaning": "Sūrat al-Kahf — Recommended to recite in full on Fridays. Whoever recites it will have a light shining for him between the two Fridays.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_istighfar_1",
+    "arabic": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+    "transliteration": "Allāhumma anta rabbī lā ilāha illā ant, khalaqtanī wa anā ʿabduk, wa anā ʿalā ʿahdika wa waʿdika mastaṭaʿt. Aʿūdhu bika min sharri mā ṣanaʿt. Abūʾu laka biniʿmatika ʿalayy, wa abūʾu bidhanbī faghfir lī fa innahu lā yaghfirudh-dhunūba illā ant.",
+    "english_meaning": "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant. I abide by Your covenant and promise as best I can. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for there is none who forgives sins but You. [Sayyid al-Istighfar — Master of Forgiveness]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_istighfar_2",
+    "arabic": "أَسْتَغْفِرُ اللَّهَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ",
+    "transliteration": "Astaghfirullāhal-ladhī lā ilāha illā huwal-ḥayyul-qayyūmu wa atūbu ilayh.",
+    "english_meaning": "I seek the forgiveness of Allah, there is none worthy of worship but He, the Ever-Living, the Sustainer of all, and I repent to Him. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_istighfar_3",
+    "arabic": "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
+    "transliteration": "Astaghfirullāha wa atūbu ilayh.",
+    "english_meaning": "I seek the forgiveness of Allah and repent to Him. (100×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_istighfar_4",
+    "arabic": "رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ",
+    "transliteration": "Rabbighfir lī wa tub ʿalayya innaka anta at-tawwābur-raḥīm.",
+    "english_meaning": "My Lord, forgive me and accept my repentance. Verily You are the Oft-Returning, the Most Merciful. (100×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_istighfar_5",
+    "arabic": "رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ",
+    "transliteration": "Rabbanā ẓalamnā anfusanā wa in lam taghfir lanā wa tarḥamnā lanakūnanna minal-khāsirīn.",
+    "english_meaning": "Our Lord, we have wronged ourselves, and if You do not forgive us and have mercy upon us, we will surely be among the losers. [The supplication of Adam and Hawwa ﷺ]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_istikhara_1",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْتَخِيرُكَ بِعِلْمِكَ، وَأَسْتَقْدِرُكَ بِقُدْرَتِكَ، وَأَسْأَلُكَ مِنْ فَضْلِكَ الْعَظِيمِ، فَإِنَّكَ تَقْدِرُ وَلَا أَقْدِرُ، وَتَعْلَمُ وَلَا أَعْلَمُ، وَأَنْتَ عَلَّامُ الْغُيُوبِ، اللَّهُمَّ إِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الْأَمْرَ خَيْرٌ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي فَاقْدُرْهُ لِي وَيَسِّرْهُ لِي ثُمَّ بَارِكْ لِي فِيهِ، وَإِنْ كُنْتَ تَعْلَمُ أَنَّ هَذَا الْأَمْرَ شَرٌّ لِي فِي دِينِي وَمَعَاشِي وَعَاقِبَةِ أَمْرِي فَاصْرِفْهُ عَنِّي وَاصْرِفْنِي عَنْهُ وَاقْدُرْ لِيَ الْخَيْرَ حَيْثُ كَانَ ثُمَّ أَرْضِنِي بِهِ",
+    "transliteration": "Allāhumma innī astakhīruka biʿilmik, wa astaqdiruka biqudratik, wa asʾaluka min faḍlikal-ʿaẓīm. Fa innaka taqdiru wa lā aqdiru, wa taʿlamu wa lā aʿlam, wa anta ʿallāmul-ghuyūb. Allāhumma in kunta taʿlamu anna hādhal-amra khayrun lī fī dīnī wa maʿāshī wa ʿāqibati amrī faqdur-hu lī wa yassir-hu lī thumma bārik lī fīh. Wa in kunta taʿlamu anna hādhal-amra sharrun lī fī dīnī wa maʿāshī wa ʿāqibati amrī faṣrif-hu ʿannī waṣrif-nī ʿanhu waqdur liyal-khayra ḥaythu kāna thumma arḍinī bih.",
+    "english_meaning": "O Allah, I seek Your counsel by Your knowledge and by Your power I seek strength, and I ask You from Your immense favour, for verily You are able while I am not, and verily You know while I do not, and You are the Knower of the unseen. O Allah, if You know this affair to be good for me in relation to my religion, my life, and my end, then decree and facilitate it for me, and bless me with it. And if You know this affair to be ill for me towards my religion, my life, and my end, then remove it from me and remove me from it, and decree for me what is good wherever it may be, and make me satisfied with it. [Recite after 2 rakat]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_10",
+    "arabic": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْكُفْرِ وَالْفَقْرِ، وَأَعُوذُ بِكَ مِنْ عَذَابِ الْقَبْرِ، لَا إِلَهَ إِلَّا أَنْتَ",
+    "transliteration": "Allāhumma innī aʿūdhu bika minal-kufri wal-faqr, wa aʿūdhu bika min ʿadhābil-qabr, lā ilāha illā ant.",
+    "english_meaning": "O Allah, I seek refuge in You from disbelief and poverty, and I seek refuge in You from the punishment of the grave. None has the right to be worshipped but You. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_11",
+    "arabic": "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
+    "transliteration": "Bismillāhil-ladhī lā yaḍurru maʿasmihi shayʾun fil-arḍi wa lā fis-samāʾ, wa huwas-samīʿul-ʿalīm.",
+    "english_meaning": "In the name of Allah with Whose name nothing can cause harm in the earth nor in the heavens, and He is the All-Hearing, All-Knowing. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_12",
+    "arabic": "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا",
+    "transliteration": "Raḍītu billāhi rabbā, wa bil-islāmi dīnā, wa bi-Muḥammadin ṣallallāhu ʿalayhi wa sallam nabiyyā.",
+    "english_meaning": "I am pleased with Allah as my Lord, Islam as my religion, and Muhammad ﷺ as my Prophet. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_13",
+    "arabic": "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ",
+    "transliteration": "Yā ḥayyu yā qayyūmu biraḥmatika astaghīth, aṣliḥ lī shaʾnī kullahu wa lā takilnī ilā nafsī ṭarfata ʿayn.",
+    "english_meaning": "O Ever Living One, O Sustainer of all, in Your mercy I seek relief. Rectify all of my affairs and do not leave me to depend upon myself for the blink of an eye.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_14",
+    "arabic": "أَصْبَحْنَا عَلَى فِطْرَةِ الْإِسْلَامِ، وَعَلَى كَلِمَةِ الْإِخْلَاصِ، وَعَلَى دِينِ نَبِيِّنَا مُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ، وَعَلَى مِلَّةِ أَبِينَا إِبْرَاهِيمَ حَنِيفًا مُسْلِمًا وَمَا كَانَ مِنَ الْمُشْرِكِينَ",
+    "transliteration": "Aṣbaḥnā ʿalā fiṭratil-islām, wa ʿalā kalimatal-ikhlāṣ, wa ʿalā dīni nabiyyinā Muḥammadin ṣallallāhu ʿalayhi wa sallam, wa ʿalā millati abīnā Ibrāhīma ḥanīfan muslimā wa mā kāna minal-mushrikīn.",
+    "english_meaning": "We have reached the morning upon the fitrah of Islam, the word of sincerity, the religion of our Prophet Muhammad ﷺ, and the way of our father Ibrahim, a upright Muslim — and he was not of the polytheists.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_15",
+    "arabic": "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
+    "transliteration": "Subḥānallāhi wa biḥamdih.",
+    "english_meaning": "Glory is to Allah and praise is to Him. (100×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_16",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+    "transliteration": "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr.",
+    "english_meaning": "None has the right to be worshipped except Allah, alone, without any partner, to Him belongs all sovereignty and praise, and He is over all things omnipotent. (10×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_17",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا",
+    "transliteration": "Allāhumma innī asʾaluka ʿilman nāfiʿā, wa rizqan ṭayyibā, wa ʿamalan mutaqabbalā.",
+    "english_meaning": "O Allah, I ask You for knowledge that is beneficial, provision that is good, and deeds that are accepted.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_18",
+    "arabic": "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+    "transliteration": "Aʿūdhu bikalimātillāhit-tāmmāti min sharri mā khalaq.",
+    "english_meaning": "I seek refuge in the perfect words of Allah from the evil of what He has created. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_19",
+    "arabic": "اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
+    "transliteration": "Allāhumma ṣalli wa sallim wa bārik ʿalā nabiyyinā Muḥammad.",
+    "english_meaning": "O Allah, send prayers, peace and blessings upon our Prophet Muhammad. (10×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_20",
+    "arabic": "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+    "transliteration": "Ḥasbiyallāhu lā ilāha illā huwa, ʿalayhi tawakkaltu wa huwa rabbul-ʿarshil-ʿaẓīm.",
+    "english_meaning": "Allah is sufficient for me, none has the right to be worshipped but Him, upon Him I rely and He is the Lord of the mighty throne. (7×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_5",
+    "arabic": "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، رَبِّ أَسْأَلُكَ خَيْرَ مَا فِي هَذَا الْيَوْمِ وَخَيْرَ مَا بَعْدَهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِي هَذَا الْيَوْمِ وَشَرِّ مَا بَعْدَهُ، رَبِّ أَعُوذُ بِكَ مِنَ الْكَسَلِ وَسُوءِ الْكِبَرِ، رَبِّ أَعُوذُ بِكَ مِنْ عَذَابٍ فِي النَّارِ وَعَذَابٍ فِي الْقَبْرِ",
+    "transliteration": "Aṣbaḥnā wa aṣbaḥal-mulku lillāh, wal-ḥamdu lillāh, lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Rabbi asʾaluka khayra mā fī hādhal-yawm wa khayra mā baʿdah, wa aʿūdhu bika min sharri mā fī hādhal-yawm wa sharri mā baʿdah. Rabbi aʿūdhu bika minal-kasali wa sūʾil-kibar. Rabbi aʿūdhu bika min ʿadhābin fin-nār wa ʿadhābin fil-qabr.",
+    "english_meaning": "We have reached the morning and at this very time all sovereignty belongs to Allah. All praise is for Allah. None has the right to be worshipped except Allah, alone, without any partner. My Lord, I ask You for the good of this day and the good of what follows it, and I seek refuge in You from its evil and the evil of what follows it. My Lord, I seek refuge in You from laziness and the misery of old age. My Lord, I seek refuge in You from torment in the Fire and punishment in the grave.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_6",
+    "arabic": "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ",
+    "transliteration": "Allāhumma bika aṣbaḥnā, wa bika amsaynā, wa bika naḥyā, wa bika namūt, wa ilayka an-nushūr.",
+    "english_meaning": "O Allah, by You we enter the morning and by You we enter the evening, by You we live and by You we die, and to You is the resurrection.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_7",
+    "arabic": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+    "transliteration": "Allāhumma anta rabbī, lā ilāha illā ant, khalaqtanī wa anā ʿabduk, wa anā ʿalā ʿahdika wa waʿdika mastaṭaʿt, aʿūdhu bika min sharri mā ṣanaʿt, abūʾu laka biniʿmatika ʿalayy, wa abūʾu laka bidhanbī faghfir lī, fa innahu lā yaghfirudh-dhunūba illā ant.",
+    "english_meaning": "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant. I abide by Your covenant and promise as best I can. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for there is none who forgives sins but You. [Sayyid al-Istighfar]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_8",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ",
+    "transliteration": "Allāhumma innī asʾalukal-ʿafwa wal-ʿāfiyata fid-dunyā wal-ākhirah.",
+    "english_meaning": "O Allah, I ask You for pardon and well-being in this life and the next.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_morning_9",
+    "arabic": "اللَّهُمَّ عَافِنِي فِي بَدَنِي، اللَّهُمَّ عَافِنِي فِي سَمْعِي، اللَّهُمَّ عَافِنِي فِي بَصَرِي، لَا إِلَهَ إِلَّا أَنْتَ",
+    "transliteration": "Allāhumma ʿāfinī fī badanī, Allāhumma ʿāfinī fī samʿī, Allāhumma ʿāfinī fī baṣarī, lā ilāha illā ant.",
+    "english_meaning": "O Allah, grant my body health. O Allah, grant my hearing health. O Allah, grant my sight health. None has the right to be worshipped but You. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_parents_1",
+    "arabic": "رَبِّ اغْفِرْ لِي وَلِوَالِدَيَّ وَلِمَنْ دَخَلَ بَيْتِيَ مُؤْمِنًا وَلِلْمُؤْمِنِينَ وَالْمُؤْمِنَاتِ",
+    "transliteration": "Rabbighfir lī wa liwālidayya wa liman dakhala baytiya muʾminan wa lil-muʾminīna wal-muʾmināt.",
+    "english_meaning": "My Lord, forgive me and my parents and whoever enters my house as a believer, and all believing men and women. [Nūḥ 71:28]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_parents_2",
+    "arabic": "رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا",
+    "transliteration": "Rabbir-ḥamhumā kamā rabbayānī ṣaghīrā.",
+    "english_meaning": "My Lord, have mercy on them both as they raised me when I was small. [Al-Isrāʾ 17:24]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_parents_3",
+    "arabic": "رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ",
+    "transliteration": "Rabbanāghfir lī wa liwālidayya wa lil-muʾminīna yawma yaqūmul-ḥisāb.",
+    "english_meaning": "Our Lord, forgive me and my parents and the believers on the Day when the account is established. [Ibrāhīm 14:41]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_parents_4",
+    "arabic": "اللَّهُمَّ اغْفِرْ لِحَيِّنَا وَمَيِّتِنَا وَشَاهِدِنَا وَغَائِبِنَا وَصَغِيرِنَا وَكَبِيرِنَا وَذَكَرِنَا وَأُنْثَانَا",
+    "transliteration": "Allāhummagh-fir liḥayyinā wa mayyitinā wa shāhidinā wa ghāʾibinā wa ṣaghīrinā wa kabīrinā wa dhakarinā wa unthānā.",
+    "english_meaning": "O Allah, forgive our living and our dead, those present and those absent, our young and our old, our males and our females.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quran_khatm_1",
+    "arabic": "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ",
+    "transliteration": "Subḥānaka Allāhumma wa biḥamdik, lā ilāha illā ant, astaghfiruka wa atūbu ilayk.",
+    "english_meaning": "Glory is to You O Allah and praise. None has the right to be worshipped except You. I seek Your forgiveness and repent to You.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quran_khatm_2",
+    "arabic": "اللَّهُمَّ ارْحَمْنِي بِالْقُرْآنِ، وَاجْعَلْهُ لِي إِمَامًا وَنُورًا وَهُدًى وَرَحْمَةً، اللَّهُمَّ ذَكِّرْنِي مِنْهُ مَا نَسِيتُ، وَعَلِّمْنِي مِنْهُ مَا جَهِلْتُ، وَارْزُقْنِي تِلَاوَتَهُ آنَاءَ اللَّيْلِ وَأَطْرَافَ النَّهَارِ، وَاجْعَلْهُ لِي حُجَّةً يَا رَبَّ الْعَالَمِينَ",
+    "transliteration": "Allāhummār-ḥamnī bil-Qurʾān, wajʿalhu lī imāman wa nūran wa hudan wa raḥmah. Allāhumma dhakkirnī minhu mā nasīt, wa ʿallimnī minhu mā jahilt, warzuqnī tilāwatahu ānāʾal-layli wa aṭrāfan-nahār, wajʿalhu lī ḥujjatan yā rabbal-ʿālamīn.",
+    "english_meaning": "O Allah, have mercy on me through the Quran, and make it for me a leader, a light, a guidance and a mercy. O Allah, remind me of what I have forgotten from it, teach me from it what I am ignorant of, grant me its recitation in the hours of night and the ends of day, and make it a proof for me, O Lord of the worlds.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quranic_1",
+    "arabic": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
+    "transliteration": "Rabbanā ātinā fid-dunyā ḥasanatan wa fil-ākhirati ḥasanatan wa qinā ʿadhāban-nār.",
+    "english_meaning": "Our Lord, give us good in this world and good in the Hereafter and save us from the punishment of the Fire. [Al-Baqarah 2:201]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quranic_2",
+    "arabic": "رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِنْ لَدُنْكَ رَحْمَةً إِنَّكَ أَنْتَ الْوَهَّابُ",
+    "transliteration": "Rabbanā lā tuzigh qulūbanā baʿda idh hadaytanā wa hab lanā min ladunka raḥmah, innaka antal-wahhāb.",
+    "english_meaning": "Our Lord, let not our hearts deviate after You have guided us and grant us from Yourself mercy. Indeed You are the Bestower. [Āl ʿImrān 3:8]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quranic_3",
+    "arabic": "رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ",
+    "transliteration": "Rabbanā ẓalamnā anfusanā wa in lam taghfir lanā wa tarḥamnā lanakūnanna minal-khāsirīn.",
+    "english_meaning": "Our Lord, we have wronged ourselves, and if You do not forgive us and have mercy upon us, we will surely be among the losers. [Al-Aʿrāf 7:23]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quranic_4",
+    "arabic": "رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي وَاحْلُلْ عُقْدَةً مِنْ لِسَانِي يَفْقَهُوا قَوْلِي",
+    "transliteration": "Rabbish-raḥ lī ṣadrī wa yassir lī amrī waḥlul ʿuqdatan min lisānī yafqahū qawlī.",
+    "english_meaning": "My Lord, expand for me my breast and ease for me my task and untie the knot from my tongue that they may understand my speech. [Ṭā Hā 20:25–28]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quranic_5",
+    "arabic": "رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ",
+    "transliteration": "Rabbi innī limā anzalta ilayya min khayrin faqīr.",
+    "english_meaning": "My Lord, indeed I am, for whatever good You would send down to me, in need. [Al-Qaṣaṣ 28:24]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_quranic_6",
+    "arabic": "رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا",
+    "transliteration": "Rabbanā hab lanā min azwājinā wa dhurriyyātinā qurrata aʿyunin wajʿalnā lil-muttaqīna imāmā.",
+    "english_meaning": "Our Lord, grant us from among our wives and offspring comfort to our eyes and make us an example for the righteous. [Al-Furqān 25:74]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_rizq_1",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا",
+    "transliteration": "Allāhumma innī asʾaluka ʿilman nāfiʿā, wa rizqan ṭayyibā, wa ʿamalan mutaqabbalā.",
+    "english_meaning": "O Allah, I ask You for knowledge that is beneficial, provision that is good, and deeds that are accepted.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_rizq_2",
+    "arabic": "اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ، وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ",
+    "transliteration": "Allāhummak-finī biḥalālika ʿan ḥarāmik, wa aghnini bifaḍlika ʿamman siwāk.",
+    "english_meaning": "O Allah, suffice me with what You have made lawful, keeping me from what You have made unlawful, and enrich me with Your favour so that I need no one other than You.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_rizq_3",
+    "arabic": "رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ",
+    "transliteration": "Rabbi innī limā anzalta ilayya min khayrin faqīr.",
+    "english_meaning": "My Lord, indeed I am, for whatever good You would send down to me, in need. [Al-Qaṣaṣ 28:24]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_rizq_4",
+    "arabic": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ",
+    "transliteration": "Allāhumma innī aʿūdhu bika minal-hammi wal-ḥazan, wal-ʿajzi wal-kasal, wal-bukhli wal-jubn, wa ḍalaʿid-dayni wa ghalabatir-rijāl.",
+    "english_meaning": "O Allah, I seek refuge in You from worry and grief, from incapacity and laziness, from miserliness and cowardice, from the burden of debt and from being overpowered by others.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_1",
+    "arabic": "بِسْمِ اللَّهِ أَرْقِيكَ، مِنْ كُلِّ شَيْءٍ يُؤْذِيكَ، مِنْ شَرِّ كُلِّ نَفْسٍ أَوْ عَيْنِ حَاسِدٍ، اللَّهُ يَشْفِيكَ، بِسْمِ اللَّهِ أَرْقِيكَ",
+    "transliteration": "Bismillāhi arqīk, min kulli shayʾin yuʾdhīk, min sharri kulli nafsin aw ʿayni ḥāsid, Allāhu yashfīk, bismillāhi arqīk.",
+    "english_meaning": "In the name of Allah I perform ruqyah for you, from everything that harms you, from the evil of every soul or envious eye, may Allah heal you. In the name of Allah I perform ruqyah for you. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_2",
+    "arabic": "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّةِ مِنْ كُلِّ شَيْطَانٍ وَهَامَّةٍ، وَمِنْ كُلِّ عَيْنٍ لَامَّةٍ",
+    "transliteration": "Aʿūdhu bikalimātillāhit-tāmmati min kulli shayṭānin wa hāmmah, wa min kulli ʿaynin lāmmah.",
+    "english_meaning": "I seek refuge in the perfect words of Allah from every devil and poisonous creature, and from every evil eye. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_3",
+    "arabic": "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
+    "transliteration": "Bismillāhil-ladhī lā yaḍurru maʿasmihi shayʾun fil-arḍi wa lā fis-samāʾ, wa huwas-samīʿul-ʿalīm.",
+    "english_meaning": "In the name of Allah with Whose name nothing can cause harm in the earth nor in the heavens, and He is the All-Hearing, All-Knowing. (3×)",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_4",
+    "arabic": "اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ... (آية الكرسي كاملة)",
+    "transliteration": "Āyat al-Kursī — Al-Baqarah 2:255 (full verse)",
+    "english_meaning": "Āyat al-Kursī — Al-Baqarah 2:255. The greatest verse in the Quran. Recite over yourself, family, and home for protection.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_5",
+    "arabic": "قُلْ هُوَ اللَّهُ أَحَدٌ (سورة الإخلاص كاملة)",
+    "transliteration": "Sūrat al-Ikhlāṣ (complete)",
+    "english_meaning": "Sūrat al-Ikhlāṣ — recite 3×. Equal in reward to reciting one third of the Quran.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_6",
+    "arabic": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ (سورة الفلق كاملة)",
+    "transliteration": "Sūrat al-Falaq (complete)",
+    "english_meaning": "Sūrat al-Falaq — recite 3×. Seek refuge from all created evil.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_ruqyah_7",
+    "arabic": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ (سورة الناس كاملة)",
+    "transliteration": "Sūrat an-Nās (complete)",
+    "english_meaning": "Sūrat an-Nās — recite 3×. Seek refuge from the whisperer.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_sick_1",
+    "arabic": "لَا بَأْسَ طَهُورٌ إِنْ شَاءَ اللَّهُ",
+    "transliteration": "Lā baʾsa ṭahūrun in shāʾallāh.",
+    "english_meaning": "Do not worry, it will be a purification, if Allah wills. [Said to comfort the sick person]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_sick_2",
+    "arabic": "اللَّهُمَّ رَبَّ النَّاسِ، أَذْهِبِ الْبَأْسَ، اشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَمًا",
+    "transliteration": "Allāhumma rabban-nās, adh-hibil-baʾs, ishfi antash-shāfī, lā shifāʾa illā shifāʾuk, shifāʾan lā yughādiru saqamā.",
+    "english_meaning": "O Allah, Lord of mankind, remove the affliction and send down cure and healing, for there is no cure except Yours; a cure that leaves no illness behind.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_sick_3",
+    "arabic": "بِسْمِ اللَّهِ — أَعُوذُ بِاللَّهِ وَقُدْرَتِهِ مِنْ شَرِّ مَا أَجِدُ وَأُحَاذِرُ",
+    "transliteration": "Bismillāh — Aʿūdhu billāhi wa qudratihī min sharri mā ajidu wa uḥādhir.",
+    "english_meaning": "In the name of Allah — I seek refuge in Allah and His power from the evil of what I feel and what I fear. [Place hand on area of pain, say Bismillah 3×, then the rest 7×]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_sick_4",
+    "arabic": "أَسْأَلُ اللَّهَ الْعَظِيمَ رَبَّ الْعَرْشِ الْعَظِيمِ أَنْ يَشْفِيَكَ",
+    "transliteration": "Asʾalullāhal-ʿaẓīma rabbal-ʿarshil-ʿaẓīmi an yashfiyak.",
+    "english_meaning": "I ask Allah the Almighty, Lord of the mighty throne, to cure you. (7×) [Said when visiting the sick]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_travel_1",
+    "arabic": "اللَّهُ أَكْبَرُ، اللَّهُ أَكْبَرُ، اللَّهُ أَكْبَرُ، سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ، اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى، اللَّهُمَّ هَوِّنْ عَلَيْنَا سَفَرَنَا هَذَا وَاطْوِ عَنَّا بُعْدَهُ، اللَّهُمَّ أَنْتَ الصَّاحِبُ فِي السَّفَرِ وَالْخَلِيفَةُ فِي الْأَهْلِ",
+    "transliteration": "Allāhu akbar, Allāhu akbar, Allāhu akbar. Subḥānal-ladhī sakhkhara lanā hādhā wa mā kunnā lahu muqrinīn, wa innā ilā rabbinā lamunqalibūn. Allāhumma innā nasʾaluka fī safarinā hādhal-birra wat-taqwā, wa minal-ʿamali mā tarḍā. Allāhumma hawwin ʿalaynā safaranā hādhā waṭwi ʿannā buʿdah. Allāhumma antas-ṣāḥibu fis-safar wal-khalīfatu fil-ahl.",
+    "english_meaning": "Allah is the greatest (×3). Glory is to Him Who has provided this for us though we could never have had it by our efforts. Surely, unto our Lord we are returning. O Allah, we ask You on this journey for goodness and piety, and for deeds that are pleasing to You. O Allah, lighten this journey for us and make its distance easy for us. O Allah, You are our Companion on the road and the One Who looks after our family.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_travel_2",
+    "arabic": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ وَعْثَاءِ السَّفَرِ، وَكَآبَةِ الْمَنْظَرِ، وَسُوءِ الْمُنْقَلَبِ فِي الْمَالِ وَالْأَهْلِ",
+    "transliteration": "Allāhumma innī aʿūdhu bika min waʿthāʾis-safar, wa kaʾābatil-manẓar, wa sūʾil-munqalabi fil-māli wal-ahl.",
+    "english_meaning": "O Allah, I seek refuge in You from the difficulties of travel, from unpleasant sights, and from a bad return to my property and family.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_waking_1",
+    "arabic": "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+    "transliteration": "Al-ḥamdu lillāhil-ladhī aḥyānā baʿda mā amātanā wa ilayhin-nushūr.",
+    "english_meaning": "All praise is for Allah who gave us life after having taken it from us and unto Him is the resurrection.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_waking_2",
+    "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ الْعَلِيِّ الْعَظِيمِ",
+    "transliteration": "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Subḥānallāh, wal-ḥamdu lillāh, wa lā ilāha illallāh, wallāhu akbar, wa lā ḥawla wa lā quwwata illā billāhil-ʿaliyyil-ʿaẓīm.",
+    "english_meaning": "None has the right to be worshipped except Allah, alone, without any partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent. Glory is to Allah, all praise is for Allah, none has the right to be worshipped except Allah, Allah is the greatest, and there is no power and no might except with Allah the Most High, the Most Great.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_waking_3",
+    "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ هَذَا الْيَوْمِ فَتْحَهُ وَنَصْرَهُ وَنُورَهُ وَبَرَكَتَهُ وَهُدَاهُ، وَأَعُوذُ بِكَ مِنْ شَرِّ مَا فِيهِ وَشَرِّ مَا بَعْدَهُ",
+    "transliteration": "Allāhumma innī asʾaluka khayra hādhal-yawmi fatḥahu wa naṣrahu wa nūrahu wa barakatahu wa hudāh, wa aʿūdhu bika min sharri mā fīhi wa sharri mā baʿdah.",
+    "english_meaning": "O Allah, I ask You for the goodness of this day — its victory, its help, its light, its blessings and its guidance. And I seek refuge in You from the evil in it and the evil after it.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_wudu_1",
+    "arabic": "بِسْمِ اللَّهِ",
+    "transliteration": "Bismillāh.",
+    "english_meaning": "In the name of Allah. [Said before wudu]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_wudu_2",
+    "arabic": "أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، وَأَشْهَدُ أَنَّ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ، اللَّهُمَّ اجْعَلْنِي مِنَ التَّوَّابِينَ وَاجْعَلْنِي مِنَ الْمُتَطَهِّرِينَ",
+    "transliteration": "Ashhadu an lā ilāha illallāhu waḥdahu lā sharīka lah, wa ashhadu anna Muḥammadan ʿabduhu wa rasūluh. Allāhummaj-ʿalnī minat-tawwābīna waj-ʿalnī minal-mutaṭahhirīn.",
+    "english_meaning": "I bear witness that none has the right to be worshipped except Allah, alone, without any partner, and I bear witness that Muhammad is His servant and Messenger. O Allah, make me of those who repent and make me of those who purify themselves. [Said after wudu]",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  },
+  {
+    "key": "athkar_wudu_3",
+    "arabic": "سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ",
+    "transliteration": "Subḥānaka Allāhumma wa biḥamdik, ashhadu an lā ilāha illā ant, astaghfiruka wa atūbu ilayk.",
+    "english_meaning": "Glory is to You O Allah and praise. I bear witness that none has the right to be worshipped but You. I seek Your forgiveness and repent to You.",
+    "takhrij": "",
+    "needs": [
+      "ru",
+      "zh",
+      "ur",
+      "bn",
+      "fa",
+      "ms",
+      "sw",
+      "ha"
+    ]
+  }
+]
