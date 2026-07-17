@@ -177,7 +177,7 @@ export default function SettingsScreen() {
 
 
   // ── Help texts (all 15 languages) ───────────────────────────────
-  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid' | 'iqama';
+  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid' | 'iqama' | 'dst';
   const HELP: Record<string, Record<HelpKey, string>> = {
     ar: {
       language: 'اللغة الأولى ثابتة على العربية.\n\nاللغة الثانية تظهر تحت كل اسم صلاة ومصطلح. "تلقائي" يختار اللغة حسب البلد الذي اكتُشف من موقعك.',
@@ -192,6 +192,7 @@ export default function SettingsScreen() {
       dhuha: 'صلاة الضحى تُصلَّى بعد ارتفاع الشمس وقبل الزوال — ركعتان إلى ثماني ركعات.\n\nقيام الليل يُصلَّى في الثلث الأخير من الليل قبيل الفجر.\n\nفعّل كل منهما واضبط وقت التذكير ليُنبّهك التطبيق.',
       eid: 'تُصلَّى صباح يوم عيد الفطر (١ شوال) وعيد الأضحى (١٠ ذو الحجة).\n\nأدخل هنا الوقت الرسمي المعلَن في مسجدك أو مدينتك.\n\nيظهر هذا الخيار قبل العيد بيومين وفي يوم العيد فقط.',
       iqama: 'الإقامة هي النداء الثاني الذي يُعلَن مباشرةً قبل إقامة الصلاة في المسجد.\n\nاضبط هنا الفاصل الزمني (بالدقائق) بين وقت الأذان الرسمي وإقامة الصلاة لكل فريضة.\n\nبعد وقت الأذان بهذه المدة، يُعرض في الشاشة الرئيسية عداد "الإقامة خلال..." بدلاً من عداد الصلاة القادمة.',
+      dst: '«تلقائي» يتبع قواعد التوقيت الصيفي لموقعك ويتحوّل من تلقاء نفسه — وهو صحيح في جميع الأماكن تقريباً، فلا تحتاج عادةً إلى تغييره.\\n\\nاستخدم «مفعّل» أو «معطّل» فقط لتجاوز الحالة النادرة التي تكون فيها الخريطة غير دقيقة لمنطقتك تحديداً — مثلاً منطقة تقع ضمن نطاق زمني يعتمد التوقيت الصيفي بينما هي نفسها لا تعتمده.',
     },
     en: {
       language: 'Arabic is the fixed primary language.\n\nThe second language appears beneath each prayer name and label. "Auto" detects your country from your GPS location and picks the most appropriate language.',
@@ -206,6 +207,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha is a voluntary prayer after sunrise and before Dhuhr — 2 to 8 rak\'ahs.\n\nQiyam (Tahajjud) is the night vigil prayer, best in the last third of the night before Fajr.\n\nToggle each on and set a reminder time.',
       eid: 'Eid prayer is performed on the morning of Eid al-Fitr (1 Shawwal) and Eid al-Adha (10 Dhul Hijjah).\n\nEnter the official prayer time announced by your mosque or city.\n\nThis option appears only in the two days before Eid and on the day itself.',
       iqama: 'Iqama is the second call that is announced just before the congregational prayer begins in the mosque.\n\nSet the delay (in minutes) between the official Athan time and the Iqama for each obligatory prayer.\n\nOnce that delay has elapsed after the Athan, the home screen switches from the "Next Prayer" countdown to an "Iqama in…" countdown.',
+      dst: '\'Auto\' follows the daylight-saving rules for your location and switches by itself — it is right almost everywhere, so you normally never need to change it.\\n\\nUse \'On\' or \'Off\' only to override the rare case where the map is wrong for your exact locality — for example, a place inside a timezone that observes daylight saving even though the locality itself does not.',
     },
     fr: {
       language: 'L\'arabe est la langue principale fixe.\n\nLa deuxième langue apparaît sous chaque nom de prière. "Auto" détecte votre pays via GPS.',
@@ -220,6 +222,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha est une prière volontaire après le lever du soleil et avant Dhuhr — 2 à 8 rak\'a.\n\nQiyam (Tahajjud) est la prière nocturne, idéalement dans le dernier tiers de la nuit avant Fajr.\n\nActivez chacune et définissez l\'heure de rappel.',
       eid: 'La prière de l\'Aïd a lieu le matin de l\'Aïd al-Fitr (1 Chawwal) et de l\'Aïd al-Adha (10 Dhul Hijja).\n\nEntrez l\'heure officielle de votre mosquée ou ville.\n\nCette option n\'apparaît que deux jours avant l\'Aïd et le jour même.',
       iqama: 'L\'Iqama est le second appel annoncé juste avant le début de la prière collective à la mosquée.\n\nDéfinissez ici le délai (en minutes) entre l\'Athan officiel et l\'Iqama pour chaque prière obligatoire.\n\nUne fois ce délai écoulé, l\'écran principal affiche un compte à rebours "Iqama dans…" au lieu de "Prochaine prière".',
+      dst: '« Auto » suit les règles d\'heure d\'été de votre position et bascule de lui-même — c\'est correct presque partout, vous n\'avez normalement pas à le changer.\\n\\nN\'utilisez « Activé » ou « Désactivé » que pour le cas rare où la carte est fausse pour votre localité précise — par exemple, un lieu situé dans un fuseau qui applique l\'heure d\'été alors que la localité elle-même ne l\'applique pas.',
     },
     es: {
       language: 'El árabe es el idioma principal fijo.\n\nEl segundo idioma aparece bajo cada nombre de oración. "Auto" detecta tu país por GPS.',
@@ -234,6 +237,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha es una oración voluntaria después del amanecer y antes del Dhuhr — 2 a 8 rak\'as.\n\nQiyam (Tahajjud) es la oración nocturna, mejor en el último tercio de la noche antes del Fajr.\n\nActiva cada una y establece el horario de recordatorio.',
       eid: 'La oración del Eid se realiza la mañana del Eid al-Fitr (1 Shawwal) y el Eid al-Adha (10 Dhul Hijjah).\n\nIngresa el horario oficial de tu mezquita o ciudad.\n\nEsta opción solo aparece dos días antes del Eid y el día mismo.',
       iqama: 'La Iqama es el segundo llamado que se anuncia justo antes de que comience la oración congregacional en la mezquita.\n\nEstablece aquí el retraso (en minutos) entre el horario oficial del Athan y la Iqama para cada oración obligatoria.\n\nUna vez transcurrido ese tiempo, la pantalla principal muestra una cuenta regresiva "Iqama en…" en lugar de "Próxima oración".',
+      dst: '«Auto» sigue las reglas del horario de verano de tu ubicación y cambia por sí solo — es correcto casi en todas partes, así que normalmente no necesitas cambiarlo.\\n\\nUsa «Activado» o «Desactivado» solo para el caso raro en que el mapa se equivoca con tu localidad exacta — por ejemplo, un lugar dentro de una zona horaria que aplica el horario de verano aunque la localidad en sí no lo haga.',
     },
     ru: {
       language: 'Арабский язык — основной фиксированный.\n\nВторой язык отображается под каждым названием намаза. "Авто" определяет страну по GPS.',
@@ -248,6 +252,7 @@ export default function SettingsScreen() {
       dhuha: 'Духа — добровольная молитва после восхода солнца до Зухра — от 2 до 8 ракаатов.\n\nКийям (Тахаджжуд) — ночная молитва, лучше всего в последнюю треть ночи перед Фаджром.\n\nВключите каждую и задайте время напоминания.',
       eid: 'Намаз Ид совершается утром Ид аль-Фитр (1 Шаввала) и Ид аль-Адха (10 Зуль-Хиджа).\n\nВведите официальное время молитвы для вашей мечети или города.\n\nЭта опция отображается за два дня до праздника и в сам день.',
       iqama: 'Икама — второй призыв, объявляемый непосредственно перед началом коллективной молитвы в мечети.\n\nУстановите задержку (в минутах) между официальным азаном и икамой для каждого обязательного намаза.\n\nКак только этот промежуток истечёт, на главном экране появится обратный отсчёт «Икама через…» вместо «Следующий намаз».',
+      dst: '«Авто» следует правилам летнего времени для вашего местоположения и переключается сам — это верно почти везде, поэтому обычно менять не нужно.\\n\\nИспользуйте «Вкл.» или «Выкл.» только для редкого случая, когда карта ошибается для вашей местности — например, место внутри часового пояса, где действует летнее время, хотя сама местность его не соблюдает.',
     },
     zh: {
       language: '阿拉伯语是固定的主要语言。\n\n第二语言显示在每个礼拜名称下方。"自动"通过GPS检测您的国家。',
@@ -262,6 +267,7 @@ export default function SettingsScreen() {
       dhuha: '杜哈祈祷是日出后至晌礼前的自愿礼拜，2至8拉卡特。\n\n夜间礼拜（塔哈朱德）最好在夜晚的最后三分之一，即晨礼前。\n\n开启每项并设置提醒时间。',
       eid: '开斋节礼拜在开斋节（1 Shawwal）和宰牲节（10 Dhul Hijjah）的早晨举行。\n\n输入您所在清真寺或城市的官方礼拜时间。\n\n此选项仅在节前两天和节日当天显示。',
       iqama: '伊卡玛是在清真寺会众礼拜开始前宣布的第二次呼唤。\n\n在此设置每个主命礼拜的宣礼（阿赞）时间与伊卡玛之间的延迟（分钟）。\n\n延迟时间过后，主屏幕将显示"伊卡玛倒计时"，而非"下次礼拜"。',
+      dst: '「自动」会按您所在位置的夏令时规则自动切换——几乎在所有地方都正确，通常无需更改。\\n\\n仅在地图对您的具体地区判断有误的罕见情况下，才使用「开启」或「关闭」——例如某地所在的时区实行夏令时，而该地本身并不实行。',
     },
     tr: {
       language: 'Arapça sabit birincil dildir.\n\nİkinci dil her namaz adının altında görünür. "Otomatik" GPS ile ülkenizi algılar.',
@@ -276,6 +282,7 @@ export default function SettingsScreen() {
       dhuha: 'Duhâ namazı, gün doğumundan sonra ve öğleden önce kılınan nafile bir namazdır — 2 ila 8 rekât.\n\nKıyâmülleyl (Teheccüd), gecenin son üçte birinde kılınan gece namazıdır.\n\nHer birini etkinleştirin ve hatırlatma saatini ayarlayın.',
       eid: 'Bayram namazı, Ramazan Bayramı\'nın (1 Şevval) ve Kurban Bayramı\'nın (10 Zilhicce) sabahında kılınır.\n\nMescidinizdeki veya şehirinizdeki resmi namaz saatini girin.\n\nBu seçenek yalnızca bayramdan iki gün önce ve bayram günü görünür.',
       iqama: 'İkame, camide cemaatle namaza başlanmadan hemen önce okunan ikinci çağrıdır.\n\nBurada her farz namaz için ezanın okunmasından ikameye kadar olan süreyi (dakika olarak) ayarlayın.\n\nBu süre geçince ana ekranda "Sonraki namaz" yerine "İkameye … kaldı" geri sayımı görünür.',
+      dst: '«Otomatik», konumunuzun yaz saati kurallarını izler ve kendiliğinden değişir — neredeyse her yerde doğrudur, normalde değiştirmeniz gerekmez.\\n\\n«Açık» veya «Kapalı» seçeneğini yalnızca haritanın tam olarak sizin bölgeniz için yanıldığı ender durumda kullanın — örneğin, bölgenin kendisi uygulamadığı hâlde yaz saati uygulayan bir saat diliminin içinde kalan bir yer.',
     },
     ur: {
       language: 'عربی ہمیشہ پہلی زبان رہتی ہے۔\n\nدوسری زبان ہر نماز کے نام کے نیچے نظر آتی ہے۔ "خودکار" GPS سے آپ کا ملک معلوم کرتا ہے۔',
@@ -290,6 +297,7 @@ export default function SettingsScreen() {
       dhuha: 'نماز چاشت سورج طلوع ہونے کے بعد اور ظہر سے پہلے ادا کی جاتی ہے — ۲ سے ۸ رکعات۔\n\nقیام اللیل (تہجد) رات کے آخری تہائی حصے میں ادا کی جاتی ہے۔\n\nہر ایک کو فعال کریں اور یاددہانی کا وقت مقرر کریں۔',
       eid: 'نماز عید الفطر (۱ شوال) اور عید الاضحیٰ (۱۰ ذو الحجہ) کی صبح ادا کی جاتی ہے۔\n\nاپنی مسجد یا شہر کے اعلان کردہ وقت درج کریں۔\n\nیہ آپشن صرف عید سے دو دن پہلے اور عید کے دن ظاہر ہوتا ہے۔',
       iqama: 'اقامت وہ دوسری پکار ہے جو مسجد میں باجماعت نماز شروع ہونے سے فوری پہلے دی جاتی ہے۔\n\nیہاں ہر فرض نماز کے لیے اذان اور اقامت کے درمیان وقفہ (منٹوں میں) مقرر کریں۔\n\nیہ وقفہ گزرنے کے بعد، مرکزی اسکرین پر "اگلی نماز" کی بجائے "اقامت میں…" کا الٹا گنتی نمایاں ہوگی۔',
+      dst: '«خودکار» آپ کے مقام کے ڈے لائٹ سیونگ اصولوں کے مطابق خود بخود بدل جاتا ہے — یہ تقریباً ہر جگہ درست ہوتا ہے، عام طور پر اسے تبدیل کرنے کی ضرورت نہیں۔\\n\\n«آن» یا «آف» صرف اُس نادر صورت میں استعمال کریں جب نقشہ آپ کے عین علاقے کے لیے غلط ہو — مثلاً کوئی جگہ جو ایسے ٹائم زون میں ہو جہاں ڈے لائٹ سیونگ نافذ ہے مگر وہ علاقہ خود اسے نہیں مانتا۔',
     },
     id: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama shalat. "Otomatis" mendeteksi negara Anda via GPS.',
@@ -304,6 +312,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha adalah shalat sunnah setelah matahari terbit dan sebelum Zuhur — 2 hingga 8 rakaat.\n\nQiyam (Tahajud) adalah shalat malam, terbaik di sepertiga terakhir malam sebelum Subuh.\n\nAktifkan masing-masing dan atur waktu pengingat.',
       eid: 'Shalat Eid dilaksanakan pada pagi hari Eid al-Fitr (1 Syawal) dan Eid al-Adha (10 Dzulhijjah).\n\nMasukkan waktu shalat resmi yang diumumkan masjid atau kota Anda.\n\nOpsi ini hanya muncul dua hari sebelum dan pada hari Eid.',
       iqama: 'Iqamah adalah seruan kedua yang dikumandangkan tepat sebelum shalat berjamaah dimulai di masjid.\n\nTetapkan jeda (dalam menit) antara waktu Azan resmi dan Iqamah untuk setiap shalat wajib.\n\nSetelah jeda itu berlalu, layar utama beralih dari hitung mundur "Shalat Berikutnya" ke hitung mundur "Iqamah dalam…".',
+      dst: '«Otomatis» mengikuti aturan waktu musim panas untuk lokasi Anda dan berganti sendiri — hampir selalu benar, jadi biasanya tidak perlu diubah.\\n\\nGunakan «Aktif» atau «Nonaktif» hanya untuk kasus langka saat peta keliru untuk daerah Anda persis — misalnya, tempat yang berada di dalam zona waktu yang menerapkan waktu musim panas padahal daerah itu sendiri tidak.',
     },
     bn: {
       language: 'আরবি সর্বদা প্রধান ভাষা।\n\nদ্বিতীয় ভাষা প্রতিটি নামাজের নামের নিচে দেখায়। "স্বয়ংক্রিয়" GPS দিয়ে আপনার দেশ শনাক্ত করে।',
@@ -318,6 +327,7 @@ export default function SettingsScreen() {
       dhuha: 'দুহা হল সূর্যোদয়ের পর ও জোহরের আগে স্বেচ্ছামূলক নামাজ — ২ থেকে ৮ রাকাত।\n\nকিয়ামুল লাইল (তাহাজ্জুদ) ফজরের আগে রাতের শেষ তৃতীয়াংশে পড়া হয়।\n\nপ্রতিটি সক্রিয় করুন এবং স্মরণের সময় সেট করুন।',
       eid: 'ঈদের নামাজ ঈদুল ফিতর (১ শাওয়াল) এবং ঈদুল আযহা (১০ জিলহজ্জ) এর সকালে পড়া হয়।\n\nআপনার মসজিদ বা শহরের ঘোষিত সময় লিখুন।\n\nএই বিকল্পটি শুধুমাত্র ঈদের দুই দিন আগে এবং ঈদের দিন দেখা যায়।',
       iqama: 'ইকামত হল দ্বিতীয় আহ্বান যা মসজিদে জামায়াত শুরু হওয়ার ঠিক আগে দেওয়া হয়।\n\nপ্রতিটি ফরজ নামাজের জন্য আযান ও ইকামতের মধ্যে বিরতি (মিনিটে) এখানে সেট করুন।\n\nসেই বিরতি পেরিয়ে গেলে প্রধান স্ক্রিনে "পরবর্তী নামাজ"-এর পরিবর্তে "ইকামত আসছে…" কাউন্টডাউন দেখাবে।',
+      dst: '«স্বয়ংক্রিয়» আপনার অবস্থানের ডে-লাইট সেভিং নিয়ম অনুসরণ করে নিজে থেকেই বদলায় — প্রায় সব জায়গায় এটি সঠিক, তাই সাধারণত পরিবর্তনের দরকার হয় না।\\n\\n«চালু» বা «বন্ধ» কেবল সেই বিরল ক্ষেত্রেই ব্যবহার করুন যখন মানচিত্র আপনার নির্দিষ্ট এলাকার জন্য ভুল — যেমন এমন একটি স্থান যা এমন টাইম জোনে পড়ে যেখানে ডে-লাইট সেভিং চলে অথচ এলাকাটি নিজে তা মানে না।',
     },
     fa: {
       language: 'عربی زبان اصلی ثابت است.\n\nزبان دوم زیر هر نام نماز نمایش داده می‌شود. "خودکار" کشور شما را از GPS تشخیص می‌دهد.',
@@ -332,6 +342,7 @@ export default function SettingsScreen() {
       dhuha: 'نماز ضحی پس از طلوع آفتاب و پیش از ظهر خوانده می‌شود — ۲ تا ۸ رکعت.\n\nقیام اللیل (تهجد) در آخرین سوم شب قبل از فجر بهترین وقت دارد.\n\nهر کدام را فعال کنید و زمان یادآوری را تنظیم نمایید.',
       eid: 'نماز عید در صبح روز عیدالفطر (۱ شوال) و عیدالأضحی (۱۰ ذی‌الحجه) ادا می‌شود.\n\nوقت رسمی اعلام‌شده توسط مسجد یا شهر خود را وارد کنید.\n\nاین گزینه فقط دو روز قبل از عید و روز عید نمایش داده می‌شود.',
       iqama: 'اقامه دومین ندایی است که دقیقاً پیش از شروع نماز جماعت در مسجد خوانده می‌شود.\n\nدر اینجا فاصله زمانی (بر حسب دقیقه) بین اذان رسمی و اقامه را برای هر نماز واجب تنظیم کنید.\n\nپس از گذشت این فاصله، صفحه اصلی به‌جای "نماز بعدی" شمارش معکوس "اقامه در …" را نمایش می‌دهد.',
+      dst: '«خودکار» قوانین ساعت تابستانی موقعیت شما را دنبال می‌کند و خودبه‌خود تغییر می‌کند — تقریباً همه‌جا درست است و معمولاً نیازی به تغییر آن نیست.\\n\\nفقط در موارد نادری که نقشه برای منطقهٔ دقیق شما اشتباه است از «روشن» یا «خاموش» استفاده کنید — برای نمونه، جایی که درون منطقهٔ زمانی‌ای قرار دارد که ساعت تابستانی را اجرا می‌کند در حالی که خود آن منطقه آن را اجرا نمی‌کند.',
     },
     ms: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama sembahyang. "Auto" mengesan negara anda melalui GPS.',
@@ -346,6 +357,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha ialah sembahyang sunat selepas matahari terbit dan sebelum Zohor — 2 hingga 8 rakaat.\n\nQiyam (Tahajud) adalah sembahyang malam, terbaik pada sepertiga akhir malam sebelum Subuh.\n\nAktifkan setiap satu dan tetapkan masa peringatan.',
       eid: 'Solat Hari Raya dilaksanakan pada pagi Hari Raya Aidilfitri (1 Syawal) dan Aidiladha (10 Zulhijjah).\n\nMasukkan waktu solat rasmi yang diumumkan oleh masjid atau bandar anda.\n\nPilihan ini hanya muncul dua hari sebelum dan pada Hari Raya.',
       iqama: 'Iqamah ialah seruan kedua yang dilaungkan sejurus sebelum solat berjemaah dimulakan di masjid.\n\nTetapkan di sini jeda masa (dalam minit) antara waktu Azan rasmi dan Iqamah bagi setiap solat fardu.\n\nSelepas jeda itu berlalu, skrin utama beralih daripada kiraan undur "Solat Seterusnya" kepada "Iqamah dalam…".',
+      dst: '«Auto» mengikut peraturan waktu musim panas bagi lokasi anda dan bertukar dengan sendiri — betul hampir di mana-mana, jadi biasanya anda tidak perlu mengubahnya.\\n\\nGunakan «Hidup» atau «Mati» hanya untuk kes jarang apabila peta tersilap bagi kawasan tepat anda — contohnya, tempat yang berada dalam zon waktu yang mengamalkan waktu musim panas walaupun kawasan itu sendiri tidak.',
     },
     pt: {
       language: 'O árabe é o idioma principal fixo.\n\nO segundo idioma aparece abaixo de cada nome de oração. "Auto" detecta seu país por GPS.',
@@ -360,6 +372,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha é uma oração voluntária após o nascer do sol e antes do Dhuhr — 2 a 8 rak\'as.\n\nQiyam (Tahajud) é a oração noturna, melhor no último terço da noite antes do Fajr.\n\nAtive cada uma e defina o horário de lembrete.',
       eid: 'A oração do Eid é realizada na manhã do Eid al-Fitr (1 Shawwal) e do Eid al-Adha (10 Dhul Hijjah).\n\nInsira o horário oficial anunciado pela sua mesquita ou cidade.\n\nEsta opção aparece apenas dois dias antes do Eid e no próprio dia.',
       iqama: 'A Iqama é o segundo chamado anunciado imediatamente antes do início da oração em congregação na mesquita.\n\nDefina aqui o intervalo (em minutos) entre o horário oficial do Athan e a Iqama para cada oração obrigatória.\n\nApós esse intervalo, a tela inicial muda da contagem regressiva de "Próxima oração" para "Iqama em…".',
+      dst: '«Auto» segue as regras de horário de verão da sua localização e muda sozinho — está correto quase em todo o lado, por isso normalmente não precisa de o alterar.\\n\\nUse «Ligado» ou «Desligado» apenas para o caso raro em que o mapa está errado para a sua localidade exata — por exemplo, um lugar dentro de um fuso que aplica o horário de verão embora a própria localidade não o faça.',
     },
     sw: {
       language: 'Kiarabu ni lugha kuu ya kudumu.\n\nLugha ya pili inaonekana chini ya kila jina la sala. "Otomatiki" hugundua nchi yako kupitia GPS.',
@@ -374,6 +387,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha ni sala ya hiari baada ya machweo ya jua na kabla ya Dhuhr — rak\'a 2 hadi 8.\n\nQiyam (Tahajud) ni sala ya usiku, bora zaidi katika theluthi ya mwisho ya usiku kabla ya Fajr.\n\nWasha kila moja na uweke wakati wa ukumbusho.',
       eid: 'Sala ya Eid husaliwa asubuhi ya Eid al-Fitr (1 Shawwal) na Eid al-Adha (10 Dhul Hijjah).\n\nIngiza wakati rasmi uliotangazwa na msikiti au mji wako.\n\nChaguo hili linaonekana tu siku mbili kabla na siku ya Eid.',
       iqama: 'Iqama ni wito wa pili unaoitangazwa mara moja kabla ya sala ya jamaa kuanza msikitini.\n\nWeka hapa muda wa kupumzika (kwa dakika) kati ya wakati rasmi wa Adhana na Iqama kwa kila sala ya faradhi.\n\nBaada ya muda huo kupita, skrini kuu itabadilika kutoka kuhesabu nyuma "Sala Ijayo" hadi "Iqama katika…".',
+      dst: '«Otomatiki» hufuata kanuni za saa za majira ya joto kwa eneo lako na hubadilika lenyewe — ni sahihi karibu kila mahali, hivyo kwa kawaida huhitaji kulibadilisha.\\n\\nTumia «Washa» au «Zima» tu kwa hali adimu ambapo ramani imekosea kwa eneo lako hasa — kwa mfano, mahali palipo ndani ya saa za eneo zinazotumia saa za majira ya joto ilhali eneo lenyewe halizitumii.',
     },
     ha: {
       language: 'Larabci shine harshen farko na dindindin.\n\nHarshe na biyu yana bayyana ƙarƙashin sunan kowace sallah. "Atomatik" yana gano ƙasarku ta GPS.',
@@ -388,6 +402,7 @@ export default function SettingsScreen() {
       dhuha: 'Dhuha addu\'a ce ta son rai bayan fitowar rana da kafin Dhuhr — rak\'a 2 zuwa 8.\n\nQiyam addu\'a ce ta dare, mafi kyau a cikin kashi uku na ƙarshe na dare kafin Fajr.\n\nKunnawa kowane ɗaya ku saita lokacin tunatarwa.',
       eid: 'An yi sallar Eid safe na Eid al-Fitr (1 Shawwal) da Eid al-Adha (10 Dhul Hijjah).\n\nShiga lokacin addu\'a na hukuma da masallaci ko birnin ka ya sanar.\n\nZabin nan yana bayyana ne kwanaki biyu kafin Eid da ranar Eid.',
       iqama: 'Iqama wata kira ce ta biyu da ake yi nan take kafin sallah ta jama\'a ta fara a masallaci.\n\nKa saita a nan jinkirin (a cikin mintuna) tsakanin lokacin Azan na hukuma da Iqama don kowace sallah ta wajibi.\n\nBayan wannan jinkirin ya wuce, allo na farko yana sauya daga ƙididdiga ta "Sallah Mai Zuwa" zuwa "Iqama a cikin…".',
+      dst: '«Kai tsaye» yana bin ka\'idodin lokacin bazara na wurin ka kuma yana canzawa da kansa — daidai ne kusan ko\'ina, don haka ba sai ka canza shi ba.\\n\\nYi amfani da «Kunna» ko «Kashe» kawai a yanayin da ba kasafai ba inda taswira ta yi kuskure ga yankin ka daidai — misali, wuri da ke cikin yankin lokaci da ke amfani da lokacin bazara alhali yankin da kansa ba ya amfani da shi.',
     },
   };
 
@@ -839,9 +854,14 @@ export default function SettingsScreen() {
           {dstResolved.applicable && (
             <View style={[styles.settingRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'stretch', gap: 8 }]}>
               <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[styles.settingLabel, { flex: 1, color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
-                  {tr.dstSetting}
-                </Text>
+                <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+                  <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+                    {tr.dstSetting}
+                  </Text>
+                  <Pressable onPress={() => showHelp(tr.dstSetting, HELP[lang]?.dst ?? HELP['en'].dst)} hitSlop={8}>
+                    <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+                  </Pressable>
+                </View>
                 <View style={styles.chips}>
                   <Chip value={tr.dst_auto} selected={dstMode === 'auto'} onPress={() => updateSettings({ dstMode: 'auto' })} />
                   <Chip value={tr.dst_on}   selected={dstMode === 'on'}   onPress={() => updateSettings({ dstMode: 'on' })} />
