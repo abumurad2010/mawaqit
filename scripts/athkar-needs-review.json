@@ -627,5 +627,25 @@
       "annotations",
       "narrator_chain"
     ]
+  },
+  {
+    "chapter": "دعاء الذهاب إلى المسجد",
+    "category": "going_prayer",
+    "arabic": "اللَّهُمَّ اجْعَلْ لِي نُورًا فِي قَبْرِي .. وَنُورًا فِي عِظَامِي",
+    "count": 1,
+    "takhrij": "",
+    "defects": [
+      "ellipsis"
+    ]
+  },
+  {
+    "chapter": "دعاء دخول المسجد",
+    "category": "mosque",
+    "arabic": "بِسْمِ اللَّهِ، وَالصَّلَاةُ* وَالسَّلَامُ عَلَى رَسُولِ اللَّهِ** اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ***",
+    "count": 1,
+    "takhrij": "",
+    "defects": [
+      "footnote_marker"
+    ]
   }
 ]
