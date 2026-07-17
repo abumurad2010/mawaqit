@@ -2249,9 +2249,17 @@ function ReaderScreen({
       // missing lookup fell through to '' — Arabic + transliteration then a BLANK
       // meaning. Fall back to the English base (never blank) instead. No new
       // translations are generated; this is fallback only.
-      const translation = (i18n[meaningLang] as any)?.[thikr.translationKey]
+      const rawTranslation = (i18n[meaningLang] as any)?.[thikr.translationKey]
         ?? (i18n.en as any)?.[thikr.translationKey]
         ?? '';
+      // For Arabic UI the "meaning" of an Arabic dhikr is its own Arabic text,
+      // so in full mode it would render the identical Arabic twice. Suppress the
+      // meaning line when it just duplicates the dhikr. Render gate only — the
+      // i18n data is unchanged.
+      const translation =
+        meaningLang === 'ar' && rawTranslation.trim() === thikr.arabic.trim()
+          ? ''
+          : rawTranslation;
       return {
         key: `b-${i}`,
         arabic: thikr.arabic,
