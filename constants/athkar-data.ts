@@ -9,11 +9,27 @@
  * 'shield-cross', 'shield-cross-outline'
  */
 
+/*
+ * SOURCE / ATTRIBUTION
+ * Repetition counts and takhrij (source citations) are drawn from the Hisn
+ * al-Muslim dataset `asellam/HisnElMuslim` (hisn.json), MIT-licensed
+ * © 2021 Abdellah SELLAM — https://github.com/asellam/HisnElMuslim
+ * cross-checked against `rn0x/hisnmuslim_app` (MIT; hisnmuslim.com data).
+ * The two sources agree on counts for 172/174 shared adhkar.
+ * NOTE: the original provenance of the Arabic/transliteration/meaning text in
+ * this file is unknown; a subset (notably parents, laylatul_qadr, quran_khatm,
+ * amazement, eclipse) is not present in Hisn al-Muslim and its source is
+ * unverified. `takhrij` is populated only where a value is confirmed from a source.
+ */
+
 export interface Thikr {
   arabic: string;
   transliteration: string;
   translationKey: string;
   count: number;
+  /** Source citation (takhrij), verbatim from the MIT Hisn al-Muslim dataset.
+   *  Present only on entries whose count/text is confirmed against a source. */
+  takhrij?: string;
 }
 
 export interface AthkarCategory {
@@ -348,7 +364,8 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         arabic: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
         transliteration: "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr.",
         translationKey: "athkar_afterprayer_7",
-        count: 1,
+        count: 100,
+        takhrij: "من قالها مائة مرة في يوم كانت له عدل عشر رقاب، وكتب له مائة حسنة، ومحيت عنه مائة سيئة، وكانت حرزًا من الشيطان يومه ذلك حتى يمسي، ولم يأت أحد بأفضل مما جاء به إلا أحد عمل أكثر من ذلك. البخاري 4/ 95، ومسلم 4/ 2071",
       },
       {
         arabic: "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ",
@@ -491,7 +508,8 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         arabic: "اللَّهُ اللَّهُ رَبِّي لَا أُشْرِكُ بِهِ شَيْئًا",
         transliteration: "Allāhu Allāhu rabbī lā ushriku bihi shayʾā.",
         translationKey: "athkar_distress_2",
-        count: 7,
+        count: 1,
+        takhrij: "أخرجه أبو داود 2/ 87 وانظر صحيح ابن ماجة 2/ 335",
       },
       {
         arabic: "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
@@ -746,7 +764,8 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         arabic: "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
         transliteration: "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā ṣallayta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd. Allāhumma bārik ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā bārakta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd.",
         translationKey: "athkar_friday_1",
-        count: 100,
+        count: 1,
+        takhrij: "البخاري مع الفتح 6/ 408",
       },
       {
         arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِأَنَّ لَكَ الْحَمْدَ، لَا إِلَهَ إِلَّا أَنْتَ، الْمَنَّانُ، بَدِيعُ السَّمَاوَاتِ وَالْأَرْضِ، يَا ذَا الْجَلَالِ وَالْإِكْرَامِ، يَا حَيُّ يَا قَيُّومُ، إِنِّي أَسْأَلُكَ الْجَنَّةَ وَأَعُوذُ بِكَ مِنَ النَّارِ",
@@ -808,7 +827,8 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         arabic: "لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ",
         transliteration: "Lā ilāha illā anta subḥānaka innī kuntu minaẓ-ẓālimīn.",
         translationKey: "athkar_faraj_2",
-        count: 40,
+        count: 1,
+        takhrij: "التّرمذي 5/ 529، والحاكم، وصحّحه ووافقه الذّهبيّ 1/ 505، وانظر صحيح التّرمذي 3/ 168",
       },
       {
         arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ يَا اللَّهُ بِأَنَّكَ الْوَاحِدُ الْأَحَدُ الصَّمَدُ الَّذِي لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ، أَنْ تَغْفِرَ لِي ذُنُوبِي إِنَّكَ أَنْتَ الْغَفُورُ الرَّحِيمُ",
@@ -1238,7 +1258,8 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         arabic: "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
         transliteration: "Allāhumma ṣalli ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā ṣallayta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd. Allāhumma bārik ʿalā Muḥammadin wa ʿalā āli Muḥammad, kamā bārakta ʿalā Ibrāhīma wa ʿalā āli Ibrāhīm, innaka ḥamīdun majīd.",
         translationKey: "athkar_salawat_1",
-        count: 10,
+        count: 1,
+        takhrij: "البخاري مع الفتح 6/ 408",
       },
       {
         arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
@@ -1444,7 +1465,8 @@ const ATHKAR_CATEGORIES: AthkarCategory[] = [
         arabic: "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
         transliteration: "Lā ilāha illallāhu waḥdahu lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr.",
         translationKey: "athkar_arafah_1",
-        count: 1,
+        count: 100,
+        takhrij: "من قالها مائة مرة في يوم كانت له عدل عشر رقاب، وكتب له مائة حسنة، ومحيت عنه مائة سيئة، وكانت حرزًا من الشيطان يومه ذلك حتى يمسي، ولم يأت أحد بأفضل مما جاء به إلا أحد عمل أكثر من ذلك. البخاري 4/ 95، ومسلم 4/ 2071",
       },
       {
         arabic: "اللَّهُمَّ لَكَ الْحَمْدُ كَالَّذِي تَقُولُ وَخَيْرًا مِمَّا نَقُولُ، اللَّهُمَّ لَكَ صَلَاتِي وَنُسُكِي وَمَحْيَايَ وَمَمَاتِي وَإِلَيْكَ مَآبِي، وَلَكَ رَبِّ تُرَاثِي، اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ عَذَابِ الْقَبْرِ وَوَسْوَسَةِ الصَّدْرِ وَشَتَاتِ الْأَمْرِ",

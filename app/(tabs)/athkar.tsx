@@ -1697,6 +1697,7 @@ interface SwipePage {
   transliteration: string;
   translation: string;
   translationRtl: boolean;
+  takhrij?: string;
   required: number;
   current: number;
   done: boolean;
@@ -2008,6 +2009,24 @@ function SwipeableReader(props: SwipeableReaderProps) {
                       </Text>
                     )}
 
+                    {/* Takhrij (source citation) — shown when the entry carries one. */}
+                    {!!page.takhrij && (
+                      <Text
+                        selectable
+                        style={{
+                          fontSize: cardFS.translation - 2,
+                          lineHeight: (cardFS.translation - 2) * 1.6,
+                          color: C.textMuted,
+                          textAlign: 'center',
+                          writingDirection: 'rtl',
+                          fontFamily: 'Amiri_400Regular',
+                          marginTop: 12,
+                        }}
+                      >
+                        {page.takhrij}
+                      </Text>
+                    )}
+
                     {/* User-item label + edit/delete row */}
                     {page.userItem && (
                       <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8, marginTop: 16, justifyContent: 'center' }}>
@@ -2239,6 +2258,7 @@ function ReaderScreen({
         transliteration: thikr.transliteration,
         translation,
         translationRtl: meaningRtl,
+        takhrij: thikr.takhrij,
         required,
         current,
         done,
