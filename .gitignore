@@ -39,3 +39,6 @@ yarn-error.*
 .env
 *.ipa
 *.aab
+ios/build_device_release/
+ios/build_device/
+qul-v2-staging/
