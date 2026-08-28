@@ -26,6 +26,25 @@ export type CalcMethod =
 
 export type AsrMethod = 'standard' | 'hanafi';
 
+/**
+ * Method-baked maghrib adjustment in minutes for display purposes. These are the
+ * per-method ihtiyat values adhan (or our custom Other-based methods) already apply
+ * INTERNALLY to `p.methodAdjustments.maghrib` in buildParams — reported here so the
+ * Settings badge can show the true effective offset without re-doing calculatePrayerTimes.
+ *   Jordan       +5   (our custom Other-based Aladhan 23)
+ *   Turkey       +7   (adhan-js CM.Turkey — Diyanet)
+ *   Moonsighting +3   (adhan-js CM.MoonsightingCommittee)
+ * Everything else: 0.
+ */
+export function methodBakedMaghribAdj(method: CalcMethod): number {
+  switch (method) {
+    case 'Jordan':       return 5;
+    case 'Turkey':       return 7;
+    case 'Moonsighting': return 3;
+    default:             return 0;
+  }
+}
+
 export interface PrayerTimesParams {
   lat: number;
   lng: number;
@@ -33,6 +52,12 @@ export interface PrayerTimesParams {
   method?: CalcMethod;
   asrMethod?: AsrMethod;
   maghribOffset?: number; // per-country/user ihtiyat minutes after sunset (lib/maghrib-offsets.ts)
+  /** Optional per-prayer offsets (minutes, ±) revealed by the Settings "adjust
+   *  all prayer times" toggle. Stack ON TOP of the method-native adjustments. */
+  fajrOffset?: number;
+  dhuhrOffset?: number;
+  asrOffset?: number;
+  ishaOffset?: number;
   /** IANA timezone of the LOCATION. Only used by callers for display (formatTimeInZone);
    *  adhan computes absolute instants for the date's calendar day at the coordinates. */
   timezone?: string | null;
@@ -68,7 +93,7 @@ function buildParams(method: CalcMethod): adhan.CalculationParameters {
     case 'Singapore':     return CM.Singapore();
     case 'Turkey':        return CM.Turkey();
     case 'Moonsighting':  return CM.MoonsightingCommittee();
-    // Aladhan 23 - Jordan: Fajr 18, Isha 18, Maghrib +5 min
+    // Aladhan 23 - Jordan: Fajr 18, Isha 18, Maghrib +5 min (method-native ihtiyat).
     case 'Jordan':  { const p = CM.Other(); p.fajrAngle = 18; p.ishaAngle = 18; p.methodAdjustments.maghrib = 5; return p; }
     // Aladhan 19 - Algeria: Fajr 18, Isha 17
     case 'Algeria': { const p = CM.Other(); p.fajrAngle = 18; p.ishaAngle = 17; return p; }
@@ -100,6 +125,10 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
     method = 'MWL',
     asrMethod = 'standard',
     maghribOffset = 0,
+    fajrOffset = 0,
+    dhuhrOffset = 0,
+    asrOffset = 0,
+    ishaOffset = 0,
   } = params;
 
   const coords = new adhan.Coordinates(lat, lng);
@@ -121,6 +150,12 @@ export function calculatePrayerTimes(params: PrayerTimesParams): PrayerTimes {
   p.polarCircleResolution = adhan.PolarCircleResolution.AqrabBalad;
   // Per-country / user Maghrib ihtiyat, layered on adhan's method output.
   p.adjustments.maghrib = (p.adjustments.maghrib ?? 0) + maghribOffset;
+  // Optional per-prayer offsets ("Adjust all prayer times" toggle). Zero when
+  // the toggle is off — the four fields default to 0 in AppContext.
+  if (fajrOffset)  p.adjustments.fajr  = (p.adjustments.fajr  ?? 0) + fajrOffset;
+  if (dhuhrOffset) p.adjustments.dhuhr = (p.adjustments.dhuhr ?? 0) + dhuhrOffset;
+  if (asrOffset)   p.adjustments.asr   = (p.adjustments.asr   ?? 0) + asrOffset;
+  if (ishaOffset)  p.adjustments.isha  = (p.adjustments.isha  ?? 0) + ishaOffset;
 
   const pt = new adhan.PrayerTimes(coords, date, p);
 

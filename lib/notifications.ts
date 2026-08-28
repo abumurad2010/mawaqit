@@ -275,6 +275,10 @@ export async function schedulePrayerNotifications(params: {
   calcMethod: CalcMethod;
   asrMethod: AsrMethod;
   maghribOffset: number;
+  fajrOffset?: number;
+  dhuhrOffset?: number;
+  asrOffset?: number;
+  ishaOffset?: number;
   prayerNotifications: Record<string, PrayerNotifConfig>;
   lang: Lang;
   firstAdhanOffset?: number;
@@ -336,6 +340,10 @@ export async function schedulePrayerNotifications(params: {
       method: params.calcMethod,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      fajrOffset: params.fajrOffset ?? 0,
+      dhuhrOffset: params.dhuhrOffset ?? 0,
+      asrOffset: params.asrOffset ?? 0,
+      ishaOffset: params.ishaOffset ?? 0,
       timezone: params.timezone ?? null,
     });
 

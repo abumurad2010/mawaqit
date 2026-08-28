@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mawaqit | مواقيت",
     "slug": "mawaqit",
-    "version": "1.3.7",
+    "version": "1.3.8",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mawaqit.app",
-      "buildNumber": "110",
+      "buildNumber": "113",
       "entitlements": {
         "com.apple.security.application-groups": ["group.com.mawaqit.app.widget"]
       },
@@ -31,7 +31,7 @@
     },
     "android": {
       "package": "com.mawaqit.app",
-      "versionCode": 46,
+      "versionCode": 49,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"

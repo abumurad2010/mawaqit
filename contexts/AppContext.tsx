@@ -9,7 +9,7 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
-import { zoneOffsetHours, standardOffset, isDstActive } from '@/lib/prayer-times';
+import { zoneOffsetHours, standardOffset, isDstActive, methodBakedMaghribAdj } from '@/lib/prayer-times';
 import tzlookup from 'tz-lookup'; // types provided by types/tz-lookup.d.ts
 import { updateWidgetFromParams } from '@/lib/widget';
 
@@ -17,6 +17,7 @@ import type { Lang } from '@/constants/i18n';
 import { isRtlLang, detectSecondLang } from '@/constants/i18n';
 import { BUNDLED_LANGS, SUPPORTED_TRANSLIT_LANGS } from '@/lib/quran-transliteration';
 import { getRecommendedMethod } from '@/lib/method-by-country';
+import { getMaghribOffset } from '@/lib/maghrib-offsets';
 import { schedulePrayerNotifications, cancelAllPrayerNotifications, scheduleThikrNotifications, cancelThikrNotifications } from '@/lib/notifications';
 import { getColors } from '@/constants/colors';
 import type { AccessibilityTheme, ColorPalette } from '@/constants/colors';
@@ -68,6 +69,27 @@ export interface LocationData {
   localName?: string; // Localized city name from reverse geocoding (in app language)
   country?: string;
   countryCode?: string;
+  /** Set when this location came from a favorite/saved city (SavedCity.id).
+   *  Anchors per-city method memory. */
+  savedCityId?: string;
+}
+
+export interface SavedCity {
+  id: string;
+  lat: number;
+  lng: number;
+  city: string;
+  countryCode?: string;
+  /** Manual method override for this specific city; when unset the effective method
+   *  falls back to calcMethodByCountry, then to getRecommendedMethod. */
+  calcMethod?: CalcMethod;
+}
+
+export interface PrayerOffsets {
+  fajr: number;
+  dhuhr: number;
+  asr: number;
+  isha: number;
 }
 
 /** @deprecated kept for migration only */
@@ -80,9 +102,14 @@ interface AppSettings {
   themeMode: 'auto' | 'light' | 'dark';
   accessibilityTheme: AccessibilityTheme;
   calcMethod: CalcMethod;
-  /** When true, calcMethod follows the location recommendation (getRecommendedMethod);
-   *  set false the moment the user picks a method explicitly. */
+  /** Deprecated in 1.3.8. Replaced by calcMethodByCountry (per-country memory) and
+   *  SavedCity.calcMethod (per-city memory). Kept only so older persisted settings
+   *  parse; migration folds it into calcMethodByCountry on first launch. */
   calcMethodAuto: boolean;
+  /** Per-country user override of the calc method. Populated on save when the
+   *  effective location is NOT a saved city; consulted before falling back to
+   *  getRecommendedMethod. Key = ISO 3166-1 alpha-2 country code. */
+  calcMethodByCountry: Record<string, CalcMethod>;
   asrMethod: AsrMethod;
   /** Daylight-saving override for manual locations. 'auto' = trust the IANA zone
    *  (device tzdata); 'on'/'off' force standard-time+1 / standard-time. Escape hatch
@@ -112,17 +139,37 @@ interface AppSettings {
   prayerAdhan: Record<string, string>;
   adhanLength: 'full' | 'short';
   prePrayerReminder: number;
+  /** When true, the Settings "adjust all prayer times" toggle exposes per-prayer
+   *  ± minute fields for Fajr/Dhuhr/Asr/Isha. Maghrib always has its own field
+   *  regardless of this toggle. */
+  perPrayerOffsetsEnabled: boolean;
+  /** ± minute offsets applied to Fajr/Dhuhr/Asr/Isha when perPrayerOffsetsEnabled
+   *  is true. Values persist even when the toggle is off so re-enabling restores
+   *  the last configuration; the offsets are only APPLIED when enabled. */
+  prayerOffsets: PrayerOffsets;
+  /** Saved/favorite cities the user can switch to instantly, without triggering
+   *  GPS. Each entry can carry its own calcMethod override (per-city memory). */
+  savedCities: SavedCity[];
 }
 
 interface AppContextValue extends AppSettings {
   isDark: boolean;
   isRtl: boolean;
   colors: ColorPalette;
+  /** Method actually applied to prayer-time calculations (per-city → per-country →
+   *  recommended). Same as `calcMethod` on this value — exposed as a distinct field
+   *  so callers can be explicit about intent when writing preview/what-if calcs. */
+  effectiveCalcMethod: CalcMethod;
   resolvedSecondLang: Lang;
   location: LocationData | null;
   setLocation: (loc: LocationData | null) => void;
   maghribBase: number;
   maghribOffset: number;
+  /** Total user-visible maghrib offset in minutes: method-baked (Jordan/Turkey/
+   *  Moonsighting) + country base + user tune. Used by the Settings badge; the
+   *  calculation itself uses maghribOffset (base + user), because the method-baked
+   *  portion is already applied inside adhan/prayer-times.ts. */
+  maghribEffective: number;
   maghribUserAdj: number;
   setMaghribUserAdj: (adj: number) => void;
   countryCode: string | null;
@@ -152,6 +199,20 @@ interface AppContextValue extends AppSettings {
   setTranslitLastPage: (page: number) => void;
   quranNavTarget: { surah: number; ayah: number; timestamp: number } | null;
   setQuranNavTarget: (target: { surah: number; ayah: number; timestamp: number } | null) => void;
+  /** Persist a new favorite city. If one already exists at the same
+   *  (lat,lng) rounded to 4 decimals it is refreshed in-place. Returns the id. */
+  addSavedCity: (c: Omit<SavedCity, 'id'>) => Promise<string>;
+  /** Remove a favorite by id. If the current location came from this favorite,
+   *  the tab keeps showing its coords — user can pick another. */
+  removeSavedCity: (id: string) => Promise<void>;
+  /** Switch the active location to a saved city with NO GPS trip. */
+  useSavedCity: (id: string) => Promise<void>;
+  /** Switch to an arbitrary (searched or ad-hoc) location atomically — used by
+   *  the "tap search result to switch immediately" flow before deciding to save. */
+  switchToLocation: (loc: LocationData) => Promise<void>;
+  /** Store the calc-method override for the current location: on a saved city it
+   *  writes SavedCity.calcMethod; anywhere else it writes calcMethodByCountry. */
+  setEffectiveCalcMethod: (m: CalcMethod) => Promise<void>;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -162,6 +223,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   accessibilityTheme: 'default',
   calcMethod: 'MWL',
   calcMethodAuto: true,
+  calcMethodByCountry: {},
   asrMethod: 'standard',
   dstMode: 'auto',
   locationMode: 'auto',
@@ -185,6 +247,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   adhanLength: 'short',
   prePrayerReminder: 0,
   jumuahTime: null,
+  perPrayerOffsetsEnabled: false,
+  prayerOffsets: { fajr: 0, dhuhr: 0, asr: 0, isha: 0 },
+  savedCities: [],
 };
 
 const VALID_CALC_METHODS = [
@@ -227,6 +292,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (parsed.calcMethod && !VALID_CALC_METHODS.includes(parsed.calcMethod)) {
             parsed.calcMethod = 'MWL';
           }
+          // 1.3.8 migration: fold the boolean calcMethodAuto into calcMethodByCountry.
+          // Old value `false` + a saved country → stash that user's explicit choice
+          // under their country so it still applies when they return; every other
+          // country falls back to getRecommendedMethod.
+          if (!parsed.calcMethodByCountry) parsed.calcMethodByCountry = {};
+          if (parsed.calcMethodAuto === false && parsed.calcMethod && cc) {
+            parsed.calcMethodByCountry = {
+              ...parsed.calcMethodByCountry,
+              [cc]: parsed.calcMethod,
+            };
+          }
+          if (!parsed.prayerOffsets) parsed.prayerOffsets = { fajr: 0, dhuhr: 0, asr: 0, isha: 0 };
+          if (typeof parsed.perPrayerOffsetsEnabled !== 'boolean') parsed.perPrayerOffsetsEnabled = false;
+          if (!Array.isArray(parsed.savedCities)) parsed.savedCities = [];
           // Migrate old string-format notifications → new {banner, athan} object format
           if (parsed.prayerNotifications) {
             const migrated: Record<string, PrayerNotifConfig> = {};
@@ -297,18 +376,34 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ? settings.manualLocation.countryCode
       : countryCode;
 
-  // The per-country Maghrib ihtiyat is now supplied by adhan's own method parameters
-  // (e.g. Diyanet Turkey +7, Jordan +5). The old per-country DEFAULT table would
-  // stack on top of that (Turkey +12, Jordan +10), so it is no longer applied — only
-  // the user's explicit tune (maghribUserAdj) is layered on adhan's output.
-  const maghribBase = 0;
-  const maghribOffset = maghribUserAdj;
+  // Effective method resolution: per-city (SavedCity.calcMethod) → per-country
+  // (calcMethodByCountry[cc]) → recommended (getRecommendedMethod). This is the SINGLE
+  // source of truth for what method the app applies.
+  const currentSavedCity: SavedCity | null =
+    effectiveLocation?.savedCityId
+      ? (settings.savedCities?.find(c => c.id === effectiveLocation.savedCityId) ?? null)
+      : null;
+  const countryOverride: CalcMethod | undefined =
+    effectiveCountryCode ? settings.calcMethodByCountry?.[effectiveCountryCode] : undefined;
+  const effectiveCalcMethod: CalcMethod =
+    currentSavedCity?.calcMethod
+      ?? countryOverride
+      ?? getRecommendedMethod(effectiveCountryCode, effectiveLocation?.lat ?? null);
 
-  // Effective method: follows the location recommendation (Moonsighting for the UK
-  // and above ~48°) until the user picks one explicitly (calcMethodAuto → false).
-  const effectiveCalcMethod: CalcMethod = settings.calcMethodAuto
-    ? getRecommendedMethod(effectiveCountryCode, effectiveLocation?.lat ?? null)
-    : settings.calcMethod;
+  // Maghrib ihtiyat has TWO independent sources: (1) the METHOD-baked adjustment adhan
+  // (or our custom Aladhan-23 Jordan) applies inside calculatePrayerTimes — Jordan +5,
+  // Turkey +7 (Diyanet), Moonsighting +3, else 0; (2) the country-table BASE we layer
+  // on top only when the method itself does NOT already carry one — so we don't double
+  // count Jordan (5+5) or Turkey (7+5). Everything else uses the country default
+  // (SA:2, EG:3, GB:2, …). The user's ± tune stacks on top of the base.
+  //   maghribOffset       = what the CALCULATION receives (base + user, NOT baked adj)
+  //   maghribEffective    = what the USER SEES as their true total (baked + base + user)
+  //                         → drives the Settings badge only; never touched by adhan.
+  const methodCarriesMaghribAdj =
+    effectiveCalcMethod === 'Jordan' || effectiveCalcMethod === 'Turkey';
+  const maghribBase = methodCarriesMaghribAdj ? 0 : getMaghribOffset(effectiveCountryCode);
+  const maghribOffset = maghribBase + maghribUserAdj;
+  const maghribEffective = methodBakedMaghribAdj(effectiveCalcMethod) + maghribBase + maghribUserAdj;
 
   // Resolve a non-null IANA timezone in BOTH modes — so the DST switch renders
   // everywhere — but from the RIGHT source in each:
@@ -426,9 +521,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log('[Notifications] rescheduleAll skipped — effectiveLocation is null');
       return;
     }
-    const { prayerNotifications, lang, calcMethod, asrMethod, thikrRemindersEnabled } = settings;
+    const { prayerNotifications, lang, asrMethod, thikrRemindersEnabled } = settings;
+    // Notifications/widget must use the SAME effective method the UI displays
+    // (per-city → per-country → recommended), not the raw settings.calcMethod.
+    const calcMethod = effectiveCalcMethod;
     const hasAny = Object.values(prayerNotifications).some(v => v.banner || v.athan !== 'none');
     console.log(`[Notifications] rescheduleAll triggered — hasAny=${hasAny} thikrEnabled=${thikrRemindersEnabled} location=${effectiveLocation.lat.toFixed(3)},${effectiveLocation.lng.toFixed(3)}`);
+
+    const perPrayerOn = settings.perPrayerOffsetsEnabled;
+    const _pOff = settings.prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 };
+    const fajrOffset  = perPrayerOn ? (_pOff.fajr  ?? 0) : 0;
+    const dhuhrOffset = perPrayerOn ? (_pOff.dhuhr ?? 0) : 0;
+    const asrOffset   = perPrayerOn ? (_pOff.asr   ?? 0) : 0;
+    const ishaOffset  = perPrayerOn ? (_pOff.isha  ?? 0) : 0;
 
     const rescheduleAll = async () => {
       try {
@@ -439,6 +544,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
             calcMethod,
             asrMethod,
             maghribOffset,
+            fajrOffset,
+            dhuhrOffset,
+            asrOffset,
+            ishaOffset,
             prayerNotifications,
             lang,
             firstAdhanOffset: settings.firstAdhanOffset ?? 0,
@@ -483,6 +592,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           method: calcMethod,
           asrMethod,
           maghribOffset,
+          fajrOffset,
+          dhuhrOffset,
+          asrOffset,
+          ishaOffset,
           lang,
           timezone: locationTimezone,
           dstShiftMs,
@@ -491,20 +604,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
 
     rescheduleAll();
-  }, [effectiveLocation, settings.prayerNotifications, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, dstShiftMs]);
+  }, [effectiveLocation, settings.prayerNotifications, effectiveCalcMethod, settings.asrMethod, settings.lang, maghribOffset, settings.firstAdhanOffset, effectiveCountryCode, locationUtcOffset, locationTimezone, settings.dhuhaTime, settings.tahajjudTime, settings.thikrRemindersEnabled, settings.selectedAdhan, settings.prayerAdhan, settings.prePrayerReminder, settings.jumuahTime, dstShiftMs, settings.perPrayerOffsetsEnabled, settings.prayerOffsets]);
 
   // Date-rollover watcher: while the app stays open across midnight, push a
   // fresh widget timeline so "today" rolls to the next calendar day.
   useEffect(() => {
     if (!effectiveLocation) return;
+    const _pOff2 = settings.prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 };
+    const _perPrayerOn = settings.perPrayerOffsetsEnabled;
     const tick = () => {
       try {
         updateWidgetFromParams({
           lat: effectiveLocation.lat,
           lng: effectiveLocation.lng,
-          method: settings.calcMethod,
+          method: effectiveCalcMethod,
           asrMethod: settings.asrMethod,
           maghribOffset,
+          fajrOffset:  _perPrayerOn ? _pOff2.fajr  : 0,
+          dhuhrOffset: _perPrayerOn ? _pOff2.dhuhr : 0,
+          asrOffset:   _perPrayerOn ? _pOff2.asr   : 0,
+          ishaOffset:  _perPrayerOn ? _pOff2.isha  : 0,
           lang: settings.lang,
           timezone: locationTimezone,
           dstShiftMs,
@@ -518,7 +637,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const msUntilMidnight = tomorrow.getTime() - now.getTime();
     const timeoutId = setTimeout(tick, msUntilMidnight);
     return () => clearTimeout(timeoutId);
-  }, [effectiveLocation, settings.calcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, dstShiftMs]);
+  }, [effectiveLocation, effectiveCalcMethod, settings.asrMethod, settings.lang, maghribOffset, locationTimezone, dstShiftMs, settings.perPrayerOffsetsEnabled, settings.prayerOffsets]);
 
   const updateSettings = async (partial: Partial<AppSettings>) => {
     const next = { ...settings, ...partial };
@@ -580,10 +699,73 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const addSavedCity: AppContextValue['addSavedCity'] = async (c) => {
+    // De-dupe by ~11 m precision so re-saving the same GPS pin doesn't create a copy.
+    const key = (lat: number, lng: number) => `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    const existing = settings.savedCities.find(x => key(x.lat, x.lng) === key(c.lat, c.lng));
+    const id = existing?.id ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const nextList = existing
+      ? settings.savedCities.map(x => x.id === id ? { ...x, ...c, id } : x)
+      : [...settings.savedCities, { ...c, id }];
+    await updateSettings({ savedCities: nextList });
+    return id;
+  };
+
+  const removeSavedCity: AppContextValue['removeSavedCity'] = async (id) => {
+    await updateSettings({ savedCities: settings.savedCities.filter(x => x.id !== id) });
+  };
+
+  const useSavedCity: AppContextValue['useSavedCity'] = async (id) => {
+    const city = (settings.savedCities ?? []).find(x => x.id === id);
+    if (!city) return;
+    const loc: LocationData = {
+      lat: city.lat, lng: city.lng, city: city.city,
+      countryCode: city.countryCode, savedCityId: city.id,
+    };
+    // Atomic switch. Set the raw location + countryCode STATE first so the sync
+    // effect in index.tsx sees the new city on the SAME render as settings.manualLocation,
+    // avoiding a 1-frame window where effectiveCalcMethod already switched to the new
+    // country but the prayer-times calc still used the previous location's coords.
+    setLocationState(loc);
+    if (loc.countryCode) {
+      setCountryCode(loc.countryCode);
+      AsyncStorage.setItem('countryCode', loc.countryCode).catch(() => {});
+    }
+    await updateSettings({ locationMode: 'manual', manualLocation: loc });
+  };
+
+  const switchToLocation = async (loc: LocationData): Promise<void> => {
+    // Non-saved location switch (search-result-tap flow in LocationModal). Same atomic
+    // pattern as useSavedCity so the method + times switch in one render.
+    setLocationState(loc);
+    if (loc.countryCode) {
+      setCountryCode(loc.countryCode);
+      AsyncStorage.setItem('countryCode', loc.countryCode).catch(() => {});
+    }
+    await updateSettings({ locationMode: 'manual', manualLocation: loc });
+  };
+
+  const setEffectiveCalcMethod: AppContextValue['setEffectiveCalcMethod'] = async (m) => {
+    if (currentSavedCity) {
+      const nextList = settings.savedCities.map(x =>
+        x.id === currentSavedCity.id ? { ...x, calcMethod: m } : x,
+      );
+      await updateSettings({ savedCities: nextList });
+    } else if (effectiveCountryCode) {
+      await updateSettings({
+        calcMethodByCountry: { ...settings.calcMethodByCountry, [effectiveCountryCode]: m },
+      });
+    } else {
+      // No location yet — stash on the raw calcMethod field as a last resort.
+      await updateSettings({ calcMethod: m });
+    }
+  };
+
   const value = useMemo<AppContextValue>(
     () => ({
       ...settings,
       calcMethod: effectiveCalcMethod, // override raw setting with the location-aware effective method
+      effectiveCalcMethod,
       isDark,
       isRtl,
       colors,
@@ -592,6 +774,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLocation,
       maghribBase,
       maghribOffset,
+      maghribEffective,
       maghribUserAdj,
       setMaghribUserAdj,
       countryCode: effectiveCountryCode,
@@ -615,8 +798,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTranslitLastPage,
       quranNavTarget,
       setQuranNavTarget,
+      addSavedCity,
+      removeSavedCity,
+      useSavedCity,
+      switchToLocation,
+      setEffectiveCalcMethod,
     }),
-    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribUserAdj, effectiveCountryCode, effectiveCalcMethod, locationUtcOffset, locationTimezone, dstOverrideOffset, dstShiftMs, dstResolved, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
+    [settings, isDark, isRtl, colors, resolvedSecondLang, location, maghribBase, maghribOffset, maghribEffective, maghribUserAdj, effectiveCountryCode, effectiveCalcMethod, currentSavedCity, locationUtcOffset, locationTimezone, dstOverrideOffset, dstShiftMs, dstResolved, bookmarks, lastReadPage, lastReadSurah, translitLastSurah, translitLastPage, quranNavTarget],
   );
 
   if (!loaded) return null;

@@ -16,6 +16,7 @@ import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import { calculatePrayerTimes, formatPrayerTime } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getRecommendedMethod } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import { scheduleTestNotification } from '@/lib/notifications';
@@ -31,7 +32,7 @@ const SANS_MD = 'Inter_500Medium';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
+    isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, maghribEffective, countryCode,
     maghribUserAdj, setMaghribUserAdj, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
@@ -39,7 +40,10 @@ export default function SettingsScreen() {
     selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
     jumuahTime, location,
     dstMode, dstResolved,
-    updateSettings,
+    perPrayerOffsetsEnabled, prayerOffsets,
+    locationTimezone, dstOverrideOffset,
+    maghribOffset, effectiveCalcMethod,
+    updateSettings, setEffectiveCalcMethod,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -102,6 +106,10 @@ export default function SettingsScreen() {
   const [draftJumuahTime, setDraftJumuahTime] = useState<string | null>(jumuahTime ?? null);
   const [tempJumuahTime, setTempJumuahTime] = useState(jumuahTime ?? '12:30');
   const [showJumuahRoller, setShowJumuahRoller] = useState(false);
+  const [draftPerPrayerEnabled, setDraftPerPrayerEnabled] = useState<boolean>(perPrayerOffsetsEnabled ?? false);
+  const [draftPrayerOffsets, setDraftPrayerOffsets] = useState<{fajr:number;dhuhr:number;asr:number;isha:number}>(
+    () => ((prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 }))
+  );
   const [activePrayerAdhanKey, setActivePrayerAdhanKey] = useState<string | null>(null);
   const isMountedRef = useRef(true);
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
@@ -494,7 +502,9 @@ export default function SettingsScreen() {
     draftEidPrayerTime !== (eidPrayerTime ?? '07:30') ||
     draftThikrRemindersEnabled !== (thikrRemindersEnabled ?? false) ||
     draftPrePrayerReminder !== (prePrayerReminder ?? 0) ||
-    draftJumuahTime !== (jumuahTime ?? null);
+    draftJumuahTime !== (jumuahTime ?? null) ||
+    draftPerPrayerEnabled !== (perPrayerOffsetsEnabled ?? false) ||
+    JSON.stringify(draftPrayerOffsets) !== JSON.stringify((prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 }));
 
   const TAB_ROUTES: Record<string, string> = {
     index: '/',
@@ -519,9 +529,13 @@ export default function SettingsScreen() {
     if (!draftShowDhuha) finalNotifications['dhuha'] = { banner: false, athan: 'none' };
     if (!draftShowQiyam) finalNotifications['qiyam'] = { banner: false, athan: 'none' };
 
+    // Per-city / per-country method memory: if the draft differs from the current
+    // effective method, route it through setEffectiveCalcMethod so it lands on the
+    // right key (SavedCity.calcMethod for a saved-city location, else calcMethodByCountry).
+    if (draftCalcMethod !== calcMethod) {
+      setEffectiveCalcMethod(draftCalcMethod);
+    }
     updateSettings({
-      calcMethod: draftCalcMethod,
-      calcMethodAuto: false, // saving Settings locks the chosen method as explicit
       asrMethod: draftAsrMethod,
       hijriAdjustment: draftHijri,
       prayerNotifications: finalNotifications,
@@ -544,6 +558,8 @@ export default function SettingsScreen() {
       thikrRemindersEnabled: draftThikrRemindersEnabled,
       prePrayerReminder: draftPrePrayerReminder,
       jumuahTime: draftJumuahTime,
+      perPrayerOffsetsEnabled: draftPerPrayerEnabled,
+      prayerOffsets: draftPrayerOffsets,
     });
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
@@ -577,6 +593,8 @@ export default function SettingsScreen() {
     setDraftPrePrayerReminder(prePrayerReminder ?? 0);
     setDraftJumuahTime(jumuahTime ?? null);
     setTempJumuahTime(jumuahTime ?? '12:30');
+    setDraftPerPrayerEnabled(perPrayerOffsetsEnabled ?? false);
+    setDraftPrayerOffsets((prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 }));
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
   };
@@ -1250,7 +1268,7 @@ export default function SettingsScreen() {
               <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isRtl ? 'row-reverse' : 'row', flex: 1 }]}>
                 <Ionicons name="location-outline" size={12} color={C.tint} />
                 <Text style={[styles.autoOffsetText, { color: C.tint, fontSize: 12 }]}>
-                  {`${maghribBase} ${tr.minutes}${countryCode ? ` (${countryCode})` : ''}`}
+                  {`${maghribEffective - draftAdjustment} ${tr.minutes}${countryCode ? ` (${countryCode})` : ''}`}
                 </Text>
               </View>
               {/* Stepper */}
@@ -1274,7 +1292,7 @@ export default function SettingsScreen() {
               {/* Total */}
               <View style={[styles.totalBadge, { backgroundColor: C.tint, paddingHorizontal: 8, paddingVertical: 4 }]}>
                 <Text style={[styles.totalBadgeText, { color: C.tintText, fontSize: 12 }]}>
-                  {`= ${maghribBase + draftAdjustment} ${(lang === 'ar' || lang === 'fa') ? 'د' : tr.minutes}`}
+                  {`= ${maghribEffective - maghribUserAdj + draftAdjustment} ${(lang === 'ar' || lang === 'fa') ? 'د' : tr.minutes}`}
                 </Text>
               </View>
               {draftAdjustment !== 0 && (
@@ -1284,6 +1302,69 @@ export default function SettingsScreen() {
               )}
             </View>
           </View>
+
+          {/* Adjust all prayer times — toggle + 4 conditional steppers */}
+          <View style={[styles.compactRow, { borderBottomWidth: draftPerPrayerEnabled ? StyleSheet.hairlineWidth : 0, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]} numberOfLines={2}>
+              {isAr ? 'تعديل مواقيت جميع الصلوات' : 'Adjust all prayer times'}
+            </Text>
+            <Switch
+              value={draftPerPrayerEnabled}
+              onValueChange={v => { Haptics.selectionAsync(); setDraftPerPrayerEnabled(v); }}
+              trackColor={{ false: C.separator, true: C.tint + '99' }}
+              thumbColor={draftPerPrayerEnabled ? C.tint : C.textMuted}
+            />
+          </View>
+          {draftPerPrayerEnabled && (() => {
+            // Live-preview today's prayer times using the DRAFT offsets, so the number
+            // next to each ± stepper always reflects what the user is about to save.
+            const previewTimes = location ? calculatePrayerTimes({
+              lat: location.lat, lng: location.lng, date: new Date(),
+              method: effectiveCalcMethod, asrMethod: draftAsrMethod,
+              maghribOffset,
+              fajrOffset:  draftPrayerOffsets.fajr,
+              dhuhrOffset: draftPrayerOffsets.dhuhr,
+              asrOffset:   draftPrayerOffsets.asr,
+              ishaOffset:  draftPrayerOffsets.isha,
+              timezone: locationTimezone,
+            }) : null;
+            return (['fajr','dhuhr','asr','isha'] as const).map((p, idx, arr) => (
+              <View
+                key={p}
+                style={[styles.compactRow, {
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: C.separator,
+                  flexDirection: isRtl ? 'row-reverse' : 'row',
+                }]}
+              >
+                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+                  {({ fajr: tr.fajr, dhuhr: tr.dhuhr, asr: tr.asr, isha: tr.isha } as Record<string, string>)[p]}
+                </Text>
+                {previewTimes && (
+                  <Text style={{ color: C.textMuted, fontFamily: SANS, fontSize: 12, marginHorizontal: 8, minWidth: 62, textAlign: 'right' }}>
+                    {formatPrayerTime(previewTimes[p], locationTimezone, dstOverrideOffset, false, tr.am ?? 'AM', tr.pm ?? 'PM')}
+                  </Text>
+                )}
+                <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftPrayerOffsets(o => ({ ...o, [p]: Math.max((o[p] ?? 0) - 1, -30) })); }}
+                    style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Ionicons name="remove" size={16} color={C.tint} />
+                  </Pressable>
+                  <Text style={[styles.stepperValue, { color: C.text, minWidth: 32 }]}>
+                    {draftPrayerOffsets[p] > 0 ? `+${draftPrayerOffsets[p]}` : draftPrayerOffsets[p]}
+                  </Text>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftPrayerOffsets(o => ({ ...o, [p]: Math.min((o[p] ?? 0) + 1, 30) })); }}
+                    style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Ionicons name="add" size={16} color={C.tint} />
+                  </Pressable>
+                </View>
+              </View>
+            ));
+          })()}
 
           {/* First Adhan */}
           <View style={[styles.compactRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
@@ -1717,6 +1798,16 @@ export default function SettingsScreen() {
             <Text style={{ color: C.tint, fontSize: 12, fontFamily: SANS }}>{tr.test_notification}</Text>
           </Pressable>
         </View>
+        <Text style={{
+          color: C.textMuted, fontSize: 12,
+          fontFamily: isRtl ? 'Amiri_400Regular' : SANS,
+          textAlign: isRtl ? 'right' : 'left',
+          marginBottom: 8, marginHorizontal: 4,
+        }}>
+          {isAr
+            ? 'ملاحظة: تنبيه صلاة الجمعة مضبوط من إعداد "وقت الجمعة" بالأعلى وليس ضمن هذه القائمة.'
+            : 'Note: Jumuʼah is scheduled from the "Jumuʼah time" setting above, not from this list.'}
+        </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {NOTIF_PRAYERS.map((prayer, idx) => {
             const cfg: PrayerNotifConfig = draftNotifications[prayer.key] ?? EMPTY_CFG;
