@@ -16,6 +16,7 @@ import type { PrayerNotifConfig } from '@/contexts/AppContext';
 import TimeRoller from '@/components/TimeRoller';
 import { t, LANG_META, isRtlLang, detectSecondLang } from '@/constants/i18n';
 import type { CalcMethod, AsrMethod } from '@/lib/prayer-times';
+import { calculatePrayerTimes, formatPrayerTime } from '@/lib/prayer-times';
 import { ALL_CALC_METHODS, getRecommendedMethod } from '@/lib/method-by-country';
 import { playAthan, stopAthan } from '@/lib/audio';
 import { scheduleTestNotification } from '@/lib/notifications';
@@ -31,7 +32,7 @@ const SANS_MD = 'Inter_500Medium';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const {
-    isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, countryCode,
+    isDark, lang, secondLang, resolvedSecondLang, calcMethod, asrMethod, maghribBase, maghribEffective, countryCode,
     maghribUserAdj, setMaghribUserAdj, hijriAdjustment, accessibilityTheme,
     firstAdhanOffset, prayerNotifications, colors,
     dhuhaTime, tahajjudTime, showDhuha, showQiyam, eidPrayerTime,
@@ -39,7 +40,10 @@ export default function SettingsScreen() {
     selectedAdhan, prayerAdhan, adhanLength, prePrayerReminder,
     jumuahTime, location,
     dstMode, dstResolved,
-    updateSettings,
+    perPrayerOffsetsEnabled, prayerOffsets,
+    locationTimezone, dstOverrideOffset,
+    maghribOffset, effectiveCalcMethod, effectiveLocation,
+    updateSettings, setEffectiveCalcMethod,
   } = useApp();
   const C = colors;
   const tr = t(lang);
@@ -58,8 +62,23 @@ export default function SettingsScreen() {
   const decreaseFont = () => { if (fsIdx > 0) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[fsIdx - 1] }); } };
   const increaseFont = () => { if (fsIdx < FONT_STEPS.length - 1) { Haptics.selectionAsync(); updateSettings({ fontSize: FONT_STEPS[fsIdx + 1] }); } };
 
-  // Local draft state — nothing is saved until the user taps Save
-  const [draftCalcMethod, setDraftCalcMethod] = useState(calcMethod);
+  // Local draft state — nothing is saved until the user taps Save.
+  //
+  // calcMethod here is the *effective* method (AppContext rebinds `calcMethod`
+  // to `effectiveCalcMethod` at :767), so the initial draft matches what the app
+  // is actually using for the current location.
+  //
+  // openedEffectiveMethodRef captures that effective value at the moment this
+  // screen became active. handleSave gates the setEffectiveCalcMethod call on
+  // (draft !== opened) so a fresh page-open with no user pick can never write a
+  // per-country / per-city override, even if `effectiveCalcMethod` shifts while
+  // this screen is mounted because the user switched cities in another surface.
+  const [draftCalcMethod, setDraftCalcMethod] = useState(effectiveCalcMethod);
+  const openedEffectiveMethodRef = useRef(effectiveCalcMethod);
+  // True once the user has deliberately picked a method from the modal this
+  // session. Prevents the auto-resync effect below from clobbering a deliberate
+  // pick when the active location changes underneath the screen.
+  const pickerTouchedRef = useRef(false);
   const [draftAsrMethod, setDraftAsrMethod] = useState(asrMethod);
   const [draftAdjustment, setDraftAdjustment] = useState(maghribUserAdj);
   const [draftHijri, setDraftHijri] = useState(hijriAdjustment ?? 0);
@@ -102,6 +121,10 @@ export default function SettingsScreen() {
   const [draftJumuahTime, setDraftJumuahTime] = useState<string | null>(jumuahTime ?? null);
   const [tempJumuahTime, setTempJumuahTime] = useState(jumuahTime ?? '12:30');
   const [showJumuahRoller, setShowJumuahRoller] = useState(false);
+  const [draftPerPrayerEnabled, setDraftPerPrayerEnabled] = useState<boolean>(perPrayerOffsetsEnabled ?? false);
+  const [draftPrayerOffsets, setDraftPrayerOffsets] = useState<{fajr:number;dhuhr:number;asr:number;isha:number}>(
+    () => ((prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 }))
+  );
   const [activePrayerAdhanKey, setActivePrayerAdhanKey] = useState<string | null>(null);
   const isMountedRef = useRef(true);
   const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
@@ -117,10 +140,46 @@ export default function SettingsScreen() {
   // Keep draft in sync with per-country maghrib adjustment loaded from storage
   useEffect(() => { setDraftAdjustment(maghribUserAdj); }, [maghribUserAdj]);
 
+  // Passive re-sync of the calc-method draft when the *active location* changes
+  // under this screen. Only reshapes the baseline if the user has NOT touched
+  // the picker this session — a deliberate pick must survive a stray location
+  // shift. Also shifts openedEffectiveMethodRef so the save-gate stays honest:
+  // (draft !== opened) still means "the user chose something different from
+  // what was showing when they opened Settings."
+  useEffect(() => {
+    if (pickerTouchedRef.current) return;
+    setDraftCalcMethod(effectiveCalcMethod);
+    openedEffectiveMethodRef.current = effectiveCalcMethod;
+  }, [effectiveCalcMethod]);
+
+  // Ref that always tracks the latest effectiveCalcMethod so the focus effect
+  // (whose callback deliberately has [] deps to avoid re-firing on every
+  // method change) can read the current value on refocus without staleness.
+  const effectiveCalcMethodRef = useRef(effectiveCalcMethod);
+  useEffect(() => { effectiveCalcMethodRef.current = effectiveCalcMethod; }, [effectiveCalcMethod]);
+  // True after the screen has been blurred (moved away from). Used by the
+  // focus effect below to distinguish "regained focus after leaving" (needs
+  // a full re-baseline) from "initial mount" or "in-place re-render".
+  const settingsBlurredRef = useRef(false);
+
   useFocusEffect(
     useCallback(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
+      // Re-baseline the calc-method draft ONLY when the screen regains focus
+      // after having been blurred (e.g. the user left to another tab, switched
+      // cities elsewhere, and came back). Doing this on every focus would
+      // clobber a deliberate pick when the user opens the location sheet from
+      // within Settings (the sheet is a Modal — Settings never blurs — but the
+      // location change fires the passive effect above, which correctly
+      // preserves the pick via pickerTouchedRef).
+      if (settingsBlurredRef.current) {
+        setDraftCalcMethod(effectiveCalcMethodRef.current);
+        openedEffectiveMethodRef.current = effectiveCalcMethodRef.current;
+        pickerTouchedRef.current = false;
+        settingsBlurredRef.current = false;
+      }
       return () => {
+        settingsBlurredRef.current = true;
         stopAthan();
       };
     }, [])
@@ -177,14 +236,14 @@ export default function SettingsScreen() {
 
 
   // ── Help texts (all 15 languages) ───────────────────────────────
-  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid' | 'iqama' | 'dst' | 'prePrayer';
+  type HelpKey = 'language' | 'fontSize' | 'accessibility' | 'hijri' | 'calcMethod' | 'asrMethod' | 'maghrib' | 'firstAdhan' | 'notifications' | 'dhuha' | 'eid' | 'iqama' | 'dst' | 'prePrayer' | 'adjustAllPrayerTimes' | 'jumuahTime';
   const HELP: Record<string, Record<HelpKey, string>> = {
     ar: {
       language: 'اللغة الأولى ثابتة على العربية.\n\nاللغة الثانية تظهر تحت كل اسم صلاة ومصطلح. "تلقائي" يختار اللغة حسب البلد الذي اكتُشف من موقعك.',
       fontSize: 'يتحكم في حجم الخط العربي في صفحة قراءة القرآن فقط. لا يؤثر على بقية التطبيق.\n\nصغير: آيات أكثر في الشاشة.\nكبير: مريح للقراءة المطولة.',
       accessibility: 'اختر نظام الألوان الأنسب لبصرك. كل نظام يغير اللون الرئيسي في التطبيق.\n\n• الافتراضي: الأخضر الإسلامي الكلاسيكي\n• تباين عالٍ: أسود وأبيض خالص\n• عمى الألوان: أزرق مناسب للـ deuteranopia\n• دافئ: عنبري يخفف الضوء الأزرق\n• الوردي / المحيط / البنفسجي: خيارات جمالية',
       hijri: 'يُعدّل التاريخ الهجري المعروض بمقدار يوم أو يومين.\n\nبعض الدول تعلن بداية الشهر الهجري يوماً قبل أو بعد الحساب الفلكي بسبب اعتماد رؤية الهلال فعلياً. اضبط هذا الرقم ليتطابق مع التقويم المعتمد في بلدك.',
-      calcMethod: 'تحدد زاوية الشمس تحت الأفق لحساب وقتَي الفجر والعشاء.\n\n• رابطة العالم الإسلامي: الأوسع انتشاراً — فجر 18°، عشاء 17°\n• الأوقاف الأردنية: المعتمد في الأردن\n• أم القرى: المملكة والخليج — العشاء 90 دقيقة بعد المغرب\n• الهيئة المصرية: مصر وشمال أفريقيا — فجر 19.5°، عشاء 17.5°\n• ISNA: أمريكا الشمالية — فجر 15°، عشاء 15°\n• كراتشي: جنوب آسيا — فجر 18°، عشاء 18°\n• طهران / جعفري: للمذهب الشيعي',
+      calcMethod: 'تحدد زاوية الشمس تحت الأفق لحساب وقتَي الفجر والعشاء.\n\n• رابطة العالم الإسلامي: الأوسع انتشاراً — فجر 18°، عشاء 17°\n• الأوقاف الأردنية: المعتمد في الأردن\n• أم القرى: المملكة والخليج — العشاء 90 دقيقة بعد المغرب\n• الهيئة المصرية: مصر وشمال أفريقيا — فجر 19.5°، عشاء 17.5°\n• ISNA: أمريكا الشمالية — فجر 15°، عشاء 15°\n• كراتشي: جنوب آسيا — فجر 18°، عشاء 18°\n• طهران / جعفري: للمذهب الشيعي\n\n\n\nيُختار الأنسب تلقائياً لبلد المدينة المحددة، ويمكنك تغييره يدوياً.',
       asrMethod: '• الجمهور (الشافعي، المالكي، الحنبلي): يبدأ العصر حين يساوي الظل طول الشيء — رأي الأغلبية.\n\n• الحنفي: يبدأ العصر حين يصبح الظل ضعفَي طول الشيء — يؤخر العصر نحو 30–60 دقيقة.',
       maghrib: 'الاحتياط الشرعي: يُضاف بعد الغروب الفلكي لضمان اكتمال الغروب المرئي فعلاً.\n\nالتطبيق يُوصي بالقيمة المعتمدة رسمياً في بلدك. يمكنك تعديلها يدوياً بالزيادة أو النقصان.',
       firstAdhan: 'أذان تنبيهي قبل الفجر — للتنبيه على وقت السحور في رمضان ووقت الاستعداد للصلاة.\n\nالمملكة العربية السعودية تعتمد أذاناً واحداً فقط عند الفجر. أما مصر والشام وكثير من الدول فتُشغّل أذاناً أول قبل 20–30 دقيقة.\n\nإذا كنت في بلدٍ لا يُشغّل أذاناً أول، اتركه على "إيقاف".',
@@ -194,13 +253,16 @@ export default function SettingsScreen() {
       iqama: 'الإقامة هي النداء الثاني الذي يُعلَن مباشرةً قبل إقامة الصلاة في المسجد.\n\nاضبط هنا الفاصل الزمني (بالدقائق) بين وقت الأذان الرسمي وإقامة الصلاة لكل فريضة.\n\nبعد وقت الأذان بهذه المدة، يُعرض في الشاشة الرئيسية عداد "الإقامة خلال..." بدلاً من عداد الصلاة القادمة.',
       dst: '«تلقائي» يتبع قواعد التوقيت الصيفي لموقعك ويتحوّل من تلقاء نفسه — وهو صحيح في جميع الأماكن تقريباً، فلا تحتاج عادةً إلى تغييره.\\n\\nاستخدم «مفعّل» أو «معطّل» فقط لتجاوز الحالة النادرة التي تكون فيها الخريطة غير دقيقة لمنطقتك تحديداً — مثلاً منطقة تقع ضمن نطاق زمني يعتمد التوقيت الصيفي بينما هي نفسها لا تعتمده.',
       prePrayer: 'تنبيه يظهر قبل كل صلاة بعدد الدقائق الذي تختاره لتستعدّ لها — وهو منفصل عن الأذان نفسه.\\n\\nاختر «إيقاف» لتعطيل التذكير تماماً.',
+      adjustAllPrayerTimes: 'عند إيقافه، ينطبق تعديل المغرب فقط. عند تفعيله، يظهر ضبط ± لكل من الصلوات الخمس، وتبدأ كلها من صفر.',
+      jumuahTime: 'يضبط الوقت المعروض لصلاة الجمعة، والقيمة الافتراضية هي وقت الظهر.',
+    
     },
     en: {
       language: 'Arabic is the fixed primary language.\n\nThe second language appears beneath each prayer name and label. "Auto" detects your country from your GPS location and picks the most appropriate language.',
       fontSize: 'Controls Arabic font size in the Quran reader only — does not affect the rest of the app.\n\nSmall: more verses on screen at once.\nLarge: easier for extended reading sessions.',
       accessibility: 'Choose a colour theme that suits your visual needs. Each theme changes the app\'s accent colour.\n\n• Default: classic Islamic green\n• High Contrast: pure black & white\n• Color Blind: blue, deuteranopia-friendly\n• Warm: amber tones, reduces blue light\n• Blossom / Ocean / Violet: aesthetic options',
       hijri: 'Adjusts the displayed Hijri date by ±1 or ±2 days.\n\nSome countries declare the new Hijri month a day earlier or later than the astronomical calculation, based on actual moon sighting. Set this to match your country\'s official calendar.',
-      calcMethod: 'Sets the sun angle for calculating Fajr and Isha times.\n\n• Muslim World League: most widely used — Fajr 18°, Isha 17°\n• Jordan Ministry of Awqaf: official in Jordan\n• Umm Al-Qura: Saudi Arabia & Gulf — Isha fixed at 90 min after Maghrib\n• Egyptian Authority: Egypt & North Africa — Fajr 19.5°, Isha 17.5°\n• ISNA: North America — Fajr 15°, Isha 15°\n• Karachi: South Asia — Fajr 18°, Isha 18°\n• Tehran / Jafari: Shia Ithna-Ashari practice',
+      calcMethod: 'Sets the sun angle for calculating Fajr and Isha times.\n\n• Muslim World League: most widely used — Fajr 18°, Isha 17°\n• Jordan Ministry of Awqaf: official in Jordan\n• Umm Al-Qura: Saudi Arabia & Gulf — Isha fixed at 90 min after Maghrib\n• Egyptian Authority: Egypt & North Africa — Fajr 19.5°, Isha 17.5°\n• ISNA: North America — Fajr 15°, Isha 15°\n• Karachi: South Asia — Fajr 18°, Isha 18°\n• Tehran / Jafari: Shia Ithna-Ashari practice\n\n\n\nAutomatically chosen for the selected city\'s country and can be changed manually.',
       asrMethod: '• Standard (Shafi\'i, Maliki, Hanbali): Asr begins when an object\'s shadow equals its own height — the majority opinion.\n\n• Hanafi: Asr begins when the shadow is twice the height — delays Asr by roughly 30–60 minutes.',
       maghrib: 'Precautionary margin added after astronomical sunset to ensure the sun has visually set before the Athan is called.\n\nThe app recommends the official standard for your country. You can fine-tune it with the ±stepper.',
       firstAdhan: 'An early Athan before Fajr — typically used to signal Suhoor time during Ramadan and time to prepare for prayer.\n\nSaudi Arabia uses a single Athan at Fajr only. Egypt, the Levant, and many other countries call a first Athan 20–30 min earlier.\n\nIf you are in a country that doesn\'t have a first Athan, leave this Off.',
@@ -210,13 +272,16 @@ export default function SettingsScreen() {
       iqama: 'Iqama is the second call that is announced just before the congregational prayer begins in the mosque.\n\nSet the delay (in minutes) between the official Athan time and the Iqama for each obligatory prayer.\n\nOnce that delay has elapsed after the Athan, the home screen switches from the "Next Prayer" countdown to an "Iqama in…" countdown.',
       dst: '\'Auto\' follows the daylight-saving rules for your location and switches by itself — it is right almost everywhere, so you normally never need to change it.\\n\\nUse \'On\' or \'Off\' only to override the rare case where the map is wrong for your exact locality — for example, a place inside a timezone that observes daylight saving even though the locality itself does not.',
       prePrayer: 'A notification a set number of minutes before each prayer to help you prepare — this is separate from the Athan itself.\\n\\nSet Off to disable the reminder entirely.',
+      adjustAllPrayerTimes: 'When off, only the Maghrib adjustment applies. When on, a ± control appears for each of the five prayers, each starting at 0.',
+      jumuahTime: 'Sets the time shown for Friday prayer. Defaults to Dhuhr.',
+    
     },
     fr: {
       language: 'L\'arabe est la langue principale fixe.\n\nLa deuxième langue apparaît sous chaque nom de prière. "Auto" détecte votre pays via GPS.',
       fontSize: 'Contrôle la taille de police arabe dans le lecteur du Coran uniquement.\n\nPetit: plus de versets à l\'écran.\nGrand: plus confortable pour une lecture prolongée.',
       accessibility: 'Choisissez le thème de couleur adapté à vos besoins visuels.\n\n• Défaut: vert islamique classique\n• Contraste élevé: noir et blanc pur\n• Daltonien: bleu, adapté à la deutéranopie\n• Chaud: tons ambrés\n• Fleur / Océan / Violet: options esthétiques',
       hijri: 'Ajuste la date hégirien affichée de ±1 ou ±2 jours selon la déclaration officielle du croissant dans votre pays.',
-      calcMethod: 'Définit l\'angle solaire pour Fajr et Isha.\n\n• LIM: Fajr 18°, Isha 17°\n• Awqaf Jordanie: officiel en Jordanie\n• Umm Al-Qura: Arabie Saoudite — Isha 90 min après Maghrib\n• Égypte: Fajr 19.5°, Isha 17.5°\n• ISNA: Amérique du Nord\n• Karachi: Asie du Sud',
+      calcMethod: 'Définit l\'angle solaire pour Fajr et Isha.\n\n• LIM: Fajr 18°, Isha 17°\n• Awqaf Jordanie: officiel en Jordanie\n• Umm Al-Qura: Arabie Saoudite — Isha 90 min après Maghrib\n• Égypte: Fajr 19.5°, Isha 17.5°\n• ISNA: Amérique du Nord\n• Karachi: Asie du Sud\n\nChoisie automatiquement selon le pays de la ville sélectionnée; modifiable manuellement.',
       asrMethod: '• Standard (Chafi\'i, Maliki, Hanbali): Asr quand l\'ombre = hauteur de l\'objet.\n\n• Hanafi: Asr quand l\'ombre = 2× la hauteur — retarde Asr de 30–60 min.',
       maghrib: 'Marge de précaution ajoutée après le coucher astronomique. L\'app recommande le standard officiel de votre pays.',
       firstAdhan: 'Athan précoce avant Fajr pour le Suhoor pendant le Ramadan.\n\nArabie Saoudite: un seul Athan. Égypte/Levant: premier Athan 20–30 min avant.\n\nSi vous êtes dans un pays sans premier Athan, laissez sur Désactivé.',
@@ -226,13 +291,16 @@ export default function SettingsScreen() {
       iqama: 'L\'Iqama est le second appel annoncé juste avant le début de la prière collective à la mosquée.\n\nDéfinissez ici le délai (en minutes) entre l\'Athan officiel et l\'Iqama pour chaque prière obligatoire.\n\nUne fois ce délai écoulé, l\'écran principal affiche un compte à rebours "Iqama dans…" au lieu de "Prochaine prière".',
       dst: '« Auto » suit les règles d\'heure d\'été de votre position et bascule de lui-même — c\'est correct presque partout, vous n\'avez normalement pas à le changer.\\n\\nN\'utilisez « Activé » ou « Désactivé » que pour le cas rare où la carte est fausse pour votre localité précise — par exemple, un lieu situé dans un fuseau qui applique l\'heure d\'été alors que la localité elle-même ne l\'applique pas.',
       prePrayer: 'Une notification un nombre de minutes défini avant chaque prière pour vous aider à vous préparer — distincte de l\'Athan lui-même.\\n\\nMettez sur « Désactivé » pour désactiver complètement le rappel.',
+      adjustAllPrayerTimes: 'Désactivé : seul l\'ajustement du Maghrib s\'applique. Activé : un contrôle ± apparaît pour chacune des cinq prières, commençant chacun à 0.',
+      jumuahTime: 'Définit l\'heure affichée pour la prière du vendredi. Par défaut : Dhuhr.',
+    
     },
     es: {
       language: 'El árabe es el idioma principal fijo.\n\nEl segundo idioma aparece bajo cada nombre de oración. "Auto" detecta tu país por GPS.',
       fontSize: 'Controla el tamaño de fuente árabe solo en el lector del Corán.\n\nPequeño: más versos en pantalla.\nGrande: más cómodo para lectura prolongada.',
       accessibility: 'Elige el tema de color que mejor se adapte a tus necesidades visuales.\n\n• Predeterminado: verde islámico clásico\n• Alto contraste: blanco y negro puro\n• Daltónico: azul, apto para deuteranopía\n• Cálido: tonos ámbar\n• Flor / Océano / Violeta: opciones estéticas',
       hijri: 'Ajusta la fecha hegira mostrada en ±1 o ±2 días según la declaración oficial del creciente lunar en tu país.',
-      calcMethod: 'Define el ángulo solar para Fajr e Isha.\n\n• LMI: Fajr 18°, Isha 17°\n• Awqaf Jordania: oficial en Jordania\n• Umm Al-Qura: Arabia Saudita — Isha 90 min después del Maghrib\n• Egipto: Fajr 19.5°, Isha 17.5°\n• ISNA: América del Norte\n• Karachi: Asia del Sur',
+      calcMethod: 'Define el ángulo solar para Fajr e Isha.\n\n• LMI: Fajr 18°, Isha 17°\n• Awqaf Jordania: oficial en Jordania\n• Umm Al-Qura: Arabia Saudita — Isha 90 min después del Maghrib\n• Egipto: Fajr 19.5°, Isha 17.5°\n• ISNA: América del Norte\n• Karachi: Asia del Sur\n\n\n\nSe elige automáticamente según el país de la ciudad seleccionada; se puede cambiar manualmente.',
       asrMethod: '• Estándar (Shafi\'i, Maliki, Hanbali): Asr cuando la sombra = altura del objeto.\n\n• Hanafi: Asr cuando la sombra = 2× la altura — retrasa Asr 30–60 min.',
       maghrib: 'Margen de precaución tras el ocaso astronómico. La app recomienda el estándar oficial de tu país.',
       firstAdhan: 'Athan temprano antes del Fajr para el Suhoor durante el Ramadán.\n\nArabia Saudita: un solo Athan. Egipto/Levante: primer Athan 20–30 min antes.\n\nSi estás en un país que no tiene primer Athan, déjalo en Desactivado.',
@@ -242,13 +310,16 @@ export default function SettingsScreen() {
       iqama: 'La Iqama es el segundo llamado que se anuncia justo antes de que comience la oración congregacional en la mezquita.\n\nEstablece aquí el retraso (en minutos) entre el horario oficial del Athan y la Iqama para cada oración obligatoria.\n\nUna vez transcurrido ese tiempo, la pantalla principal muestra una cuenta regresiva "Iqama en…" en lugar de "Próxima oración".',
       dst: '«Auto» sigue las reglas del horario de verano de tu ubicación y cambia por sí solo — es correcto casi en todas partes, así que normalmente no necesitas cambiarlo.\\n\\nUsa «Activado» o «Desactivado» solo para el caso raro en que el mapa se equivoca con tu localidad exacta — por ejemplo, un lugar dentro de una zona horaria que aplica el horario de verano aunque la localidad en sí no lo haga.',
       prePrayer: 'Una notificación un número fijo de minutos antes de cada oración para ayudarte a prepararte — es independiente del propio Athan.\\n\\nSelecciona «Desactivado» para desactivar el recordatorio por completo.',
+      adjustAllPrayerTimes: 'Desactivado: solo se aplica el ajuste del Maghrib. Activado: aparece un control ± para cada una de las cinco oraciones, cada uno empezando en 0.',
+      jumuahTime: 'Establece la hora mostrada para la oración del viernes. Por defecto: Dhuhr.',
+    
     },
     ru: {
       language: 'Арабский язык — основной фиксированный.\n\nВторой язык отображается под каждым названием намаза. "Авто" определяет страну по GPS.',
       fontSize: 'Управляет размером шрифта только в читалке Корана.\n\nМаленький: больше аятов на экране.\nБольшой: удобнее для длительного чтения.',
       accessibility: 'Выберите цветовую тему по своим визуальным потребностям.\n\n• По умолчанию: классический исламский зелёный\n• Высокий контраст: чёрный и белый\n• Дальтоники: синий, подходит для дейтеранопии\n• Тёплый: янтарные тона\n• Цветок / Океан / Фиолетовый: эстетические варианты',
       hijri: 'Корректирует отображаемую дату Хиджры на ±1–2 дня в соответствии с официальным объявлением в вашей стране.',
-      calcMethod: 'Угол солнца для расчёта Фаджр и Иша.\n\n• ВИЛ: Фаджр 18°, Иша 17°\n• Иордания: официальный стандарт\n• Умм аль-Кура: Саудовская Аравия — Иша 90 мин после Магриба\n• Египет: Фаджр 19.5°, Иша 17.5°\n• ISNA: Северная Америка\n• Карачи: Южная Азия',
+      calcMethod: 'Угол солнца для расчёта Фаджр и Иша.\n\n• ВИЛ: Фаджр 18°, Иша 17°\n• Иордания: официальный стандарт\n• Умм аль-Кура: Саудовская Аравия — Иша 90 мин после Магриба\n• Египет: Фаджр 19.5°, Иша 17.5°\n• ISNA: Северная Америка\n• Карачи: Южная Азия\n\n\n\nВыбирается автоматически по стране выбранного города; можно изменить вручную.',
       asrMethod: '• Стандарт (Шафии, Малики, Ханбали): Аср когда тень = высоте объекта.\n\n• Ханафи: Аср когда тень = 2× высоте — задержка 30–60 мин.',
       maghrib: 'Предохранительный запас после астрономического захода. Приложение рекомендует официальный стандарт вашей страны.',
       firstAdhan: 'Ранний азан перед Фаджром для Сухура в Рамадан.\n\nСаудовская Аравия: один азан. Египет/Левант: первый азан за 20–30 мин до Фаджра.\n\nЕсли в вашей стране нет первого азана, оставьте его выключенным.',
@@ -258,13 +329,16 @@ export default function SettingsScreen() {
       iqama: 'Икама — второй призыв, объявляемый непосредственно перед началом коллективной молитвы в мечети.\n\nУстановите задержку (в минутах) между официальным азаном и икамой для каждого обязательного намаза.\n\nКак только этот промежуток истечёт, на главном экране появится обратный отсчёт «Икама через…» вместо «Следующий намаз».',
       dst: '«Авто» следует правилам летнего времени для вашего местоположения и переключается сам — это верно почти везде, поэтому обычно менять не нужно.\\n\\nИспользуйте «Вкл.» или «Выкл.» только для редкого случая, когда карта ошибается для вашей местности — например, место внутри часового пояса, где действует летнее время, хотя сама местность его не соблюдает.',
       prePrayer: 'Уведомление за заданное число минут до каждой молитвы, чтобы вы успели подготовиться — оно отдельно от самого азана.\\n\\nВыберите «Выкл.», чтобы полностью отключить напоминание.',
+      adjustAllPrayerTimes: 'Выключено — применяется только поправка к Магрибу. Включено — появляется регулятор ± для каждой из пяти молитв, все начинаются с 0.',
+      jumuahTime: 'Задаёт время, показываемое для пятничной молитвы. По умолчанию — Зухр.',
+    
     },
     zh: {
       language: '阿拉伯语是固定的主要语言。\n\n第二语言显示在每个礼拜名称下方。"自动"通过GPS检测您的国家。',
       fontSize: '仅控制古兰经阅读器中的阿拉伯字体大小。\n\n小：屏幕显示更多节。\n大：长时间阅读更舒适。',
       accessibility: '选择适合您视觉需求的颜色主题。\n\n• 默认：经典伊斯兰绿\n• 高对比度：纯黑白\n• 色盲：蓝色，适合红绿色盲\n• 暖色：琥珀色调\n• 花朵/海洋/紫罗兰：美学选项',
       hijri: '将显示的伊斯兰历日期调整±1或±2天，以匹配您所在国家的官方月牙观测公告。',
-      calcMethod: '设置计算晨礼和宵礼的太阳角度。\n\n• 世界伊斯兰联盟：晨礼18°，宵礼17°\n• 约旦宗教部：约旦官方标准\n• 乌姆古拉：沙特阿拉伯 — 宵礼在昏礼后90分钟\n• 埃及：晨礼19.5°，宵礼17.5°',
+      calcMethod: '设置计算晨礼和宵礼的太阳角度。\n\n• 世界伊斯兰联盟：晨礼18°，宵礼17°\n• 约旦宗教部：约旦官方标准\n• 乌姆古拉：沙特阿拉伯 — 宵礼在昏礼后90分钟\n• 埃及：晨礼19.5°，宵礼17.5°\n\n\n\n根据所选城市的国家自动选择,可以手动更改。',
       asrMethod: '• 标准（沙菲仪、马利基、罕百里）：晡礼在阴影等于物体高度时开始。\n\n• 哈乃非：晡礼在阴影为两倍高度时开始，推迟30–60分钟。',
       maghrib: '天文日落后的预防性余量。应用程序推荐您所在国家的官方标准。',
       firstAdhan: '斋月期间封斋前的早期宣礼。\n\n沙特阿拉伯只有一次宣礼。埃及和黎凡特提前20–30分钟。\n\n如果您所在的国家没有第一遍宣礼，请将其关闭。',
@@ -274,13 +348,16 @@ export default function SettingsScreen() {
       iqama: '伊卡玛是在清真寺会众礼拜开始前宣布的第二次呼唤。\n\n在此设置每个主命礼拜的宣礼（阿赞）时间与伊卡玛之间的延迟（分钟）。\n\n延迟时间过后，主屏幕将显示"伊卡玛倒计时"，而非"下次礼拜"。',
       dst: '「自动」会按您所在位置的夏令时规则自动切换——几乎在所有地方都正确，通常无需更改。\\n\\n仅在地图对您的具体地区判断有误的罕见情况下，才使用「开启」或「关闭」——例如某地所在的时区实行夏令时，而该地本身并不实行。',
       prePrayer: '在每次礼拜前设定的分钟数发出通知，帮助您做准备——它与宣礼本身是分开的。\\n\\n选择「关闭」可完全停用该提醒。',
+      adjustAllPrayerTimes: '关闭时,仅应用昏礼调整。开启时,五番礼拜各出现 ± 调节,均从 0 开始。',
+      jumuahTime: '设置显示的主麻拜时间,默认为晌礼时间。',
+    
     },
     tr: {
       language: 'Arapça sabit birincil dildir.\n\nİkinci dil her namaz adının altında görünür. "Otomatik" GPS ile ülkenizi algılar.',
       fontSize: 'Yalnızca Kuran okuyucusundaki Arapça yazı tipi boyutunu kontrol eder.\n\nKüçük: daha fazla ayet görünür.\nBüyük: uzun okuma için daha rahat.',
       accessibility: 'Görsel ihtiyaçlarınıza uygun renk temasını seçin.\n\n• Varsayılan: klasik İslami yeşil\n• Yüksek Kontrast: saf siyah-beyaz\n• Renk Körü: mavi, deuteranopi dostu\n• Sıcak: kehribar tonları\n• Çiçek / Okyanus / Mor: estetik seçenekler',
       hijri: 'Gösterilen Hicri tarihi ülkenizdeki resmi hilal gözlemine göre ±1–2 gün ayarlar.',
-      calcMethod: 'Fecir ve Yatsı için güneş açısını belirler.\n\n• Dünya İslam Birliği: Fecir 18°, Yatsı 17°\n• Ürdün Diyanet: resmi standart\n• Ümmü\'l-Kura: Suudi Arabistan — Yatsı Akşamdan 90 dk sonra\n• Mısır: Fecir 19.5°, Yatsı 17.5°',
+      calcMethod: 'Fecir ve Yatsı için güneş açısını belirler.\n\n• Dünya İslam Birliği: Fecir 18°, Yatsı 17°\n• Ürdün Diyanet: resmi standart\n• Ümmü\'l-Kura: Suudi Arabistan — Yatsı Akşamdan 90 dk sonra\n• Mısır: Fecir 19.5°, Yatsı 17.5°\n\nSeçili şehrin ülkesine göre otomatik olarak seçilir, elle değiştirilebilir.',
       asrMethod: '• Standart (Şafii, Maliki, Hanbeli): gölge = nesne boyu olduğunda.\n\n• Hanefi: gölge = 2× boy olduğunda — 30–60 dk geç başlar.',
       maghrib: 'Astronomik günbatımından sonra eklenen ihtiyat süresi. Uygulama ülkenizin resmi standardını önerir.',
       firstAdhan: 'Fecirden önce erken ezan — Ramazan\'da Sahur için.\n\nSuudi Arabistan tek ezan okur. Mısır/Levant 20–30 dk önce okur.\n\nÜlkenizde ilk ezan yoksa, bunu Kapalı bırakın.',
@@ -290,13 +367,16 @@ export default function SettingsScreen() {
       iqama: 'İkame, camide cemaatle namaza başlanmadan hemen önce okunan ikinci çağrıdır.\n\nBurada her farz namaz için ezanın okunmasından ikameye kadar olan süreyi (dakika olarak) ayarlayın.\n\nBu süre geçince ana ekranda "Sonraki namaz" yerine "İkameye … kaldı" geri sayımı görünür.',
       dst: '«Otomatik», konumunuzun yaz saati kurallarını izler ve kendiliğinden değişir — neredeyse her yerde doğrudur, normalde değiştirmeniz gerekmez.\\n\\n«Açık» veya «Kapalı» seçeneğini yalnızca haritanın tam olarak sizin bölgeniz için yanıldığı ender durumda kullanın — örneğin, bölgenin kendisi uygulamadığı hâlde yaz saati uygulayan bir saat diliminin içinde kalan bir yer.',
       prePrayer: 'Hazırlanmanıza yardımcı olmak için her namazdan belirlediğiniz dakika önce gelen bir bildirim — ezanın kendisinden ayrıdır.\\n\\nHatırlatmayı tamamen kapatmak için «Kapalı» seçin.',
+      adjustAllPrayerTimes: 'Kapalıyken yalnızca Akşam ayarı geçerlidir. Açıkken beş namazın her biri için ± ayarı çıkar; her biri 0\'dan başlar.',
+      jumuahTime: 'Cuma namazı için gösterilen saati belirler. Varsayılan olarak Öğle vaktine ayarlıdır.',
+    
     },
     ur: {
       language: 'عربی ہمیشہ پہلی زبان رہتی ہے۔\n\nدوسری زبان ہر نماز کے نام کے نیچے نظر آتی ہے۔ "خودکار" GPS سے آپ کا ملک معلوم کرتا ہے۔',
       fontSize: 'صرف قرآن ریڈر میں عربی فونٹ کا سائز کنٹرول کرتا ہے۔\n\nچھوٹا: زیادہ آیات دکھاتا ہے۔\nبڑا: طویل مطالعے کے لیے آرام دہ۔',
       accessibility: 'اپنی بصری ضروریات کے مطابق رنگ تھیم منتخب کریں۔\n\n• ڈیفالٹ: کلاسک اسلامی سبز\n• ہائی کنٹراسٹ: خالص سیاہ و سفید\n• کلر بلائنڈ: نیلا، deuteranopia کے لیے موزوں\n• گرم: کہربائی رنگ\n• پھول / سمندر / بنفشی: جمالیاتی انتخاب',
       hijri: 'ہلال کی سرکاری رویت کے مطابق ہجری تاریخ ±1–2 دن ایڈجسٹ کرتا ہے۔',
-      calcMethod: 'فجر اور عشاء کے لیے سورج کا زاویہ متعین کرتا ہے۔\n\n• عالمی اسلامی لیگ: فجر 18°، عشاء 17°\n• اردن اوقاف: اردن کا سرکاری معیار\n• ام القریٰ: سعودی عرب — عشاء مغرب کے 90 منٹ بعد\n• مصری ادارہ: فجر 19.5°، عشاء 17.5°\n• کراچی: جنوبی ایشیا',
+      calcMethod: 'فجر اور عشاء کے لیے سورج کا زاویہ متعین کرتا ہے۔\n\n• عالمی اسلامی لیگ: فجر 18°، عشاء 17°\n• اردن اوقاف: اردن کا سرکاری معیار\n• ام القریٰ: سعودی عرب — عشاء مغرب کے 90 منٹ بعد\n• مصری ادارہ: فجر 19.5°، عشاء 17.5°\n• کراچی: جنوبی ایشیا\n\n\n\nمنتخب شہر کے ملک کے مطابق خودکار طور پر منتخب ہوتا ہے، دستی طور پر تبدیل کیا جا سکتا ہے۔',
       asrMethod: '• جمہور (شافعی، مالکی، حنبلی): سایہ = اونچائی پر عصر شروع۔\n\n• حنفی: سایہ = دو گنا اونچائی — تقریباً 30–60 منٹ تاخیر۔',
       maghrib: 'فلکی غروب کے بعد احتیاطی وقفہ۔ ایپ آپ کے ملک کا سرکاری معیار تجویز کرتی ہے۔',
       firstAdhan: 'فجر سے پہلے ابتدائی اذان — رمضان میں سحری کے لیے۔\n\nسعودی عرب میں صرف ایک اذان ہوتی ہے۔ مصر اور شام میں 20–30 منٹ پہلے۔\n\nاگر آپ کے ملک میں پہلی اذان نہیں ہوتی، تو اسے بند رکھیں۔',
@@ -306,13 +386,16 @@ export default function SettingsScreen() {
       iqama: 'اقامت وہ دوسری پکار ہے جو مسجد میں باجماعت نماز شروع ہونے سے فوری پہلے دی جاتی ہے۔\n\nیہاں ہر فرض نماز کے لیے اذان اور اقامت کے درمیان وقفہ (منٹوں میں) مقرر کریں۔\n\nیہ وقفہ گزرنے کے بعد، مرکزی اسکرین پر "اگلی نماز" کی بجائے "اقامت میں…" کا الٹا گنتی نمایاں ہوگی۔',
       dst: '«خودکار» آپ کے مقام کے ڈے لائٹ سیونگ اصولوں کے مطابق خود بخود بدل جاتا ہے — یہ تقریباً ہر جگہ درست ہوتا ہے، عام طور پر اسے تبدیل کرنے کی ضرورت نہیں۔\\n\\n«آن» یا «آف» صرف اُس نادر صورت میں استعمال کریں جب نقشہ آپ کے عین علاقے کے لیے غلط ہو — مثلاً کوئی جگہ جو ایسے ٹائم زون میں ہو جہاں ڈے لائٹ سیونگ نافذ ہے مگر وہ علاقہ خود اسے نہیں مانتا۔',
       prePrayer: 'ہر نماز سے مقررہ منٹ پہلے ایک اطلاع تاکہ آپ تیاری کر سکیں — یہ خود اذان سے الگ ہے۔\\n\\nیاد دہانی مکمل بند کرنے کے لیے «آف» منتخب کریں۔',
+      adjustAllPrayerTimes: 'بند ہونے پر صرف مغرب کی تعدیل لاگو ہوتی ہے۔ آن کرنے پر پانچوں نمازوں کے لیے ± کنٹرول ظاہر ہوتا ہے، ہر ایک صفر سے شروع ہوتا ہے۔',
+      jumuahTime: 'جمعہ کی نماز کے لیے دکھایا جانے والا وقت طے کرتا ہے۔ ڈیفالٹ ظہر کا وقت ہے۔',
+    
     },
     id: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama shalat. "Otomatis" mendeteksi negara Anda via GPS.',
       fontSize: 'Mengontrol ukuran font Arab hanya di pembaca Al-Quran.\n\nKecil: lebih banyak ayat di layar.\nBesar: lebih nyaman untuk membaca lama.',
       accessibility: 'Pilih tema warna sesuai kebutuhan visual Anda.\n\n• Default: hijau Islam klasik\n• Kontras Tinggi: hitam putih murni\n• Buta Warna: biru, ramah deuteranopia\n• Hangat: nuansa amber\n• Bunga / Laut / Ungu: opsi estetika',
       hijri: 'Menyesuaikan tanggal Hijriah yang ditampilkan ±1–2 hari sesuai pengumuman resmi hilal di negara Anda.',
-      calcMethod: 'Menetapkan sudut matahari untuk Subuh dan Isya.\n\n• Liga Muslim Dunia: Subuh 18°, Isya 17°\n• Yordania: standar resmi\n• Umm Al-Qura: Arab Saudi — Isya 90 menit setelah Maghrib\n• Mesir: Subuh 19.5°, Isya 17.5°',
+      calcMethod: 'Menetapkan sudut matahari untuk Subuh dan Isya.\n\n• Liga Muslim Dunia: Subuh 18°, Isya 17°\n• Yordania: standar resmi\n• Umm Al-Qura: Arab Saudi — Isya 90 menit setelah Maghrib\n• Mesir: Subuh 19.5°, Isya 17.5°\n\n\n\nDipilih otomatis sesuai negara kota yang dipilih; bisa diubah manual.',
       asrMethod: '• Standar (Syafi\'i, Maliki, Hambali): Asar saat bayangan = tinggi benda.\n\n• Hanafi: Asar saat bayangan = 2× tinggi — mundur 30–60 menit.',
       maghrib: 'Batas kehati-hatian setelah matahari terbenam secara astronomis. Aplikasi merekomendasikan standar resmi negara Anda.',
       firstAdhan: 'Azan awal sebelum Subuh untuk Sahur selama Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 menit lebih awal.\n\nJika negara Anda tidak memiliki azan pertama, biarkan Nonaktif.',
@@ -322,13 +405,16 @@ export default function SettingsScreen() {
       iqama: 'Iqamah adalah seruan kedua yang dikumandangkan tepat sebelum shalat berjamaah dimulai di masjid.\n\nTetapkan jeda (dalam menit) antara waktu Azan resmi dan Iqamah untuk setiap shalat wajib.\n\nSetelah jeda itu berlalu, layar utama beralih dari hitung mundur "Shalat Berikutnya" ke hitung mundur "Iqamah dalam…".',
       dst: '«Otomatis» mengikuti aturan waktu musim panas untuk lokasi Anda dan berganti sendiri — hampir selalu benar, jadi biasanya tidak perlu diubah.\\n\\nGunakan «Aktif» atau «Nonaktif» hanya untuk kasus langka saat peta keliru untuk daerah Anda persis — misalnya, tempat yang berada di dalam zona waktu yang menerapkan waktu musim panas padahal daerah itu sendiri tidak.',
       prePrayer: 'Notifikasi sejumlah menit yang Anda tetapkan sebelum setiap salat untuk membantu Anda bersiap — terpisah dari azan itu sendiri.\\n\\nPilih «Nonaktif» untuk mematikan pengingat sepenuhnya.',
+      adjustAllPrayerTimes: 'Saat mati, hanya penyesuaian Maghrib yang berlaku. Saat aktif, tombol ± muncul untuk setiap dari lima salat, masing-masing dimulai dari 0.',
+      jumuahTime: 'Menetapkan waktu yang ditampilkan untuk salat Jumat. Default: waktu Dzuhur.',
+    
     },
     bn: {
       language: 'আরবি সর্বদা প্রধান ভাষা।\n\nদ্বিতীয় ভাষা প্রতিটি নামাজের নামের নিচে দেখায়। "স্বয়ংক্রিয়" GPS দিয়ে আপনার দেশ শনাক্ত করে।',
       fontSize: 'শুধুমাত্র কুরআন রিডারে আরবি ফন্টের আকার নিয়ন্ত্রণ করে।\n\nছোট: বেশি আয়াত দেখায়।\nবড়: দীর্ঘ পাঠের জন্য আরামদায়ক।',
       accessibility: 'আপনার দৃষ্টি চাহিদা অনুযায়ী রঙের থিম বেছে নিন।',
       hijri: 'আপনার দেশের সরকারি হিলাল দেখার অনুযায়ী হিজরি তারিখ ±১–২ দিন সামঞ্জস্য করে।',
-      calcMethod: 'ফজর ও ইশার জন্য সূর্যের কোণ নির্ধারণ করে।\n\n• মুসলিম বিশ্ব লীগ: ফজর 18°, ইশা 17°\n• উম্মুল কুরা: সৌদি আরব — ইশা মাগরিবের ৯০ মিনিট পরে\n• মিশর: ফজর 19.5°, ইশা 17.5°',
+      calcMethod: 'ফজর ও ইশার জন্য সূর্যের কোণ নির্ধারণ করে।\n\n• মুসলিম বিশ্ব লীগ: ফজর 18°, ইশা 17°\n• উম্মুল কুরা: সৌদি আরব — ইশা মাগরিবের ৯০ মিনিট পরে\n• মিশর: ফজর 19.5°, ইশা 17.5°\n\n\n\nনির্বাচিত শহরের দেশ অনুসারে স্বয়ংক্রিয়ভাবে নির্বাচিত হয়; ম্যানুয়ালি পরিবর্তন করা যায়।',
       asrMethod: '• আদর্শ (শাফেয়ি, মালেকি, হাম্বলি): ছায়া = উচ্চতা হলে আসর শুরু।\n\n• হানাফি: ছায়া = ২× উচ্চতা হলে — ৩০–৬০ মিনিট দেরি।',
       maghrib: 'জ্যোতির্বিদ্যাগত সূর্যাস্তের পর সতর্কতামূলক ব্যবধান। অ্যাপ আপনার দেশের সরকারি মান সুপারিশ করে।',
       firstAdhan: 'রমজানে সেহরির জন্য ফজরের আগে প্রাথমিক আজান।\n\nসৌদি আরব: শুধুমাত্র একটি আজান। মিশর/লেভান্ট: ফজরের ২০–৩০ মিনিট আগে।\n\nআপনার দেশে প্রথম আজান না থাকলে, এটি বন্ধ রাখুন।',
@@ -338,13 +424,16 @@ export default function SettingsScreen() {
       iqama: 'ইকামত হল দ্বিতীয় আহ্বান যা মসজিদে জামায়াত শুরু হওয়ার ঠিক আগে দেওয়া হয়।\n\nপ্রতিটি ফরজ নামাজের জন্য আযান ও ইকামতের মধ্যে বিরতি (মিনিটে) এখানে সেট করুন।\n\nসেই বিরতি পেরিয়ে গেলে প্রধান স্ক্রিনে "পরবর্তী নামাজ"-এর পরিবর্তে "ইকামত আসছে…" কাউন্টডাউন দেখাবে।',
       dst: '«স্বয়ংক্রিয়» আপনার অবস্থানের ডে-লাইট সেভিং নিয়ম অনুসরণ করে নিজে থেকেই বদলায় — প্রায় সব জায়গায় এটি সঠিক, তাই সাধারণত পরিবর্তনের দরকার হয় না।\\n\\n«চালু» বা «বন্ধ» কেবল সেই বিরল ক্ষেত্রেই ব্যবহার করুন যখন মানচিত্র আপনার নির্দিষ্ট এলাকার জন্য ভুল — যেমন এমন একটি স্থান যা এমন টাইম জোনে পড়ে যেখানে ডে-লাইট সেভিং চলে অথচ এলাকাটি নিজে তা মানে না।',
       prePrayer: 'প্রতিটি নামাজের নির্ধারিত মিনিট আগে একটি বিজ্ঞপ্তি যাতে আপনি প্রস্তুত হতে পারেন — এটি আজান থেকে আলাদা।\\n\\nমনে করিয়ে দেওয়া পুরোপুরি বন্ধ করতে «বন্ধ» নির্বাচন করুন।',
+      adjustAllPrayerTimes: 'বন্ধ থাকলে শুধু মাগরিব সমন্বয় প্রযোজ্য হয়। চালু করলে পাঁচ ওয়াক্ত নামাজ প্রতিটির জন্য ± নিয়ন্ত্রণ আসে, প্রতিটি 0 থেকে শুরু।',
+      jumuahTime: 'জুমার নামাজের জন্য প্রদর্শিত সময় নির্ধারণ করে। ডিফল্ট: যোহরের সময়।',
+    
     },
     fa: {
       language: 'عربی زبان اصلی ثابت است.\n\nزبان دوم زیر هر نام نماز نمایش داده می‌شود. "خودکار" کشور شما را از GPS تشخیص می‌دهد.',
       fontSize: 'فقط اندازه فونت عربی در قاری قرآن را کنترل می‌کند.\n\nکوچک: آیات بیشتری روی صفحه.\nبزرگ: مطالعه طولانی راحت‌تر.',
       accessibility: 'پوسته رنگی متناسب با نیازهای بینایی خود را انتخاب کنید.',
       hijri: 'تاریخ هجری نمایش داده شده را ±۱–۲ روز بر اساس اعلام رسمی رؤیت هلال در کشورتان تنظیم می‌کند.',
-      calcMethod: 'زاویه خورشید برای فجر و عشا را تعیین می‌کند.\n\n• رابطه جهان اسلام: فجر 18°، عشا 17°\n• اردن: استاندارد رسمی\n• ام‌القری: عربستان — عشا 90 دقیقه پس از مغرب\n• مصر: فجر 19.5°، عشا 17.5°',
+      calcMethod: 'زاویه خورشید برای فجر و عشا را تعیین می‌کند.\n\n• رابطه جهان اسلام: فجر 18°، عشا 17°\n• اردن: استاندارد رسمی\n• ام‌القری: عربستان — عشا 90 دقیقه پس از مغرب\n• مصر: فجر 19.5°، عشا 17.5°\n\n\n\nبر اساس کشور شهر انتخاب‌شده به‌طور خودکار انتخاب می‌شود؛ می‌توان به‌صورت دستی تغییر داد.',
       asrMethod: '• استاندارد (شافعی، مالکی، حنبلی): عصر زمانی که سایه = ارتفاع شیء.\n\n• حنفی: عصر زمانی که سایه = 2× ارتفاع — تأخیر 30–60 دقیقه.',
       maghrib: 'حاشیه احتیاطی پس از غروب نجومی. برنامه استاندارد رسمی کشور شما را توصیه می‌کند.',
       firstAdhan: 'اذان اولیه قبل از فجر برای سحری در رمضان.\n\nعربستان سعودی: یک اذان. مصر/لوان: 20–30 دقیقه زودتر.\n\nاگر در کشوری هستید که اذان اول ندارد، آن را خاموش بگذارید.',
@@ -354,13 +443,16 @@ export default function SettingsScreen() {
       iqama: 'اقامه دومین ندایی است که دقیقاً پیش از شروع نماز جماعت در مسجد خوانده می‌شود.\n\nدر اینجا فاصله زمانی (بر حسب دقیقه) بین اذان رسمی و اقامه را برای هر نماز واجب تنظیم کنید.\n\nپس از گذشت این فاصله، صفحه اصلی به‌جای "نماز بعدی" شمارش معکوس "اقامه در …" را نمایش می‌دهد.',
       dst: '«خودکار» قوانین ساعت تابستانی موقعیت شما را دنبال می‌کند و خودبه‌خود تغییر می‌کند — تقریباً همه‌جا درست است و معمولاً نیازی به تغییر آن نیست.\\n\\nفقط در موارد نادری که نقشه برای منطقهٔ دقیق شما اشتباه است از «روشن» یا «خاموش» استفاده کنید — برای نمونه، جایی که درون منطقهٔ زمانی‌ای قرار دارد که ساعت تابستانی را اجرا می‌کند در حالی که خود آن منطقه آن را اجرا نمی‌کند.',
       prePrayer: 'اعلانی که چند دقیقهٔ تعیین‌شده پیش از هر نماز نمایش داده می‌شود تا آماده شوید — این جدا از خودِ اذان است.\\n\\nبرای غیرفعال کردن کامل یادآوری، «خاموش» را انتخاب کنید.',
+      adjustAllPrayerTimes: 'در حالت خاموش فقط تنظیم مغرب اعمال می‌شود. با روشن کردن، برای هر یک از پنج نماز یک کنترل ± ظاهر می‌شود که همه از 0 شروع می‌شوند.',
+      jumuahTime: 'زمان نمایش‌داده‌شده برای نماز جمعه را تنظیم می‌کند. پیش‌فرض: زمان ظهر.',
+    
     },
     ms: {
       language: 'Arab adalah bahasa utama yang tetap.\n\nBahasa kedua muncul di bawah setiap nama sembahyang. "Auto" mengesan negara anda melalui GPS.',
       fontSize: 'Mengawal saiz fon Arab dalam pembaca Al-Quran sahaja.\n\nKecil: lebih banyak ayat pada skrin.\nBesar: lebih selesa untuk membaca lama.',
       accessibility: 'Pilih tema warna mengikut keperluan visual anda.',
       hijri: 'Melaraskan tarikh Hijri yang dipaparkan ±1–2 hari mengikut pengumuman rasmi anak bulan di negara anda.',
-      calcMethod: 'Menetapkan sudut matahari untuk Subuh dan Isyak.\n\n• Liga Muslim Dunia: Subuh 18°, Isyak 17°\n• Jordan: standard rasmi\n• Umm Al-Qura: Arab Saudi — Isyak 90 minit selepas Maghrib',
+      calcMethod: 'Menetapkan sudut matahari untuk Subuh dan Isyak.\n\n• Liga Muslim Dunia: Subuh 18°, Isyak 17°\n• Jordan: standard rasmi\n• Umm Al-Qura: Arab Saudi — Isyak 90 minit selepas Maghrib\n\n\n\nDipilih automatik mengikut negara bandar yang dipilih; boleh ditukar secara manual.',
       asrMethod: '• Standard (Syafi\'i, Maliki, Hanbali): Asar bila bayangan = tinggi benda.\n\n• Hanafi: Asar bila bayangan = 2× tinggi — lewat 30–60 min.',
       maghrib: 'Margin berjaga-jaga selepas matahari terbenam secara astronomik. Aplikasi mengesyorkan standard rasmi negara anda.',
       firstAdhan: 'Azan awal sebelum Subuh untuk Sahur semasa Ramadan.\n\nArab Saudi: satu azan. Mesir/Levant: azan pertama 20–30 minit lebih awal.\n\nJika negara anda tidak mempunyai azan pertama, biarkan ia Mati.',
@@ -370,13 +462,16 @@ export default function SettingsScreen() {
       iqama: 'Iqamah ialah seruan kedua yang dilaungkan sejurus sebelum solat berjemaah dimulakan di masjid.\n\nTetapkan di sini jeda masa (dalam minit) antara waktu Azan rasmi dan Iqamah bagi setiap solat fardu.\n\nSelepas jeda itu berlalu, skrin utama beralih daripada kiraan undur "Solat Seterusnya" kepada "Iqamah dalam…".',
       dst: '«Auto» mengikut peraturan waktu musim panas bagi lokasi anda dan bertukar dengan sendiri — betul hampir di mana-mana, jadi biasanya anda tidak perlu mengubahnya.\\n\\nGunakan «Hidup» atau «Mati» hanya untuk kes jarang apabila peta tersilap bagi kawasan tepat anda — contohnya, tempat yang berada dalam zon waktu yang mengamalkan waktu musim panas walaupun kawasan itu sendiri tidak.',
       prePrayer: 'Pemberitahuan beberapa minit yang anda tetapkan sebelum setiap solat untuk membantu anda bersedia — berasingan daripada azan itu sendiri.\\n\\nPilih «Mati» untuk mematikan peringatan sepenuhnya.',
+      adjustAllPrayerTimes: 'Apabila mati, hanya pelarasan Maghrib digunakan. Apabila hidup, kawalan ± muncul untuk setiap satu daripada lima solat, setiap satu bermula dari 0.',
+      jumuahTime: 'Menetapkan waktu yang dipaparkan untuk solat Jumaat. Lalai: waktu Zohor.',
+    
     },
     pt: {
       language: 'O árabe é o idioma principal fixo.\n\nO segundo idioma aparece abaixo de cada nome de oração. "Auto" detecta seu país por GPS.',
       fontSize: 'Controla o tamanho da fonte árabe apenas no leitor do Alcorão.\n\nPequeno: mais versículos na tela.\nGrande: mais confortável para leitura prolongada.',
       accessibility: 'Escolha o tema de cor adequado às suas necessidades visuais.',
       hijri: 'Ajusta a data Hijri exibida em ±1–2 dias conforme o anúncio oficial do crescente no seu país.',
-      calcMethod: 'Define o ângulo solar para Fajr e Isha.\n\n• Liga Mundial Islâmica: Fajr 18°, Isha 17°\n• Jordânia: padrão oficial\n• Umm Al-Qura: Arábia Saudita — Isha 90 min após Maghrib',
+      calcMethod: 'Define o ângulo solar para Fajr e Isha.\n\n• Liga Mundial Islâmica: Fajr 18°, Isha 17°\n• Jordânia: padrão oficial\n• Umm Al-Qura: Arábia Saudita — Isha 90 min após Maghrib\n\nEscolhido automaticamente pelo país da cidade selecionada; pode ser alterado manualmente.',
       asrMethod: '• Padrão (Shafi\'i, Maliki, Hanbali): Asr quando sombra = altura do objeto.\n\n• Hanafi: Asr quando sombra = 2× altura — atraso de 30–60 min.',
       maghrib: 'Margem de precaução após o pôr do sol astronômico. O app recomenda o padrão oficial do seu país.',
       firstAdhan: 'Athan antecipado antes do Fajr para o Suhoor durante o Ramadã.\n\nArábia Saudita: um único Athan. Egito/Levante: primeiro Athan 20–30 min antes.\n\nSe você estiver em um país que não tem o primeiro Athan, deixe-o Desativado.',
@@ -386,13 +481,16 @@ export default function SettingsScreen() {
       iqama: 'A Iqama é o segundo chamado anunciado imediatamente antes do início da oração em congregação na mesquita.\n\nDefina aqui o intervalo (em minutos) entre o horário oficial do Athan e a Iqama para cada oração obrigatória.\n\nApós esse intervalo, a tela inicial muda da contagem regressiva de "Próxima oração" para "Iqama em…".',
       dst: '«Auto» segue as regras de horário de verão da sua localização e muda sozinho — está correto quase em todo o lado, por isso normalmente não precisa de o alterar.\\n\\nUse «Ligado» ou «Desligado» apenas para o caso raro em que o mapa está errado para a sua localidade exata — por exemplo, um lugar dentro de um fuso que aplica o horário de verão embora a própria localidade não o faça.',
       prePrayer: 'Uma notificação um número definido de minutos antes de cada oração para o ajudar a preparar-se — é separada do próprio Athan.\\n\\nSelecione «Desligado» para desativar o lembrete por completo.',
+      adjustAllPrayerTimes: 'Desligado: apenas o ajuste do Maghrib se aplica. Ligado: aparece um controle ± para cada uma das cinco orações, cada um começando em 0.',
+      jumuahTime: 'Define a hora exibida para a oração de sexta-feira. Padrão: horário de Dhuhr.',
+    
     },
     sw: {
       language: 'Kiarabu ni lugha kuu ya kudumu.\n\nLugha ya pili inaonekana chini ya kila jina la sala. "Otomatiki" hugundua nchi yako kupitia GPS.',
       fontSize: 'Inadhibiti ukubwa wa fonti ya Kiarabu katika msomaji wa Qur\'an tu.',
       accessibility: 'Chagua mandhari ya rangi inayofaa mahitaji yako ya kuona.',
       hijri: 'Hurekebisha tarehe ya Hijria iliyoonyeshwa kwa ±1–2 siku kulingana na matangazo rasmi ya mwezi katika nchi yako.',
-      calcMethod: 'Inaweka pembe ya jua kwa Alfajiri na Isha.\n\n• Ligi ya Ulimwengu wa Kiislamu: Alfajiri 18°, Isha 17°\n• Umm Al-Qura: Saudi Arabia — Isha dakika 90 baada ya Magharibi',
+      calcMethod: 'Inaweka pembe ya jua kwa Alfajiri na Isha.\n\n• Ligi ya Ulimwengu wa Kiislamu: Alfajiri 18°, Isha 17°\n• Umm Al-Qura: Saudi Arabia — Isha dakika 90 baada ya Magharibi\n\nHuchaguliwa kiotomatiki kulingana na nchi ya jiji lililochaguliwa; unaweza kubadilisha kwa mikono.',
       asrMethod: '• Kawaida: Asr wakati kivuli = urefu wa kitu.\n\n• Hanafi: Asr wakati kivuli = mara 2 — kuchelewa dakika 30–60.',
       maghrib: 'Kiwango cha tahadhari baada ya machweo ya kiangalizi. Programu inakupendekeza kiwango rasmi cha nchi yako.',
       firstAdhan: 'Adhana ya mapema kabla ya Alfajiri kwa Daku wakati wa Ramadhani.\n\nSaudia Arabia: adhana moja tu. Misri/Levant: adhana ya kwanza dakika 20–30 mapema.\n\nIkiwa nchi yako haina adhana ya kwanza, iacha kwenye Imezimwa.',
@@ -402,13 +500,16 @@ export default function SettingsScreen() {
       iqama: 'Iqama ni wito wa pili unaoitangazwa mara moja kabla ya sala ya jamaa kuanza msikitini.\n\nWeka hapa muda wa kupumzika (kwa dakika) kati ya wakati rasmi wa Adhana na Iqama kwa kila sala ya faradhi.\n\nBaada ya muda huo kupita, skrini kuu itabadilika kutoka kuhesabu nyuma "Sala Ijayo" hadi "Iqama katika…".',
       dst: '«Otomatiki» hufuata kanuni za saa za majira ya joto kwa eneo lako na hubadilika lenyewe — ni sahihi karibu kila mahali, hivyo kwa kawaida huhitaji kulibadilisha.\\n\\nTumia «Washa» au «Zima» tu kwa hali adimu ambapo ramani imekosea kwa eneo lako hasa — kwa mfano, mahali palipo ndani ya saa za eneo zinazotumia saa za majira ya joto ilhali eneo lenyewe halizitumii.',
       prePrayer: 'Arifa dakika kadhaa unazoweka kabla ya kila swala ili kukusaidia kujiandaa — ni tofauti na adhana yenyewe.\\n\\nChagua «Zima» ili kuzima kikumbusho kabisa.',
+      adjustAllPrayerTimes: 'Ikiwa imezimwa, marekebisho ya Magharibi tu ndiyo yanatumika. Ikiwa imewashwa, kidhibiti ± huonekana kwa kila moja ya sala tano, kila moja huanza kutoka 0.',
+      jumuahTime: 'Huweka wakati unaoonyeshwa kwa Sala ya Ijumaa. Chaguo-msingi: wakati wa Adhuhuri.',
+    
     },
     ha: {
       language: 'Larabci shine harshen farko na dindindin.\n\nHarshe na biyu yana bayyana ƙarƙashin sunan kowace sallah. "Atomatik" yana gano ƙasarku ta GPS.',
       fontSize: 'Yana sarrafa girman rubutu na Larabci a mai karanta Alƙur\'ani kawai.',
       accessibility: 'Zaɓi jigo na launi da ya dace da buƙatun gani na ku.',
       hijri: 'Yana daidaita kwanan Hijira da aka nuna da ±1–2 kwana bisa ga sanarwar hukuma ta ganin wata a ƙasarku.',
-      calcMethod: 'Yana saita kusurwar rana don Asuba da Isha.\n\n• Ligi ta Duniya ta Kiislamu: Asuba 18°, Isha 17°\n• Umm Al-Qura: Saudi Arabia — Isha minti 90 bayan Magariba',
+      calcMethod: 'Yana saita kusurwar rana don Asuba da Isha.\n\n• Ligi ta Duniya ta Kiislamu: Asuba 18°, Isha 17°\n• Umm Al-Qura: Saudi Arabia — Isha minti 90 bayan Magariba\n\nAna zaɓan ta ta atomatik dangane da ƙasar birni da aka zaɓa; ana iya canjinta da hannu.',
       asrMethod: '• Ma\'auni: Azahar lokacin inuwa = tsayin abu.\n\n• Hanafi: Azahar lokacin inuwa = ninki biyu — jinkiri minti 30–60.',
       maghrib: 'Kiwon kariya bayan faɗuwar rana na tauraron dan adam. Aikace-aikacen yana ba da shawarar ma\'aunin hukuma na ƙasarku.',
       firstAdhan: 'Farkon azan kafin Asuba don Suhur a lokacin Azumi.\n\nSaudi Arabia: azan guda ɗaya. Masar/Levant: farkon azan mintuna 20–30 kafin lokaci.\n\nIdan ƙasarku ba ta da farkon azan, bar ta a kashe.',
@@ -418,6 +519,9 @@ export default function SettingsScreen() {
       iqama: 'Iqama wata kira ce ta biyu da ake yi nan take kafin sallah ta jama\'a ta fara a masallaci.\n\nKa saita a nan jinkirin (a cikin mintuna) tsakanin lokacin Azan na hukuma da Iqama don kowace sallah ta wajibi.\n\nBayan wannan jinkirin ya wuce, allo na farko yana sauya daga ƙididdiga ta "Sallah Mai Zuwa" zuwa "Iqama a cikin…".',
       dst: '«Kai tsaye» yana bin ka\'idodin lokacin bazara na wurin ka kuma yana canzawa da kansa — daidai ne kusan ko\'ina, don haka ba sai ka canza shi ba.\\n\\nYi amfani da «Kunna» ko «Kashe» kawai a yanayin da ba kasafai ba inda taswira ta yi kuskure ga yankin ka daidai — misali, wuri da ke cikin yankin lokaci da ke amfani da lokacin bazara alhali yankin da kansa ba ya amfani da shi.',
       prePrayer: 'Sanarwa \'yan mintuna da ka saita kafin kowace sallah don taimaka maka shirya — ta bambanta da kiran sallah kanta.\\n\\nZaɓi «Kashe» don kashe tunatarwar gaba ɗaya.',
+      adjustAllPrayerTimes: 'Idan a kashe, sai kawai gyaran Magariba ke aiki. Idan a kunna, sarrafa ± zai bayyana ga kowace daga cikin sallolin biyar, kowanne yana farawa daga 0.',
+      jumuahTime: 'Yana saita lokacin da ake nunawa don Sallar Juma\'a. Tsohuwa: lokacin Azahar.',
+    
     },
   };
 
@@ -444,7 +548,13 @@ export default function SettingsScreen() {
     Alert.alert(title, body);
   };
 
-  const recommendedMethod = getRecommendedMethod(countryCode, location?.lat ?? null);
+  // Recommended method for the *effective* location. `countryCode` here is
+  // already the effective country (AppContext rebinds it to effectiveCountryCode
+  // at the value spread), and effectiveLocation is manualLocation when in
+  // manual mode / raw GPS `location` otherwise. Recomputes every render, and
+  // since both inputs come from context, re-renders whenever the location
+  // changes — no memoisation needed.
+  const recommendedMethod = getRecommendedMethod(countryCode, effectiveLocation?.lat ?? null);
 
   const handlePreview = async (key: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -475,7 +585,7 @@ export default function SettingsScreen() {
     JSON.stringify(Object.fromEntries(Object.entries(r).sort()));
 
   const hasChanges =
-    draftCalcMethod !== calcMethod ||
+    draftCalcMethod !== openedEffectiveMethodRef.current ||
     draftAsrMethod !== asrMethod ||
     draftAdjustment !== maghribUserAdj ||
     draftHijri !== (hijriAdjustment ?? 0) ||
@@ -494,7 +604,9 @@ export default function SettingsScreen() {
     draftEidPrayerTime !== (eidPrayerTime ?? '07:30') ||
     draftThikrRemindersEnabled !== (thikrRemindersEnabled ?? false) ||
     draftPrePrayerReminder !== (prePrayerReminder ?? 0) ||
-    draftJumuahTime !== (jumuahTime ?? null);
+    draftJumuahTime !== (jumuahTime ?? null) ||
+    draftPerPrayerEnabled !== (perPrayerOffsetsEnabled ?? false) ||
+    JSON.stringify(draftPrayerOffsets) !== JSON.stringify((prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 }));
 
   const TAB_ROUTES: Record<string, string> = {
     index: '/',
@@ -519,9 +631,15 @@ export default function SettingsScreen() {
     if (!draftShowDhuha) finalNotifications['dhuha'] = { banner: false, athan: 'none' };
     if (!draftShowQiyam) finalNotifications['qiyam'] = { banner: false, athan: 'none' };
 
+    // Per-city / per-country method memory: only write an override when the
+    // user deliberately picked something different from what was showing when
+    // this screen was opened. Comparing against openedEffectiveMethodRef (not
+    // the live effective method) prevents a stray write when the active
+    // location shifted under Settings while the picker choice stayed put.
+    if (draftCalcMethod !== openedEffectiveMethodRef.current) {
+      setEffectiveCalcMethod(draftCalcMethod);
+    }
     updateSettings({
-      calcMethod: draftCalcMethod,
-      calcMethodAuto: false, // saving Settings locks the chosen method as explicit
       asrMethod: draftAsrMethod,
       hijriAdjustment: draftHijri,
       prayerNotifications: finalNotifications,
@@ -544,6 +662,8 @@ export default function SettingsScreen() {
       thikrRemindersEnabled: draftThikrRemindersEnabled,
       prePrayerReminder: draftPrePrayerReminder,
       jumuahTime: draftJumuahTime,
+      perPrayerOffsetsEnabled: draftPerPrayerEnabled,
+      prayerOffsets: draftPrayerOffsets,
     });
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
@@ -552,7 +672,9 @@ export default function SettingsScreen() {
   const handleCancel = () => {
     Haptics.selectionAsync();
     // Reset all drafts back to committed settings (discard changes)
-    setDraftCalcMethod(calcMethod);
+    setDraftCalcMethod(effectiveCalcMethod);
+    openedEffectiveMethodRef.current = effectiveCalcMethod;
+    pickerTouchedRef.current = false;
     setDraftAsrMethod(asrMethod);
     setDraftAdjustment(maghribUserAdj);
     setDraftHijri(hijriAdjustment ?? 0);
@@ -577,6 +699,8 @@ export default function SettingsScreen() {
     setDraftPrePrayerReminder(prePrayerReminder ?? 0);
     setDraftJumuahTime(jumuahTime ?? null);
     setTempJumuahTime(jumuahTime ?? '12:30');
+    setDraftPerPrayerEnabled(perPrayerOffsetsEnabled ?? false);
+    setDraftPrayerOffsets((prayerOffsets ?? { fajr: 0, dhuhr: 0, asr: 0, isha: 0 }));
     const targetRoute = TAB_ROUTES[getPreviousTab()] ?? '/';
     router.replace(targetRoute as any);
   };
@@ -994,16 +1118,13 @@ export default function SettingsScreen() {
         </View>
 
         {/* Prayer Calculation */}
-        <View style={{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, marginBottom: 6, marginLeft: isRtl ? 0 : 4, marginRight: isRtl ? 4 : 0 }}>
-          <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left', marginTop: 0, marginBottom: 0 }]}>
-            {tr.prayerCalculation}
-          </Text>
-          <Pressable onPress={() => showHelp(tr.prayerCalculation, HELP[lang]?.calcMethod ?? HELP['en'].calcMethod)} hitSlop={8}>
-            <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
-          </Pressable>
-        </View>
+        <Text style={[styles.sectionTitle, { color: C.tint, fontFamily: isRtl ? 'Amiri_700Bold' : SANS, textAlign: isRtl ? 'right' : 'left' }]}>
+          {tr.prayerCalculation}
+        </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
-          {/* Calculation method — dropdown row */}
+          {/* Calculation method — dropdown row. Help icon lives on this row
+              (not on the section header): the explanation is about the
+              method concept itself, not the whole section. */}
           <Pressable
             onPress={() => { Haptics.selectionAsync(); setShowMethodModal(true); }}
             style={[styles.settingRow, { borderBottomColor: C.separator, borderBottomWidth: 1, flexDirection: isRtl ? 'row-reverse' : 'row' }]}
@@ -1017,6 +1138,12 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Pressable
+                onPress={(e) => { e.stopPropagation(); showHelp(tr.calculationMethod, HELP[lang]?.calcMethod ?? HELP['en'].calcMethod); }}
+                hitSlop={8}
+              >
+                <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+              </Pressable>
               <Ionicons name={isRtl ? 'chevron-back' : 'chevron-forward'} size={18} color={C.textMuted} />
             </View>
           </Pressable>
@@ -1044,6 +1171,7 @@ export default function SettingsScreen() {
                       onPress={() => {
                         Haptics.selectionAsync();
                         setDraftCalcMethod(m);
+                        pickerTouchedRef.current = true;
                         setShowMethodModal(false);
                       }}
                       style={[
@@ -1250,7 +1378,7 @@ export default function SettingsScreen() {
               <View style={[styles.autoOffsetBadge, { backgroundColor: C.tint + '22', borderColor: C.tint + '55', flexDirection: isRtl ? 'row-reverse' : 'row', flex: 1 }]}>
                 <Ionicons name="location-outline" size={12} color={C.tint} />
                 <Text style={[styles.autoOffsetText, { color: C.tint, fontSize: 12 }]}>
-                  {`${maghribBase} ${tr.minutes}${countryCode ? ` (${countryCode})` : ''}`}
+                  {`${maghribEffective - maghribUserAdj} ${tr.minutes}${countryCode ? ` (${countryCode})` : ''}`}
                 </Text>
               </View>
               {/* Stepper */}
@@ -1274,7 +1402,7 @@ export default function SettingsScreen() {
               {/* Total */}
               <View style={[styles.totalBadge, { backgroundColor: C.tint, paddingHorizontal: 8, paddingVertical: 4 }]}>
                 <Text style={[styles.totalBadgeText, { color: C.tintText, fontSize: 12 }]}>
-                  {`= ${maghribBase + draftAdjustment} ${(lang === 'ar' || lang === 'fa') ? 'د' : tr.minutes}`}
+                  {`= ${maghribEffective - maghribUserAdj + draftAdjustment} ${(lang === 'ar' || lang === 'fa') ? 'د' : tr.minutes}`}
                 </Text>
               </View>
               {draftAdjustment !== 0 && (
@@ -1284,6 +1412,76 @@ export default function SettingsScreen() {
               )}
             </View>
           </View>
+
+          {/* Adjust all prayer times — toggle + 4 conditional steppers */}
+          <View style={[styles.compactRow, { borderBottomWidth: draftPerPrayerEnabled ? StyleSheet.hairlineWidth : 0, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
+            <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]} numberOfLines={2}>
+              {tr.adjustAllPrayerTimes as string}
+            </Text>
+            <Pressable
+              onPress={() => showHelp(tr.adjustAllPrayerTimes as string, HELP[lang]?.adjustAllPrayerTimes ?? HELP['en'].adjustAllPrayerTimes)}
+              hitSlop={8}
+              style={{ marginHorizontal: 8 }}
+            >
+              <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+            </Pressable>
+            <Switch
+              value={draftPerPrayerEnabled}
+              onValueChange={v => { Haptics.selectionAsync(); setDraftPerPrayerEnabled(v); }}
+              trackColor={{ false: C.separator, true: C.tint + '99' }}
+              thumbColor={draftPerPrayerEnabled ? C.tint : C.textMuted}
+            />
+          </View>
+          {draftPerPrayerEnabled && (() => {
+            // Live-preview today's prayer times using the DRAFT offsets, so the number
+            // next to each ± stepper always reflects what the user is about to save.
+            const previewTimes = location ? calculatePrayerTimes({
+              lat: location.lat, lng: location.lng, date: new Date(),
+              method: effectiveCalcMethod, asrMethod: draftAsrMethod,
+              maghribOffset,
+              fajrOffset:  draftPrayerOffsets.fajr,
+              dhuhrOffset: draftPrayerOffsets.dhuhr,
+              asrOffset:   draftPrayerOffsets.asr,
+              ishaOffset:  draftPrayerOffsets.isha,
+              timezone: locationTimezone,
+            }) : null;
+            return (['fajr','dhuhr','asr','isha'] as const).map((p, idx, arr) => (
+              <View
+                key={p}
+                style={[styles.compactRow, {
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: C.separator,
+                  flexDirection: isRtl ? 'row-reverse' : 'row',
+                }]}
+              >
+                <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
+                  {({ fajr: tr.fajr, dhuhr: tr.dhuhr, asr: tr.asr, isha: tr.isha } as Record<string, string>)[p]}
+                </Text>
+                {previewTimes && (
+                  <Text style={{ color: C.textMuted, fontFamily: SANS, fontSize: 12, marginHorizontal: 8, minWidth: 62, textAlign: 'right' }}>
+                    {formatPrayerTime(previewTimes[p], locationTimezone, dstOverrideOffset, false, tr.am ?? 'AM', tr.pm ?? 'PM')}
+                  </Text>
+                )}
+                <View style={[styles.stepperControls, { backgroundColor: C.backgroundSecond, borderColor: C.separator }]}>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftPrayerOffsets(o => ({ ...o, [p]: Math.max((o[p] ?? 0) - 1, -30) })); }}
+                    style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Ionicons name="remove" size={16} color={C.tint} />
+                  </Pressable>
+                  <Text style={[styles.stepperValue, { color: C.text, minWidth: 32 }]}>
+                    {draftPrayerOffsets[p] > 0 ? `+${draftPrayerOffsets[p]}` : draftPrayerOffsets[p]}
+                  </Text>
+                  <Pressable
+                    onPress={() => { Haptics.selectionAsync(); setDraftPrayerOffsets(o => ({ ...o, [p]: Math.min((o[p] ?? 0) + 1, 30) })); }}
+                    style={({ pressed }) => [styles.stepperBtn, { opacity: pressed ? 0.6 : 1 }]}
+                  >
+                    <Ionicons name="add" size={16} color={C.tint} />
+                  </Pressable>
+                </View>
+              </View>
+            ));
+          })()}
 
           {/* First Adhan */}
           <View style={[styles.compactRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, flexDirection: isRtl ? 'row-reverse' : 'row' }]}>
@@ -1432,6 +1630,13 @@ export default function SettingsScreen() {
             <Text style={[styles.settingLabel, { color: C.text, fontFamily: isRtl ? 'Amiri_400Regular' : SANS, textAlign: isRtl ? 'right' : 'left', flex: 1 }]}>
               {tr.jumuahTimeSetting as string}
             </Text>
+            <Pressable
+              onPress={() => showHelp(tr.jumuahTimeSetting as string, HELP[lang]?.jumuahTime ?? HELP['en'].jumuahTime)}
+              hitSlop={8}
+              style={{ marginHorizontal: 8 }}
+            >
+              <MaterialCommunityIcons name="help-circle-outline" size={18} color={C.textMuted} />
+            </Pressable>
             <View style={[{ flexDirection: isRtl ? 'row-reverse' : 'row', alignItems: 'center', gap: 8 }, draftJumuahTime === null && { opacity: 0.38 }]} pointerEvents={draftJumuahTime !== null ? 'auto' : 'none'}>
               <Pressable
                 onPress={() => { Haptics.selectionAsync(); setTempJumuahTime(draftJumuahTime ?? '12:30'); setShowJumuahRoller(true); }}
@@ -1717,6 +1922,14 @@ export default function SettingsScreen() {
             <Text style={{ color: C.tint, fontSize: 12, fontFamily: SANS }}>{tr.test_notification}</Text>
           </Pressable>
         </View>
+        <Text style={{
+          color: C.textMuted, fontSize: 12,
+          fontFamily: isRtl ? 'Amiri_400Regular' : SANS,
+          textAlign: isRtl ? 'right' : 'left',
+          marginBottom: 8, marginHorizontal: 4,
+        }}>
+          {tr.jumuahNoNotifNote as string}
+        </Text>
         <View style={[styles.card, { backgroundColor: C.backgroundCard, borderColor: C.separator }]}>
           {NOTIF_PRAYERS.map((prayer, idx) => {
             const cfg: PrayerNotifConfig = draftNotifications[prayer.key] ?? EMPTY_CFG;

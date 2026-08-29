@@ -132,6 +132,10 @@ export function updateWidgetFromParams(params: {
   method: CalcMethod;
   asrMethod: AsrMethod;
   maghribOffset: number;
+  fajrOffset?: number;
+  dhuhrOffset?: number;
+  asrOffset?: number;
+  ishaOffset?: number;
   lang: Lang;
   timezone?: string | null; // IANA zone of the location (manual mode); null → device-local
   dstShiftMs?: number;
@@ -142,6 +146,12 @@ export function updateWidgetFromParams(params: {
     today.setHours(12, 0, 0, 0);
     const tomorrow = new Date(today.getTime() + 24 * 3600 * 1000);
 
+    const perPrayer = {
+      fajrOffset:  params.fajrOffset  ?? 0,
+      dhuhrOffset: params.dhuhrOffset ?? 0,
+      asrOffset:   params.asrOffset   ?? 0,
+      ishaOffset:  params.ishaOffset  ?? 0,
+    };
     const t = calculatePrayerTimes({
       lat: params.lat,
       lng: params.lng,
@@ -149,6 +159,7 @@ export function updateWidgetFromParams(params: {
       method: params.method,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      ...perPrayer,
       timezone: params.timezone ?? null,
     });
     const tm = calculatePrayerTimes({
@@ -158,6 +169,7 @@ export function updateWidgetFromParams(params: {
       method: params.method,
       asrMethod: params.asrMethod,
       maghribOffset: params.maghribOffset,
+      ...perPrayer,
       timezone: params.timezone ?? null,
     });
     const dsh = params.dstShiftMs ?? 0;
