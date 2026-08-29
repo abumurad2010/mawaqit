@@ -13,6 +13,37 @@ import { useApp } from '@/contexts/AppContext';
 import { t } from '@/constants/i18n';
 import type { Bookmark } from '@/contexts/AppContext';
 
+// Locales that use Eastern Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) in their calendars.
+const ARABIC_INDIC_LOCALES = new Set(['ar', 'fa', 'ur']);
+
+function toArabicIndicDigits(s: string): string {
+  return s.replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
+}
+
+/**
+ * Explicit GREGORIAN date formatter — DD/MM/YYYY, with Arabic-Indic digits for
+ * locales that use them (ar/fa/ur), Western digits otherwise. Bypasses
+ * `toLocaleDateString('ar-SA', …)` because on iOS `ar-SA` resolves to the
+ * Islamic (Hijri) calendar, producing e.g. "1 محرم 1445" instead of a
+ * Gregorian date. Uses the JS Date's Gregorian getters directly.
+ */
+function formatBookmarkDate(ts: number, locale: string): string {
+  const d = new Date(ts);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear());
+  const s = `${day}/${month}/${year}`;
+  return ARABIC_INDIC_LOCALES.has(locale) ? toArabicIndicDigits(s) : s;
+}
+
+function formatBookmarkTime(ts: number, locale: string): string {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const s = `${hh}:${mm}`;
+  return ARABIC_INDIC_LOCALES.has(locale) ? toArabicIndicDigits(s) : s;
+}
+
 export default function BookmarksScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, lang, colors, bookmarks, removeBookmark } = useApp();
@@ -68,13 +99,9 @@ export default function BookmarksScreen() {
               </Text>
               {!!item.timestamp && (
                 <Text style={[styles.timestamp, { color: C.textMuted, fontWeight: fw }]}>
-                  {new Date(item.timestamp).toLocaleDateString(lang === 'ar' ? 'ar-SA' : undefined, {
-                    day: 'numeric', month: 'short', year: 'numeric',
-                  })}
+                  {formatBookmarkDate(item.timestamp, lang)}
                   {' · '}
-                  {new Date(item.timestamp).toLocaleTimeString(lang === 'ar' ? 'ar-SA' : undefined, {
-                    hour: '2-digit', minute: '2-digit',
-                  })}
+                  {formatBookmarkTime(item.timestamp, lang)}
                 </Text>
               )}
             </View>

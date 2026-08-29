@@ -181,6 +181,23 @@ export default function QuranReaderScreen() {
   const scrollYRef = useRef(0);
   const [visibleSurahNum, setVisibleSurahNum] = useState(0);
 
+  // Tap-to-immersive: single tap on the page fades header + bottom nav via an
+  // OVERLAY (they are absolute-positioned, not in the layout flow), so the
+  // Arabic text does NOT reflow or shift a single pixel between states.
+  // Swipe-to-turn-page (PanResponder below) claims the touch when Math.abs(dx)
+  // dominates, so a swipe never fires onPress. A vertical drag is captured by
+  // the ScrollView, same effect. Only a plain tap toggles.
+  const [chromeVisible, setChromeVisible] = useState(true);
+  const toggleChrome = useCallback(() => {
+    setChromeVisible(v => !v);
+  }, []);
+  // Static chrome heights, computed from the current styles so ScrollView's
+  // paddingTop / paddingBottom match the space the overlays cover. Using
+  // known-good literals rather than onLayout avoids a first-frame text jump
+  // when the measurement lands.
+  const HEADER_H = topInset + 46;     // topInset + 4 (paddingTop) + 34 (iconBtn) + 8 (paddingBottom)
+  const BOTTOM_NAV_H = bottomInset + 60; // 12 (paddingTop) + ~34 (button+padding) + bottomInset + 14 (paddingBottom)
+
   const QURAN_FONT_SIZES = [16, 19, 22, 26, 30];
   const arabicFontSize = QURAN_FONT_SIZES[quranFontStep] ?? 22;
 
@@ -313,56 +330,9 @@ export default function QuranReaderScreen() {
   return (
     <View style={[styles.root, { backgroundColor: bgColor }]}>
 
-      {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: topInset + 4, paddingHorizontal: 16, borderBottomColor: C.separator }]}>
-        <Pressable
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
-        >
-          <Ionicons name="chevron-back" size={20} color={C.tint} />
-        </Pressable>
-
-        <View style={styles.headerCenter}>
-          <Text style={[styles.headerSurah, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
-            {surahLabel}
-          </Text>
-          <Text style={[styles.headerJuz, { color: C.textMuted }]}>
-            {isAr
-              ? `جزء ${toArabicIndic(juzNum)} · صفحة ${toArabicIndic(pageNum)}`
-              : `Juz ${juzNum} · Page ${pageNum}`}
-          </Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep - 1); }}
-            disabled={quranFontStep <= 0}
-            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep <= 0) ? 0.4 : 1 }]}
-          >
-            <Text style={[styles.fontStepLabel, { color: C.textSecond }]}>A−</Text>
-          </Pressable>
-          <Text style={[styles.fontSizeStepName, { color: C.textMuted }]}>
-            {(['XS', 'S', 'M', 'L', 'XL'] as const)[quranFontStep]}
-          </Text>
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep + 1); }}
-            disabled={quranFontStep >= 4}
-            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep >= 4) ? 0.4 : 1 }]}
-          >
-            <Text style={[styles.fontStepLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
-          </Pressable>
-          </View>
-          <Pressable
-            onPress={() => router.push('/bookmarks')}
-            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* ── Page content with swipe ── */}
+      {/* ── Page content with swipe. Chrome (header + bottom nav) is rendered
+           BELOW as absolute overlays so the ScrollView's padding stays constant
+           regardless of chrome visibility — text does not shift a pixel. ── */}
       <Animated.View
         style={[{ flex: 1 }, { transform: [{ translateX: slideAnim }] }]}
         {...panResponder.panHandlers}
@@ -370,12 +340,13 @@ export default function QuranReaderScreen() {
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
-          contentContainerStyle={[styles.pageContent, { paddingBottom: bottomInset + 90 }]}
+          contentContainerStyle={[styles.pageContent, { paddingTop: HEADER_H, paddingBottom: BOTTOM_NAV_H + 40 }]}
           showsVerticalScrollIndicator={false}
           scrollEnabled
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
+        <Pressable onPress={toggleChrome}>
           {pageAyahs.length === 0 ? (
             <Text style={{ color: C.textMuted, textAlign: 'center', marginTop: 60, fontFamily: 'Amiri_400Regular', fontSize: 18 }}>
               ...
@@ -481,15 +452,85 @@ export default function QuranReaderScreen() {
             </Text>
             <View style={[styles.pageNumLine, { backgroundColor: C.separator }]} />
           </View>
+        </Pressable>
         </ScrollView>
       </Animated.View>
 
-      {/* ── Bottom navigation ── */}
-      <View style={[styles.bottomNav, {
-        paddingBottom: bottomInset + 14,
-        borderTopColor: C.separator,
-        backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
-      }]}>
+      {/* ── Header (overlay) — fades on tap-to-immersive. Absolute-positioned
+           so its space is preserved via ScrollView's paddingTop=HEADER_H.
+           pointerEvents 'none' when hidden so it does not swallow taps meant
+           for the underlying page. ── */}
+      <View
+        pointerEvents={chromeVisible ? 'auto' : 'none'}
+        style={[
+          styles.header,
+          {
+            position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
+            paddingTop: topInset + 4, paddingHorizontal: 16,
+            borderBottomColor: C.separator,
+            backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
+            opacity: chromeVisible ? 1 : 0,
+          },
+        ]}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={C.tint} />
+        </Pressable>
+
+        <View style={styles.headerCenter}>
+          <Text style={[styles.headerSurah, { color: C.text, fontFamily: 'Amiri_700Bold' }]}>
+            {surahLabel}
+          </Text>
+          <Text style={[styles.headerJuz, { color: C.textMuted }]}>
+            {isAr
+              ? `جزء ${toArabicIndic(juzNum)}`
+              : `Juz ${juzNum}`}
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep - 1); }}
+            disabled={quranFontStep <= 0}
+            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep <= 0) ? 0.4 : 1 }]}
+          >
+            <Text style={[styles.fontStepLabel, { color: C.textSecond }]}>A−</Text>
+          </Pressable>
+          <Text style={[styles.fontSizeStepName, { color: C.textMuted }]}>
+            {(['XS', 'S', 'M', 'L', 'XL'] as const)[quranFontStep]}
+          </Text>
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setQuranFontStep(quranFontStep + 1); }}
+            disabled={quranFontStep >= 4}
+            style={({ pressed }) => [styles.fontStepBtn, { backgroundColor: C.backgroundCard, opacity: (pressed || quranFontStep >= 4) ? 0.4 : 1 }]}
+          >
+            <Text style={[styles.fontStepLabel, { color: C.textSecond, fontSize: 14 }]}>A+</Text>
+          </Pressable>
+          </View>
+          <Pressable
+            onPress={() => router.push('/bookmarks')}
+            style={({ pressed }) => [styles.iconBtn, { backgroundColor: C.backgroundCard, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Ionicons name="bookmark-outline" size={18} color={C.textSecond} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* ── Bottom navigation (overlay) ── */}
+      <View
+        pointerEvents={chromeVisible ? 'auto' : 'none'}
+        style={[styles.bottomNav, {
+          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+          paddingBottom: bottomInset + 14,
+          borderTopColor: C.separator,
+          backgroundColor: isDark ? 'rgba(13,13,13,0.97)' : 'rgba(250,246,238,0.97)',
+          opacity: chromeVisible ? 1 : 0,
+        }]}
+      >
         <Pressable
           onPress={() => navigate('next')}
           disabled={pageNum >= TOTAL_PAGES}

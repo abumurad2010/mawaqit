@@ -50,11 +50,10 @@ const GREGORIAN_MONTHS_AR = [
 ];
 
 const DAYS_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const DAYS_AR = ['أح','إث','ثل','أر','خم','جم','سب'];
+const DAYS_AR = ['أحد','اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
 // Persian: Intl produces full names (يكشنبه etc.) — use short forms
 const DAYS_FA = ['یک‌ش','دوش','سه‌ش','چهار','پنج‌ش','جمعه','شنبه'];
-// Urdu: Intl produces natural short names but جمعرات (Thu) is long — trim to جمعر
-const DAYS_UR = ['اتوار','پیر','منگل','بدھ','جمعر','جمعہ','ہفتہ'];
+const DAYS_UR = ['اتوار','پیر','منگل','بدھ','جمعرات','جمعہ','ہفتہ'];
 // Swahili: Intl.DateTimeFormat produces long names (all start with "Juma") — use 3-char abbreviations
 const DAYS_SW = ['Jpi','Jtt','Jnn','Jtn','Alh','Iju','Jmo'];
 

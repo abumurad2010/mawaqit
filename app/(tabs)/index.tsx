@@ -642,8 +642,12 @@ export default function PrayerTimesScreen() {
           </Pressable>
         </View>
 
-        {/* Row 3: location */}
-        <View style={styles.metaRow}>
+        {/* Row 3: location — tappable to open the location sheet (GPS/saved/search) */}
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); setShowManual(true); }}
+          style={({ pressed }) => [styles.metaRow, { opacity: pressed ? 0.5 : 1 }]}
+          hitSlop={6}
+        >
           <Ionicons name="location-sharp" size={hFS - 2} color={pageMuted} />
           <Text style={[styles.metaText, { color: pageMuted, fontWeight: fw, flexShrink: 1, fontSize: hFS }]} numberOfLines={1}>
             {loadingLoc
@@ -652,7 +656,8 @@ export default function PrayerTimesScreen() {
                 ? (localizedCity ?? (locationMode === 'manual' ? (manualLocation?.city) : (location?.city)) ?? `${effectiveLat.toFixed(2)}°, ${effectiveLng?.toFixed(2)}°`)
                 : tr.locationPermission}
           </Text>
-        </View>
+          <Ionicons name="chevron-down" size={hFS - 4} color={pageMuted} />
+        </Pressable>
       </View>
 
       {/* ── Animated slide container — everything below the header slides on day change ── */}

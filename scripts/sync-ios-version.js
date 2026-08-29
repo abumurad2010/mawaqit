@@ -22,33 +22,63 @@ if (!buildNumber) {
   process.exit(1);
 }
 
-const plistPath = path.join(root, 'ios', 'Mawaqit', 'Info.plist');
+// Guard: the JS_BUILD_MARKER literal in app/about.tsx must match app.json version.
+// If it drifts, a stale Metro bundle shipped against a fresh native binary will render
+// as "1.3.8 · JS:1.3.7" on the About screen — this check fails loud before that ships.
+const aboutPath = path.join(root, 'app', 'about.tsx');
+const aboutSrc = fs.readFileSync(aboutPath, 'utf8');
+const markerMatch = aboutSrc.match(/const\s+JS_BUILD_MARKER\s*:\s*string\s*=\s*'([^']+)'/);
+if (!markerMatch) {
+  console.error('sync-ios-version: JS_BUILD_MARKER literal not found in app/about.tsx');
+  process.exit(1);
+}
+if (markerMatch[1] !== version) {
+  console.error(
+    `sync-ios-version: JS_BUILD_MARKER mismatch — app.json version="${version}" ` +
+    `but app/about.tsx JS_BUILD_MARKER="${markerMatch[1]}". Update the literal.`
+  );
+  process.exit(1);
+}
+
+// Both plists must move together. Apple rejects an app extension whose
+// CFBundleVersion differs from its containing app's (App Store Connect
+// error ITMS-90478 or similar), so drift between these two is a submission
+// blocker. Writing both from the same source (app.json) here means the two
+// physically cannot fall out of sync unless someone edits one by hand.
+const PLIST_TARGETS = [
+  { name: 'main app', path: path.join(root, 'ios', 'Mawaqit',       'Info.plist') },
+  { name: 'widget',   path: path.join(root, 'ios', 'MawaqitWidget', 'Info.plist') },
+];
 const PLIST_BUDDY = '/usr/libexec/PlistBuddy';
 
-if (fs.existsSync(PLIST_BUDDY)) {
-  execSync(`"${PLIST_BUDDY}" -c "Set :CFBundleShortVersionString ${version}" "${plistPath}"`);
-  execSync(`"${PLIST_BUDDY}" -c "Set :CFBundleVersion ${buildNumber}" "${plistPath}"`);
-  console.log(`sync-ios-version: Info.plist updated via PlistBuddy → ${version} (build ${buildNumber})`);
-} else {
-  // Fallback for non-macOS environments
-  const original = fs.readFileSync(plistPath, 'utf8');
+function replacePlistValue(xml, key, value) {
+  return xml.replace(
+    new RegExp(`(<key>${key}<\\/key>\\s*<string>)[^<]*(<\\/string>)`),
+    `$1${value}$2`
+  );
+}
 
-  function replacePlistValue(xml, key, value) {
-    return xml.replace(
-      new RegExp(`(<key>${key}<\\/key>\\s*<string>)[^<]*(<\\/string>)`),
-      `$1${value}$2`
-    );
+for (const target of PLIST_TARGETS) {
+  if (!fs.existsSync(target.path)) {
+    console.error(`sync-ios-version: missing ${target.name} plist at ${target.path}`);
+    process.exit(1);
   }
-
-  const updated = [
-    ['CFBundleShortVersionString', version],
-    ['CFBundleVersion', String(buildNumber)],
-  ].reduce((xml, [key, val]) => replacePlistValue(xml, key, val), original);
-
-  if (updated === original) {
-    console.log(`sync-ios-version: already up to date (${version} / build ${buildNumber})`);
+  if (fs.existsSync(PLIST_BUDDY)) {
+    execSync(`"${PLIST_BUDDY}" -c "Set :CFBundleShortVersionString ${version}" "${target.path}"`);
+    execSync(`"${PLIST_BUDDY}" -c "Set :CFBundleVersion ${buildNumber}" "${target.path}"`);
+    console.log(`sync-ios-version: ${target.name} Info.plist updated via PlistBuddy → ${version} (build ${buildNumber}) [${target.path}]`);
   } else {
-    fs.writeFileSync(plistPath, updated, 'utf8');
-    console.log(`sync-ios-version: Info.plist updated via regex → ${version} (build ${buildNumber})`);
+    // Fallback for non-macOS environments
+    const original = fs.readFileSync(target.path, 'utf8');
+    const updated = [
+      ['CFBundleShortVersionString', version],
+      ['CFBundleVersion', String(buildNumber)],
+    ].reduce((xml, [key, val]) => replacePlistValue(xml, key, val), original);
+    if (updated === original) {
+      console.log(`sync-ios-version: ${target.name} Info.plist already up to date (${version} / build ${buildNumber})`);
+    } else {
+      fs.writeFileSync(target.path, updated, 'utf8');
+      console.log(`sync-ios-version: ${target.name} Info.plist updated via regex → ${version} (build ${buildNumber}) [${target.path}]`);
+    }
   }
 }

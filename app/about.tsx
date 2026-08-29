@@ -17,6 +17,11 @@ const riwaqLogoLight = require('@/assets/images/riwaq-labs-logo.png');
 const appIcon = require('@/assets/images/icon.png');
 const APP_VERSION: string = Constants.expoConfig?.version ?? '1.0.0';
 
+// Module-level literal baked into the JS bundle. sync-ios-version.js asserts this
+// matches app.json version, so a stale Metro bundle installed against a fresh native
+// binary is caught immediately by the "1.3.8 · JS:1.3.8" line on this screen.
+const JS_BUILD_MARKER: string = '1.3.8';
+
 export default function AboutScreen() {
   const { colors, lang, isRtl, isDark } = useApp();
   const C = colors;
@@ -59,7 +64,7 @@ export default function AboutScreen() {
             {tr.about_app_tagline}
           </Text>
           <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: 'Inter_400Regular', marginTop: 4 }}>
-            v{APP_VERSION}
+            {`v${APP_VERSION} · JS:${JS_BUILD_MARKER}`}
           </Text>
         </View>
 
